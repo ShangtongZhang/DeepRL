@@ -33,9 +33,7 @@ class MountainCar(BasicTask):
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
 
-        optimizer_fn = lambda name: tf.train.GradientDescentOptimizer(name=name, learning_rate=0.01)
-        self.network_fn = lambda name: Network(name, self.state_space_size,
-                                               self.action_space_size, optimizer_fn, tf.random_normal_initializer())
+        self.network_fn = lambda learning_rate=0.01: FullyConnectedNet([self.state_space_size, 50, 200, self.action_space_size], learning_rate)
         self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.95, min_epsilon=0.1)
         self.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
 
@@ -51,45 +49,28 @@ class CartPole(BasicTask):
     def __init__(self):
         self.env = gym.make(self.name)
 
-        optimizer_fn = lambda name: tf.train.GradientDescentOptimizer(name=name, learning_rate=0.01)
-        self.network_fn = lambda name: Network(name, self.state_space_size,
-                                               self.action_space_size, optimizer_fn, tf.random_normal_initializer())
+        self.network_fn = lambda learning_rate=0.01: FullyConnectedNet([self.state_space_size, 50, 200, self.action_space_size], learning_rate)
         self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.95, min_epsilon=0.1)
         self.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
 
-class LunarLander(BasicTask):
-    state_space_size = 8
-    action_space_size = 4
-    name = 'LunarLander-v2'
-    success_threshold = 200
-    discount = 0.99
-    step_limit = 5000
-    target_network_update_freq = 200
-
-    def __init__(self):
-        self.env = gym.make(self.name)
-        optimizer_fn = lambda name: tf.train.GradientDescentOptimizer(name=name, learning_rate=0.001)
-        self.network_fn = lambda name: Network(name, self.state_space_size,
-                                               self.action_space_size, optimizer_fn, tf.random_normal_initializer())
-        self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.99, min_epsilon=0.1)
-        self.replay_fn = lambda: Replay(memory_size=20000, batch_size=100)
-
 if __name__ == '__main__':
-    # task = MountainCar()
-    task = LunarLander()
-    agent = DQNAgent(task.name, task, task.network_fn, task.policy_fn, task.replay_fn,
+    task = MountainCar()
+    bp_network_fn = lambda learning_rate=0.001: FullyConnectedNet([task.state_space_size, 50, 200, task.action_space_size], learning_rate, gpu=False)
+    def smd_network_fn(learning_rate=0.001):
+        bp_network = bp_network_fn(learning_rate)
+        return SMDNetworkWrapper(bp_network)
+
+    agent = DQNAgent(task, smd_network_fn, task.policy_fn, task.replay_fn,
                      task.discount, task.step_limit, task.target_network_update_freq)
     window_size = 100
-    with tf.Session() as sess:
-        sess.run(tf.global_variables_initializer())
-        ep = 0
-        rewards = []
-        while True:
-            ep += 1
-            reward = agent.episode(sess)
-            rewards.append(reward)
-            if len(rewards) > window_size:
-                reward = np.mean(rewards[-window_size:])
-            print 'episode %d: %f' % (ep, reward)
-            if reward > task.success_threshold:
-                break
+    ep = 0
+    rewards = []
+    while True:
+        ep += 1
+        reward = agent.episode()
+        rewards.append(reward)
+        if len(rewards) > window_size:
+            reward = np.mean(rewards[-window_size:])
+        print 'episode %d: %f' % (ep, reward)
+        if reward > task.success_threshold:
+            break

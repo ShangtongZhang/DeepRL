@@ -7,6 +7,7 @@ __pycache__/
 exp_*
 upload.py
 *.sh
+data
 
 # C extensions
 *.so

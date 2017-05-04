@@ -4,46 +4,67 @@
 # declaration at the top                                              #
 #######################################################################
 
-import tensorflow as tf
-from common import *
+import torch
+from torch.autograd import Variable
+import torch.nn as nn
+import torch.nn.functional as F
+import numpy as np
+from SMDWrapper import SMDWrapper
 
-class Network:
-    def __init__(self, name, dim_in, dim_out, optimizer_fn, initializer=tf.random_normal_initializer()):
-        self.x = tf.placeholder(tf.float32, shape=(None, dim_in))
-        dim_hidden1 = 50
-        dim_hidden2 = 200
-        W1, b1, net1, phi1 = \
-            fully_connected(name, 'layer1', self.x, dim_in, dim_hidden1, initializer, tf.nn.relu)
-        W2, b2, net2, phi2 = \
-            fully_connected(name, 'layer2', phi1, dim_hidden1, dim_hidden2, initializer, tf.nn.relu)
-        W3, b3, net3, self.y = \
-            fully_connected(name, 'layer3', phi2, dim_hidden2, dim_out, initializer, tf.identity)
-        self.target = tf.placeholder(tf.float32, shape=(None, dim_out))
-        loss = 0.5 * tf.reduce_mean(tf.squared_difference(self.y, self.target))
-        self.variables = [W1, b1, W2, b2, W3, b3]
-        self.train_op = optimizer_fn(name).minimize(loss=loss)
+class FullyConnectedNet(nn.Module):
+    def __init__(self, dims, learning_rate, gpu=True):
+        super(FullyConnectedNet, self).__init__()
+        self.fc1 = nn.Linear(dims[0], dims[1])
+        self.fc2 = nn.Linear(dims[1], dims[2])
+        self.fc3 = nn.Linear(dims[2], dims[3])
+        self.criterion = nn.MSELoss()
+        self.learning_rate = learning_rate
+        self.optimizer = torch.optim.SGD(self.parameters(), learning_rate)
+        self.gpu = gpu and torch.cuda.is_available()
+        if self.gpu:
+            print 'Transferring network to GPU...'
+            self.cuda()
+            print 'Network transferred.'
 
-    def get_assign_ops(self, src_network):
-        assign_ops = []
-        for dst_var, src_var in zip(self.variables, src_network.variables):
-            assign_ops.append(dst_var.assign(src_var))
-        return assign_ops
+    def forward(self, x):
+        x = torch.from_numpy(np.asarray(x, dtype='float32'))
+        if self.gpu:
+            x = x.cuda()
+        x = Variable(x)
 
-    def predict(self, sess, x):
-        y = sess.run(self.y, feed_dict={self.x: x})
+        y = F.relu(self.fc1(x))
+        y = F.relu(self.fc2(y))
+        y = self.fc3(y)
         return y
 
-    def learn(self, sess, x, target):
-        sess.run(self.train_op, feed_dict={self.x: x, self.target: target})
+    def sync_with(self, src_net):
+        for param_dst, param_src in zip(self.parameters(), src_net.parameters()):
+            param_dst.data.copy_(param_src.data)
 
-class SimpleNetwork(Network):
-    def __init__(self, name, dim_in, dim_out, dim_hidden, optimizer_fn, initializer=tf.random_normal_initializer()):
-        self.x = tf.placeholder(tf.float32, shape=(None, dim_in))
-        W1, b1, net1, phi1 = \
-            fully_connected(name, 'layer1', self.x, dim_in, dim_hidden, initializer, tf.nn.relu)
-        W2, b2, net2, self.y = \
-            fully_connected(name, 'layer2', phi1, dim_hidden, dim_out, initializer, tf.identity)
-        self.target = tf.placeholder(tf.float32, shape=(None, dim_out))
-        loss = 0.5 * tf.reduce_mean(tf.squared_difference(self.y, self.target))
-        self.variables = [W1, b1, W2, b2]
-        self.train_op = optimizer_fn(name).minimize(loss=loss)
+    def predict(self, x):
+        return self.forward(x).cpu().data.numpy()
+
+    def learn(self, x, target):
+        target = torch.from_numpy(target)
+        if self.gpu:
+            target = target.cuda()
+        target = Variable(target)
+
+        y = self.forward(x)
+        loss = self.criterion(y, target)
+        self.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+    def output_transfer(self, y):
+        return y
+
+class SMDNetworkWrapper(SMDWrapper):
+    def __init__(self, net):
+        SMDWrapper.__init__(self, net)
+
+    def sync_with(self, src_net):
+        self.net.sync_with(src_net.net)
+
+    def parameters(self):
+        return self.net.parameters()
