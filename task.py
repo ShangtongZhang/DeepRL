@@ -39,6 +39,24 @@ class MountainCar(BasicTask):
         self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.95, min_epsilon=0.1)
         self.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
 
+class CartPole(BasicTask):
+    state_space_size = 4
+    action_space_size = 2
+    name = 'CartPole-v0'
+    success_threshold = 195
+    discount = 0.99
+    step_limit = 5000
+    target_network_update_freq = 200
+
+    def __init__(self):
+        self.env = gym.make(self.name)
+
+        optimizer_fn = lambda name: tf.train.GradientDescentOptimizer(name=name, learning_rate=0.01)
+        self.network_fn = lambda name: Network(name, self.state_space_size,
+                                               self.action_space_size, optimizer_fn, tf.random_normal_initializer())
+        self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.95, min_epsilon=0.1)
+        self.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
+
 class LunarLander(BasicTask):
     state_space_size = 8
     action_space_size = 4
@@ -53,7 +71,7 @@ class LunarLander(BasicTask):
         optimizer_fn = lambda name: tf.train.GradientDescentOptimizer(name=name, learning_rate=0.001)
         self.network_fn = lambda name: Network(name, self.state_space_size,
                                                self.action_space_size, optimizer_fn, tf.random_normal_initializer())
-        self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.99, min_epsilon=0)
+        self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.99, min_epsilon=0.1)
         self.replay_fn = lambda: Replay(memory_size=20000, batch_size=100)
 
 if __name__ == '__main__':

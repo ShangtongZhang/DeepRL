@@ -35,3 +35,15 @@ class Network:
 
     def learn(self, sess, x, target):
         sess.run(self.train_op, feed_dict={self.x: x, self.target: target})
+
+class SimpleNetwork(Network):
+    def __init__(self, name, dim_in, dim_out, dim_hidden, optimizer_fn, initializer=tf.random_normal_initializer()):
+        self.x = tf.placeholder(tf.float32, shape=(None, dim_in))
+        W1, b1, net1, phi1 = \
+            fully_connected(name, 'layer1', self.x, dim_in, dim_hidden, initializer, tf.nn.relu)
+        W2, b2, net2, self.y = \
+            fully_connected(name, 'layer2', phi1, dim_hidden, dim_out, initializer, tf.identity)
+        self.target = tf.placeholder(tf.float32, shape=(None, dim_out))
+        loss = 0.5 * tf.reduce_mean(tf.squared_difference(self.y, self.target))
+        self.variables = [W1, b1, W2, b2]
+        self.train_op = optimizer_fn(name).minimize(loss=loss)
