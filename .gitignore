@@ -8,6 +8,8 @@ exp_*
 upload.py
 *.sh
 data
+draw_*
+log
 
 # C extensions
 *.so

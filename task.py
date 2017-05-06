@@ -7,6 +7,7 @@
 import gym
 import sys
 from dqn_agent import *
+import torch.optim
 
 class BasicTask:
     def transfer_state(self, state):
@@ -32,8 +33,8 @@ class MountainCar(BasicTask):
     def __init__(self):
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
-
-        self.network_fn = lambda learning_rate=0.01: FullyConnectedNet([self.state_space_size, 50, 200, self.action_space_size], learning_rate)
+        self.optimizer_fn = lambda params: torch.optim.SGD(params, 0.001)
+        self.network_fn = lambda optimizer_fn: FullyConnectedNet([self.state_space_size, 50, 200, self.action_space_size], optimizer_fn)
         self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.95, min_epsilon=0.1)
         self.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
 
@@ -48,19 +49,15 @@ class CartPole(BasicTask):
 
     def __init__(self):
         self.env = gym.make(self.name)
-
-        self.network_fn = lambda learning_rate=0.01: FullyConnectedNet([self.state_space_size, 50, 200, self.action_space_size], learning_rate)
-        self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.95, min_epsilon=0.1)
+        self.optimizer_fn = lambda params: torch.optim.SGD(params, 0.001)
+        self.network_fn = lambda optimizer_fn: FullyConnectedNet([self.state_space_size, 50, 200, self.action_space_size], optimizer_fn)
+        self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.99, min_epsilon=0.01)
         self.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
 
 if __name__ == '__main__':
-    task = MountainCar()
-    bp_network_fn = lambda learning_rate=0.001: FullyConnectedNet([task.state_space_size, 50, 200, task.action_space_size], learning_rate, gpu=False)
-    def smd_network_fn(learning_rate=0.001):
-        bp_network = bp_network_fn(learning_rate)
-        return SMDNetworkWrapper(bp_network)
-
-    agent = DQNAgent(task, smd_network_fn, task.policy_fn, task.replay_fn,
+    task = CartPole()
+    optimizer_fn = lambda params: torch.optim.SGD(params, 0.001)
+    agent = DQNAgent(task, task.network_fn, optimizer_fn, task.policy_fn, task.replay_fn,
                      task.discount, task.step_limit, task.target_network_update_freq)
     window_size = 100
     ep = 0

@@ -9,17 +9,15 @@ from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
-from SMDWrapper import SMDWrapper
 
 class FullyConnectedNet(nn.Module):
-    def __init__(self, dims, learning_rate, gpu=True):
+    def __init__(self, dims, optimizer_fn, gpu=True):
         super(FullyConnectedNet, self).__init__()
         self.fc1 = nn.Linear(dims[0], dims[1])
         self.fc2 = nn.Linear(dims[1], dims[2])
         self.fc3 = nn.Linear(dims[2], dims[3])
         self.criterion = nn.MSELoss()
-        self.learning_rate = learning_rate
-        self.optimizer = torch.optim.SGD(self.parameters(), learning_rate)
+        self.optimizer = optimizer_fn(self.parameters())
         self.gpu = gpu and torch.cuda.is_available()
         if self.gpu:
             print 'Transferring network to GPU...'
@@ -58,13 +56,3 @@ class FullyConnectedNet(nn.Module):
 
     def output_transfer(self, y):
         return y
-
-class SMDNetworkWrapper(SMDWrapper):
-    def __init__(self, net):
-        SMDWrapper.__init__(self, net)
-
-    def sync_with(self, src_net):
-        self.net.sync_with(src_net.net)
-
-    def parameters(self):
-        return self.net.parameters()

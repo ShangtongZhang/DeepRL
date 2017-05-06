@@ -10,9 +10,9 @@ from policy import *
 import numpy as np
 
 class DQNAgent:
-    def __init__(self, task, network_fn, policy_fn, replay_fn, discount, step_limit, target_network_update_freq):
-        self.learning_network = network_fn()
-        self.target_network = network_fn()
+    def __init__(self, task, network_fn, optimizer_fn, policy_fn, replay_fn, discount, step_limit, target_network_update_freq):
+        self.learning_network = network_fn(optimizer_fn)
+        self.target_network = network_fn(optimizer_fn)
         self.task = task
         self.step_limit = step_limit
         self.replay = replay_fn()
