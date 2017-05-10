@@ -13,6 +13,7 @@ class DQNAgent:
     def __init__(self, task, network_fn, optimizer_fn, policy_fn, replay_fn, discount, step_limit, target_network_update_freq):
         self.learning_network = network_fn(optimizer_fn)
         self.target_network = network_fn(optimizer_fn)
+        self.target_network.load_state_dict(self.learning_network.state_dict())
         self.task = task
         self.step_limit = step_limit
         self.replay = replay_fn()
@@ -26,7 +27,7 @@ class DQNAgent:
         total_reward = 0.0
         steps = 0
         while not self.step_limit or steps < self.step_limit:
-            value = self.learning_network.predict(np.reshape(state, (1, -1)) )
+            value = self.learning_network.predict(np.reshape(state, (1, -1)))
             action = self.policy.sample(value.flatten())
             next_state, reward, done, info = self.task.step(action)
             total_reward += reward
@@ -42,8 +43,8 @@ class DQNAgent:
                 targets = self.learning_network.predict(states)
                 q_next = self.target_network.predict(next_states)
                 q_next = np.max(q_next, axis=1)
-                q_next = rewards + self.discount * q_next
                 q_next = np.where(terminals, 0, q_next)
+                q_next = rewards + self.discount * q_next
                 targets[np.arange(len(actions)), actions] = q_next
                 self.learning_network.learn(states, targets)
             if self.total_steps % self.target_network_update_freq == 0:

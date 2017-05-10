@@ -11,13 +11,14 @@ import torch.nn.functional as F
 import numpy as np
 
 class FullyConnectedNet(nn.Module):
-    def __init__(self, dims, optimizer_fn, gpu=True):
+    def __init__(self, dims, optimizer_fn=None, gpu=True):
         super(FullyConnectedNet, self).__init__()
         self.fc1 = nn.Linear(dims[0], dims[1])
         self.fc2 = nn.Linear(dims[1], dims[2])
         self.fc3 = nn.Linear(dims[2], dims[3])
         self.criterion = nn.MSELoss()
-        self.optimizer = optimizer_fn(self.parameters())
+        if optimizer_fn is not None:
+            self.optimizer = optimizer_fn(self.parameters())
         self.gpu = gpu and torch.cuda.is_available()
         if self.gpu:
             print 'Transferring network to GPU...'
@@ -53,6 +54,12 @@ class FullyConnectedNet(nn.Module):
         self.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+    def gradient(self, x, target):
+        y = self.forward(x)
+        target = Variable(torch.from_numpy(target))
+        loss = self.criterion(y, target)
+        loss.backward()
 
     def output_transfer(self, y):
         return y
