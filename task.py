@@ -39,35 +39,8 @@ class MountainCar(BasicTask):
         self.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
 
 class CartPole(BasicTask):
-    state_space_size = 4
-    action_space_size = 2
     name = 'CartPole-v0'
     success_threshold = 195
-    discount = 0.99
-    step_limit = 5000
-    target_network_update_freq = 200
 
     def __init__(self):
         self.env = gym.make(self.name)
-        self.optimizer_fn = lambda params: torch.optim.SGD(params, 0.001)
-        self.network_fn = lambda optimizer_fn: FullyConnectedNet([self.state_space_size, 50, 200, self.action_space_size], optimizer_fn)
-        self.policy_fn = lambda: GreedyPolicy(epsilon=0.5, decay_factor=0.99, min_epsilon=0.01)
-        self.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
-
-if __name__ == '__main__':
-    task = CartPole()
-    optimizer_fn = lambda params: torch.optim.SGD(params, 0.001)
-    agent = DQNAgent(task, task.network_fn, optimizer_fn, task.policy_fn, task.replay_fn,
-                     task.discount, task.step_limit, task.target_network_update_freq)
-    window_size = 100
-    ep = 0
-    rewards = []
-    while True:
-        ep += 1
-        reward = agent.episode()
-        rewards.append(reward)
-        if len(rewards) > window_size:
-            reward = np.mean(rewards[-window_size:])
-        print 'episode %d: %f' % (ep, reward)
-        if reward > task.success_threshold:
-            break

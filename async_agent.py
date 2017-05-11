@@ -8,161 +8,113 @@ from network import *
 from policy import *
 import numpy as np
 import torch.multiprocessing as mp
-import time
 from task import *
 from network import *
-from torch.autograd import Variable
-import threading
 
 class AsyncAgent:
     def __init__(self, task_fn, network_fn, optimizer_fn, policy_fn, discount, step_limit,
-                 target_network_update_freq, n_workers):
+                 target_network_update_freq, n_workers, batch_size, test_interval):
         self.network_fn = network_fn
         self.learning_network = network_fn()
-        # self.learning_network.share_memory()
+        self.learning_network.share_memory()
         self.target_network = network_fn()
-        # self.target_network.share_memory()
+        self.target_network.share_memory()
         self.target_network.load_state_dict(self.learning_network.state_dict())
 
-        # self.optimizer_fn = optimizer_fn
-        # self.optimizer = optimizer_fn(self.learning_network.parameters())
+        self.optimizer_fn = optimizer_fn
         self.task_fn = task_fn
         self.step_limit = step_limit
         self.discount = discount
+        self.optimizer_fn = optimizer_fn
         self.target_network_update_freq = target_network_update_freq
-        # self.policy = policy_fn()
         self.policy_fn = policy_fn
-        # self.total_steps = mp.Value('i', 0)
-        self.total_steps = 0
-        self.lock = threading.Lock()
-        # self.lock = mp.Lock()
+        self.steps_lock = mp.Lock()
+        self.network_lock = mp.Lock()
+        self.total_steps = mp.Value('i', 0)
+        self.stop_signal = mp.Value('i', False)
         self.n_workers = n_workers
-        self.batch_size = 5
+        self.batch_size = batch_size
+        self.test_interval = test_interval
+
+    def deterministic_episode(self, task):
+        state = np.asarray([task.reset()])
+        total_rewards = 0
+        steps = 0
+        while True and steps < self.step_limit:
+            with self.network_lock:
+                action_values = self.learning_network.predict(state)
+            steps += 1
+            action = np.argmax(action_values.flatten())
+            state, reward, terminal, _ = task.step(action)
+            total_rewards += reward
+            if terminal:
+                break
+            state = state.reshape([1, -1])
+        return total_rewards
 
     def async_update(self, worker_network, optimizer):
-        with self.lock:
+        with self.network_lock:
             optimizer.zero_grad()
             for param, worker_param in zip(self.learning_network.parameters(), worker_network.parameters()):
-                param._grad = worker_param.grad
-            # print list(self.learning_network.parameters())[1].data
-            # print list(worker_network.parameters())[1].grad.data
+                param._grad = worker_param.grad.clone()
             optimizer.step()
-            # print list(self.learning_network.parameters())[1].data
 
     def worker(self, id):
-        # worker_network = self.network_fn()
+        optimizer = self.optimizer_fn(self.learning_network.parameters())
+        worker_network = self.network_fn()
+        worker_network.load_state_dict(self.learning_network.state_dict())
         task = self.task_fn()
-        episode = 0
-        # optimizer = self.optimizer_fn(self.learning_network.parameters())
         policy = self.policy_fn()
         terminal = True
+        episode = 0
         episode_steps = 0
-        while True:
+        while True and not self.stop_signal.value:
             batch_states, batch_actions, batch_rewards = [], [], []
             if terminal:
-                if id == 0:
-                    print 'episode %d, epsilon %f, steps: %d' % \
-                          (episode, policy.epsilon, episode_steps)
                 episode_steps = 0
                 episode += 1
                 policy.update_epsilon()
                 terminal = False
                 state = task.reset()
-                state = np.reshape(state, (1, -1))
+                state = state.reshape([1, -1])
             while not terminal and len(batch_states) < self.batch_size:
                 episode_steps += 1
-                with self.lock:
-                    self.total_steps += 1
+                with self.steps_lock:
+                    self.total_steps.value += 1
                 batch_states.append(state)
-                value = self.learning_network.predict(state)
+                value = worker_network.predict(state)
                 action = policy.sample(value.flatten())
                 batch_actions.append(action)
                 state, reward, terminal, _ = task.step(action)
-                state = np.reshape(state, (1, -1))
+                state = state.reshape([1, -1])
                 if not terminal:
-                    q_next = np.max(self.target_network.predict(state))
+                    with self.network_lock:
+                        q_next = np.max(self.target_network.predict(state))
                     reward += self.discount * q_next
                 batch_rewards.append(reward)
 
-            self.learning_network.learn_from_raw(np.vstack(batch_states), batch_actions, batch_rewards)
+            worker_network.zero_grad()
+            worker_network.gradient(np.vstack(batch_states), batch_actions, batch_rewards)
+            self.async_update(worker_network, optimizer)
+            worker_network.load_state_dict(self.learning_network.state_dict())
 
-            if self.total_steps % self.target_network_update_freq == 0:
-                with self.lock:
+            if self.total_steps.value % self.target_network_update_freq == 0:
+                with self.network_lock:
                     self.target_network.load_state_dict(self.learning_network.state_dict())
 
     def run(self):
-        procs = [threading.Thread(target=self.worker, args=(i, )) for i in range(self.n_workers)]
-        # procs = [mp.Process(target=self.worker, args=(i, )) for i in range(self.n_workers)]
+        procs = [mp.Process(target=self.worker, args=(i, )) for i in range(self.n_workers)]
         for p in procs: p.start()
-        # while True:
-        #     time.sleep(0.01)
+        task = self.task_fn()
+        while True:
+            if self.total_steps.value % self.test_interval == 0:
+                test_repeats = 5
+                rewards = np.zeros(test_repeats)
+                for i in range(test_repeats):
+                    rewards[i] = self.deterministic_episode(task)
+                print 'total stpes: %d, test process epsidoe reward: %f' %\
+                      (self.total_steps.value, np.mean(rewards))
+                if np.mean(rewards) > task.success_threshold:
+                    self.stop_signal.value = True
+                    break
         for p in procs: p.join()
-        # print list(self.learning_network.parameters())[1].data
-
-class Test:
-    def __init__(self):
-        # self.data = np.zeros((2, 3))
-        self.data = torch.zeros((2, 3))
-        # self.data.share_memory_()
-        print self.data
-        # self.val = mp.Value('i', 0)
-        # self.lock = mp.Lock()
-        self.lock = threading.Lock()
-
-    def fun(self):
-        # self.data += rank
-        for i in range(50):
-            time.sleep(0.01)
-            # with self.lock:
-            #     self.val.value += 1
-            self.data += 1
-
-    def run(self):
-        processes = []
-        for i in range(3):
-            # processes.append(mp.Process(target=self.fun))
-            processes.append(threading.Thread(target=self.fun))
-        for p in processes:
-            p.start()
-        for p in processes:
-            p.join()
-
-class TestNet(nn.Module):
-    def __init__(self):
-        super(TestNet, self).__init__()
-        self.fc = nn.Linear(2, 1, bias=False)
-        for param in self.parameters():
-            param.data.copy_(torch.from_numpy(np.array([[1.0, 2.0]], dtype='float32').T))
-        self.criterion = nn.MSELoss()
-    def gradient(self, x, target):
-        y = self.fc(x)
-        loss = self.criterion(y, target)
-        loss.backward()
-
-# t = Test()
-# t.run()
-# print t.val.value
-# print t.data
-
-if __name__ == '__main__':
-    task_fn = lambda: CartPole()
-    optimizer_fn = lambda params: torch.optim.SGD(params, 0.001)
-    network_fn = lambda: FullyConnectedNet([4, 50, 200, 2], optimizer_fn = optimizer_fn)
-    policy_fn = lambda: GreedyPolicy(epsilon=1.0, end_episode=500, min_epsilon=0.1)
-    # config = {'discount': 0.99, 'step_limit': 5000, 'target_network_update_freq': 200}
-    agent = AsyncAgent(task_fn, network_fn, optimizer_fn, policy_fn, 0.99, 0, 200, 8)
-    agent.run()
-
-    # t = Test()
-    # t.run()
-    # print t.data
-
-    # t = TestNet()
-    # x = Variable(torch.from_numpy(np.array([[0.1, 0.2]], dtype='float32')))
-    # target = Variable(torch.from_numpy(np.array([1], dtype='float32')))
-    # t.gradient(x, target)
-    # for p in t.parameters(): print p.grad
-    # t.gradient(x, target)
-    # for p in t.parameters(): print p.grad
-    # t.gradient(x, target)
-    # for p in t.parameters(): print p.grad

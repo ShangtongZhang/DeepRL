@@ -10,11 +10,11 @@ from policy import *
 import numpy as np
 
 class DQNAgent:
-    def __init__(self, task, network_fn, optimizer_fn, policy_fn, replay_fn, discount, step_limit, target_network_update_freq):
+    def __init__(self, task_fn, network_fn, optimizer_fn, policy_fn, replay_fn, discount, step_limit, target_network_update_freq):
         self.learning_network = network_fn(optimizer_fn)
         self.target_network = network_fn(optimizer_fn)
         self.target_network.load_state_dict(self.learning_network.state_dict())
-        self.task = task
+        self.task = task_fn()
         self.step_limit = step_limit
         self.replay = replay_fn()
         self.discount = discount
@@ -48,6 +48,21 @@ class DQNAgent:
                 targets[np.arange(len(actions)), actions] = q_next
                 self.learning_network.learn(states, targets)
             if self.total_steps % self.target_network_update_freq == 0:
-                self.target_network.sync_with(self.learning_network)
+                self.target_network.load_state_dict(self.learning_network.state_dict())
         self.policy.update_epsilon()
         return total_reward
+
+    def run(self):
+        window_size = 100
+        ep = 0
+        rewards = []
+        while True:
+            ep += 1
+            reward = self.episode()
+            rewards.append(reward)
+            if len(rewards) > window_size:
+                reward = np.mean(rewards[-window_size:])
+            print 'episode %d: %f' % (ep, reward)
+            if reward > self.task.success_threshold:
+                break
+

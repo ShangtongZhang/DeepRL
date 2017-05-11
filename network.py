@@ -43,16 +43,6 @@ class FullyConnectedNet(nn.Module):
     def predict(self, x):
         return self.forward(x).cpu().data.numpy()
 
-    def learn_from_raw(self, x, actions, rewards):
-        y = self.forward(x)
-        target = np.copy(y.data.numpy())
-        target[np.arange(target.shape[0]), actions] = np.asarray(rewards)
-        target = Variable(torch.from_numpy(target))
-        loss = self.criterion(y, target)
-        self.zero_grad()
-        loss.backward()
-        self.optimizer.step()
-
     def learn(self, x, target):
         target = torch.from_numpy(target)
         if self.gpu:
@@ -64,8 +54,10 @@ class FullyConnectedNet(nn.Module):
         loss.backward()
         self.optimizer.step()
 
-    def gradient(self, x, target):
+    def gradient(self, x, actions, rewards):
         y = self.forward(x)
+        target = np.copy(y.data.numpy())
+        target[np.arange(target.shape[0]), actions] = np.asarray(rewards)
         target = Variable(torch.from_numpy(target))
         loss = self.criterion(y, target)
         loss.backward()
