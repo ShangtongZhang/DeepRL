@@ -1,4 +1,4 @@
-#DeepRL
+# DeepRL
 > Highly modularized implementation of popular deep RL algorithms powered by PyTorch
 * Deep Q-Learning
 * Asynchronous One-Step Q-Learning
