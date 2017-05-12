@@ -10,9 +10,10 @@ import numpy as np
 import torch.multiprocessing as mp
 from task import *
 from network import *
+from bootstrap import *
 
 class AsyncAgent:
-    def __init__(self, task_fn, network_fn, optimizer_fn, policy_fn, discount, step_limit,
+    def __init__(self, task_fn, network_fn, optimizer_fn, policy_fn, bootstrap_fn, discount, step_limit,
                  target_network_update_freq, n_workers, batch_size, test_interval, test_repeats):
         self.network_fn = network_fn
         self.learning_network = network_fn()
@@ -20,6 +21,7 @@ class AsyncAgent:
         self.target_network = network_fn()
         self.target_network.share_memory()
         self.target_network.load_state_dict(self.learning_network.state_dict())
+        self.bootstrap_fn = bootstrap_fn
 
         self.optimizer_fn = optimizer_fn
         self.task_fn = task_fn
@@ -81,22 +83,23 @@ class AsyncAgent:
                 terminal = False
                 state = task.reset()
                 state = state.reshape([1, -1])
+                value = worker_network.predict(state)
+                action = policy.sample(value.flatten())
             while not terminal and len(batch_states) < self.batch_size:
                 episode_steps += 1
                 with self.steps_lock:
                     self.total_steps.value += 1
                 batch_states.append(state)
-                value = worker_network.predict(state)
-                action = policy.sample(value.flatten())
                 batch_actions.append(action)
                 state, reward, terminal, _ = task.step(action)
+                batch_rewards.append(reward)
                 episode_return += reward
                 state = state.reshape([1, -1])
-                if not terminal:
-                    with self.network_lock:
-                        q_next = np.max(self.target_network.predict(state))
-                    reward += self.discount * q_next
-                batch_rewards.append(reward)
+                value = worker_network.predict(state)
+                action = policy.sample(value.flatten())
+
+            batch_rewards = self.bootstrap_fn(batch_states, batch_actions, batch_rewards,
+                                              state, action, terminal, self)
 
             if episode_steps > self.step_limit:
                 terminal = True
