@@ -62,7 +62,8 @@ class DQNAgent:
             rewards.append(reward)
             if len(rewards) > window_size:
                 reward = np.mean(rewards[-window_size:])
-            print 'episode %d: %f' % (ep, reward)
+            print 'episode %d, epsilon %f, reward %f' % (
+                ep, self.policy.epsilon, reward)
             if reward > self.task.success_threshold:
                 break
 

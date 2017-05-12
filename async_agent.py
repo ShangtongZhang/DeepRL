@@ -13,7 +13,7 @@ from network import *
 
 class AsyncAgent:
     def __init__(self, task_fn, network_fn, optimizer_fn, policy_fn, discount, step_limit,
-                 target_network_update_freq, n_workers, batch_size, test_interval):
+                 target_network_update_freq, n_workers, batch_size, test_interval, test_repeats):
         self.network_fn = network_fn
         self.learning_network = network_fn()
         self.learning_network.share_memory()
@@ -35,14 +35,14 @@ class AsyncAgent:
         self.n_workers = n_workers
         self.batch_size = batch_size
         self.test_interval = test_interval
+        self.test_repeats = test_repeats
 
-    def deterministic_episode(self, task):
+    def deterministic_episode(self, task, network):
         state = np.asarray([task.reset()])
         total_rewards = 0
         steps = 0
         while True and steps < self.step_limit:
-            with self.network_lock:
-                action_values = self.learning_network.predict(state)
+            action_values = network.predict(state)
             steps += 1
             action = np.argmax(action_values.flatten())
             state, reward, terminal, _ = task.step(action)
@@ -68,10 +68,14 @@ class AsyncAgent:
         terminal = True
         episode = 0
         episode_steps = 0
+        episode_return = 0
         while True and not self.stop_signal.value:
             batch_states, batch_actions, batch_rewards = [], [], []
             if terminal:
+                if id == 0:
+                    print 'worker %d, episode %d, return %f' % (id, episode, episode_return)
                 episode_steps = 0
+                episode_return = 0
                 episode += 1
                 policy.update_epsilon()
                 terminal = False
@@ -86,12 +90,16 @@ class AsyncAgent:
                 action = policy.sample(value.flatten())
                 batch_actions.append(action)
                 state, reward, terminal, _ = task.step(action)
+                episode_return += reward
                 state = state.reshape([1, -1])
                 if not terminal:
                     with self.network_lock:
                         q_next = np.max(self.target_network.predict(state))
                     reward += self.discount * q_next
                 batch_rewards.append(reward)
+
+            if episode_steps > self.step_limit:
+                terminal = True
 
             worker_network.zero_grad()
             worker_network.gradient(np.vstack(batch_states), batch_actions, batch_rewards)
@@ -106,13 +114,15 @@ class AsyncAgent:
         procs = [mp.Process(target=self.worker, args=(i, )) for i in range(self.n_workers)]
         for p in procs: p.start()
         task = self.task_fn()
+        test_network = self.network_fn()
         while True:
             if self.total_steps.value % self.test_interval == 0:
-                test_repeats = 5
-                rewards = np.zeros(test_repeats)
-                for i in range(test_repeats):
-                    rewards[i] = self.deterministic_episode(task)
-                print 'total stpes: %d, test process epsidoe reward: %f' %\
+                with self.network_lock:
+                    test_network.load_state_dict(self.learning_network.state_dict())
+                rewards = np.zeros(self.test_repeats)
+                for i in range(self.test_repeats):
+                    rewards[i] = self.deterministic_episode(task, test_network)
+                print 'total steps: %d, averaged return per episode: %f' %\
                       (self.total_steps.value, np.mean(rewards))
                 if np.mean(rewards) > task.success_threshold:
                     self.stop_signal.value = True
