@@ -64,3 +64,43 @@ class FullyConnectedNet(nn.Module):
 
     def output_transfer(self, y):
         return y
+
+class ActorCriticNet(nn.Module):
+    def __init__(self, dims, gpu=True):
+        super(ActorCriticNet, self).__init__()
+        self.fc1 = nn.Linear(dims[0], dims[1])
+        self.fc_actor = nn.Linear(dims[1], dims[2])
+        self.fc_critic = nn.Linear(dims[1], 1)
+        self.gpu = gpu and torch.cuda.is_available()
+        if self.gpu:
+            print 'Transferring network to GPU...'
+            self.cuda()
+            print 'Network transferred.'
+
+    def forward(self, x):
+        x = torch.from_numpy(np.asarray(x, dtype='float32'))
+        if self.gpu:
+            x = x.cuda()
+        x = Variable(x)
+        phi = self.fc1(x)
+        return phi
+
+    def predict(self, x):
+        phi = self.forward(x)
+        return F.softmax(self.fc_actor(phi)).cpu().data.numpy()
+
+    def gradient(self, x, actions, rewards):
+        phi = self.forward(x)
+        logit = self.fc_actor(phi)
+        log_prob = F.log_softmax(logit)
+        state_value = self.fc_critic(phi)
+        log_prob = log_prob.gather(1, Variable(torch.from_numpy(np.asarray([actions]).reshape([-1, 1]))))
+        advantage = np.asarray([rewards]).reshape([-1, 1]) - state_value.cpu().data.numpy()
+        policy_loss = -torch.sum(log_prob * Variable(torch.from_numpy(np.asarray(advantage, dtype='float32'))))
+        value_loss = 0.5 * torch.sum(torch.pow(state_value - Variable(torch.from_numpy(np.asarray(rewards, dtype='float32'))), 2))
+        (policy_loss + value_loss).backward()
+        nn.utils.clip_grad_norm(self.parameters(), 40)
+
+    def critic(self, x):
+        phi = self.forward(x)
+        return self.fc_critic(phi).cpu().data.numpy()

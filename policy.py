@@ -13,12 +13,18 @@ class GreedyPolicy:
         self.min_epsilon = min_epsilon
         self.end_episode = end_episode
 
-    def sample(self, state):
+    def sample(self, action_value):
         if np.random.rand() < self.epsilon:
-            return np.random.randint(0, len(state))
-        return np.argmax(state)
+            return np.random.randint(0, len(action_value))
+        return np.argmax(action_value)
 
     def update_epsilon(self):
         self.epsilon = self.init_epsilon - float(self.current_episode) / self.end_episode * (self.init_epsilon - self.min_epsilon)
         self.epsilon = max(self.epsilon, self.min_epsilon)
         self.current_episode += 1
+
+class SamplePolicy:
+    def sample(self, action_value):
+        return np.random.choice(np.arange(len(action_value)), p=action_value)
+    def update_epsilon(self):
+        pass

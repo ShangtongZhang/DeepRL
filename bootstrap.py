@@ -43,3 +43,16 @@ def OneStepSarsa(batch_states, batch_actions, batch_rewards,
     batch_actions.pop(-1)
     batch_rewards = np.asarray(batch_rewards) + agent.discount * q_next
     return batch_rewards
+
+def AdvantageActorCritic(batch_states, batch_actions, batch_rewards,
+                         tailing_state, tailing_action, terminal, agent):
+    if terminal:
+        reward = 0
+    else:
+        with agent.network_lock:
+            reward = np.asscalar(agent.learning_network.critic(tailing_state))
+    rewards = []
+    for r in reversed(batch_rewards):
+        reward = r + agent.discount * reward
+        rewards.append(reward)
+    return rewards
