@@ -1,12 +1,13 @@
 from async_agent import *
 from dqn_agent import *
+import logging
 
 def async_cart_pole():
     config = dict()
     config['task_fn'] = lambda: CartPole()
     config['optimizer_fn'] = lambda params: torch.optim.SGD(params, 0.001)
     config['network_fn'] = lambda: FullyConnectedNet([4, 50, 200, 2])
-    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, end_episode=500, min_epsilon=0.1)
+    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=5000, min_epsilon=0.1)
     # config['bootstrap_fn'] = OneStepQLearning
     # config['bootstrap_fn'] = NStepQLearning
     config['bootstrap_fn'] = OneStepSarsa
@@ -25,7 +26,7 @@ def async_lunar_lander():
     config['task_fn'] = lambda: LunarLander()
     config['optimizer_fn'] = lambda params: torch.optim.Adam(params, 0.001)
     config['network_fn'] = lambda: FullyConnectedNet([8, 50, 200, 4])
-    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, end_episode=2000, min_epsilon=0.05)
+    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=40000, min_epsilon=0.05)
     config['bootstrap_fn'] = OneStepQLearning
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
@@ -37,30 +38,19 @@ def async_lunar_lander():
     agent = AsyncAgent(**config)
     agent.run()
 
-# Mountain Car is fairly unstable
-def dqn_mountain_car():
-    config = dict()
-    config['task_fn'] = lambda: MountainCar()
-    config['optimizer_fn'] = lambda params: torch.optim.SGD(params, 0.001)
-    config['network_fn'] = lambda optimizer_fn: FullyConnectedNet([2, 50, 200, 3], optimizer_fn)
-    config['policy_fn'] = lambda: GreedyPolicy(epsilon=0.5, end_episode=500, min_epsilon=0.1)
-    config['replay_fn'] = lambda: Replay(memory_size=10000, batch_size=10)
-    config['discount'] = 0.99
-    config['target_network_update_freq'] = 1000
-    config['step_limit'] = 5000
-    agent = DQNAgent(**config)
-    agent.run()
-
 def dqn_cart_pole():
     config = dict()
     config['task_fn'] = lambda: CartPole()
     config['optimizer_fn'] = lambda params: torch.optim.SGD(params, 0.001)
     config['network_fn'] = lambda optimizer_fn: FullyConnectedNet([4, 50, 200, 2], optimizer_fn)
-    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, end_episode=500, min_epsilon=0.1)
+    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config['replay_fn'] = lambda: Replay(memory_size=10000, batch_size=10)
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
-    config['step_limit'] = 300
+    config['step_limit'] = 0
+    config['explore_steps'] = 1000
+    config['logger'] = gym.logger
+    config['history_length'] = 1
     agent = DQNAgent(**config)
     agent.run()
 
@@ -81,9 +71,28 @@ def actor_critic_cart_pole():
     agent = AsyncAgent(**config)
     agent.run()
 
+def dqn_pixel_atari(name):
+    config = dict()
+    config['task_fn'] = lambda: PixelAtari(name)
+    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.00025)
+    config['network_fn'] = lambda optimizer_fn: ConvNet(4, 6, optimizer_fn)
+    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    config['replay_fn'] = lambda: Replay(memory_size=1000000, batch_size=32)
+    config['discount'] = 0.99
+    config['target_network_update_freq'] = 10000
+    config['step_limit'] = 0
+    config['explore_steps'] = 50000
+    config['logger'] = gym.logger
+    config['history_length'] = 4
+    agent = DQNAgent(**config)
+    agent.run()
+
 if __name__ == '__main__':
+    # gym.logger.setLevel(logging.DEBUG)
+    gym.logger.setLevel(logging.INFO)
     # async_cart_pole()
     # async_lunar_lander()
     # dqn_cart_pole()
     # dqn_mountain_car()
-    actor_critic_cart_pole()
+    # actor_critic_cart_pole()
+    dqn_pixel_atari('Breakout-v0')

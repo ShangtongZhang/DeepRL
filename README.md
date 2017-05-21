@@ -6,6 +6,6 @@
 * Asynchronous N-Step Q-Learning
 * Asynchronous Advantage Actor Critic (A3C)
 
->Benchmarked by classical control tasks (CartPole, LunarLander). Atari games will make it difficult to replicate in a regular laptop without a good GPU. However it's fairly easy to adapt the components to fit Atari games.
+>Tested with both classical control tasks (CartPole, LunarLander) and Atari games.
 
 >Try it out from ```main.py```!

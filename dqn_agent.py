@@ -10,7 +10,18 @@ from policy import *
 import numpy as np
 
 class DQNAgent:
-    def __init__(self, task_fn, network_fn, optimizer_fn, policy_fn, replay_fn, discount, step_limit, target_network_update_freq):
+    def __init__(self,
+                 task_fn,
+                 network_fn,
+                 optimizer_fn,
+                 policy_fn,
+                 replay_fn,
+                 discount,
+                 step_limit,
+                 target_network_update_freq,
+                 explore_steps,
+                 history_length,
+                 logger):
         self.learning_network = network_fn(optimizer_fn)
         self.target_network = network_fn(optimizer_fn)
         self.target_network.load_state_dict(self.learning_network.state_dict())
@@ -21,24 +32,37 @@ class DQNAgent:
         self.target_network_update_freq = target_network_update_freq
         self.policy = policy_fn()
         self.total_steps = 0
+        self.explore_steps = explore_steps
+        self.history_length = history_length
+        self.logger = logger
+
+    def get_state(self, history_buffer):
+        if self.history_length > 1:
+            return np.vstack(history_buffer)
+        return history_buffer[0]
 
     def episode(self):
         state = self.task.reset()
+        history_buffer = [state] * self.history_length
         total_reward = 0.0
         steps = 0
         while not self.step_limit or steps < self.step_limit:
-            value = self.learning_network.predict(np.reshape(state, (1, -1)))
+            state = self.get_state(history_buffer)
+            value = self.learning_network.predict(np.reshape(state, (1, ) + state.shape))
             action = self.policy.sample(value.flatten())
             next_state, reward, done, info = self.task.step(action)
+            history_buffer.pop(0)
+            history_buffer.append(next_state)
+            next_state = self.get_state(history_buffer)
             total_reward += reward
             self.replay.feed([state, action, reward, next_state, int(done)])
             steps += 1
             self.total_steps += 1
-            state = next_state
+            self.logger.debug('steps %d, reward %f, action %d' % (steps, reward, action))
             if done:
                 break
-            experiences = self.replay.sample()
-            if experiences is not None:
+            if self.total_steps > self.explore_steps:
+                experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 targets = self.learning_network.predict(states)
                 q_next = self.target_network.predict(next_states)
@@ -46,10 +70,13 @@ class DQNAgent:
                 q_next = np.where(terminals, 0, q_next)
                 q_next = rewards + self.discount * q_next
                 targets[np.arange(len(actions)), actions] = q_next
+                self.logger.debug('start minibatch')
                 self.learning_network.learn(states, targets)
+                self.logger.debug('minibatch ended')
             if self.total_steps % self.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.learning_network.state_dict())
-        self.policy.update_epsilon()
+            if self.total_steps > self.explore_steps:
+                self.policy.update_epsilon()
         return total_reward
 
     def run(self):
@@ -60,10 +87,8 @@ class DQNAgent:
             ep += 1
             reward = self.episode()
             rewards.append(reward)
-            if len(rewards) > window_size:
-                reward = np.mean(rewards[-window_size:])
-            print 'episode %d, epsilon %f, reward %f' % (
-                ep, self.policy.epsilon, reward)
-            if reward > self.task.success_threshold:
+            avg_reward = np.mean(rewards[-window_size:])
+            self.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d' % (
+                ep, self.policy.epsilon, reward, avg_reward, self.total_steps))
+            if avg_reward > self.task.success_threshold:
                 break
-

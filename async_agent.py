@@ -79,7 +79,6 @@ class AsyncAgent:
                 episode_steps = 0
                 episode_return = 0
                 episode += 1
-                policy.update_epsilon()
                 terminal = False
                 state = task.reset()
                 state = state.reshape([1, -1])
@@ -97,6 +96,7 @@ class AsyncAgent:
                 state = state.reshape([1, -1])
                 value = worker_network.predict(state)
                 action = policy.sample(value.flatten())
+                policy.update_epsilon()
 
             batch_rewards = self.bootstrap_fn(batch_states, batch_actions, batch_rewards,
                                               state, action, terminal, self)

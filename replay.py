@@ -37,10 +37,21 @@ class Replay:
             sampled_indices = np.arange(len(self.terminals))
             np.random.shuffle(sampled_indices)
             sampled_indices = sampled_indices[: self.batch_size]
-            return [np.asarray(self.states)[sampled_indices],
-                    np.asarray(self.actions)[sampled_indices],
-                    np.asarray(self.rewards)[sampled_indices],
-                    np.asarray(self.next_states)[sampled_indices],
-                    np.asarray(self.terminals)[sampled_indices]]
+            sampled_states = []
+            sampled_actions = []
+            sampled_rewards = []
+            sampled_next_states = []
+            sampled_terminals = []
+            for ind in sampled_indices:
+                sampled_states.append(self.states[ind])
+                sampled_actions.append(self.actions[ind])
+                sampled_rewards.append(self.rewards[ind])
+                sampled_next_states.append(self.next_states[ind])
+                sampled_terminals.append(self.terminals[ind])
+            return [np.asarray(sampled_states),
+                    np.asarray(sampled_actions),
+                    np.asarray(sampled_rewards),
+                    np.asarray(sampled_next_states),
+                    np.asarray(sampled_terminals)]
         return None
 

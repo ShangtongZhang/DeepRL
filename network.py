@@ -36,10 +36,6 @@ class FullyConnectedNet(nn.Module):
         y = self.fc3(y)
         return y
 
-    def sync_with(self, src_net):
-        for param_dst, param_src in zip(self.parameters(), src_net.parameters()):
-            param_dst.data.copy_(param_src.data)
-
     def predict(self, x):
         return self.forward(x).cpu().data.numpy()
 
@@ -104,3 +100,48 @@ class ActorCriticNet(nn.Module):
     def critic(self, x):
         phi = self.forward(x)
         return self.fc_critic(phi).cpu().data.numpy()
+
+class ConvNet(nn.Module):
+    def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
+        super(ConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 64, 512)
+        self.fc5 = nn.Linear(512, n_actions)
+
+        self.criterion = nn.MSELoss()
+        if optimizer_fn is not None:
+            self.optimizer = optimizer_fn(self.parameters())
+
+        self.gpu = gpu and torch.cuda.is_available()
+        if self.gpu:
+            print 'Transferring network to GPU...'
+            self.cuda()
+            print 'Network transferred.'
+
+    def to_torch_variable(self, x):
+        x = torch.from_numpy(np.asarray(x, dtype='float32'))
+        if self.gpu:
+            x = x.cuda()
+        return Variable(x)
+
+    def forward(self, x):
+        y = F.relu(self.conv1(x))
+        y = F.relu(self.conv2(y))
+        y = F.relu(self.conv3(y))
+        y = y.view(y.size(0), -1)
+        y = F.relu(self.fc4(y))
+        return self.fc5(y)
+
+    def predict(self, x):
+        return self.forward(self.to_torch_variable(x)).cpu().data.numpy()
+
+    def learn(self, x, target):
+        x = self.to_torch_variable(x)
+        target = self.to_torch_variable(target)
+        y = self.forward(x)
+        loss = self.criterion(y, target)
+        self.zero_grad()
+        loss.backward()
+        self.optimizer.step()
