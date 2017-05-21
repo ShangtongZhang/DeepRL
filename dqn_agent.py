@@ -8,6 +8,9 @@ from network import *
 from replay import *
 from policy import *
 import numpy as np
+import time
+import psutil
+import os
 
 class DQNAgent:
     def __init__(self,
@@ -35,6 +38,7 @@ class DQNAgent:
         self.explore_steps = explore_steps
         self.history_length = history_length
         self.logger = logger
+        self.process = psutil.Process(os.getpid())
 
     def get_state(self, history_buffer):
         if self.history_length > 1:
@@ -42,6 +46,7 @@ class DQNAgent:
         return history_buffer[0]
 
     def episode(self):
+        episode_start_time = time.time()
         state = self.task.reset()
         history_buffer = [state] * self.history_length
         total_reward = 0.0
@@ -58,25 +63,38 @@ class DQNAgent:
             self.replay.feed([state, action, reward, next_state, int(done)])
             steps += 1
             self.total_steps += 1
-            self.logger.debug('steps %d, reward %f, action %d' % (steps, reward, action))
             if done:
                 break
             if self.total_steps > self.explore_steps:
+                sample_start_time = time.time()
                 experiences = self.replay.sample()
+                self.logger.debug('sample time %f' % (time.time() - sample_start_time))
                 states, actions, rewards, next_states, terminals = experiences
+                predict_start_time = time.time()
                 targets = self.learning_network.predict(states)
                 q_next = self.target_network.predict(next_states)
+                self.logger.debug('prediction time %f' % (time.time() - predict_start_time))
                 q_next = np.max(q_next, axis=1)
                 q_next = np.where(terminals, 0, q_next)
                 q_next = rewards + self.discount * q_next
                 targets[np.arange(len(actions)), actions] = q_next
-                self.logger.debug('start minibatch')
+                minibatch_start_time = time.time()
                 self.learning_network.learn(states, targets)
-                self.logger.debug('minibatch ended')
+                self.logger.debug('minibatch time %f' % (time.time() - minibatch_start_time))
             if self.total_steps % self.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.learning_network.state_dict())
             if self.total_steps > self.explore_steps:
                 self.policy.update_epsilon()
+        episode_time = time.time() - episode_start_time
+        info = self.process.memory_full_info()
+        if hasattr(info, 'swap'):
+            info_stat = info.swap
+        elif hasattr(info, 'pfaults'):
+            info_stat = info.pfaults
+        else:
+            info_stat = -1
+        self.logger.debug('episode steps %d, episode time %f, time per step %f, memory_info %d' %
+                          (steps, episode_time, episode_time / float(steps), info_stat))
         return total_reward
 
     def run(self):

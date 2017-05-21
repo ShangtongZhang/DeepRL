@@ -77,7 +77,7 @@ def dqn_pixel_atari(name):
     config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.00025)
     config['network_fn'] = lambda optimizer_fn: ConvNet(4, 6, optimizer_fn)
     config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
-    config['replay_fn'] = lambda: Replay(memory_size=1000000, batch_size=32)
+    config['replay_fn'] = lambda: Replay(memory_size=200000, batch_size=32)
     config['discount'] = 0.99
     config['target_network_update_freq'] = 10000
     config['step_limit'] = 0
@@ -88,11 +88,10 @@ def dqn_pixel_atari(name):
     agent.run()
 
 if __name__ == '__main__':
-    # gym.logger.setLevel(logging.DEBUG)
-    gym.logger.setLevel(logging.INFO)
+    gym.logger.setLevel(logging.DEBUG)
+    # gym.logger.setLevel(logging.INFO)
     # async_cart_pole()
     # async_lunar_lander()
     # dqn_cart_pole()
-    # dqn_mountain_car()
     # actor_critic_cart_pole()
     dqn_pixel_atari('Breakout-v0')

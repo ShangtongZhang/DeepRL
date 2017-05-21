@@ -11,47 +11,44 @@ class Replay:
         self.memory_size = memory_size
         self.batch_size = batch_size
 
-        self.states = []
-        self.actions = []
-        self.rewards = []
-        self.next_states = []
-        self.terminals = []
+        self.states = None
+        self.actions = np.empty(self.memory_size, dtype=np.int8)
+        self.rewards = np.empty(self.memory_size)
+        self.next_states = None
+        self.terminals = np.empty(self.memory_size, dtype=np.int8)
+
+        self.pos = 0
+        self.full = False
 
 
     def feed(self, experience):
         state, action, reward, next_state, done = experience
-        self.states.append(state)
-        self.actions.append(action)
-        self.rewards.append(reward)
-        self.next_states.append(next_state)
-        self.terminals.append(done)
-        if len(self.terminals) > self.memory_size:
-            self.states.pop(0)
-            self.actions.pop(0)
-            self.rewards.pop(0)
-            self.next_states.pop(0)
-            self.terminals.pop(0)
+
+        if self.states is None:
+            self.states = np.empty((self.memory_size, ) + state.shape)
+            self.next_states = np.empty((self.memory_size, ) + state.shape)
+
+        self.states[self.pos][:] = state
+        self.actions[self.pos] = action
+        self.rewards[self.pos] = reward
+        self.next_states[self.pos][:] = next_state
+        self.terminals[self.pos] = done
+
+        self.pos += 1
+        if self.pos == self.memory_size:
+            self.full = True
+            self.pos = 0
 
     def sample(self):
-        if len(self.terminals) >= self.batch_size:
-            sampled_indices = np.arange(len(self.terminals))
-            np.random.shuffle(sampled_indices)
-            sampled_indices = sampled_indices[: self.batch_size]
-            sampled_states = []
-            sampled_actions = []
-            sampled_rewards = []
-            sampled_next_states = []
-            sampled_terminals = []
-            for ind in sampled_indices:
-                sampled_states.append(self.states[ind])
-                sampled_actions.append(self.actions[ind])
-                sampled_rewards.append(self.rewards[ind])
-                sampled_next_states.append(self.next_states[ind])
-                sampled_terminals.append(self.terminals[ind])
-            return [np.asarray(sampled_states),
-                    np.asarray(sampled_actions),
-                    np.asarray(sampled_rewards),
-                    np.asarray(sampled_next_states),
-                    np.asarray(sampled_terminals)]
-        return None
-
+        upper_bound = self.memory_size if self.full else self.pos
+        sampled_indices = np.random.randint(0, upper_bound, size=self.batch_size)
+        sampled_states = self.states[sampled_indices]
+        sampled_actions = self.actions[sampled_indices]
+        sampled_rewards = self.rewards[sampled_indices]
+        sampled_next_states = self.next_states[sampled_indices]
+        sampled_terminals = self.terminals[sampled_indices]
+        return [sampled_states,
+                sampled_actions,
+                sampled_rewards,
+                sampled_next_states,
+                sampled_terminals]
