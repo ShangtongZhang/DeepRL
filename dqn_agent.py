@@ -11,6 +11,7 @@ import numpy as np
 import time
 import psutil
 import os
+import pickle
 
 class DQNAgent:
     def __init__(self,
@@ -39,6 +40,7 @@ class DQNAgent:
         self.history_length = history_length
         self.logger = logger
         self.process = psutil.Process(os.getpid())
+        self.report_interval = 1000
 
     def get_state(self, history_buffer):
         if self.history_length > 1:
@@ -53,49 +55,52 @@ class DQNAgent:
         steps = 0
         while not self.step_limit or steps < self.step_limit:
             state = self.get_state(history_buffer)
+            state = self.task.normalize_state(state)
             value = self.learning_network.predict(np.reshape(state, (1, ) + state.shape))
             action = self.policy.sample(value.flatten())
             next_state, reward, done, info = self.task.step(action)
+            self.replay.feed([history_buffer[-1], action, reward, next_state, int(done)])
             history_buffer.pop(0)
             history_buffer.append(next_state)
-            next_state = self.get_state(history_buffer)
             total_reward += reward
-            self.replay.feed([state, action, reward, next_state, int(done)])
             steps += 1
             self.total_steps += 1
             if done:
                 break
             if self.total_steps > self.explore_steps:
                 sample_start_time = time.time()
-                experiences = self.replay.sample()
-                self.logger.debug('sample time %f' % (time.time() - sample_start_time))
+                experiences = self.replay.sample(self.history_length)
+                if self.total_steps % self.report_interval == 0:
+                    self.logger.debug('sample time %f' % (time.time() - sample_start_time))
                 states, actions, rewards, next_states, terminals = experiences
+                states = self.task.normalize_state(states)
+                next_states = self.task.normalize_state(next_states)
                 predict_start_time = time.time()
                 targets = self.learning_network.predict(states)
                 q_next = self.target_network.predict(next_states)
-                self.logger.debug('prediction time %f' % (time.time() - predict_start_time))
+                if self.total_steps % self.report_interval == 0:
+                    self.logger.debug('prediction time %f' % (time.time() - predict_start_time))
                 q_next = np.max(q_next, axis=1)
                 q_next = np.where(terminals, 0, q_next)
                 q_next = rewards + self.discount * q_next
                 targets[np.arange(len(actions)), actions] = q_next
                 minibatch_start_time = time.time()
                 self.learning_network.learn(states, targets)
-                self.logger.debug('minibatch time %f' % (time.time() - minibatch_start_time))
+                if self.total_steps % self.report_interval == 0:
+                    self.logger.debug('minibatch time %f' % (time.time() - minibatch_start_time))
             if self.total_steps % self.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.learning_network.state_dict())
             if self.total_steps > self.explore_steps:
                 self.policy.update_epsilon()
         episode_time = time.time() - episode_start_time
-        info = self.process.memory_full_info()
-        if hasattr(info, 'swap'):
-            info_stat = info.swap
-        elif hasattr(info, 'pfaults'):
-            info_stat = info.pfaults
-        else:
-            info_stat = -1
-        self.logger.debug('episode steps %d, episode time %f, time per step %f, memory_info %d' %
-                          (steps, episode_time, episode_time / float(steps), info_stat))
+        info = self.process.memory_info()
+        self.logger.debug('episode steps %d, episode time %f, time per step %f, rss %d, vms %d' %
+                          (steps, episode_time, episode_time / float(steps), info.rss, info.vms))
         return total_reward
+
+    def save(self, file_name):
+        with open(file_name, 'wb') as f:
+            pickle.dump(self.learning_network.state_dict(), f)
 
     def run(self):
         window_size = 100
@@ -104,6 +109,8 @@ class DQNAgent:
         while True:
             ep += 1
             reward = self.episode()
+            if ep % 1000 == 0:
+                self.save('data/dqn-episode-%d.bin')
             rewards.append(reward)
             avg_reward = np.mean(rewards[-window_size:])
             self.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d' % (

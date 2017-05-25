@@ -66,24 +66,25 @@ def actor_critic_cart_pole():
     config['step_limit'] = 300
     config['n_workers'] = 8
     config['batch_size'] = 5
-    config['test_interval'] = 500
+    config['test_interval'] = 50000
     config['test_repeats'] = 5
     agent = AsyncAgent(**config)
     agent.run()
 
 def dqn_pixel_atari(name):
     config = dict()
-    config['task_fn'] = lambda: PixelAtari(name)
-    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.00025)
-    config['network_fn'] = lambda optimizer_fn: ConvNet(4, 6, optimizer_fn)
+    history_length = 4
+    config['task_fn'] = lambda: PixelAtari(name, 30)
+    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
+    config['network_fn'] = lambda optimizer_fn: ConvNet(history_length, 6, optimizer_fn)
     config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
-    config['replay_fn'] = lambda: Replay(memory_size=200000, batch_size=32)
+    config['replay_fn'] = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
     config['discount'] = 0.99
     config['target_network_update_freq'] = 10000
     config['step_limit'] = 0
     config['explore_steps'] = 50000
     config['logger'] = gym.logger
-    config['history_length'] = 4
+    config['history_length'] = history_length
     agent = DQNAgent(**config)
     agent.run()
 

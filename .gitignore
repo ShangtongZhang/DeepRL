@@ -10,6 +10,7 @@ upload.py
 data
 draw_*
 log
+figure
 
 # C extensions
 *.so

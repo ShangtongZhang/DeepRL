@@ -9,11 +9,20 @@ import numpy as np
 import cv2
 
 class BasicTask:
+    no_op = 0
+
     def transfer_state(self, state):
         return state
 
+    def normalize_state(self, state):
+        return state
+
     def reset(self):
-        return self.transfer_state(self.env.reset())
+        state = self.env.reset()
+        if self.no_op > 0:
+            for _ in range(np.random.randint(1, self.no_op + 1)):
+                state, _, _, _ = self.env.step(0)
+        return self.transfer_state(state)
 
     def step(self, action):
         next_state, reward, done, info = self.env.step(action)
@@ -47,10 +56,14 @@ class PixelAtari(BasicTask):
     height = 84
     success_threshold = 1000
 
-    def __init__(self, name):
+    def __init__(self, name, no_op):
+        self.no_op = no_op
         self.env = gym.make(name)
 
     def transfer_state(self, state):
-        img = (state[:, :, 0] * 0.299 + state[:, :, 1] * 0.587 + state[:, :, 2] * 0.114) / 255.0
+        img = (state[:, :, 0] * 0.299 + state[:, :, 1] * 0.587 + state[:, :, 2] * 0.114)
         img = cv2.resize(img, (self.width, self.height))
-        return np.reshape(img, (1, self.width, self.height))
+        return np.asarray(np.reshape(img, (1, self.width, self.height)), np.uint8)
+
+    def normalize_state(self, state):
+        return np.asarray(state, dtype=np.float32) / 255.0
