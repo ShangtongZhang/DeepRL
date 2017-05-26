@@ -42,7 +42,7 @@ def dqn_cart_pole():
     config = dict()
     config['task_fn'] = lambda: CartPole()
     config['optimizer_fn'] = lambda params: torch.optim.SGD(params, 0.001)
-    config['network_fn'] = lambda optimizer_fn: FullyConnectedNet([4, 50, 200, 2], optimizer_fn)
+    config['network_fn'] = lambda optimizer_fn: FullyConnectedNet([8, 50, 200, 2], optimizer_fn)
     config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config['replay_fn'] = lambda: Replay(memory_size=10000, batch_size=10)
     config['discount'] = 0.99
@@ -50,7 +50,7 @@ def dqn_cart_pole():
     config['step_limit'] = 0
     config['explore_steps'] = 1000
     config['logger'] = gym.logger
-    config['history_length'] = 1
+    config['history_length'] = 2
     agent = DQNAgent(**config)
     agent.run()
 
@@ -93,6 +93,7 @@ if __name__ == '__main__':
     # gym.logger.setLevel(logging.INFO)
     # async_cart_pole()
     # async_lunar_lander()
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # actor_critic_cart_pole()
-    dqn_pixel_atari('Breakout-v0')
+    # dqn_pixel_atari('Breakout-v0')
+    # dqn_pixel_atari('SpaceInvaders-v0')

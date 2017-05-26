@@ -40,37 +40,11 @@ class Replay:
             self.full = True
             self.pos = 0
 
-    def sample(self, history_length):
+    def sample(self):
         upper_bound = self.memory_size if self.full else self.pos
         sampled_indices = np.random.randint(0, upper_bound, size=self.batch_size)
-        sampled_states = []
-        sampled_actions = []
-        sampled_rewards = []
-        sampled_next_states = []
-        sampled_terminals = []
-        for index in sampled_indices:
-            if history_length == 1:
-                sampled_states.append(self.states[index])
-                sampled_next_states.append(self.next_states[index])
-            else:
-                full_indices = [(index - i + self.memory_size) % self.memory_size for i in range(history_length)]
-                if self.pos in full_indices:
-                    for i in range(full_indices.index(self.pos), len(full_indices)):
-                        full_indices[i] = self.pos
-                state = [self.states[i] for i in full_indices]
-                state = np.vstack(state)
-                sampled_states.append(state)
-
-                next_state = [self.next_states[i] for i in full_indices]
-                next_state = np.vstack(next_state)
-                sampled_next_states.append(next_state)
-
-            sampled_rewards.append(self.rewards[index])
-            sampled_actions.append(self.actions[index])
-            sampled_terminals.append(self.terminals[index])
-
-        return [np.asarray(sampled_states),
-                np.asarray(sampled_actions),
-                np.asarray(sampled_rewards),
-                np.asarray(sampled_next_states),
-                np.asarray(sampled_terminals)]
+        return [self.states[sampled_indices],
+                self.actions[sampled_indices],
+                self.rewards[sampled_indices],
+                self.next_states[sampled_indices],
+                self.terminals[sampled_indices]]

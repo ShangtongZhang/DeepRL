@@ -26,6 +26,7 @@ class FullyConnectedNet(nn.Module):
             print 'Network transferred.'
 
     def forward(self, x):
+        x = x.reshape((x.shape[0], -1))
         x = torch.from_numpy(np.asarray(x, dtype='float32'))
         if self.gpu:
             x = x.cuda()

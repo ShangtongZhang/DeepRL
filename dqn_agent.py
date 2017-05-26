@@ -43,9 +43,7 @@ class DQNAgent:
         self.report_interval = 1000
 
     def get_state(self, history_buffer):
-        if self.history_length > 1:
-            return np.vstack(history_buffer)
-        return history_buffer[0]
+        return np.vstack(history_buffer)
 
     def episode(self):
         episode_start_time = time.time()
@@ -59,9 +57,10 @@ class DQNAgent:
             value = self.learning_network.predict(np.reshape(state, (1, ) + state.shape))
             action = self.policy.sample(value.flatten())
             next_state, reward, done, info = self.task.step(action)
-            self.replay.feed([history_buffer[-1], action, reward, next_state, int(done)])
             history_buffer.pop(0)
             history_buffer.append(next_state)
+            next_state = self.get_state(history_buffer)
+            self.replay.feed([state, action, reward, next_state, int(done)])
             total_reward += reward
             steps += 1
             self.total_steps += 1
@@ -69,7 +68,7 @@ class DQNAgent:
                 break
             if self.total_steps > self.explore_steps:
                 sample_start_time = time.time()
-                experiences = self.replay.sample(self.history_length)
+                experiences = self.replay.sample()
                 if self.total_steps % self.report_interval == 0:
                     self.logger.debug('sample time %f' % (time.time() - sample_start_time))
                 states, actions, rewards, next_states, terminals = experiences
@@ -110,7 +109,7 @@ class DQNAgent:
             ep += 1
             reward = self.episode()
             if ep % 1000 == 0:
-                self.save('data/dqn-episode-%d.bin')
+                self.save('data/dqn-episode-%d.bin' % (ep))
             rewards.append(reward)
             avg_reward = np.mean(rewards[-window_size:])
             self.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d' % (
