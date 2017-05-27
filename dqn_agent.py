@@ -75,16 +75,15 @@ class DQNAgent:
                 states = self.task.normalize_state(states)
                 next_states = self.task.normalize_state(next_states)
                 predict_start_time = time.time()
-                targets = self.learning_network.predict(states)
                 q_next = self.target_network.predict(next_states)
                 if self.total_steps % self.report_interval == 0:
                     self.logger.debug('prediction time %f' % (time.time() - predict_start_time))
                 q_next = np.max(q_next, axis=1)
                 q_next = np.where(terminals, 0, q_next)
                 q_next = rewards + self.discount * q_next
-                targets[np.arange(len(actions)), actions] = q_next
                 minibatch_start_time = time.time()
-                self.learning_network.learn(states, targets)
+                self.learning_network.learn(states, actions, q_next)
+                # self.learning_network.clippedLearn(states, actions, q_next)
                 if self.total_steps % self.report_interval == 0:
                     self.logger.debug('minibatch time %f' % (time.time() - minibatch_start_time))
             if self.total_steps % self.target_network_update_freq == 0:

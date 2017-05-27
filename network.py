@@ -27,10 +27,7 @@ class FullyConnectedNet(nn.Module):
 
     def forward(self, x):
         x = x.reshape((x.shape[0], -1))
-        x = torch.from_numpy(np.asarray(x, dtype='float32'))
-        if self.gpu:
-            x = x.cuda()
-        x = Variable(x)
+        x = self.to_torch_variable(x)
 
         y = F.relu(self.fc1(x))
         y = F.relu(self.fc2(y))
@@ -40,16 +37,34 @@ class FullyConnectedNet(nn.Module):
     def predict(self, x):
         return self.forward(x).cpu().data.numpy()
 
-    def learn(self, x, target):
-        target = torch.from_numpy(target)
+    def to_torch_variable(self, x, dtype='float32'):
+        x = torch.from_numpy(np.asarray(x, dtype=dtype))
         if self.gpu:
-            target = target.cuda()
-        target = Variable(target)
+            x = x.cuda()
+        return Variable(x)
+
+    def learn(self, x, actions, targets):
         y = self.forward(x)
-        loss = self.criterion(y, target)
+        actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
+        targets = self.to_torch_variable(targets).unsqueeze(1)
+        y = y.gather(1, actions)
+        error = -(targets - y) * 0.5
         self.zero_grad()
-        loss.backward()
+        y.backward(error.data)
         self.optimizer.step()
+
+
+    def clippedLearn(self, x, actions, targets):
+        y = self.forward(x)
+        actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
+        targets = self.to_torch_variable(targets).unsqueeze(1)
+        y = y.gather(1, actions)
+        bellman_error = targets - y
+        bellman_error = bellman_error.clamp(-1, 1) * -1
+        self.zero_grad()
+        y.backward(bellman_error.data)
+        self.optimizer.step()
+
 
     def gradient(self, x, actions, rewards):
         y = self.forward(x)
@@ -121,8 +136,8 @@ class ConvNet(nn.Module):
             self.cuda()
             print 'Network transferred.'
 
-    def to_torch_variable(self, x):
-        x = torch.from_numpy(np.asarray(x, dtype='float32'))
+    def to_torch_variable(self, x, dtype='float32'):
+        x = torch.from_numpy(np.asarray(x, dtype=dtype))
         if self.gpu:
             x = x.cuda()
         return Variable(x)
@@ -138,11 +153,23 @@ class ConvNet(nn.Module):
     def predict(self, x):
         return self.forward(self.to_torch_variable(x)).cpu().data.numpy()
 
-    def learn(self, x, target):
-        x = self.to_torch_variable(x)
-        target = self.to_torch_variable(target)
-        y = self.forward(x)
-        loss = self.criterion(y, target)
+    def learn(self, x, actions, targets):
+        y = self.forward(self.to_torch_variable(x))
+        actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
+        targets = self.to_torch_variable(targets).unsqueeze(1)
+        y = y.gather(1, actions)
+        error = -(targets - y) * 0.5
         self.zero_grad()
-        loss.backward()
+        y.backward(error.data)
+        self.optimizer.step()
+
+    def clippedLearn(self, x, actions, targets):
+        y = self.forward(self.to_torch_variable(x))
+        actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
+        targets = self.to_torch_variable(targets).unsqueeze(1)
+        y = y.gather(1, actions)
+        bellman_error = -(targets - y)
+        bellman_error = bellman_error.clamp(-1, 1)
+        self.zero_grad()
+        y.backward(bellman_error.data)
         self.optimizer.step()

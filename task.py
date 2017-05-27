@@ -59,9 +59,26 @@ class PixelAtari(BasicTask):
     def __init__(self, name, no_op):
         self.no_op = no_op
         self.env = gym.make(name)
+        self.done = True
+        self.lives = 0
+
+    def reset(self):
+        if self.done:
+            return BasicTask.reset(self)
+        else:
+            state, _, _, _ = BasicTask.step(self, 0)
+            return state
+
+    def step(self, action):
+        next_state, reward, done, info = BasicTask.step(self, action)
+        self.done = done
+        if self.lives > 0 and info['ale.lives'] < self.lives:
+            done = True
+        self.lives = info['ale.lives']
+        return next_state, reward, done, info
 
     def transfer_state(self, state):
-        img = (state[:, :, 0] * 0.299 + state[:, :, 1] * 0.587 + state[:, :, 2] * 0.114)
+        img = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
         img = cv2.resize(img, (self.width, self.height))
         return np.asarray(np.reshape(img, (1, self.width, self.height)), np.uint8)
 
