@@ -25,6 +25,8 @@ class DQNAgent:
                  target_network_update_freq,
                  explore_steps,
                  history_length,
+                 test_interval,
+                 test_repetitions,
                  logger):
         self.learning_network = network_fn(optimizer_fn)
         self.target_network = network_fn(optimizer_fn)
@@ -40,12 +42,13 @@ class DQNAgent:
         self.history_length = history_length
         self.logger = logger
         self.process = psutil.Process(os.getpid())
-        self.report_interval = 1000
+        self.test_interval = test_interval
+        self.test_repetitions = test_repetitions
 
     def get_state(self, history_buffer):
         return np.vstack(history_buffer)
 
-    def episode(self):
+    def episode(self, deterministic=False):
         episode_start_time = time.time()
         state = self.task.reset()
         history_buffer = [state] * self.history_length
@@ -55,40 +58,34 @@ class DQNAgent:
             state = self.get_state(history_buffer)
             state = self.task.normalize_state(state)
             value = self.learning_network.predict(np.reshape(state, (1, ) + state.shape))
-            action = self.policy.sample(value.flatten())
+            if deterministic:
+                action = np.argmax(value.flatten())
+            else:
+                action = self.policy.sample(value.flatten())
             next_state, reward, done, info = self.task.step(action)
             history_buffer.pop(0)
             history_buffer.append(next_state)
-            next_state = self.get_state(history_buffer)
-            self.replay.feed([state, action, reward, next_state, int(done)])
+            if not deterministic:
+                next_state = self.get_state(history_buffer)
+                self.replay.feed([state, action, reward, next_state, int(done)])
+                self.total_steps += 1
             total_reward += reward
             steps += 1
-            self.total_steps += 1
             if done:
                 break
-            if self.total_steps > self.explore_steps:
-                sample_start_time = time.time()
+            if not deterministic and self.total_steps > self.explore_steps:
                 experiences = self.replay.sample()
-                if self.total_steps % self.report_interval == 0:
-                    self.logger.debug('sample time %f' % (time.time() - sample_start_time))
                 states, actions, rewards, next_states, terminals = experiences
                 states = self.task.normalize_state(states)
                 next_states = self.task.normalize_state(next_states)
-                predict_start_time = time.time()
                 q_next = self.target_network.predict(next_states)
-                if self.total_steps % self.report_interval == 0:
-                    self.logger.debug('prediction time %f' % (time.time() - predict_start_time))
                 q_next = np.max(q_next, axis=1)
                 q_next = np.where(terminals, 0, q_next)
                 q_next = rewards + self.discount * q_next
-                minibatch_start_time = time.time()
                 self.learning_network.learn(states, actions, q_next)
-                # self.learning_network.clippedLearn(states, actions, q_next)
-                if self.total_steps % self.report_interval == 0:
-                    self.logger.debug('minibatch time %f' % (time.time() - minibatch_start_time))
-            if self.total_steps % self.target_network_update_freq == 0:
+            if not deterministic and self.total_steps % self.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.learning_network.state_dict())
-            if self.total_steps > self.explore_steps:
+            if not deterministic and self.total_steps > self.explore_steps:
                 self.policy.update_epsilon()
         episode_time = time.time() - episode_start_time
         info = self.process.memory_info()
@@ -107,11 +104,19 @@ class DQNAgent:
         while True:
             ep += 1
             reward = self.episode()
-            if ep % 1000 == 0:
-                self.save('data/dqn-episode-%d.bin' % (ep))
             rewards.append(reward)
             avg_reward = np.mean(rewards[-window_size:])
             self.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d' % (
                 ep, self.policy.epsilon, reward, avg_reward, self.total_steps))
-            if avg_reward > self.task.success_threshold:
-                break
+
+            if ep % self.test_interval == 0:
+                self.logger.info('Testing...')
+                self.save('data/dqn-episode-%d.bin' % (ep))
+                test_rewards = []
+                for _ in range(self.test_repetitions):
+                    test_rewards.append(self.episode(True))
+                avg_reward = np.mean(test_rewards)
+                self.logger.info('Avg reward %f(%f)' % (
+                    avg_reward, np.std(test_rewards) / np.sqrt(self.test_repetitions)))
+                if avg_reward > self.task.success_threshold:
+                    break

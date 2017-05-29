@@ -6,11 +6,9 @@
 import gym
 import sys
 import numpy as np
-import cv2
+from atari_wrapper import *
 
 class BasicTask:
-    no_op = 0
-
     def transfer_state(self, state):
         return state
 
@@ -19,9 +17,6 @@ class BasicTask:
 
     def reset(self):
         state = self.env.reset()
-        if self.no_op > 0:
-            for _ in range(np.random.randint(1, self.no_op + 1)):
-                state, _, _, _ = self.env.step(0)
         return self.transfer_state(state)
 
     def step(self, action):
@@ -52,35 +47,18 @@ class LunarLander(BasicTask):
         self.env = gym.make(self.name)
 
 class PixelAtari(BasicTask):
-    width = 84
-    height = 84
     success_threshold = 1000
 
-    def __init__(self, name, no_op):
-        self.no_op = no_op
-        self.env = gym.make(name)
-        self.done = True
-        self.lives = 0
-
-    def reset(self):
-        if self.done:
-            return BasicTask.reset(self)
-        else:
-            state, _, _, _ = BasicTask.step(self, 0)
-            return state
-
-    def step(self, action):
-        next_state, reward, done, info = BasicTask.step(self, action)
-        self.done = done
-        if self.lives > 0 and info['ale.lives'] < self.lives:
-            done = True
-        self.lives = info['ale.lives']
-        return next_state, reward, done, info
-
-    def transfer_state(self, state):
-        img = cv2.cvtColor(state, cv2.COLOR_RGB2GRAY)
-        img = cv2.resize(img, (self.width, self.height))
-        return np.asarray(np.reshape(img, (1, self.width, self.height)), np.uint8)
+    def __init__(self, name, no_op, frame_skip):
+        env = gym.make(name)
+        assert 'NoFrameskip' in env.spec.id
+        env = EpisodicLifeEnv(env)
+        env = NoopResetEnv(env, noop_max=no_op)
+        env = MaxAndSkipEnv(env, skip=frame_skip)
+        if 'FIRE' in env.unwrapped.get_action_meanings():
+            env = FireResetEnv(env)
+        env = ProcessFrame84(env)
+        self.env = ClippedRewardsWrapper(env)
 
     def normalize_state(self, state):
         return np.asarray(state, dtype=np.float32) / 255.0

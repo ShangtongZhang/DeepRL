@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+
 class FullyConnectedNet(nn.Module):
     def __init__(self, dims, optimizer_fn=None, gpu=True):
         super(FullyConnectedNet, self).__init__()
@@ -44,38 +45,32 @@ class FullyConnectedNet(nn.Module):
         return Variable(x)
 
     def learn(self, x, actions, targets):
+        self.zero_grad()
+        self.gradient(x, actions, targets)
+        self.optimizer.step()
+
+    # def clippedLearn(self, x, actions, targets):
+    #     y = self.forward(x)
+    #     actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
+    #     targets = self.to_torch_variable(targets).unsqueeze(1)
+    #     y = y.gather(1, actions)
+    #     bellman_error = targets - y
+    #     bellman_error = bellman_error.clamp(-1, 1) * -1
+    #     self.zero_grad()
+    #     y.backward(bellman_error.data)
+    #     self.optimizer.step()
+
+    def gradient(self, x, actions, targets):
         y = self.forward(x)
         actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
         targets = self.to_torch_variable(targets).unsqueeze(1)
         y = y.gather(1, actions)
-        error = -(targets - y) * 0.5
-        self.zero_grad()
-        y.backward(error.data)
-        self.optimizer.step()
-
-
-    def clippedLearn(self, x, actions, targets):
-        y = self.forward(x)
-        actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
-        targets = self.to_torch_variable(targets).unsqueeze(1)
-        y = y.gather(1, actions)
-        bellman_error = targets - y
-        bellman_error = bellman_error.clamp(-1, 1) * -1
-        self.zero_grad()
-        y.backward(bellman_error.data)
-        self.optimizer.step()
-
-
-    def gradient(self, x, actions, rewards):
-        y = self.forward(x)
-        target = np.copy(y.data.numpy())
-        target[np.arange(target.shape[0]), actions] = np.asarray(rewards)
-        target = Variable(torch.from_numpy(target))
-        loss = self.criterion(y, target)
+        loss = self.criterion(y, targets)
         loss.backward()
 
     def output_transfer(self, y):
         return y
+
 
 class ActorCriticNet(nn.Module):
     def __init__(self, dims, gpu=True):
@@ -89,12 +84,14 @@ class ActorCriticNet(nn.Module):
             self.cuda()
             print 'Network transferred.'
 
-    def forward(self, x):
-        x = torch.from_numpy(np.asarray(x, dtype='float32'))
+    def to_torch_variable(self, x, dtype='float32'):
+        x = torch.from_numpy(np.asarray(x, dtype=dtype))
         if self.gpu:
             x = x.cuda()
-        x = Variable(x)
-        phi = self.fc1(x)
+        return Variable(x)
+
+    def forward(self, x):
+        phi = self.fc1(self.to_torch_variable(x))
         return phi
 
     def predict(self, x):
@@ -104,18 +101,22 @@ class ActorCriticNet(nn.Module):
     def gradient(self, x, actions, rewards):
         phi = self.forward(x)
         logit = self.fc_actor(phi)
-        log_prob = F.log_softmax(logit)
+        prob = F.softmax(logit)
+        log_prob_ = F.log_softmax(logit)
         state_value = self.fc_critic(phi)
-        log_prob = log_prob.gather(1, Variable(torch.from_numpy(np.asarray([actions]).reshape([-1, 1]))))
+        log_prob = log_prob_.gather(1, self.to_torch_variable(np.asarray([actions]).reshape([-1, 1]), 'int64'))
         advantage = np.asarray([rewards]).reshape([-1, 1]) - state_value.cpu().data.numpy()
-        policy_loss = -torch.sum(log_prob * Variable(torch.from_numpy(np.asarray(advantage, dtype='float32'))))
-        value_loss = 0.5 * torch.sum(torch.pow(state_value - Variable(torch.from_numpy(np.asarray(rewards, dtype='float32'))), 2))
-        (policy_loss + value_loss).backward()
+        policy_loss = -torch.sum(log_prob * self.to_torch_variable(advantage))
+        value_loss = 0.5 * torch.sum(
+            torch.pow(state_value - Variable(torch.from_numpy(np.asarray(rewards, dtype='float32'))), 2))
+        entropy = -torch.sum(torch.mul(prob, log_prob_))
+        (policy_loss + value_loss - 0.01 * entropy).backward()
         nn.utils.clip_grad_norm(self.parameters(), 40)
 
     def critic(self, x):
         phi = self.forward(x)
         return self.fc_critic(phi).cpu().data.numpy()
+
 
 class ConvNet(nn.Module):
     def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
@@ -154,22 +155,14 @@ class ConvNet(nn.Module):
         return self.forward(self.to_torch_variable(x)).cpu().data.numpy()
 
     def learn(self, x, actions, targets):
-        y = self.forward(self.to_torch_variable(x))
-        actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
-        targets = self.to_torch_variable(targets).unsqueeze(1)
-        y = y.gather(1, actions)
-        error = -(targets - y) * 0.5
         self.zero_grad()
-        y.backward(error.data)
+        self.gradient(x, actions, targets)
         self.optimizer.step()
 
-    def clippedLearn(self, x, actions, targets):
-        y = self.forward(self.to_torch_variable(x))
+    def gradient(self, x, actions, targets):
+        y = self.forward(x)
         actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
         targets = self.to_torch_variable(targets).unsqueeze(1)
         y = y.gather(1, actions)
-        bellman_error = -(targets - y)
-        bellman_error = bellman_error.clamp(-1, 1)
-        self.zero_grad()
-        y.backward(bellman_error.data)
-        self.optimizer.step()
+        loss = self.criterion(y, targets)
+        loss.backward()
