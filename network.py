@@ -160,7 +160,7 @@ class ConvNet(nn.Module):
         self.optimizer.step()
 
     def gradient(self, x, actions, targets):
-        y = self.forward(x)
+        y = self.forward(self.to_torch_variable(x))
         actions = self.to_torch_variable(actions, 'int64').unsqueeze(1)
         targets = self.to_torch_variable(targets).unsqueeze(1)
         y = y.gather(1, actions)

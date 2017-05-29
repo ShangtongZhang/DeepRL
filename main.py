@@ -6,18 +6,20 @@ def async_cart_pole():
     config = dict()
     config['task_fn'] = lambda: CartPole()
     config['optimizer_fn'] = lambda params: torch.optim.SGD(params, 0.001)
-    config['network_fn'] = lambda: FullyConnectedNet([4, 50, 200, 2])
+    config['network_fn'] = lambda: FullyConnectedNet([8, 50, 200, 2])
     config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=5000, min_epsilon=0.1)
-    # config['bootstrap_fn'] = OneStepQLearning
+    config['bootstrap_fn'] = OneStepQLearning
     # config['bootstrap_fn'] = NStepQLearning
-    config['bootstrap_fn'] = OneStepSarsa
+    # config['bootstrap_fn'] = OneStepSarsa
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
     config['step_limit'] = 300
     config['n_workers'] = 8
     config['batch_size'] = 5
-    config['test_interval'] = 500
-    config['test_repeats'] = 5
+    config['test_interval'] = 4000
+    config['test_repetitions'] = 50
+    config['history_length'] = 2
+    config['logger'] = gym.logger
     agent = AsyncAgent(**config)
     agent.run()
 
@@ -34,7 +36,7 @@ def async_lunar_lander():
     config['n_workers'] = 8
     config['batch_size'] = 10
     config['test_interval'] = 1000
-    config['test_repeats'] = 5
+    config['test_repetitions'] = 5
     agent = AsyncAgent(**config)
     agent.run()
 
@@ -69,7 +71,7 @@ def actor_critic_cart_pole():
     config['n_workers'] = 10
     config['batch_size'] = 5
     config['test_interval'] = 50000
-    config['test_repeats'] = 5
+    config['test_repetitions'] = 5
     config['logger'] = gym.logger
     agent = AsyncAgent(**config)
     agent.run()
@@ -94,6 +96,29 @@ def dqn_pixel_atari(name):
     agent = DQNAgent(**config)
     agent.run()
 
+def async_pixel_atari(name):
+    config = dict()
+    history_length = 4
+    n_actions = 6
+    config['task_fn'] = lambda: PixelAtari(name, 30, 4)
+    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
+    config['network_fn'] = lambda : ConvNet(history_length, n_actions, gpu=True)
+    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    config['bootstrap_fn'] = OneStepQLearning
+    # config['bootstrap_fn'] = NStepQLearning
+    # config['bootstrap_fn'] = OneStepSarsa
+    config['discount'] = 0.99
+    config['target_network_update_freq'] = 10000
+    config['step_limit'] = 0
+    config['n_workers'] = 1
+    config['batch_size'] = 32
+    config['test_interval'] = 50000
+    config['test_repetitions'] = 50
+    config['history_length'] = history_length
+    config['logger'] = gym.logger
+    agent = AsyncAgent(**config)
+    agent.run()
+
 if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
@@ -104,3 +129,4 @@ if __name__ == '__main__':
     # actor_critic_cart_pole()
     # dqn_cart_pole()
     dqn_pixel_atari('BreakoutNoFrameskip-v3')
+    # async_pixel_atari('BreakoutNoFrameskip-v3')

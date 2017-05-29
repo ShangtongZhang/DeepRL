@@ -44,33 +44,35 @@ class DQNAgent:
         self.process = psutil.Process(os.getpid())
         self.test_interval = test_interval
         self.test_repetitions = test_repetitions
-
-    def get_state(self, history_buffer):
-        return np.vstack(history_buffer)
+        self.history_buffer = None
 
     def episode(self, deterministic=False):
         episode_start_time = time.time()
         state = self.task.reset()
-        history_buffer = [state] * self.history_length
+        if self.history_buffer is None:
+            self.history_buffer = [np.zeros_like(state)] * self.history_length
+        else:
+            self.history_buffer.pop(0)
+            self.history_buffer.append(state)
+        state = np.vstack(self.history_buffer)
         total_reward = 0.0
         steps = 0
         while not self.step_limit or steps < self.step_limit:
-            state = self.get_state(history_buffer)
-            state = self.task.normalize_state(state)
-            value = self.learning_network.predict(np.reshape(state, (1, ) + state.shape))
+            value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]))
             if deterministic:
                 action = np.argmax(value.flatten())
             else:
                 action = self.policy.sample(value.flatten())
             next_state, reward, done, info = self.task.step(action)
-            history_buffer.pop(0)
-            history_buffer.append(next_state)
+            self.history_buffer.pop(0)
+            self.history_buffer.append(next_state)
+            next_state = np.vstack(self.history_buffer)
             if not deterministic:
-                next_state = self.get_state(history_buffer)
                 self.replay.feed([state, action, reward, next_state, int(done)])
                 self.total_steps += 1
             total_reward += reward
             steps += 1
+            state = next_state
             if done:
                 break
             if not deterministic and self.total_steps > self.explore_steps:
@@ -111,7 +113,7 @@ class DQNAgent:
 
             if ep % self.test_interval == 0:
                 self.logger.info('Testing...')
-                self.save('data/dqn-episode-%d.bin' % (ep))
+                self.save('data/dqn-model.bin')
                 test_rewards = []
                 for _ in range(self.test_repetitions):
                     test_rewards.append(self.episode(True))

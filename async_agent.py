@@ -25,7 +25,8 @@ class AsyncAgent:
                  n_workers,
                  batch_size,
                  test_interval,
-                 test_repeats,
+                 test_repetitions,
+                 history_length,
                  logger):
         self.network_fn = network_fn
         self.learning_network = network_fn()
@@ -49,23 +50,27 @@ class AsyncAgent:
         self.n_workers = n_workers
         self.batch_size = batch_size
         self.test_interval = test_interval
-        self.test_repeats = test_repeats
+        self.test_repetitions = test_repetitions
         self.logger = logger
+        self.history_length = history_length
 
     def deterministic_episode(self, task, network):
         state = np.asarray([task.reset()])
         total_rewards = 0
         steps = 0
         terminal = False
+        buffer = [state] * self.history_length
         while not terminal and steps < self.step_limit:
-            action_values = network.predict(state)
+            state = task.normalize_state(np.vstack(buffer))
+            action_values = network.predict(np.reshape(state, (1, ) + state.shape))
             steps += 1
             action = np.argmax(action_values.flatten())
             state, reward, terminal, _ = task.step(action)
+            buffer.pop(0)
+            buffer.append(state)
             total_rewards += reward
             if terminal:
                 break
-            state = state.reshape([1, -1])
         return total_rewards
 
     def async_update(self, worker_network, optimizer):
@@ -85,29 +90,37 @@ class AsyncAgent:
         episode = 0
         episode_steps = 0
         episode_return = 0
+        episode_returns = [0]
         while True and not self.stop_signal.value:
             batch_states, batch_actions, batch_rewards = [], [], []
             if terminal:
                 if id == 0:
-                    self.logger.debug('worker %d, episode %d, return %f' % (id, episode, episode_return))
+                    self.logger.info('episode %d, epsilon %f, return %f, avg return %f, total steps %d' % (
+                        episode, policy.epsilon, episode_return, np.mean(episode_returns[-100: ]),
+                    self.total_steps.value))
                 episode_steps = 0
+                episode_returns.append(episode_return)
                 episode_return = 0
                 episode += 1
                 terminal = False
                 state = task.reset()
-                state = state.reshape([1, -1])
-                value = worker_network.predict(state)
+                buffer = [state] * self.history_length
+                state = task.normalize_state(np.vstack(buffer))
+                value = worker_network.predict(np.reshape(state, (1, ) + state.shape))
                 action = policy.sample(value.flatten())
             while not terminal and len(batch_states) < self.batch_size:
                 episode_steps += 1
-                self.total_steps.value += 1
+                with self.steps_lock:
+                    self.total_steps.value += 1
                 batch_states.append(state)
                 batch_actions.append(action)
                 state, reward, terminal, _ = task.step(action)
                 batch_rewards.append(reward)
                 episode_return += reward
-                state = state.reshape([1, -1])
-                value = worker_network.predict(state)
+                buffer.pop(0)
+                buffer.append(state)
+                state = task.normalize_state(np.vstack(buffer))
+                value = worker_network.predict(np.reshape(state, (1, ) + state.shape))
                 action = policy.sample(value.flatten())
                 policy.update_epsilon()
 
@@ -118,7 +131,7 @@ class AsyncAgent:
                 terminal = True
 
             worker_network.zero_grad()
-            worker_network.gradient(np.vstack(batch_states), batch_actions, batch_rewards)
+            worker_network.gradient(np.asarray(batch_states), batch_actions, batch_rewards)
             self.async_update(worker_network, optimizer)
             worker_network.load_state_dict(self.learning_network.state_dict())
 
@@ -136,8 +149,8 @@ class AsyncAgent:
             if steps % self.test_interval == 0:
                 with self.network_lock:
                     test_network.load_state_dict(self.learning_network.state_dict())
-                rewards = np.zeros(self.test_repeats)
-                for i in range(self.test_repeats):
+                rewards = np.zeros(self.test_repetitions)
+                for i in range(self.test_repetitions):
                     rewards[i] = self.deterministic_episode(task, test_network)
                 self.logger.info('total steps: %d, averaged return per episode: %f' %\
                       (steps, np.mean(rewards)))
