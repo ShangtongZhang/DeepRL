@@ -80,11 +80,19 @@ class DQNAgent:
                 states, actions, rewards, next_states, terminals = experiences
                 states = self.task.normalize_state(states)
                 next_states = self.task.normalize_state(next_states)
-                q_next = self.target_network.predict(next_states)
-                q_next = np.max(q_next, axis=1)
-                q_next = np.where(terminals, 0, q_next)
-                q_next = rewards + self.discount * q_next
-                self.learning_network.learn(states, actions, q_next)
+                q_next = self.target_network.predict(next_states, False).detach()
+                q_next, _ = q_next.max(1)
+                terminals = self.learning_network.to_torch_variable(terminals).unsqueeze(1)
+                rewards = self.learning_network.to_torch_variable(rewards).unsqueeze(1)
+                q_next = q_next * (1 - terminals)
+                q_next.add_(rewards)
+                actions = self.learning_network.to_torch_variable(actions, 'int64').unsqueeze(1)
+                q = self.learning_network.predict(states, False)
+                q = q.gather(1, actions)
+                loss = self.learning_network.criterion(q, q_next)
+                self.learning_network.zero_grad()
+                loss.backward()
+                self.learning_network.optimizer.step()
             if not deterministic and self.total_steps % self.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.learning_network.state_dict())
             if not deterministic and self.total_steps > self.explore_steps:
@@ -103,6 +111,7 @@ class DQNAgent:
         window_size = 100
         ep = 0
         rewards = []
+        avg_test_rewards = []
         while True:
             ep += 1
             reward = self.episode()
@@ -113,12 +122,16 @@ class DQNAgent:
 
             if ep % self.test_interval == 0:
                 self.logger.info('Testing...')
-                self.save('data/dqn-model.bin')
+                self.save('data/dqn-model-%s.bin' % (self.task.name))
                 test_rewards = []
                 for _ in range(self.test_repetitions):
                     test_rewards.append(self.episode(True))
                 avg_reward = np.mean(test_rewards)
+                avg_test_rewards.append(avg_reward)
                 self.logger.info('Avg reward %f(%f)' % (
                     avg_reward, np.std(test_rewards) / np.sqrt(self.test_repetitions)))
+                with open('data/dqn-statistics-%s.bin' % (self.task.name), 'wb') as f:
+                    pickle.dump({'rewards': rewards,
+                                 'test_rewards': avg_test_rewards}, f)
                 if avg_reward > self.task.success_threshold:
                     break

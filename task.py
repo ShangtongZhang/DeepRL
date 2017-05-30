@@ -50,6 +50,7 @@ class PixelAtari(BasicTask):
     success_threshold = 1000
 
     def __init__(self, name, no_op, frame_skip):
+        self.name = name
         env = gym.make(name)
         assert 'NoFrameskip' in env.spec.id
         env = EpisodicLifeEnv(env)

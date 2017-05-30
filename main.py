@@ -43,7 +43,7 @@ def async_lunar_lander():
 def dqn_cart_pole():
     config = dict()
     config['task_fn'] = lambda: CartPole()
-    config['optimizer_fn'] = lambda params: torch.optim.SGD(params, 0.001)
+    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, 0.001)
     config['network_fn'] = lambda optimizer_fn: FullyConnectedNet([8, 50, 200, 2], optimizer_fn)
     config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config['replay_fn'] = lambda: Replay(memory_size=10000, batch_size=10)
