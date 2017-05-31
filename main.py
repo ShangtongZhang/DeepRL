@@ -5,15 +5,15 @@ import logging
 def async_cart_pole():
     config = dict()
     config['task_fn'] = lambda: CartPole()
-    config['optimizer_fn'] = lambda params: torch.optim.SGD(params, 0.001)
-    config['network_fn'] = lambda: FullyConnectedNet([8, 50, 200, 2])
+    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, 0.001)
+    config['network_fn'] = lambda gpu=True: FullyConnectedNet([8, 50, 200, 2], gpu=gpu)
     config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=5000, min_epsilon=0.1)
     config['bootstrap_fn'] = OneStepQLearning
     # config['bootstrap_fn'] = NStepQLearning
     # config['bootstrap_fn'] = OneStepSarsa
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
-    config['step_limit'] = 300
+    config['step_limit'] = 0
     config['n_workers'] = 8
     config['batch_size'] = 5
     config['test_interval'] = 4000
@@ -27,7 +27,7 @@ def async_lunar_lander():
     config = dict()
     config['task_fn'] = lambda: LunarLander()
     config['optimizer_fn'] = lambda params: torch.optim.Adam(params, 0.001)
-    config['network_fn'] = lambda: FullyConnectedNet([8, 50, 200, 4])
+    config['network_fn'] = lambda gpu=True: FullyConnectedNet([8, 50, 200, 4], gpu=gpu)
     config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=40000, min_epsilon=0.05)
     config['bootstrap_fn'] = OneStepQLearning
     config['discount'] = 0.99
@@ -61,17 +61,18 @@ def dqn_cart_pole():
 def actor_critic_cart_pole():
     config = dict()
     config['task_fn'] = lambda: CartPole()
-    config['optimizer_fn'] = lambda params: torch.optim.Adam(params, 0.001)
-    config['network_fn'] = lambda: ActorCriticNet([4, 200, 2])
+    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, 0.001)
+    config['network_fn'] = lambda gpu=True: FCActorCriticNet([8, 200, 2], gpu=gpu)
     config['policy_fn'] = SamplePolicy
     config['bootstrap_fn'] = AdvantageActorCritic
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
-    config['step_limit'] = 200
-    config['n_workers'] = 10
-    config['batch_size'] = 5
-    config['test_interval'] = 50000
-    config['test_repetitions'] = 5
+    config['step_limit'] = 0
+    config['n_workers'] = 16
+    config['batch_size'] = 6
+    config['test_interval'] = 4000
+    config['history_length'] = 2
+    config['test_repetitions'] = 50
     config['logger'] = gym.logger
     agent = AsyncAgent(**config)
     agent.run()
@@ -125,8 +126,8 @@ if __name__ == '__main__':
     benchmark = gym.benchmark_spec('Atari40M')
 
     # async_cart_pole()
-    # async_lunar_lander()
     # actor_critic_cart_pole()
-    # dqn_cart_pole()
-    dqn_pixel_atari('BreakoutNoFrameskip-v3')
+    # async_lunar_lander()
+    dqn_cart_pole()
+    # dqn_pixel_atari('BreakoutNoFrameskip-v3')
     # async_pixel_atari('BreakoutNoFrameskip-v3')

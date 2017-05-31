@@ -26,6 +26,7 @@ class BasicNet:
             x = x.cuda()
         return Variable(x)
 
+class VanillaNet(BasicNet):
     def predict(self, x, to_numpy=True):
         y = self.forward(x)
         if to_numpy:
@@ -38,7 +39,31 @@ class BasicNet:
         loss = self.criterion(y, targets)
         loss.backward()
 
-class FullyConnectedNet(nn.Module, BasicNet):
+class ActorCriticNet(BasicNet):
+    def predict(self, x):
+        phi = self.forward(x)
+        return F.softmax(self.fc_actor(phi)).cpu().data.numpy()
+
+    def gradient(self, x, actions, rewards):
+        phi = self.forward(x)
+        logit = self.fc_actor(phi)
+        prob = F.softmax(logit)
+        log_prob_ = F.log_softmax(logit)
+        state_value = self.fc_critic(phi)
+        log_prob = log_prob_.gather(1, actions)
+        advantage = (rewards - state_value).detach()
+        policy_loss = -torch.sum(log_prob * advantage)
+        value_loss = 0.5 * torch.sum(torch.pow(state_value - rewards, 2))
+        entropy = -torch.sum(torch.mul(prob, log_prob_))
+        (policy_loss + value_loss - self.xentropy_weight * entropy).backward()
+        nn.utils.clip_grad_norm(self.parameters(), self.grad_threshold)
+
+    def critic(self, x):
+        phi = self.forward(x)
+        return self.fc_critic(phi).cpu().data.numpy()
+
+
+class FullyConnectedNet(nn.Module, VanillaNet):
     def __init__(self, dims, optimizer_fn=None, gpu=True):
         super(FullyConnectedNet, self).__init__()
         self.fc1 = nn.Linear(dims[0], dims[1])
@@ -55,52 +80,27 @@ class FullyConnectedNet(nn.Module, BasicNet):
         y = self.fc3(y)
         return y
 
-class ActorCriticNet(nn.Module):
-    def __init__(self, dims, gpu=True):
-        super(ActorCriticNet, self).__init__()
+class FCActorCriticNet(nn.Module, ActorCriticNet):
+    def __init__(self,
+                 dims,
+                 xentropy_weight=0.01,
+                 grad_threshold=40,
+                 gpu=True):
+        super(FCActorCriticNet, self).__init__()
         self.fc1 = nn.Linear(dims[0], dims[1])
         self.fc_actor = nn.Linear(dims[1], dims[2])
         self.fc_critic = nn.Linear(dims[1], 1)
-        self.gpu = gpu and torch.cuda.is_available()
-        if self.gpu:
-            print 'Transferring network to GPU...'
-            self.cuda()
-            print 'Network transferred.'
-
-    def to_torch_variable(self, x, dtype='float32'):
-        x = torch.from_numpy(np.asarray(x, dtype=dtype))
-        if self.gpu:
-            x = x.cuda()
-        return Variable(x)
+        self.xentropy_weight = xentropy_weight
+        self.grad_threshold = grad_threshold
+        BasicNet.__init__(self, optimizer_fn=None, gpu=gpu)
 
     def forward(self, x):
-        phi = self.fc1(self.to_torch_variable(x))
+        x = self.to_torch_variable(x)
+        x = x.view(x.size(0), -1)
+        phi = self.fc1(x)
         return phi
 
-    def predict(self, x):
-        phi = self.forward(x)
-        return F.softmax(self.fc_actor(phi)).cpu().data.numpy()
-
-    def gradient(self, x, actions, rewards):
-        phi = self.forward(x)
-        logit = self.fc_actor(phi)
-        prob = F.softmax(logit)
-        log_prob_ = F.log_softmax(logit)
-        state_value = self.fc_critic(phi)
-        log_prob = log_prob_.gather(1, self.to_torch_variable(np.asarray([actions]).reshape([-1, 1]), 'int64'))
-        advantage = np.asarray([rewards]).reshape([-1, 1]) - state_value.cpu().data.numpy()
-        policy_loss = -torch.sum(log_prob * self.to_torch_variable(advantage))
-        value_loss = 0.5 * torch.sum(
-            torch.pow(state_value - Variable(torch.from_numpy(np.asarray(rewards, dtype='float32'))), 2))
-        entropy = -torch.sum(torch.mul(prob, log_prob_))
-        (policy_loss + value_loss - 0.01 * entropy).backward()
-        nn.utils.clip_grad_norm(self.parameters(), 40)
-
-    def critic(self, x):
-        phi = self.forward(x)
-        return self.fc_critic(phi).cpu().data.numpy()
-
-class ConvNet(nn.Module, BasicNet):
+class ConvNet(nn.Module, VanillaNet):
     def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
         super(ConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)

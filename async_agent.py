@@ -60,7 +60,7 @@ class AsyncAgent:
         steps = 0
         terminal = False
         buffer = [state] * self.history_length
-        while not terminal and steps < self.step_limit:
+        while not terminal and (not self.step_limit or steps < self.step_limit):
             state = task.normalize_state(np.vstack(buffer))
             action_values = network.predict(np.reshape(state, (1, ) + state.shape))
             steps += 1
@@ -95,8 +95,8 @@ class AsyncAgent:
             batch_states, batch_actions, batch_rewards = [], [], []
             if terminal:
                 if id == 0:
-                    self.logger.info('episode %d, epsilon %f, return %f, avg return %f, total steps %d' % (
-                        episode, policy.epsilon, episode_return, np.mean(episode_returns[-100: ]),
+                    self.logger.info('episode %d, return %f, avg return %f, total steps %d' % (
+                        episode, episode_return, np.mean(episode_returns[-100: ]),
                     self.total_steps.value))
                 episode_steps = 0
                 episode_returns.append(episode_return)
@@ -106,7 +106,7 @@ class AsyncAgent:
                 state = task.reset()
                 buffer = [state] * self.history_length
                 state = task.normalize_state(np.vstack(buffer))
-                value = worker_network.predict(np.reshape(state, (1, ) + state.shape))
+                value = worker_network.predict(np.stack([state]))
                 action = policy.sample(value.flatten())
             while not terminal and len(batch_states) < self.batch_size:
                 episode_steps += 1
@@ -120,18 +120,20 @@ class AsyncAgent:
                 buffer.pop(0)
                 buffer.append(state)
                 state = task.normalize_state(np.vstack(buffer))
-                value = worker_network.predict(np.reshape(state, (1, ) + state.shape))
+                value = worker_network.predict(np.stack([state]))
                 action = policy.sample(value.flatten())
                 policy.update_epsilon()
 
             batch_rewards = self.bootstrap_fn(batch_states, batch_actions, batch_rewards,
                                               state, action, terminal, self)
 
-            if episode_steps > self.step_limit:
+            if self.step_limit and episode_steps > self.step_limit:
                 terminal = True
 
             worker_network.zero_grad()
-            worker_network.gradient(np.asarray(batch_states), batch_actions, batch_rewards)
+            worker_network.gradient(np.asarray(batch_states),
+                                    worker_network.to_torch_variable(batch_actions, 'int64').unsqueeze(1),
+                                    worker_network.to_torch_variable(batch_rewards).unsqueeze(1))
             self.async_update(worker_network, optimizer)
             worker_network.load_state_dict(self.learning_network.state_dict())
 

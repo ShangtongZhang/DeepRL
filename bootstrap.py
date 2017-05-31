@@ -51,7 +51,7 @@ def AdvantageActorCritic(batch_states, batch_actions, batch_rewards,
         reward = 0
     else:
         with agent.network_lock:
-            reward = np.asscalar(agent.learning_network.critic(tailing_state))
+            reward = np.asscalar(agent.learning_network.critic(np.stack([tailing_state])))
     rewards = []
     for r in reversed(batch_rewards):
         reward = r + agent.discount * reward
