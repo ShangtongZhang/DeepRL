@@ -58,7 +58,7 @@ def dqn_cart_pole():
     agent = DQNAgent(**config)
     agent.run()
 
-def actor_critic_cart_pole():
+def a3c_cart_pole():
     config = dict()
     config['task_fn'] = lambda: CartPole()
     config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, 0.001)
@@ -66,7 +66,7 @@ def actor_critic_cart_pole():
     config['policy_fn'] = SamplePolicy
     config['bootstrap_fn'] = AdvantageActorCritic
     config['discount'] = 0.99
-    config['target_network_update_freq'] = 200
+    config['target_network_update_freq'] = 0
     config['step_limit'] = 0
     config['n_workers'] = 16
     config['batch_size'] = 6
@@ -120,14 +120,36 @@ def async_pixel_atari(name):
     agent = AsyncAgent(**config)
     agent.run()
 
+def a3c_pixel_atari(name):
+    config = dict()
+    history_length = 4
+    n_actions = 6
+    config['task_fn'] = lambda: PixelAtari(name, 30, 4)
+    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.0001, alpha=0.99, eps=0.01)
+    config['network_fn'] = lambda gpu=True: ConvActorCriticNet(history_length, n_actions, gpu=gpu)
+    config['policy_fn'] = SamplePolicy
+    config['bootstrap_fn'] = AdvantageActorCritic
+    config['discount'] = 0.99
+    config['target_network_update_freq'] = 0
+    config['step_limit'] = 0
+    config['n_workers'] = 16
+    config['batch_size'] = 10
+    config['test_interval'] = 10000
+    config['test_repetitions'] = 20
+    config['history_length'] = 4
+    config['logger'] = gym.logger
+    agent = AsyncAgent(**config)
+    agent.run()
+
 if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
     benchmark = gym.benchmark_spec('Atari40M')
 
     # async_cart_pole()
-    # actor_critic_cart_pole()
+    # a3c_cart_pole()
     # async_lunar_lander()
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # dqn_pixel_atari('BreakoutNoFrameskip-v3')
     # async_pixel_atari('BreakoutNoFrameskip-v3')
+    a3c_pixel_atari('BreakoutNoFrameskip-v3')

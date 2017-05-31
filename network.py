@@ -80,26 +80,6 @@ class FullyConnectedNet(nn.Module, VanillaNet):
         y = self.fc3(y)
         return y
 
-class FCActorCriticNet(nn.Module, ActorCriticNet):
-    def __init__(self,
-                 dims,
-                 xentropy_weight=0.01,
-                 grad_threshold=40,
-                 gpu=True):
-        super(FCActorCriticNet, self).__init__()
-        self.fc1 = nn.Linear(dims[0], dims[1])
-        self.fc_actor = nn.Linear(dims[1], dims[2])
-        self.fc_critic = nn.Linear(dims[1], 1)
-        self.xentropy_weight = xentropy_weight
-        self.grad_threshold = grad_threshold
-        BasicNet.__init__(self, optimizer_fn=None, gpu=gpu)
-
-    def forward(self, x):
-        x = self.to_torch_variable(x)
-        x = x.view(x.size(0), -1)
-        phi = self.fc1(x)
-        return phi
-
 class ConvNet(nn.Module, VanillaNet):
     def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
         super(ConvNet, self).__init__()
@@ -120,4 +100,49 @@ class ConvNet(nn.Module, VanillaNet):
         y = F.relu(self.fc4(y))
         return self.fc5(y)
 
+class FCActorCriticNet(nn.Module, ActorCriticNet):
+    def __init__(self,
+                 dims,
+                 xentropy_weight=0.01,
+                 grad_threshold=40,
+                 gpu=True):
+        super(FCActorCriticNet, self).__init__()
+        self.fc1 = nn.Linear(dims[0], dims[1])
+        self.fc_actor = nn.Linear(dims[1], dims[2])
+        self.fc_critic = nn.Linear(dims[1], 1)
+        self.xentropy_weight = xentropy_weight
+        self.grad_threshold = grad_threshold
+        BasicNet.__init__(self, optimizer_fn=None, gpu=gpu)
+
+    def forward(self, x):
+        x = self.to_torch_variable(x)
+        x = x.view(x.size(0), -1)
+        phi = self.fc1(x)
+        return phi
+
+class ConvActorCriticNet(nn.Module, ActorCriticNet):
+    def __init__(self,
+                 in_channels,
+                 n_actions,
+                 xentropy_weight=0.01,
+                 grad_threshold=40,
+                 gpu=True):
+        super(ConvActorCriticNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 64, 512)
+        self.fc_actor = nn.Linear(512, n_actions)
+        self.fc_critic = nn.Linear(512, 1)
+        self.xentropy_weight = xentropy_weight
+        self.grad_threshold = grad_threshold
+        BasicNet.__init__(self, optimizer_fn=None, gpu=gpu)
+
+    def forward(self, x):
+        x = self.to_torch_variable(x)
+        y = F.relu(self.conv1(x))
+        y = F.relu(self.conv2(y))
+        y = F.relu(self.conv3(y))
+        y = y.view(y.size(0), -1)
+        return F.relu(self.fc4(y))
 
