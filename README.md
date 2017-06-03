@@ -3,10 +3,12 @@ Highly modularized implementation of popular deep RL algorithms by PyTorch. My p
 reuse as much components as I can through different algorithms, use as less tricks as I can and switch
 easily between classical control tasks like CartPole and Atari games with raw pixel inputs.
 * Deep Q-Learning (DQN)
-* Asynchronous One-Step Q-Learning
-* Asynchronous One-Step Sarsa 
-* Asynchronous N-Step Q-Learning
-* Asynchronous Advantage Actor Critic (A3C)
+* Double DQN
+* Dueling DQN
+* Async One-Step Q-Learning
+* Async One-Step Sarsa 
+* Async N-Step Q-Learning
+* Async Advantage Actor Critic (A3C)
 
 # Curves
 > Curves for CartPole is trivial so I didn't place it here.
@@ -46,5 +48,7 @@ Detailed usage and all training details can be found in ```main.py```
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)
 * [Asynchronous Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1602.01783)
+* [Deep Reinforcement Learning with Double Q-learning](https://arxiv.org/abs/1509.06461)
+* [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/abs/1511.06581)
 * [transedward/pytorch-dqn](https://github.com/transedward/pytorch-dqn)
 * [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)

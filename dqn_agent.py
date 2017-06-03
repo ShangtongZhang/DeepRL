@@ -9,7 +9,6 @@ from replay import *
 from policy import *
 import numpy as np
 import time
-import psutil
 import os
 import pickle
 
@@ -25,6 +24,7 @@ class DQNAgent:
                  target_network_update_freq,
                  explore_steps,
                  history_length,
+                 double_q,
                  test_interval,
                  test_repetitions,
                  logger):
@@ -41,10 +41,11 @@ class DQNAgent:
         self.explore_steps = explore_steps
         self.history_length = history_length
         self.logger = logger
-        self.process = psutil.Process(os.getpid())
         self.test_interval = test_interval
         self.test_repetitions = test_repetitions
         self.history_buffer = None
+        self.double_q = double_q
+        self.tag = ''
 
     def episode(self, deterministic=False):
         episode_start_time = time.time()
@@ -81,7 +82,11 @@ class DQNAgent:
                 states = self.task.normalize_state(states)
                 next_states = self.task.normalize_state(next_states)
                 q_next = self.target_network.predict(next_states, False).detach()
-                q_next, _ = q_next.max(1)
+                if self.double_q:
+                    _, best_actions = self.learning_network.predict(next_states, False).detach().max(1)
+                    q_next = q_next.gather(1, best_actions)
+                else:
+                    q_next, _ = q_next.max(1)
                 terminals = self.learning_network.to_torch_variable(terminals).unsqueeze(1)
                 rewards = self.learning_network.to_torch_variable(rewards).unsqueeze(1)
                 q_next = q_next * (1 - terminals)
@@ -98,9 +103,8 @@ class DQNAgent:
             if not deterministic and self.total_steps > self.explore_steps:
                 self.policy.update_epsilon()
         episode_time = time.time() - episode_start_time
-        info = self.process.memory_info()
-        self.logger.debug('episode steps %d, episode time %f, time per step %f, rss %d, vms %d' %
-                          (steps, episode_time, episode_time / float(steps), info.rss, info.vms))
+        self.logger.debug('episode steps %d, episode time %f, time per step %f' %
+                          (steps, episode_time, episode_time / float(steps)))
         return total_reward
 
     def save(self, file_name):
@@ -122,7 +126,7 @@ class DQNAgent:
 
             if ep % self.test_interval == 0:
                 self.logger.info('Testing...')
-                self.save('data/dqn-model-%s.bin' % (self.task.name))
+                self.save('data/%sdqn-model-%s.bin' % (self.tag, self.task.name))
                 test_rewards = []
                 for _ in range(self.test_repetitions):
                     test_rewards.append(self.episode(True))
@@ -130,7 +134,7 @@ class DQNAgent:
                 avg_test_rewards.append(avg_reward)
                 self.logger.info('Avg reward %f(%f)' % (
                     avg_reward, np.std(test_rewards) / np.sqrt(self.test_repetitions)))
-                with open('data/dqn-statistics-%s.bin' % (self.task.name), 'wb') as f:
+                with open('data/%sdqn-statistics-%s.bin' % (self.tag, self.task.name), 'wb') as f:
                     pickle.dump({'rewards': rewards,
                                  'test_rewards': avg_test_rewards}, f)
                 if avg_reward > self.task.success_threshold:

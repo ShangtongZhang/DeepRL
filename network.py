@@ -66,6 +66,17 @@ class ActorCriticNet(BasicNet):
         phi = self.forward(x)
         return self.fc_critic(phi).cpu().data.numpy()
 
+# Base class for dueling architecture
+class DuelingNet(BasicNet):
+    def predict(self, x, to_numpy=True):
+        phi = self.forward(x)
+        value = self.fc_value(phi)
+        advantange = self.fc_advantage(phi)
+        q = value.expand_as(advantange) + (advantange - advantange.mean(1).expand_as(advantange))
+        if to_numpy:
+            return q.cpu().data.numpy()
+        return q
+
 # Network for CartPole with value based methods
 class FullyConnectedNet(nn.Module, VanillaNet):
     def __init__(self, dims, optimizer_fn=None, gpu=True):
@@ -83,6 +94,24 @@ class FullyConnectedNet(nn.Module, VanillaNet):
         y = F.relu(self.fc2(y))
         y = self.fc3(y)
         return y
+
+# Network for CartPole with dueling architecture
+class DuelingFullyConnectedNet(nn.Module, DuelingNet):
+    def __init__(self, dims, optimizer_fn=None, gpu=True):
+        super(DuelingFullyConnectedNet, self).__init__()
+        self.fc1 = nn.Linear(dims[0], dims[1])
+        self.fc2 = nn.Linear(dims[1], dims[2])
+        self.fc_value = nn.Linear(dims[2], 1)
+        self.fc_advantage = nn.Linear(dims[2], dims[3])
+        self.criterion = nn.MSELoss()
+        BasicNet.__init__(self, optimizer_fn, gpu)
+
+    def forward(self, x):
+        x = self.to_torch_variable(x)
+        x = x.view(x.size(0), -1)
+        y = F.relu(self.fc1(x))
+        phi = F.relu(self.fc2(y))
+        return phi
 
 # Network for pixel Atari game with value based methods
 class ConvNet(nn.Module, VanillaNet):
@@ -104,6 +133,28 @@ class ConvNet(nn.Module, VanillaNet):
         y = y.view(y.size(0), -1)
         y = F.relu(self.fc4(y))
         return self.fc5(y)
+
+# Network for pixel Atari game with dueling architecture
+class DuelingConvNet(nn.Module, DuelingNet):
+    def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
+        super(DuelingConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 64, 512)
+        self.fc_advantage = nn.Linear(512, n_actions)
+        self.fc_value = nn.Linear(512, 1)
+        self.criterion = nn.MSELoss()
+        BasicNet.__init__(self, optimizer_fn, gpu)
+
+    def forward(self, x):
+        x = self.to_torch_variable(x)
+        y = F.relu(self.conv1(x))
+        y = F.relu(self.conv2(y))
+        y = F.relu(self.conv3(y))
+        y = y.view(y.size(0), -1)
+        phi = F.relu(self.fc4(y))
+        return phi
 
 # Network for CartPole with actor critic
 class FCActorCriticNet(nn.Module, ActorCriticNet):
