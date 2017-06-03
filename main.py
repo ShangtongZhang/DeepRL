@@ -129,10 +129,10 @@ if __name__ == '__main__':
     gym.logger.setLevel(logging.INFO)
 
     # async_cart_pole()
-    async_pixel_atari('PongNoFrameskip-v3')
     # dqn_cart_pole()
     # dqn_pixel_atari('BreakoutNoFrameskip-v3')
     # async_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_cart_pole()
+    async_pixel_atari('PongNoFrameskip-v3')
     # a3c_pixel_atari('PongNoFrameskip-v3')
