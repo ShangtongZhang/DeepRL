@@ -9,19 +9,22 @@ import numpy as np
 from atari_wrapper import *
 
 class BasicTask:
-    def transfer_state(self, state):
-        return state
+    def __init__(self):
+        self.normalized_state = True
 
     def normalize_state(self, state):
         return state
 
     def reset(self):
         state = self.env.reset()
-        return self.transfer_state(state)
+        if self.normalized_state:
+            return self.normalize_state(state)
+        return state
 
     def step(self, action):
         next_state, reward, done, info = self.env.step(action)
-        next_state = self.transfer_state(next_state)
+        if self.normalized_state:
+            next_state = self.normalize_state(next_state)
         return next_state, np.sign(reward), done, info
 
 class MountainCar(BasicTask):
@@ -29,6 +32,7 @@ class MountainCar(BasicTask):
     success_threshold = -110
 
     def __init__(self):
+        BasicTask.__init__(self)
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
 
@@ -37,6 +41,7 @@ class CartPole(BasicTask):
     success_threshold = 195
 
     def __init__(self):
+        BasicTask.__init__(self)
         self.env = gym.make(self.name)
 
 class LunarLander(BasicTask):
@@ -44,12 +49,15 @@ class LunarLander(BasicTask):
     success_threshold = 200
 
     def __init__(self):
+        BasicTask.__init__(self)
         self.env = gym.make(self.name)
 
 class PixelAtari(BasicTask):
     success_threshold = 1000
 
-    def __init__(self, name, no_op, frame_skip):
+    def __init__(self, name, no_op, frame_skip, normalized_state=True):
+        BasicTask.__init__(self)
+        self.normalized_state = normalized_state
         self.name = name
         env = gym.make(name)
         assert 'NoFrameskip' in env.spec.id

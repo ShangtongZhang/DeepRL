@@ -10,6 +10,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+# Base class for all kinds of network
 class BasicNet:
     def __init__(self, optimizer_fn, gpu):
         if optimizer_fn is not None:
@@ -26,6 +27,7 @@ class BasicNet:
             x = x.cuda()
         return Variable(x)
 
+# Base class for value based methods
 class VanillaNet(BasicNet):
     def predict(self, x, to_numpy=True):
         y = self.forward(x)
@@ -39,6 +41,7 @@ class VanillaNet(BasicNet):
         loss = self.criterion(y, targets)
         loss.backward()
 
+# Base class for actor critic method
 class ActorCriticNet(BasicNet):
     def predict(self, x):
         phi = self.forward(x)
@@ -53,16 +56,17 @@ class ActorCriticNet(BasicNet):
         log_prob = log_prob_.gather(1, actions)
         advantage = (rewards - state_value).detach()
         policy_loss = -torch.sum(log_prob * advantage)
-        value_loss = 0.5 * torch.sum(torch.pow(state_value - rewards, 2))
+        value_loss = 0.5 * torch.sum(torch.pow(rewards - state_value, 2))
         entropy = -torch.sum(torch.mul(prob, log_prob_))
-        (policy_loss + value_loss - self.xentropy_weight * entropy).backward()
+        loss = policy_loss + value_loss - self.xentropy_weight * entropy
+        loss.backward()
         nn.utils.clip_grad_norm(self.parameters(), self.grad_threshold)
 
     def critic(self, x):
         phi = self.forward(x)
         return self.fc_critic(phi).cpu().data.numpy()
 
-
+# Network for CartPole with value based methods
 class FullyConnectedNet(nn.Module, VanillaNet):
     def __init__(self, dims, optimizer_fn=None, gpu=True):
         super(FullyConnectedNet, self).__init__()
@@ -80,6 +84,7 @@ class FullyConnectedNet(nn.Module, VanillaNet):
         y = self.fc3(y)
         return y
 
+# Network for pixel Atari game with value based methods
 class ConvNet(nn.Module, VanillaNet):
     def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
         super(ConvNet, self).__init__()
@@ -100,6 +105,7 @@ class ConvNet(nn.Module, VanillaNet):
         y = F.relu(self.fc4(y))
         return self.fc5(y)
 
+# Network for CartPole with actor critic
 class FCActorCriticNet(nn.Module, ActorCriticNet):
     def __init__(self,
                  dims,
@@ -120,6 +126,7 @@ class FCActorCriticNet(nn.Module, ActorCriticNet):
         phi = self.fc1(x)
         return phi
 
+# Network for pixel Atari game with actor critic
 class ConvActorCriticNet(nn.Module, ActorCriticNet):
     def __init__(self,
                  in_channels,
@@ -140,9 +147,9 @@ class ConvActorCriticNet(nn.Module, ActorCriticNet):
 
     def forward(self, x):
         x = self.to_torch_variable(x)
-        y = F.relu(self.conv1(x))
-        y = F.relu(self.conv2(y))
-        y = F.relu(self.conv3(y))
+        y = F.elu(self.conv1(x))
+        y = F.elu(self.conv2(y))
+        y = F.elu(self.conv3(y))
         y = y.view(y.size(0), -1)
-        return F.relu(self.fc4(y))
+        return F.elu(self.fc4(y))
 
