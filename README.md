@@ -2,6 +2,8 @@
 Highly modularized implementation of popular deep RL algorithms by PyTorch. My principal here is to
 reuse as much components as I can through different algorithms, use as less tricks as I can and switch
 easily between classical control tasks like CartPole and Atari games with raw pixel inputs.
+
+Implemented algorithms:
 * Deep Q-Learning (DQN)
 * Double DQN
 * Dueling DQN
