@@ -11,7 +11,7 @@
 # Usage
 Detailed usage can be found in ```main.py```
 
-#References
+# References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)
 * [Asynchronous Methods for Deep Reinforcement Learning](https://arxiv.org/abs/1602.01783)
 * [transedward/pytorch-dqn](https://github.com/transedward/pytorch-dqn)
