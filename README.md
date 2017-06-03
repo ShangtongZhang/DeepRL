@@ -1,15 +1,23 @@
 # DeepRL
 Highly modularized implementation of popular deep RL algorithms by PyTorch. My principal here is to
-reuse as much components as I can through different algorithms and use as less tricks as I can.
-* Deep Q-Learning
+reuse as much components as I can through different algorithms, use as less tricks as I can and switch
+easily between classical control tasks like CartPole and Atari games with raw pixel inputs.
+* Deep Q-Learning (DQN)
 * Asynchronous One-Step Q-Learning
 * Asynchronous One-Step Sarsa 
 * Asynchronous N-Step Q-Learning
 * Asynchronous Advantage Actor Critic (A3C)
 
->Tested with both classical control tasks (CartPole) and Atari games.
-
 # Curves
+> Curves for CartPole is trivial so I didn't place it here.
+## Deep Q-Learning (DQN)
+![alt text](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DQN-BreakoutNoFrameskip-v3-Train.png)
+![alt_text](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DQN-BreakoutNoFrameskip-v3-Test.png)
+
+The network and parameters here are exactly same as the DeepMind Nature paper. 
+Training curve is smoothed by window of size 100. Test is triggered every 1000 episodes.
+In total it took about 16M frames. Training time is 4 days and 10 hours in a server with
+Xeon E5-2620 v3 and Titan X.
 
 ## Asynchronous Advantage Actor Critic (A3C)
 
@@ -24,6 +32,13 @@ Another important thing is I didn't use lock for syncing up networks. Although I
 should be a lock, locking can hurt the performance heavily (about 50%). 
 
 The first 15 million frames took about 5 hours (16 processes) in a server with two Xeon E5-2620 v3.
+This is the test curve. Test is triggered in a separate deterministic test process every 50K frames.
+
+# Dependency
+* Open AI gym
+* PyTorch
+* PIL (pip install Pillow)
+* Python 2.7 (I didn't test with Python 3)
 
 # Usage
 Detailed usage and all training details can be found in ```main.py```
