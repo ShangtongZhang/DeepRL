@@ -13,7 +13,7 @@ reuse as much components as I can through different algorithms and use as less t
 
 ## Asynchronous Advantage Actor Critic (A3C)
 
-![alt text](DeepRL/images/A3C-PongNoFrameskip-v3.png)
+![alt text](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A3C-PongNoFrameskip-v3.png)
 
 The network I used here is same as the network in DQN except the activation function 
 is **Elu** rather than Relu. The optimizer is **Adam** with non-shared parameters.
