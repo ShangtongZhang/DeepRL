@@ -22,7 +22,7 @@ The network and parameters here are exactly same as the [DeepMind Nature paper](
 Training curve is smoothed by a window of size 100. All the models are trained in a server with
 Xeon E5-2620 v3 and Titan X. For Breakout, test is triggered every 1000 episodes with 50 repetitions.
 In total, 16M frames cost about 4 days and 10 hours. For Pong, test is triggered 
-every 10 episodes with no repetition. In total, 4M frames cost about 12 hours.
+every 10 episodes with no repetition. In total, 4M frames cost about 18 hours.
 
 ## A3C
 
