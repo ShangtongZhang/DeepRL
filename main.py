@@ -89,24 +89,23 @@ def dqn_pixel_atari(name):
 
 def async_pixel_atari(name):
     config = dict()
-    history_length = 1
+    history_length = 4
     n_actions = 6
     config['task_fn'] = lambda: PixelAtari(name, no_op=30, frame_skip=4)
     config['optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=0.0001)
-    # config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.0001)
     config['network_fn'] = lambda: NipsConvNet(history_length, n_actions, gpu=False)
     config['policy_fn'] = lambda: StochasticGreedyPolicy(epsilons=[1.0, 1.0, 1.0],
-                                                          final_step=int(4000000/16),
+                                                          final_step=1000000,
                                                           min_epsilons=[0.1, 0.01, 0.5],
                                                           probs=[0.4, 0.3, 0.3])
     # config['bootstrap_fn'] = OneStepQLearning
     # config['bootstrap_fn'] = NStepQLearning
     config['bootstrap_fn'] = OneStepSarsa
     config['discount'] = 0.99
-    config['target_network_update_freq'] = 40000
+    config['target_network_update_freq'] = 10000
     config['step_limit'] = 10000
     config['n_workers'] = 16
-    config['batch_size'] = 20
+    config['batch_size'] = 32
     config['test_interval'] = 50000
     config['test_repetitions'] = 1
     config['history_length'] = history_length
