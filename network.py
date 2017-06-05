@@ -134,6 +134,24 @@ class ConvNet(nn.Module, VanillaNet):
         y = F.relu(self.fc4(y))
         return self.fc5(y)
 
+class NipsConvNet(nn.Module, VanillaNet):
+    def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
+        super(NipsConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, 16, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(16, 32, kernel_size=4, stride=2)
+        self.fc3 = nn.Linear(9 * 9 * 32, 256)
+        self.fc4 = nn.Linear(256, n_actions)
+        self.criterion = nn.MSELoss()
+        BasicNet.__init__(self, optimizer_fn, gpu)
+
+    def forward(self, x):
+        x = self.to_torch_variable(x)
+        y = F.relu(self.conv1(x))
+        y = F.relu(self.conv2(y))
+        y = y.view(y.size(0), -1)
+        y = F.relu(self.fc3(y))
+        return self.fc4(y)
+
 # Network for pixel Atari game with dueling architecture
 class DuelingConvNet(nn.Module, DuelingNet):
     def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):

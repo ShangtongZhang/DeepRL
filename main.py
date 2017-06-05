@@ -93,13 +93,17 @@ def async_pixel_atari(name):
     n_actions = 6
     config['task_fn'] = lambda: PixelAtari(name, no_op=30, frame_skip=4)
     config['optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=0.0001)
-    config['network_fn'] = lambda: ConvNet(history_length, n_actions, gpu=False)
-    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    # config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.0001)
+    config['network_fn'] = lambda: NipsConvNet(history_length, n_actions, gpu=False)
+    config['policy_fn'] = lambda: StochasticGreedyPolicy(epsilons=[1.0, 1.0, 1.0],
+                                                          final_step=int(4000000/16),
+                                                          min_epsilons=[0.1, 0.01, 0.5],
+                                                          probs=[0.4, 0.3, 0.3])
     # config['bootstrap_fn'] = OneStepQLearning
     # config['bootstrap_fn'] = NStepQLearning
     config['bootstrap_fn'] = OneStepSarsa
     config['discount'] = 0.99
-    config['target_network_update_freq'] = 10000
+    config['target_network_update_freq'] = 40000
     config['step_limit'] = 10000
     config['n_workers'] = 16
     config['batch_size'] = 20
@@ -136,11 +140,11 @@ if __name__ == '__main__':
     gym.logger.setLevel(logging.INFO)
 
     # async_cart_pole()
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # dqn_pixel_atari('BreakoutNoFrameskip-v3')
     # async_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_cart_pole()
     # dqn_pixel_atari('PongNoFrameskip-v3')
-    # async_pixel_atari('PongNoFrameskip-v3')
+    async_pixel_atari('PongNoFrameskip-v3')
     # a3c_pixel_atari('PongNoFrameskip-v3')

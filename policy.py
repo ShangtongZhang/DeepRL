@@ -23,6 +23,20 @@ class GreedyPolicy:
         self.epsilon = max(self.epsilon, self.min_epsilon)
         self.current_steps += 1
 
+class StochasticGreedyPolicy:
+    def __init__(self, epsilons, final_step, min_epsilons, probs):
+        self.policies = []
+        self.probs = probs
+        for epsilon, min_epsilon in zip(epsilons, min_epsilons):
+            self.policies.append(GreedyPolicy(epsilon, final_step, min_epsilon))
+
+    def sample(self, action_value):
+        return np.random.choice(self.policies, p=self.probs).sample(action_value)
+
+    def update_epsilon(self):
+        for policy in self.policies:
+            policy.update_epsilon()
+
 class SamplePolicy:
     def sample(self, action_value):
         return np.random.choice(np.arange(len(action_value)), p=action_value)

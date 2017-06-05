@@ -13,7 +13,7 @@ Implemented algorithms:
 * Async N-Step Q-Learning
 
 # Curves
-> Curves for CartPole is trivial so I didn't place it here.
+> Curves for CartPole are trivial so I didn't place it here.
 ## DQN, Double DQN, Dueling DQN 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DQN-breakout.png)
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DQN-Pong.png)
