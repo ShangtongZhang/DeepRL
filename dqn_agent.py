@@ -59,7 +59,7 @@ class DQNAgent:
         total_reward = 0.0
         steps = 0
         while not self.step_limit or steps < self.step_limit:
-            value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]))
+            value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]), True)
             if deterministic:
                 action = np.argmax(value.flatten())
             else:
@@ -81,9 +81,9 @@ class DQNAgent:
                 states, actions, rewards, next_states, terminals = experiences
                 states = self.task.normalize_state(states)
                 next_states = self.task.normalize_state(next_states)
-                q_next = self.target_network.predict(next_states, False).detach()
+                q_next = self.target_network.predict(next_states).detach()
                 if self.double_q:
-                    _, best_actions = self.learning_network.predict(next_states, False).detach().max(1)
+                    _, best_actions = self.learning_network.predict(next_states).detach().max(1)
                     q_next = q_next.gather(1, best_actions)
                 else:
                     q_next, _ = q_next.max(1)
@@ -92,7 +92,7 @@ class DQNAgent:
                 q_next = q_next * (1 - terminals)
                 q_next.add_(rewards)
                 actions = self.learning_network.to_torch_variable(actions, 'int64').unsqueeze(1)
-                q = self.learning_network.predict(states, False)
+                q = self.learning_network.predict(states)
                 q = q.gather(1, actions)
                 loss = self.learning_network.criterion(q, q_next)
                 self.learning_network.zero_grad()

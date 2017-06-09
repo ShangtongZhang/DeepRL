@@ -20,12 +20,12 @@ class AsyncAgent:
                  network_fn,
                  optimizer_fn,
                  policy_fn,
-                 bootstrap_fn,
+                 bootstrap,
                  discount,
                  step_limit,
                  target_network_update_freq,
                  n_workers,
-                 batch_size,
+                 update_interval,
                  test_interval,
                  test_repetitions,
                  history_length,
@@ -33,16 +33,17 @@ class AsyncAgent:
         self.network_fn = network_fn
         self.learning_network = network_fn()
         self.learning_network.share_memory()
-        if bootstrap_fn != AdvantageActorCritic:
+        if bootstrap != AdvantageActorCritic:
             self.target_network = network_fn()
             self.target_network.share_memory()
             self.target_network.load_state_dict(self.learning_network.state_dict())
         else:
             self.target_network = None
-        self.bootstrap_fn = bootstrap_fn
+        self.bootstrap = bootstrap
 
         self.optimizer_fn = optimizer_fn
         self.task_fn = task_fn
+        self.task = self.task_fn()
         self.step_limit = step_limit
         self.discount = discount
         self.optimizer_fn = optimizer_fn
@@ -53,7 +54,7 @@ class AsyncAgent:
         self.total_steps = mp.Value('i', 0)
         self.stop_signal = mp.Value('i', False)
         self.n_workers = n_workers
-        self.batch_size = batch_size
+        self.update_interval = update_interval
         self.test_interval = test_interval
         self.test_repetitions = test_repetitions
         self.logger = logger
@@ -63,92 +64,69 @@ class AsyncAgent:
         state = task.reset()
         total_rewards = 0
         steps = 0
-        terminal = False
-        buffer = [state] * self.history_length
-        while not terminal and (not self.step_limit or steps < self.step_limit):
-            state = np.vstack(buffer)
-            action_values = network.predict(np.stack([state]))
-            steps += 1
-            action = np.argmax(action_values.flatten())
+        network.reset(True)
+        bootstrap = self.bootstrap(self)
+        while not self.step_limit or steps < self.step_limit:
+            action = np.argmax(bootstrap.process_state(network, state))
             state, reward, terminal, _ = task.step(action)
-            buffer.pop(0)
-            buffer.append(state)
+            steps += 1
             total_rewards += reward
             if terminal:
                 break
         return total_rewards
 
-    def async_update(self, worker_network, optimizer):
-        optimizer.zero_grad()
-        for param, worker_param in zip(self.learning_network.parameters(), worker_network.parameters()):
-            param._grad = worker_param.grad.clone().cpu()
-        optimizer.step()
-
     def worker(self, id):
         optimizer = self.optimizer_fn(self.learning_network.parameters())
         worker_network = self.network_fn()
         worker_network.load_state_dict(self.learning_network.state_dict())
+        bootstrap = self.bootstrap(self)
         task = self.task_fn()
         policy = self.policy_fn()
-        terminal = True
         episode = 0
         episode_steps = 0
-        episode_return = 0
-        episode_returns = []
-        update_target_network = False
+        episode_returns = [0]
+        state = task.reset()
+        pending_steps = 0
         while True and not self.stop_signal.value:
-            batch_states, batch_actions, batch_rewards = [], [], []
-            if terminal:
-                if episode and id == 0:
-                    episode_returns.append(episode_return)
-                    self.logger.info('episode %d, return %f, avg return %f, episode steps %d, total steps %d' % (
-                        episode, episode_return, np.mean(episode_returns[-100: ]), episode_steps,
-                    self.total_steps.value))
-                episode_steps = 0
-                episode_return = 0
-                episode += 1
-                terminal = False
-                state = task.reset()
-                buffer = [state] * self.history_length
-                state = np.vstack(buffer)
-                value = worker_network.predict(np.stack([state]))
-                action = policy.sample(value.flatten())
-            while not terminal and len(batch_states) < self.batch_size:
-                episode_steps += 1
-                with self.steps_lock:
-                    self.total_steps.value += 1
-                self.total_steps.value += 1
-                if self.total_steps.value % self.target_network_update_freq == 0:
-                    update_target_network = True
-                batch_states.append(state)
-                batch_actions.append(action)
-                state, reward, terminal, _ = task.step(action)
-                batch_rewards.append(reward)
-                episode_return += reward
-                buffer.pop(0)
-                buffer.append(state)
-                state = np.vstack(buffer)
-                value = worker_network.predict(np.stack([state]))
-                action = policy.sample(value.flatten())
-                policy.update_epsilon()
+            action = policy.sample(bootstrap.process_state(worker_network, state))
+            next_state, reward, terminal, _ = task.step(action)
+            bootstrap.process_interaction(action, reward, next_state)
 
-            batch_rewards = self.bootstrap_fn(batch_states, batch_actions, batch_rewards,
-                                              state, action, terminal, worker_network, self.discount)
-
+            episode_returns[-1] += reward
+            episode_steps += 1
             if self.step_limit and episode_steps > self.step_limit:
                 terminal = True
+            with self.steps_lock:
+                self.total_steps.value += 1
+            pending_steps += 1
 
-            worker_network.zero_grad()
-            worker_network.gradient(np.asarray(batch_states),
-                                    worker_network.to_torch_variable(batch_actions, 'int64').unsqueeze(1),
-                                    worker_network.to_torch_variable(batch_rewards).unsqueeze(1))
-            self.async_update(worker_network, optimizer)
-            worker_network.load_state_dict(self.learning_network.state_dict())
+            if terminal or pending_steps >= self.update_interval:
+                loss = bootstrap.compute_loss(worker_network, terminal)
+                pending_steps = 0
+                worker_network.zero_grad()
+                loss.backward()
+                nn.utils.clip_grad_norm(worker_network.parameters(), 40)
+                optimizer.zero_grad()
+                for param, worker_param in zip(self.learning_network.parameters(), worker_network.parameters()):
+                    param._grad = worker_param.grad.clone().cpu()
+                optimizer.step()
+                worker_network.load_state_dict(self.learning_network.state_dict())
+                worker_network.reset(terminal)
 
-            if self.target_network is not None and update_target_network:
+            if terminal:
+                state = task.reset()
+                episode += 1
+                if id == 0:
+                    self.logger.info('episode %d, return %f, avg return %f, episode steps %d, total steps %d' % (
+                        episode, episode_returns[-1], np.mean(episode_returns[-100:]), episode_steps, self.total_steps.value))
+                episode_returns.append(0)
+                episode_steps = 0
+            else:
+                state = next_state
+
+            if self.target_network and self.total_steps.value % self.target_network_update_freq == 0:
                 with self.network_lock:
                     self.target_network.load_state_dict(self.learning_network.state_dict())
-                update_target_network = False
 
     def save(self, file_name):
         with open(file_name, 'wb') as f:
@@ -158,28 +136,27 @@ class AsyncAgent:
         os.environ['OMP_NUM_THREADS'] = '1'
         procs = [mp.Process(target=self.worker, args=(i, )) for i in range(self.n_workers)]
         for p in procs: p.start()
-        task = self.task_fn()
-        test_network = self.network_fn()
         test_rewards = []
         test_points = []
+        test_network = self.network_fn()
         while True:
             steps = self.total_steps.value + 1
             if steps % self.test_interval == 0:
                 with self.network_lock:
                     test_network.load_state_dict(self.learning_network.state_dict())
-                self.save('data/%s-model-%s.bin' % (self.bootstrap_fn.__name__, task.name))
+                self.save('data/%s-model-%s.bin' % (self.bootstrap.__name__, self.task.name))
                 rewards = np.zeros(self.test_repetitions)
                 for i in range(self.test_repetitions):
-                    rewards[i] = self.deterministic_episode(task, test_network)
+                    rewards[i] = self.deterministic_episode(self.task, test_network)
                 self.logger.info('total steps: %d, averaged return per episode: %f(%f)' %\
                       (steps, np.mean(rewards), np.std(rewards) / np.sqrt(self.test_repetitions)))
                 test_rewards.append(np.mean(rewards))
                 test_points.append(steps)
                 with open('data/%s-statistics-%s.bin' % (
-                    self.bootstrap_fn.__name__, task.name
+                    self.bootstrap.__name__, self.task.name
                 ), 'wb') as f:
                     pickle.dump([test_points, test_rewards], f)
-                if np.mean(rewards) > task.success_threshold:
+                if np.mean(rewards) > self.task.success_threshold:
                     self.stop_signal.value = True
                     break
         for p in procs: p.join()

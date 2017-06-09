@@ -53,12 +53,12 @@ class LunarLander(BasicTask):
         self.env = gym.make(self.name)
 
 class PixelAtari(BasicTask):
-    success_threshold = 1000
-
-    def __init__(self, name, no_op, frame_skip, normalized_state=True):
+    def __init__(self, name, no_op, frame_skip, normalized_state=True,
+                 frame_size=84, success_threshold=1000):
         BasicTask.__init__(self)
         self.normalized_state = normalized_state
         self.name = name
+        self.success_threshold = success_threshold
         env = gym.make(name)
         assert 'NoFrameskip' in env.spec.id
         env = EpisodicLifeEnv(env)
@@ -66,7 +66,7 @@ class PixelAtari(BasicTask):
         env = MaxAndSkipEnv(env, skip=frame_skip)
         if 'FIRE' in env.unwrapped.get_action_meanings():
             env = FireResetEnv(env)
-        env = ProcessFrame84(env)
+        env = ProcessFrame(env, frame_size)
         self.env = ClippedRewardsWrapper(env)
 
     def normalize_state(self, state):
