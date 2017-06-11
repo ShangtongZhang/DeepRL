@@ -59,6 +59,7 @@ class AsyncAgent:
         self.test_repetitions = test_repetitions
         self.logger = logger
         self.history_length = history_length
+        self.tag = ''
 
     def deterministic_episode(self, task, network):
         state = task.reset()
@@ -73,12 +74,14 @@ class AsyncAgent:
             total_rewards += reward
             if terminal:
                 break
+            bootstrap.reset()
         return total_rewards
 
     def worker(self, id):
         optimizer = self.optimizer_fn(self.learning_network.parameters())
         worker_network = self.network_fn()
         worker_network.load_state_dict(self.learning_network.state_dict())
+
         bootstrap = self.bootstrap(self)
         task = self.task_fn()
         policy = self.policy_fn()
@@ -125,8 +128,7 @@ class AsyncAgent:
                 state = next_state
 
             if self.target_network and self.total_steps.value % self.target_network_update_freq == 0:
-                with self.network_lock:
-                    self.target_network.load_state_dict(self.learning_network.state_dict())
+                self.target_network.load_state_dict(self.learning_network.state_dict())
 
     def save(self, file_name):
         with open(file_name, 'wb') as f:
@@ -142,9 +144,8 @@ class AsyncAgent:
         while True:
             steps = self.total_steps.value + 1
             if steps % self.test_interval == 0:
-                with self.network_lock:
-                    test_network.load_state_dict(self.learning_network.state_dict())
-                self.save('data/%s-model-%s.bin' % (self.bootstrap.__name__, self.task.name))
+                test_network.load_state_dict(self.learning_network.state_dict())
+                self.save('data/%s%s-model-%s.bin' % (self.tag, self.bootstrap.__name__, self.task.name))
                 rewards = np.zeros(self.test_repetitions)
                 for i in range(self.test_repetitions):
                     rewards[i] = self.deterministic_episode(self.task, test_network)
@@ -152,8 +153,8 @@ class AsyncAgent:
                       (steps, np.mean(rewards), np.std(rewards) / np.sqrt(self.test_repetitions)))
                 test_rewards.append(np.mean(rewards))
                 test_points.append(steps)
-                with open('data/%s-statistics-%s.bin' % (
-                    self.bootstrap.__name__, self.task.name
+                with open('data/%s%s-statistics-%s.bin' % (
+                    self.tag, self.bootstrap.__name__, self.task.name
                 ), 'wb') as f:
                     pickle.dump([test_points, test_rewards], f)
                 if np.mean(rewards) > self.task.success_threshold:

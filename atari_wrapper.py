@@ -134,7 +134,7 @@ class ProcessFrame(gym.Wrapper):
         elif frame_size == 42:
             self.process_fn = _process_frame42
         else:
-            assert(False, "Unknown frame size")
+            assert False, "Unknown frame size"
 
     def _step(self, action):
         obs, reward, done, info = self.env.step(action)

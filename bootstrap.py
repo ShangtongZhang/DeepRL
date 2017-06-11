@@ -10,6 +10,9 @@ from torch.autograd import Variable
 class OneStepSarsa:
     def __init__(self, agent):
         self.agent = agent
+        self.reset()
+
+    def reset(self):
         self.pending = []
 
     def process_state(self, network, state):
@@ -36,13 +39,16 @@ class OneStepSarsa:
             q_next = self.agent.discount * q_next + reward
             q = q.gather(1, Variable(torch.LongTensor([[action]])))
             loss += 0.5 * (q - Variable(q_next)).pow(2)
-        self.pending = []
+        self.reset()
         return loss
 
 
 class OneStepQLearning:
     def __init__(self, agent):
         self.agent = agent
+        self.reset()
+
+    def reset(self):
         self.pending = []
 
     def process_state(self, network, state):
@@ -63,12 +69,15 @@ class OneStepQLearning:
             q_next = self.agent.discount * q_next + reward
             q = q.gather(1, Variable(torch.LongTensor([[action]])))
             loss += 0.5 * (q - Variable(q_next)).pow(2)
-        self.pending = []
+        self.reset()
         return loss
 
 class NStepQLearning:
     def __init__(self, agent):
         self.agent = agent
+        self.reset()
+
+    def reset(self):
         self.pending = []
 
     def process_state(self, network, state):
@@ -92,12 +101,15 @@ class NStepQLearning:
             q, action, reward = self.pending[i]
             R = reward + self.agent.discount * R
             loss += 0.5 * (Variable(R) - q.gather(1, Variable(torch.LongTensor([[action]])))).pow(2)
-        self.pending = []
+        self.reset()
         return loss
 
 class AdvantageActorCritic:
     def __init__(self, agent):
         self.agent = agent
+        self.reset()
+
+    def reset(self):
         self.pending = []
 
     def process_state(self, network, state):
@@ -122,6 +134,6 @@ class AdvantageActorCritic:
             loss += 0.5 * advantage.pow(2)
             loss += -log_prob.gather(1, Variable(torch.LongTensor([[action]]))) * Variable(advantage.data)
             loss += 0.01 * torch.sum(torch.mul(prob, log_prob))
-        self.pending = []
+        self.reset()
         return loss
 
