@@ -26,15 +26,12 @@ every 10 episodes with no repetition. In total, 4M frames cost about 18 hours.
 
 ## A3C
 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A3C-PongNoFrameskip-v3.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A3C-Pong.png)
 
-The network I used here is same as the network in DQN except the activation function 
-is **Elu** rather than Relu. The optimizer is **Adam** with non-shared parameters.
-To my best knowledge, this network architecture is not the most suitable for A3C. 
-If you use a 42 * 42 input, add a LSTM layer at last, you will get **much much much** better training speed 
-than this. [GAE](http://www.breloff.com/DeepRL-OnlineGAE/) can also improve performance.
+The network I used here is a smaller network with only 42 * 42 input, alougth the network for DQN can also work here,
+it's quite slow. 
 
-The first 15M frames took about 5 hours (16 processes) in a server with two Xeon E5-2620 v3.
+Training took about 2 hours (16 processes) in a server with two Xeon E5-2620 v3.
 This is the test curve. Test is triggered in a separate deterministic test process every 50K frames.
 
 # Dependency
