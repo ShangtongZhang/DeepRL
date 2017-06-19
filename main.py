@@ -1,6 +1,7 @@
 from async_agent import *
 from dqn_agent import *
 import logging
+import traceback
 
 def dqn_cart_pole():
     config = dict()
@@ -29,9 +30,9 @@ def async_cart_pole():
     config['optimizer_fn'] = lambda params: torch.optim.Adam(params, 0.001)
     config['network_fn'] = lambda: FCNet([4, 50, 200, 2])
     config['policy_fn'] = lambda: GreedyPolicy(epsilon=0.5, final_step=5000, min_epsilon=0.1)
-    config['bootstrap'] = OneStepQLearning
-    # config['bootstrap'] = NStepQLearning
-    # config['bootstrap'] = OneStepSarsa
+    config['worker_fn'] = OneStepQLearning
+    # config['worker_fn'] = NStepQLearning
+    # config['worker_fn'] = OneStepSarsa
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
     config['step_limit'] = 0
@@ -51,7 +52,7 @@ def a3c_cart_pole():
     config['optimizer_fn'] = lambda params: torch.optim.Adam(params, 0.001)
     config['network_fn'] = lambda: ActorCriticFCNet([4, 200, 2])
     config['policy_fn'] = SamplePolicy
-    config['bootstrap'] = AdvantageActorCritic
+    config['worker_fn'] = AdvantageActorCritic
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
     config['step_limit'] = 0
@@ -96,13 +97,13 @@ def async_pixel_atari(name):
     config['optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=0.0001)
     config['network_fn'] = lambda: OpenAIConvNet(history_length,
                                                  n_actions)
-    config['policy_fn'] = lambda: StochasticGreedyPolicy(epsilons=[0.5, 0.5, 0.5],
+    config['policy_fn'] = lambda: StochasticGreedyPolicy(epsilons=[0.7, 0.7, 0.7],
                                                           final_step=2000000,
-                                                          min_epsilons=[0.1, 0.01, 0.2],
+                                                          min_epsilons=[0.1, 0.01, 0.5],
                                                           probs=[0.4, 0.3, 0.3])
-    # config['bootstrap'] = OneStepQLearning
-    # config['bootstrap'] = NStepQLearning
-    config['bootstrap'] = OneStepSarsa
+    # config['worker_fn'] = OneStepQLearning
+    # config['worker_fn'] = NStepQLearning
+    config['worker_fn'] = OneStepSarsa
     config['discount'] = 0.99
     config['target_network_update_freq'] = 10000
     config['step_limit'] = 10000
@@ -113,6 +114,7 @@ def async_pixel_atari(name):
     config['history_length'] = history_length
     config['logger'] = gym.logger
     agent = AsyncAgent(**config)
+    agent.tag = 'Centered-target-network-'
     agent.run()
 
 def a3c_pixel_atari(name):
@@ -125,7 +127,7 @@ def a3c_pixel_atari(name):
                                                             n_actions,
                                                             LSTM=False)
     config['policy_fn'] = SamplePolicy
-    config['bootstrap'] = AdvantageActorCritic
+    config['worker_fn'] = AdvantageActorCritic
     config['discount'] = 0.99
     config['target_network_update_freq'] = 0
     config['step_limit'] = 10000
@@ -140,8 +142,8 @@ def a3c_pixel_atari(name):
     agent.run()
 
 if __name__ == '__main__':
-    # gym.logger.setLevel(logging.DEBUG)
-    gym.logger.setLevel(logging.INFO)
+    gym.logger.setLevel(logging.DEBUG)
+    # gym.logger.setLevel(logging.INFO)
 
     # dqn_cart_pole()
     # async_cart_pole()

@@ -10,9 +10,11 @@ import numpy as np
 import torch.multiprocessing as mp
 from task import *
 from network import *
-from bootstrap import *
+from worker import *
 import pickle
 import os
+import traceback
+import time
 
 class AsyncAgent:
     def __init__(self,
@@ -20,7 +22,7 @@ class AsyncAgent:
                  network_fn,
                  optimizer_fn,
                  policy_fn,
-                 bootstrap,
+                 worker_fn,
                  discount,
                  step_limit,
                  target_network_update_freq,
@@ -33,13 +35,10 @@ class AsyncAgent:
         self.network_fn = network_fn
         self.learning_network = network_fn()
         self.learning_network.share_memory()
-        if bootstrap != AdvantageActorCritic:
-            self.target_network = network_fn()
-            self.target_network.share_memory()
-            self.target_network.load_state_dict(self.learning_network.state_dict())
-        else:
-            self.target_network = None
-        self.bootstrap = bootstrap
+        self.target_network = network_fn()
+        self.target_network.share_memory()
+        self.target_network.load_state_dict(self.learning_network.state_dict())
+        self.worker_fn = worker_fn
 
         self.optimizer_fn = optimizer_fn
         self.task_fn = task_fn
@@ -66,86 +65,41 @@ class AsyncAgent:
         total_rewards = 0
         steps = 0
         network.reset(True)
-        bootstrap = self.bootstrap(self)
         while not self.step_limit or steps < self.step_limit:
-            action = np.argmax(bootstrap.process_state(network, state))
+            action_value = network.predict(np.stack([state]))
+            if self.worker_fn == AdvantageActorCritic:
+                action_value = action_value[0]
+            action = np.argmax(action_value.data.numpy().flatten())
             state, reward, terminal, _ = task.step(action)
             steps += 1
             total_rewards += reward
             if terminal:
                 break
-            bootstrap.reset()
         return total_rewards
 
-    def worker(self, id):
-        optimizer = self.optimizer_fn(self.learning_network.parameters())
-        worker_network = self.network_fn()
-        worker_network.load_state_dict(self.learning_network.state_dict())
-
-        bootstrap = self.bootstrap(self)
-        task = self.task_fn()
-        policy = self.policy_fn()
+    def train(self, id):
+        worker = self.worker_fn(self)
         episode = 0
-        episode_steps = 0
-        episode_returns = [0]
-        state = task.reset()
-        pending_steps = 0
+        rewards = []
         while True and not self.stop_signal.value:
-            action = policy.sample(bootstrap.process_state(worker_network, state))
-            next_state, reward, terminal, _ = task.step(action)
-            bootstrap.process_interaction(action, reward, next_state)
-
-            episode_returns[-1] += reward
-            episode_steps += 1
-            if self.step_limit and episode_steps > self.step_limit:
-                terminal = True
-            with self.steps_lock:
-                self.total_steps.value += 1
-            pending_steps += 1
-
-            if terminal or pending_steps >= self.update_interval:
-                loss = bootstrap.compute_loss(worker_network, terminal)
-                pending_steps = 0
-                worker_network.zero_grad()
-                loss.backward()
-                nn.utils.clip_grad_norm(worker_network.parameters(), 40)
-                optimizer.zero_grad()
-                for param, worker_param in zip(self.learning_network.parameters(), worker_network.parameters()):
-                    param._grad = worker_param.grad.clone().cpu()
-                optimizer.step()
-                worker_network.load_state_dict(self.learning_network.state_dict())
-                worker_network.reset(terminal)
-
-            if terminal:
-                state = task.reset()
-                episode += 1
-                if id == 0:
-                    self.logger.info('episode %d, return %f, avg return %f, episode steps %d, total steps %d' % (
-                        episode, episode_returns[-1], np.mean(episode_returns[-100:]), episode_steps, self.total_steps.value))
-                episode_returns.append(0)
-                episode_steps = 0
-            else:
-                state = next_state
-
-            if self.target_network and self.total_steps.value % self.target_network_update_freq == 0:
-                self.target_network.load_state_dict(self.learning_network.state_dict())
+            steps, reward = worker.episode()
+            rewards.append(reward)
+            self.logger.debug('worker %d, episode %d, return %f, avg return %f, episode steps %d, total steps %d' % (
+                id, episode, rewards[-1], np.mean(rewards[-100:]), steps, self.total_steps.value))
 
     def save(self, file_name):
         with open(file_name, 'wb') as f:
             pickle.dump(self.learning_network.state_dict(), f)
 
-    def run(self):
-        os.environ['OMP_NUM_THREADS'] = '1'
-        procs = [mp.Process(target=self.worker, args=(i, )) for i in range(self.n_workers)]
-        for p in procs: p.start()
+    def evaluate(self, id):
         test_rewards = []
         test_points = []
         test_network = self.network_fn()
         while True:
-            steps = self.total_steps.value + 1
+            steps = self.total_steps.value
             if steps % self.test_interval == 0:
                 test_network.load_state_dict(self.learning_network.state_dict())
-                self.save('data/%s%s-model-%s.bin' % (self.tag, self.bootstrap.__name__, self.task.name))
+                self.save('data/%s%s-model-%s.bin' % (self.tag, self.worker_fn.__name__, self.task.name))
                 rewards = np.zeros(self.test_repetitions)
                 for i in range(self.test_repetitions):
                     rewards[i] = self.deterministic_episode(self.task, test_network)
@@ -154,10 +108,28 @@ class AsyncAgent:
                 test_rewards.append(np.mean(rewards))
                 test_points.append(steps)
                 with open('data/%s%s-statistics-%s.bin' % (
-                    self.tag, self.bootstrap.__name__, self.task.name
+                    self.tag, self.worker_fn.__name__, self.task.name
                 ), 'wb') as f:
                     pickle.dump([test_points, test_rewards], f)
                 if np.mean(rewards) > self.task.success_threshold:
                     self.stop_signal.value = True
                     break
+
+    def run(self):
+        os.environ['OMP_NUM_THREADS'] = '1'
+        procs = [mp.Process(target=self.train, args=(i, )) for i in range(self.n_workers)]
+        procs.append(mp.Process(target=self.evaluate, args=(self.n_workers, )))
+        for p in procs: p.start()
+        while True:
+            time.sleep(1)
+            for i, p in enumerate(procs):
+                if not p.is_alive() and not self.stop_signal.value:
+                    self.logger.warning('Worker %d exited unexpectedly.' % i)
+                    p.terminate()
+                    procs[i] = mp.Process(target=self.train, args=(i, ))
+                    procs[i].start()
+                    self.logger.warning('Worker %d restarted.' % i)
+                    break
+            if self.stop_signal.value:
+                break
         for p in procs: p.join()
