@@ -124,7 +124,7 @@ class DQNAgent:
             self.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d' % (
                 ep, self.policy.epsilon, reward, avg_reward, self.total_steps))
 
-            if ep % self.test_interval == 0:
+            if self.test_repetitions and ep % self.test_interval == 0:
                 self.logger.info('Testing...')
                 self.save('data/%sdqn-model-%s.bin' % (self.tag, self.task.name))
                 test_rewards = []

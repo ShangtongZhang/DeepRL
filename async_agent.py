@@ -84,6 +84,7 @@ class AsyncAgent:
         while True and not self.stop_signal.value:
             steps, reward = worker.episode()
             rewards.append(reward)
+            if len(rewards) > 100: rewards.pop(0)
             self.logger.debug('worker %d, episode %d, return %f, avg return %f, episode steps %d, total steps %d' % (
                 id, episode, rewards[-1], np.mean(rewards[-100:]), steps, self.total_steps.value))
 
