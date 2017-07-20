@@ -89,7 +89,7 @@ class DQNAgent:
                     q_next, _ = q_next.max(1)
                 terminals = self.learning_network.to_torch_variable(terminals).unsqueeze(1)
                 rewards = self.learning_network.to_torch_variable(rewards).unsqueeze(1)
-                q_next = q_next * (1 - terminals)
+                q_next = self.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
                 actions = self.learning_network.to_torch_variable(actions, 'int64').unsqueeze(1)
                 q = self.learning_network.predict(states)
@@ -124,7 +124,7 @@ class DQNAgent:
             self.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d' % (
                 ep, self.policy.epsilon, reward, avg_reward, self.total_steps))
 
-            if self.test_repetitions and ep % self.test_interval == 0:
+            if self.test_interval and ep % self.test_interval == 0:
                 self.logger.info('Testing...')
                 self.save('data/%sdqn-model-%s.bin' % (self.tag, self.task.name))
                 test_rewards = []

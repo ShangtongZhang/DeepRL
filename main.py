@@ -1,7 +1,9 @@
 from async_agent import *
 from dqn_agent import *
+from DDPG_agent import *
 import logging
 import traceback
+from random_process import *
 
 def dqn_cart_pole():
     config = dict()
@@ -141,6 +143,51 @@ def a3c_pixel_atari(name):
     agent.tag = ''
     agent.run()
 
+def ddpg_montain_car():
+    config = dict()
+    config['task_fn'] = lambda: ContinuousMountainCar()
+    config['actor_network_fn'] = lambda: DDPGActorNet(2, 1)
+    config['critic_network_fn'] = lambda: DDPGCriticNet(2, 1)
+    config['actor_optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config['critic_optimizer_fn'] =\
+        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
+    config['replay_fn'] = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
+    config['discount'] = 0.99
+    config['step_limit'] = 2500
+    config['tau'] = 0.001
+    config['exploration_steps'] = 100
+    config['random_process_fn'] = lambda: OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.2)
+    config['test_interval'] = 50
+    config['test_repetitions'] = 10
+    config['tag'] = ''
+    config['logger'] = gym.logger
+    agent = DDPGAgent(**config)
+    agent.run()
+
+def ddpg_pendulum():
+    action_dim = 1
+    state_dim = 3
+    config = dict()
+    config['task_fn'] = lambda: Pendulum()
+    config['actor_network_fn'] = lambda: DDPGActorNet(state_dim, action_dim)
+    config['critic_network_fn'] = lambda: DDPGCriticNet(state_dim, action_dim)
+    config['actor_optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config['critic_optimizer_fn'] =\
+        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
+    config['replay_fn'] = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
+    config['discount'] = 0.99
+    config['step_limit'] = 200
+    config['tau'] = 0.001
+    config['exploration_steps'] = 100
+    config['random_process_fn'] = \
+        lambda: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.2)
+    config['test_interval'] = 10
+    config['test_repetitions'] = 10
+    config['tag'] = ''
+    config['logger'] = gym.logger
+    agent = DDPGAgent(**config)
+    agent.run()
+
 if __name__ == '__main__':
     gym.logger.setLevel(logging.DEBUG)
     # gym.logger.setLevel(logging.INFO)
@@ -150,9 +197,12 @@ if __name__ == '__main__':
     # a3c_cart_pole()
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
-    async_pixel_atari('PongNoFrameskip-v3')
+    # async_pixel_atari('PongNoFrameskip-v3')
     # a3c_pixel_atari('PongNoFrameskip-v3')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v3')
     # async_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_pixel_atari('BreakoutNoFrameskip-v3')
+
+    # ddpg_montain_car()
+    ddpg_pendulum()

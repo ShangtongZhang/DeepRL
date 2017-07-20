@@ -21,6 +21,8 @@ class BasicNet:
             self.cuda()
 
     def to_torch_variable(self, x, dtype='float32'):
+        if isinstance(x, Variable):
+            return x
         if not isinstance(x, torch.FloatTensor):
             x = torch.from_numpy(np.asarray(x, dtype=dtype))
         if self.gpu:
@@ -263,3 +265,79 @@ class OpenAIConvNet(nn.Module, VanillaNet):
         y = y.view(y.size(0), -1)
         phi = F.elu(self.layer5(y))
         return self.fc6(phi)
+
+class DDPGActorNet(nn.Module, BasicNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 gpu=False):
+        super(DDPGActorNet, self).__init__()
+        self.layer1 = nn.Linear(state_dim, 400)
+        self.layer2 = nn.Linear(400, 300)
+        self.layer3 = nn.Linear(300, action_dim)
+        BasicNet.__init__(self, None, False, False)
+        self.init_weights()
+
+    def init_weights(self):
+        bound = 3e-3
+        self.layer3.weight.data.uniform_(-bound, bound)
+        # self.layer3.bias.data.uniform_(-bound, bound)
+
+        def fanin(size):
+            v = 1.0 / np.sqrt(size[1])
+            return torch.FloatTensor(size).uniform_(-v, v)
+
+        self.layer1.weight.data = fanin(self.layer1.weight.data.size())
+        # self.layer1.bias.data = fanin(self.layer1.bias.data.size())
+        self.layer2.weight.data = fanin(self.layer2.weight.data.size())
+        # self.layer2.bias.data = fanin(self.layer2.bias.data.size())
+
+    def forward(self, x):
+        x = self.to_torch_variable(x)
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(x))
+        x = F.tanh(self.layer3(x))
+        return x
+
+    def predict(self, x, to_numpy=True):
+        y = self.forward(x)
+        if to_numpy:
+            y = y.cpu().data.numpy()
+        return y
+
+class DDPGCriticNet(nn.Module, BasicNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 gpu=False):
+        super(DDPGCriticNet, self).__init__()
+        self.layer1 = nn.Linear(state_dim, 400)
+        self.layer2 = nn.Linear(400 + action_dim, 300)
+        self.layer3 = nn.Linear(300, 1)
+        BasicNet.__init__(self, None, False, False)
+        self.init_weights()
+
+    def init_weights(self):
+        bound = 3e-3
+        self.layer3.weight.data.uniform_(-bound, bound)
+        # self.layer3.bias.data.uniform_(-bound, bound)
+
+        def fanin(size):
+            v = 1.0 / np.sqrt(size[1])
+            return torch.FloatTensor(size).uniform_(-v, v)
+
+        self.layer1.weight.data = fanin(self.layer1.weight.data.size())
+        # self.layer1.bias.data = fanin(self.layer1.bias.data.size())
+        self.layer2.weight.data = fanin(self.layer2.weight.data.size())
+        # self.layer2.bias.data = fanin(self.layer2.bias.data.size())
+
+    def forward(self, x, action):
+        x = self.to_torch_variable(x)
+        action = self.to_torch_variable(action)
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(torch.cat([x, action], dim=1)))
+        x = self.layer3(x)
+        return x
+
+    def predict(self, x, action):
+        return self.forward(x, action)
