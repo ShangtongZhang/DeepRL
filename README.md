@@ -11,6 +11,7 @@ Implemented algorithms:
 * Async One-Step Q-Learning
 * Async One-Step Sarsa 
 * Async N-Step Q-Learning
+* Deep Deterministic Policy Gradient (DDPG)
 
 # Curves
 > Curves for CartPole are trivial so I didn't place it here.
@@ -50,5 +51,8 @@ Detailed usage and all training details can be found in ```main.py```
 * [Dueling Network Architectures for Deep Reinforcement Learning](https://arxiv.org/abs/1511.06581)
 * [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/abs/1312.5602)
 * [HOGWILD!: A Lock-Free Approach to Parallelizing Stochastic Gradient Descent](https://arxiv.org/abs/1106.5730)
+* [Deterministic Policy Gradient Algorithms](http://proceedings.mlr.press/v32/silver14.pdf)
+* [Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971)
 * [transedward/pytorch-dqn](https://github.com/transedward/pytorch-dqn)
 * [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)
+* [ghliu/pytorch-ddpg](https://github.com/ghliu/pytorch-ddpg)
