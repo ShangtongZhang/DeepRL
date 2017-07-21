@@ -27,8 +27,6 @@ class BasicTask:
             next_state = self.normalize_state(next_state)
         return next_state, np.sign(reward), done, info
 
-
-
 class MountainCar(BasicTask):
     name = 'MountainCar-v0'
     success_threshold = -110
@@ -45,6 +43,7 @@ class CartPole(BasicTask):
     def __init__(self):
         BasicTask.__init__(self)
         self.env = gym.make(self.name)
+        self.env._max_episode_steps = sys.maxsize
 
 class LunarLander(BasicTask):
     name = 'LunarLander-v2'
@@ -74,17 +73,6 @@ class PixelAtari(BasicTask):
     def normalize_state(self, state):
         return np.asarray(state, dtype=np.float32) / 255.0
 
-
-class ContinuousMountainCar(BasicTask):
-    name = 'MountainCarContinuous-v0'
-    success_threshold = 1000
-
-    def __init__(self):
-        BasicTask.__init__(self)
-        self.env = gym.make(self.name)
-        self.env._max_episode_steps = sys.maxsize
-
-
 class Pendulum(BasicTask):
     name = 'Pendulum-v0'
     success_threshold = 200
@@ -95,7 +83,20 @@ class Pendulum(BasicTask):
         self.env._max_episode_steps = sys.maxsize
 
     def step(self, action):
+        action = 2 * np.clip(action, -1, 1)
         next_state, reward, done, info = self.env.step(action)
-        if self.normalized_state:
-            next_state = self.normalize_state(next_state)
+        return next_state, reward, done, info
+
+class BipedalWalker(BasicTask):
+    name = 'BipedalWalker-v2'
+    success_threshold = 2000
+
+    def __init__(self):
+        BasicTask.__init__(self)
+        self.env = gym.make(self.name)
+        self.env._max_episode_steps = sys.maxsize
+
+    def step(self, action):
+        action = np.clip(action, -1, 1)
+        next_state, reward, done, info = self.env.step(action)
         return next_state, reward, done, info

@@ -1,5 +1,5 @@
 from async_agent import *
-from dqn_agent import *
+from DQN_agent import *
 from DDPG_agent import *
 import logging
 import traceback
@@ -15,7 +15,7 @@ def dqn_cart_pole():
     config['replay_fn'] = lambda: Replay(memory_size=10000, batch_size=10)
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
-    config['step_limit'] = 0
+    config['step_limit'] = 200
     config['explore_steps'] = 1000
     config['logger'] = gym.logger
     config['history_length'] = 2
@@ -23,6 +23,7 @@ def dqn_cart_pole():
     config['test_repetitions'] = 50
     # config['double_q'] = True
     config['double_q'] = False
+    config['tag'] = ''
     agent = DQNAgent(**config)
     agent.run()
 
@@ -37,13 +38,14 @@ def async_cart_pole():
     # config['worker_fn'] = OneStepSarsa
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
-    config['step_limit'] = 0
+    config['step_limit'] = 200
     config['n_workers'] = 16
     config['update_interval'] = 6
     config['test_interval'] = 4000
     config['test_repetitions'] = 50
     config['history_length'] = 1
     config['logger'] = gym.logger
+    config['tag'] = ''
     agent = AsyncAgent(**config)
     agent.run()
 
@@ -57,13 +59,14 @@ def a3c_cart_pole():
     config['worker_fn'] = AdvantageActorCritic
     config['discount'] = 0.99
     config['target_network_update_freq'] = 200
-    config['step_limit'] = 0
+    config['step_limit'] = 200
     config['n_workers'] = 16
     config['update_interval'] = update_interval
     config['history_length'] = 1
     config['test_interval'] = 4000
     config['test_repetitions'] = 50
     config['logger'] = gym.logger
+    config['tag'] = ''
     agent = AsyncAgent(**config)
     agent.run()
 
@@ -87,8 +90,8 @@ def dqn_pixel_atari(name):
     config['test_repetitions'] = 1
     # config['double_q'] = True
     config['double_q'] = False
+    config['tag'] = ''
     agent = DQNAgent(**config)
-    agent.tag = 'dueling_'
     agent.run()
 
 def async_pixel_atari(name):
@@ -115,8 +118,8 @@ def async_pixel_atari(name):
     config['test_repetitions'] = 1
     config['history_length'] = history_length
     config['logger'] = gym.logger
+    config['tag'] = ''
     agent = AsyncAgent(**config)
-    agent.tag = 'Centered-target-network-'
     agent.run()
 
 def a3c_pixel_atari(name):
@@ -139,29 +142,8 @@ def a3c_pixel_atari(name):
     config['test_repetitions'] = 1
     config['history_length'] = history_length
     config['logger'] = gym.logger
-    agent = AsyncAgent(**config)
-    agent.tag = ''
-    agent.run()
-
-def ddpg_montain_car():
-    config = dict()
-    config['task_fn'] = lambda: ContinuousMountainCar()
-    config['actor_network_fn'] = lambda: DDPGActorNet(2, 1)
-    config['critic_network_fn'] = lambda: DDPGCriticNet(2, 1)
-    config['actor_optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config['critic_optimizer_fn'] =\
-        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
-    config['replay_fn'] = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
-    config['discount'] = 0.99
-    config['step_limit'] = 2500
-    config['tau'] = 0.001
-    config['exploration_steps'] = 100
-    config['random_process_fn'] = lambda: OrnsteinUhlenbeckProcess(theta=0.15, sigma=0.2)
-    config['test_interval'] = 50
-    config['test_repetitions'] = 10
     config['tag'] = ''
-    config['logger'] = gym.logger
-    agent = DDPGAgent(**config)
+    agent = AsyncAgent(**config)
     agent.run()
 
 def ddpg_pendulum():
@@ -177,6 +159,32 @@ def ddpg_pendulum():
     config['replay_fn'] = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config['discount'] = 0.99
     config['step_limit'] = 200
+    config['tau'] = 0.001
+    config['exploration_steps'] = 100
+    config['random_process_fn'] = \
+        lambda: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.2)
+    config['test_interval'] = 10
+    config['test_repetitions'] = 10
+    config['tag'] = ''
+    config['logger'] = gym.logger
+    agent = DDPGAgent(**config)
+    agent.run()
+
+def ddpg_bipedal_walker():
+    task_fn = lambda: BipedalWalker()
+    task = task_fn()
+    action_dim = task.env.action_space.shape[0]
+    state_dim = task.env.observation_space.shape[0]
+    config = dict()
+    config['task_fn'] = task_fn
+    config['actor_network_fn'] = lambda: DDPGActorNet(state_dim, action_dim, gpu=True)
+    config['critic_network_fn'] = lambda: DDPGCriticNet(state_dim, action_dim, gpu=True)
+    config['actor_optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config['critic_optimizer_fn'] =\
+        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
+    config['replay_fn'] = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
+    config['discount'] = 0.99
+    config['step_limit'] = 1000
     config['tau'] = 0.001
     config['exploration_steps'] = 100
     config['random_process_fn'] = \
@@ -204,5 +212,5 @@ if __name__ == '__main__':
     # async_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_pixel_atari('BreakoutNoFrameskip-v3')
 
-    # ddpg_montain_car()
-    ddpg_pendulum()
+    # ddpg_pendulum()
+    ddpg_bipedal_walker()

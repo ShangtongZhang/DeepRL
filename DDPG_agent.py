@@ -62,8 +62,10 @@ class DDPGAgent:
         while not self.step_limit or steps < self.step_limit:
             action = self.actor.predict(np.stack([state])).flatten()
             if not deterministic:
-                action += self.random_process.sample()
-            action = np.clip(action, -1, 1)
+                if self.total_steps < self.exploration_steps:
+                    action = np.random.uniform(-1, 1, action.shape)
+                else:
+                    action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
@@ -122,7 +124,7 @@ class DDPGAgent:
 
             if self.test_interval and ep % self.test_interval == 0:
                 self.logger.info('Testing...')
-                self.save('data/%sdqn-model-%s.bin' % (self.tag, self.task.name))
+                self.save('data/%sddpg-model-%s.bin' % (self.tag, self.task.name))
                 test_rewards = []
                 for _ in range(self.test_repetitions):
                     test_rewards.append(self.episode(True))
@@ -130,7 +132,7 @@ class DDPGAgent:
                 avg_test_rewards.append(avg_reward)
                 self.logger.info('Avg reward %f(%f)' % (
                     avg_reward, np.std(test_rewards) / np.sqrt(self.test_repetitions)))
-                with open('data/%sdqn-statistics-%s.bin' % (self.tag, self.task.name), 'wb') as f:
+                with open('data/%sddpg-statistics-%s.bin' % (self.tag, self.task.name), 'wb') as f:
                     pickle.dump({'rewards': rewards,
                                  'test_rewards': avg_test_rewards}, f)
                 if avg_reward > self.task.success_threshold:

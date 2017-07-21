@@ -27,6 +27,7 @@ class DQNAgent:
                  double_q,
                  test_interval,
                  test_repetitions,
+                 tag,
                  logger):
         self.learning_network = network_fn(optimizer_fn)
         self.target_network = network_fn(optimizer_fn)
@@ -45,7 +46,7 @@ class DQNAgent:
         self.test_repetitions = test_repetitions
         self.history_buffer = None
         self.double_q = double_q
-        self.tag = ''
+        self.tag = tag
 
     def episode(self, deterministic=False):
         episode_start_time = time.time()
@@ -62,6 +63,8 @@ class DQNAgent:
             value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]), True)
             if deterministic:
                 action = np.argmax(value.flatten())
+            elif self.total_steps < self.explore_steps:
+                action = np.random.randint(0, len(value.flatten()))
             else:
                 action = self.policy.sample(value.flatten())
             next_state, reward, done, info = self.task.step(action)

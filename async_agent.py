@@ -31,6 +31,7 @@ class AsyncAgent:
                  test_interval,
                  test_repetitions,
                  history_length,
+                 tag,
                  logger):
         self.network_fn = network_fn
         self.learning_network = network_fn()
@@ -58,7 +59,7 @@ class AsyncAgent:
         self.test_repetitions = test_repetitions
         self.logger = logger
         self.history_length = history_length
-        self.tag = ''
+        self.tag = tag
 
     def deterministic_episode(self, task, network):
         state = task.reset()
