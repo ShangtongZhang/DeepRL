@@ -40,6 +40,7 @@ This is the test curve. Test is triggered in a separate deterministic test proce
 * PyTorch
 * PIL (pip install Pillow)
 * Python 2.7 (I didn't test with Python 3)
+* Tensorflow (We need tensorboard)
 
 # Usage
 Detailed usage and all training details can be found in ```main.py```

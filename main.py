@@ -1,6 +1,7 @@
 from async_agent import *
 from DQN_agent import *
 from DDPG_agent import *
+from logger import *
 import logging
 import traceback
 from random_process import *
@@ -17,7 +18,7 @@ def dqn_cart_pole():
     config['target_network_update_freq'] = 200
     config['step_limit'] = 200
     config['explore_steps'] = 1000
-    config['logger'] = gym.logger
+    config['logger'] = Logger('./log', gym.logger)
     config['history_length'] = 2
     config['test_interval'] = 100
     config['test_repetitions'] = 50
@@ -44,7 +45,7 @@ def async_cart_pole():
     config['test_interval'] = 4000
     config['test_repetitions'] = 50
     config['history_length'] = 1
-    config['logger'] = gym.logger
+    config['logger'] = Logger('./log', gym.logger)
     config['tag'] = ''
     agent = AsyncAgent(**config)
     agent.run()
@@ -65,7 +66,7 @@ def a3c_cart_pole():
     config['history_length'] = 1
     config['test_interval'] = 4000
     config['test_repetitions'] = 50
-    config['logger'] = gym.logger
+    config['logger'] = Logger('./log', gym.logger)
     config['tag'] = ''
     agent = AsyncAgent(**config)
     agent.run()
@@ -84,7 +85,7 @@ def dqn_pixel_atari(name):
     config['target_network_update_freq'] = 10000
     config['step_limit'] = 0
     config['explore_steps'] = 50000
-    config['logger'] = gym.logger
+    config['logger'] = Logger('./log', gym.logger)
     config['history_length'] = history_length
     config['test_interval'] = 10
     config['test_repetitions'] = 1
@@ -117,7 +118,7 @@ def async_pixel_atari(name):
     config['test_interval'] = 50000
     config['test_repetitions'] = 1
     config['history_length'] = history_length
-    config['logger'] = gym.logger
+    config['logger'] = Logger('./log', gym.logger)
     config['tag'] = ''
     agent = AsyncAgent(**config)
     agent.run()
@@ -141,18 +142,18 @@ def a3c_pixel_atari(name):
     config['test_interval'] = 50000
     config['test_repetitions'] = 1
     config['history_length'] = history_length
-    config['logger'] = gym.logger
+    config['logger'] = Logger('./log', gym.logger)
     config['tag'] = ''
     agent = AsyncAgent(**config)
     agent.run()
 
 def ddpg_pendulum():
-    action_dim = 1
-    state_dim = 3
+    task_fn = lambda: Pendulum()
+    task = task_fn()
     config = dict()
-    config['task_fn'] = lambda: Pendulum()
-    config['actor_network_fn'] = lambda: DDPGActorNet(state_dim, action_dim)
-    config['critic_network_fn'] = lambda: DDPGCriticNet(state_dim, action_dim)
+    config['task_fn'] = task_fn
+    config['actor_network_fn'] = lambda: DDPGActorNet(task.state_dim, task.action_dim, F.tanh)
+    config['critic_network_fn'] = lambda: DDPGCriticNet(task.state_dim, task.action_dim)
     config['actor_optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=1e-4)
     config['critic_optimizer_fn'] =\
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
@@ -162,23 +163,21 @@ def ddpg_pendulum():
     config['tau'] = 0.001
     config['exploration_steps'] = 100
     config['random_process_fn'] = \
-        lambda: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.2)
+        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
     config['test_interval'] = 10
     config['test_repetitions'] = 10
     config['tag'] = ''
-    config['logger'] = gym.logger
+    config['logger'] = Logger('./log', gym.logger)
     agent = DDPGAgent(**config)
     agent.run()
 
 def ddpg_bipedal_walker():
     task_fn = lambda: BipedalWalker()
     task = task_fn()
-    action_dim = task.env.action_space.shape[0]
-    state_dim = task.env.observation_space.shape[0]
     config = dict()
     config['task_fn'] = task_fn
-    config['actor_network_fn'] = lambda: DDPGActorNet(state_dim, action_dim, gpu=True)
-    config['critic_network_fn'] = lambda: DDPGCriticNet(state_dim, action_dim, gpu=True)
+    config['actor_network_fn'] = lambda: DDPGActorNet(task.state_dim, task.action_dim, F.tanh, gpu=True)
+    config['critic_network_fn'] = lambda: DDPGCriticNet(task.state_dim, task.action_dim, gpu=True)
     config['actor_optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=1e-4)
     config['critic_optimizer_fn'] =\
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
@@ -188,17 +187,17 @@ def ddpg_bipedal_walker():
     config['tau'] = 0.001
     config['exploration_steps'] = 100
     config['random_process_fn'] = \
-        lambda: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.2)
+        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
     config['test_interval'] = 10
     config['test_repetitions'] = 10
     config['tag'] = ''
-    config['logger'] = gym.logger
+    config['logger'] = Logger('./log', gym.logger)
     agent = DDPGAgent(**config)
     agent.run()
 
 if __name__ == '__main__':
-    gym.logger.setLevel(logging.DEBUG)
-    # gym.logger.setLevel(logging.INFO)
+    # gym.logger.setLevel(logging.DEBUG)
+    gym.logger.setLevel(logging.INFO)
 
     # dqn_cart_pole()
     # async_cart_pole()
@@ -212,5 +211,5 @@ if __name__ == '__main__':
     # async_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_pixel_atari('BreakoutNoFrameskip-v3')
 
-    # ddpg_pendulum()
-    ddpg_bipedal_walker()
+    ddpg_pendulum()
+    # ddpg_bipedal_walker()

@@ -63,7 +63,7 @@ class DDPGAgent:
             action = self.actor.predict(np.stack([state])).flatten()
             if not deterministic:
                 if self.total_steps < self.exploration_steps:
-                    action = np.random.uniform(-1, 1, action.shape)
+                    action = self.task.random_action()
                 else:
                     action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)

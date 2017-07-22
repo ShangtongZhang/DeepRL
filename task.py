@@ -27,6 +27,9 @@ class BasicTask:
             next_state = self.normalize_state(next_state)
         return next_state, np.sign(reward), done, info
 
+    def random_action(self):
+        return self.env.action_space.sample()
+
 class MountainCar(BasicTask):
     name = 'MountainCar-v0'
     success_threshold = -110
@@ -81,6 +84,8 @@ class Pendulum(BasicTask):
         BasicTask.__init__(self)
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape[0]
 
     def step(self, action):
         action = 2 * np.clip(action, -1, 1)
@@ -95,6 +100,8 @@ class BipedalWalker(BasicTask):
         BasicTask.__init__(self)
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape[0]
 
     def step(self, action):
         action = np.clip(action, -1, 1)
