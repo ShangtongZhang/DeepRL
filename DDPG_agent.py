@@ -61,11 +61,13 @@ class DDPGAgent:
         total_reward = 0.0
         while not self.step_limit or steps < self.step_limit:
             action = self.actor.predict(np.stack([state])).flatten()
+            self.logger.histo_summary('action', action, self.total_steps)
             if not deterministic:
                 if self.total_steps < self.exploration_steps:
                     action = self.task.random_action()
                 else:
                     action += self.random_process.sample()
+            self.logger.histo_summary('noised action', action, self.total_steps)
             next_state, reward, done, info = self.task.step(action)
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])

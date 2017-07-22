@@ -3,7 +3,6 @@ from DQN_agent import *
 from DDPG_agent import *
 from logger import *
 import logging
-import traceback
 from random_process import *
 
 def dqn_cart_pole():
@@ -211,5 +210,5 @@ if __name__ == '__main__':
     # async_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_pixel_atari('BreakoutNoFrameskip-v3')
 
-    ddpg_pendulum()
-    # ddpg_bipedal_walker()
+    # ddpg_pendulum()
+    ddpg_bipedal_walker()
