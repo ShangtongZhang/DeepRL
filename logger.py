@@ -1,4 +1,4 @@
-# Copied from https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard/logger.py
+# Adapted from https://github.com/yunjey/pytorch-tutorial/blob/master/tutorials/04-utils/tensorboard/logger.py
 # Code referenced from https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
 import tensorflow as tf
 import numpy as np
@@ -11,18 +11,23 @@ except ImportError:
 
 
 class Logger(object):
-    def __init__(self, log_dir, plain_logger):
+    def __init__(self, log_dir, plain_logger, skip=False):
         """Create a summary writer logging to log_dir."""
         self.writer = tf.summary.FileWriter(log_dir)
         self.info = plain_logger.info
         self.debug = plain_logger.debug
+        self.skip = skip
 
     def scalar_summary(self, tag, value, step):
+        if self.skip:
+            return
         """Log a scalar variable."""
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
         self.writer.add_summary(summary, step)
 
     def image_summary(self, tag, images, step):
+        if self.skip:
+            return
         """Log a list of images."""
 
         img_summaries = []
@@ -46,6 +51,8 @@ class Logger(object):
         self.writer.add_summary(summary, step)
 
     def histo_summary(self, tag, values, step, bins=1000):
+        if self.skip:
+            return
         """Log a histogram of the tensor of values."""
 
         # Create a histogram using numpy

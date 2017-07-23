@@ -190,7 +190,7 @@ def ddpg_bipedal_walker():
     config['test_interval'] = 10
     config['test_repetitions'] = 10
     config['tag'] = ''
-    config['logger'] = Logger('./log', gym.logger)
+    config['logger'] = Logger('./log', gym.logger, True)
     agent = DDPGAgent(**config)
     agent.run()
 
