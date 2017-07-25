@@ -4,6 +4,7 @@ from DDPG_agent import *
 from logger import *
 import logging
 from random_process import *
+from config import Config
 
 def dqn_cart_pole():
     config = dict()
@@ -28,46 +29,40 @@ def dqn_cart_pole():
     agent.run()
 
 def async_cart_pole():
-    config = dict()
-    config['task_fn'] = lambda: CartPole()
-    config['optimizer_fn'] = lambda params: torch.optim.Adam(params, 0.001)
-    config['network_fn'] = lambda: FCNet([4, 50, 200, 2])
-    config['policy_fn'] = lambda: GreedyPolicy(epsilon=0.5, final_step=5000, min_epsilon=0.1)
-    config['worker_fn'] = OneStepQLearning
-    # config['worker_fn'] = NStepQLearning
-    # config['worker_fn'] = OneStepSarsa
-    config['discount'] = 0.99
-    config['target_network_update_freq'] = 200
-    config['step_limit'] = 200
-    config['n_workers'] = 16
-    config['update_interval'] = 6
-    config['test_interval'] = 4000
-    config['test_repetitions'] = 50
-    config['history_length'] = 1
-    config['logger'] = Logger('./log', gym.logger)
-    config['tag'] = ''
-    agent = AsyncAgent(**config)
+    config = Config()
+    config.task_fn= lambda: CartPole()
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: FCNet([4, 50, 200, 2])
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0.5, final_step=5000, min_epsilon=0.1)
+    # config.worker = OneStepQLearning
+    # config.worker = NStepQLearning
+    config.worker = OneStepSarsa
+    config.discount = 0.99
+    config.target_network_update_freq = 200
+    config.max_episode_length = 200
+    config.num_workers = 16
+    config.update_interval = 6
+    config.test_interval = 1
+    config.test_repetitions = 50
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
     agent.run()
 
 def a3c_cart_pole():
-    update_interval = 6
-    config = dict()
-    config['task_fn'] = lambda: CartPole()
-    config['optimizer_fn'] = lambda params: torch.optim.Adam(params, 0.001)
-    config['network_fn'] = lambda: ActorCriticFCNet([4, 200, 2])
-    config['policy_fn'] = SamplePolicy
-    config['worker_fn'] = AdvantageActorCritic
-    config['discount'] = 0.99
-    config['target_network_update_freq'] = 200
-    config['step_limit'] = 200
-    config['n_workers'] = 16
-    config['update_interval'] = update_interval
-    config['history_length'] = 1
-    config['test_interval'] = 4000
-    config['test_repetitions'] = 50
-    config['logger'] = Logger('./log', gym.logger)
-    config['tag'] = ''
-    agent = AsyncAgent(**config)
+    config = Config()
+    config.task_fn = lambda: CartPole()
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: ActorCriticFCNet([4, 200, 2])
+    config.policy_fn = SamplePolicy
+    config.worker = AdvantageActorCritic
+    config.discount = 0.99
+    config.max_episode_length = 200
+    config.num_workers = 16
+    config.update_interval = 6
+    config.test_interval = 1
+    config.test_repetitions = 50
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
     agent.run()
 
 def dqn_pixel_atari(name):
@@ -95,55 +90,48 @@ def dqn_pixel_atari(name):
     agent.run()
 
 def async_pixel_atari(name):
-    config = dict()
-    history_length = 1
-    n_actions = 6
-    config['task_fn'] = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42)
-    config['optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=0.0001)
-    config['network_fn'] = lambda: OpenAIConvNet(history_length,
-                                                 n_actions)
-    config['policy_fn'] = lambda: StochasticGreedyPolicy(epsilons=[0.7, 0.7, 0.7],
-                                                          final_step=2000000,
-                                                          min_epsilons=[0.1, 0.01, 0.5],
-                                                          probs=[0.4, 0.3, 0.3])
-    # config['worker_fn'] = OneStepQLearning
-    # config['worker_fn'] = NStepQLearning
-    config['worker_fn'] = OneStepSarsa
-    config['discount'] = 0.99
-    config['target_network_update_freq'] = 10000
-    config['step_limit'] = 10000
-    config['n_workers'] = 16
-    config['update_interval'] = 20
-    config['test_interval'] = 50000
-    config['test_repetitions'] = 1
-    config['history_length'] = history_length
-    config['logger'] = Logger('./log', gym.logger)
-    config['tag'] = ''
-    agent = AsyncAgent(**config)
+    config = Config()
+    config.history_length = 1
+    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42)
+    task = config.task_fn()
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
+    config.network_fn = lambda: OpenAIConvNet(
+        config.history_length, task.env.action_space.n)
+    config.policy_fn = lambda: StochasticGreedyPolicy(
+        epsilons=[0.7, 0.7, 0.7], final_step=2000000, min_epsilons=[0.1, 0.01, 0.5],
+        probs=[0.4, 0.3, 0.3])
+    # config.worker = OneStepSarsa
+    config.worker = NStepQLearning
+    # config.worker = OneStepQLearning
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.max_episode_length = 10000
+    config.num_workers = 16
+    config.update_interval = 20
+    config.test_interval = 50000
+    config.test_repetitions = 1
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
     agent.run()
 
 def a3c_pixel_atari(name):
-    config = dict()
-    history_length = 1
-    n_actions = 6
-    config['task_fn'] = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42)
-    config['optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=0.0001)
-    config['network_fn'] = lambda: OpenAIActorCriticConvNet(history_length,
-                                                            n_actions,
-                                                            LSTM=False)
-    config['policy_fn'] = SamplePolicy
-    config['worker_fn'] = AdvantageActorCritic
-    config['discount'] = 0.99
-    config['target_network_update_freq'] = 0
-    config['step_limit'] = 10000
-    config['n_workers'] = 16
-    config['update_interval'] = 20
-    config['test_interval'] = 50000
-    config['test_repetitions'] = 1
-    config['history_length'] = history_length
-    config['logger'] = Logger('./log', gym.logger)
-    config['tag'] = ''
-    agent = AsyncAgent(**config)
+    config = Config()
+    config.history_length = 1
+    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42)
+    task = config.task_fn()
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
+    config.network_fn = lambda: OpenAIActorCriticConvNet(
+        config.history_length, task.env.action_space.n, LSTM=True)
+    config.policy_fn = SamplePolicy
+    config.worker = AdvantageActorCritic
+    config.discount = 0.99
+    config.max_episode_length = 10000
+    config.num_workers = 16
+    config.update_interval = 20
+    config.test_interval = 50000
+    config.test_repetitions = 1
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
     agent.run()
 
 def ddpg_pendulum():
@@ -185,6 +173,7 @@ def ddpg_bipedal_walker():
     config['step_limit'] = 1000
     config['tau'] = 0.001
     config['exploration_steps'] = 100
+    config['noise_decay_steps'] = 10000
     config['random_process_fn'] = \
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
     config['test_interval'] = 10
@@ -204,11 +193,11 @@ if __name__ == '__main__':
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
     # async_pixel_atari('PongNoFrameskip-v3')
-    # a3c_pixel_atari('PongNoFrameskip-v3')
+    a3c_pixel_atari('PongNoFrameskip-v3')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v3')
     # async_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_pixel_atari('BreakoutNoFrameskip-v3')
 
     # ddpg_pendulum()
-    ddpg_bipedal_walker()
+    # ddpg_bipedal_walker()

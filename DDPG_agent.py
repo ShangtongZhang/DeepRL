@@ -23,6 +23,7 @@ class DDPGAgent:
                  random_process_fn,
                  test_interval,
                  test_repetitions,
+                 noise_decay_steps,
                  tag,
                  logger):
         self.task = task_fn()
@@ -46,6 +47,8 @@ class DDPGAgent:
         self.test_repetitions = test_repetitions
         self.total_steps = 0
         self.tag = tag
+        self.epsilon = 1.0
+        self.d_epsilon = 1.0 / noise_decay_steps
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -66,12 +69,13 @@ class DDPGAgent:
                 if self.total_steps < self.exploration_steps:
                     action = self.task.random_action()
                 else:
-                    action += self.random_process.sample()
+                    action += max(self.epsilon, 0) * self.random_process.sample()
             self.logger.histo_summary('noised action', action, self.total_steps)
             next_state, reward, done, info = self.task.step(action)
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
                 self.total_steps += 1
+                self.epsilon -= self.d_epsilon
             steps += 1
             total_reward += reward
             state = next_state

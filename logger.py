@@ -11,11 +11,12 @@ except ImportError:
 
 
 class Logger(object):
-    def __init__(self, log_dir, plain_logger, skip=False):
+    def __init__(self, log_dir, vanilla_logger, skip=False):
         """Create a summary writer logging to log_dir."""
         self.writer = tf.summary.FileWriter(log_dir)
-        self.info = plain_logger.info
-        self.debug = plain_logger.debug
+        self.info = vanilla_logger.info
+        self.debug = vanilla_logger.debug
+        self.warning = vanilla_logger.warning
         self.skip = skip
 
     def scalar_summary(self, tag, value, step):
