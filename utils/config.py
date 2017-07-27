@@ -25,3 +25,5 @@ class Config:
         self.worker = None
         self.update_interval = 1
         self.gradient_clip = 40
+        self.entropy_weight = 0.01
+        self.gae_tau = 1.0

@@ -5,7 +5,8 @@
 #######################################################################
 
 from network import *
-from replay import *
+from component import *
+from utils import *
 import pickle
 
 class DDPGAgent:

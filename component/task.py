@@ -88,7 +88,8 @@ class Pendulum(BasicTask):
         self.state_dim = self.env.observation_space.shape[0]
 
     def step(self, action):
-        action = 2 * np.clip(action, -1, 1)
+        # action = 2 * np.clip(action, -1, 1)
+        action = np.clip(action, -2, 2)
         next_state, reward, done, info = self.env.step(action)
         return next_state, reward, done, info
 

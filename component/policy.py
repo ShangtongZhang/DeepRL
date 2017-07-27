@@ -46,3 +46,12 @@ class SamplePolicy:
         return np.random.choice(np.arange(len(action_value)), p=action_value)
     def update_epsilon(self):
         pass
+
+class GaussianPolicy:
+    def sample(self, mean, var, deterministic=False):
+        if deterministic:
+            return mean
+        return mean + np.sqrt(var) * np.random.randn(*mean.shape)
+
+    def update_epsilon(self):
+        pass

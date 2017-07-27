@@ -57,12 +57,14 @@ class NStepQLearning:
 
                 pending = []
                 self.worker_network.zero_grad()
+                self.optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm(self.worker_network.parameters(), config.gradient_clip)
-                self.optimizer.zero_grad()
                 for param, worker_param in zip(
                         config.learning_network.parameters(), self.worker_network.parameters()):
-                    param._grad = worker_param.grad.clone()
+                    if param.grad is not None:
+                        break
+                    param._grad = worker_param.grad
                 self.optimizer.step()
                 self.worker_network.load_state_dict(config.learning_network.state_dict())
                 self.worker_network.reset(terminal)

@@ -1,10 +1,7 @@
-from async_agent import *
-from DQN_agent import *
-from DDPG_agent import *
-from logger import *
 import logging
-from random_process import *
-from config import Config
+from agent import *
+from component import *
+from utils import *
 
 def dqn_cart_pole():
     config = dict()
@@ -35,8 +32,8 @@ def async_cart_pole():
     config.network_fn = lambda: FCNet([4, 50, 200, 2])
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.5, final_step=5000, min_epsilon=0.1)
     # config.worker = OneStepQLearning
-    # config.worker = NStepQLearning
-    config.worker = OneStepSarsa
+    config.worker = NStepQLearning
+    # config.worker = OneStepSarsa
     config.discount = 0.99
     config.target_network_update_freq = 200
     config.max_episode_length = 200
@@ -52,15 +49,37 @@ def a3c_cart_pole():
     config = Config()
     config.task_fn = lambda: CartPole()
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda: ActorCriticFCNet([4, 200, 2])
+    config.network_fn = lambda: ActorCriticFCNet(4, 2)
     config.policy_fn = SamplePolicy
     config.worker = AdvantageActorCritic
     config.discount = 0.99
     config.max_episode_length = 200
     config.num_workers = 16
     config.update_interval = 6
+    config.test_interval = 100
+    config.test_repetitions = 30
+    config.logger = Logger('./log', gym.logger)
+    config.gae_tau = 1.0
+    config.entropy_weight = 0.01
+    agent = AsyncAgent(config)
+    agent.run()
+
+def a3c_pendulum():
+    config = Config()
+    config.task_fn = lambda: Pendulum()
+    task = config.task_fn()
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: ContinuousActorCriticNet(
+        task.env.observation_space.shape[0], 64, task.env.action_space.shape[0])
+    config.policy_fn = lambda: GaussianPolicy()
+    config.worker = ContinuousAdvantageActorCritic
+    config.discount = 0.99
+    config.max_episode_length = 200
+    config.num_workers = 16
+    config.update_interval = 20
     config.test_interval = 1
     config.test_repetitions = 50
+    config.entropy_weight = 0.0001
     config.logger = Logger('./log', gym.logger)
     agent = AsyncAgent(config)
     agent.run()
@@ -190,6 +209,7 @@ if __name__ == '__main__':
     # dqn_cart_pole()
     # async_cart_pole()
     a3c_cart_pole()
+    # a3c_pendulum()
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
     # async_pixel_atari('PongNoFrameskip-v3')

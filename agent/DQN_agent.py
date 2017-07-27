@@ -5,8 +5,8 @@
 #######################################################################
 
 from network import *
-from replay import *
-from policy import *
+from component import *
+from utils import *
 import numpy as np
 import time
 import os

@@ -4,16 +4,12 @@
 # declaration at the top                                              #
 #######################################################################
 
-from network import *
-from policy import *
 import numpy as np
 import torch.multiprocessing as mp
-from task import *
 from network import *
-from async_workers.one_step_sarsa import *
-from async_workers.n_step_q import *
-from async_workers.actor_critic import *
-from async_workers.one_step_sarsa import *
+from utils import *
+from component import *
+from async_worker import *
 import pickle
 import os
 import time

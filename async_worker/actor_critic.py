@@ -8,7 +8,7 @@ import torch
 from torch.autograd import Variable
 import torch.nn as nn
 
-class OneStepSarsa:
+class AdvantageActorCritic:
     def __init__(self, config):
         self.config = config
         self.optimizer = config.optimizer_fn(config.learning_network.parameters())
@@ -20,17 +20,14 @@ class OneStepSarsa:
     def episode(self, deterministic=False):
         config = self.config
         state = self.task.reset()
-        q = self.worker_network.predict(np.stack([state]))
-        action = self.policy.sample(q.data.numpy().flatten(), deterministic)
         steps = 0
         total_reward = 0
         pending = []
         while not config.stop_signal.value and \
                 (not config.max_episode_length or steps < config.max_episode_length):
+            prob, log_prob, value = self.worker_network.predict(np.stack([state]))
+            action = self.policy.sample(prob.data.numpy().flatten(), deterministic)
             next_state, reward, terminal, _ = self.task.step(action)
-            next_q = self.worker_network.predict(np.stack([next_state]))
-            next_action = self.policy.sample(next_q.data.numpy().flatten(), deterministic)
-            pending.append([q, action, reward, next_state, next_action])
 
             steps += 1
             total_reward += reward
@@ -39,44 +36,44 @@ class OneStepSarsa:
                 if terminal:
                     break
                 state = next_state
-                action = next_action
                 continue
 
+            pending.append([prob, log_prob, value, action, reward])
             with config.steps_lock:
                 config.total_steps.value += 1
 
             if terminal or len(pending) >= config.update_interval:
                 loss = 0
-                for i in range(len(pending)):
-                    q, action, reward, next_state, next_action = pending[i]
-                    q_next = config.target_network.predict(np.stack([next_state])).data
-                    if terminal and i == len(pending) - 1:
-                        q_next = torch.FloatTensor([[0]])
-                    else:
-                        q_next = q_next.gather(1, torch.LongTensor([[next_action]]))
-                    q_next = config.discount * q_next + reward
-                    q = q.gather(1, Variable(torch.LongTensor([[action]])))
-                    loss += 0.5 * (q - Variable(q_next)).pow(2)
+                if terminal:
+                    R = torch.FloatTensor([[0]])
+                else:
+                    R = self.worker_network.critic(np.stack([next_state])).data
+                GAE = torch.FloatTensor([[0]])
+                for i in reversed(range(len(pending))):
+                    prob, log_prob, value, action, reward = pending[i]
+                    R = reward + config.discount * R
+                    advantage = Variable(R) - value
+                    GAE = config.discount * GAE + advantage.data
+                    loss += 0.5 * advantage.pow(2)
+                    loss += -log_prob.gather(1, Variable(torch.LongTensor([[action]]))) * Variable(GAE)
+                    loss += 0.01 * torch.sum(torch.mul(prob, log_prob))
 
                 pending = []
                 self.worker_network.zero_grad()
+                self.optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm(self.worker_network.parameters(), config.gradient_clip)
-                self.optimizer.zero_grad()
                 for param, worker_param in zip(
                         config.learning_network.parameters(), self.worker_network.parameters()):
-                    param._grad = worker_param.grad.clone()
+                    if param.grad is not None:
+                        break
+                    param._grad = worker_param.grad
                 self.optimizer.step()
                 self.worker_network.load_state_dict(config.learning_network.state_dict())
                 self.worker_network.reset(terminal)
 
             if terminal:
                 break
-            else:
-                q = next_q
-                action = next_action
-
-            if config.total_steps.value % config.target_network_update_freq == 0:
-                config.target_network.load_state_dict(config.learning_network.state_dict())
+            state = next_state
 
         return steps, total_reward
