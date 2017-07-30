@@ -25,14 +25,16 @@ Xeon E5-2620 v3 and Titan X. For Breakout, test is triggered every 1000 episodes
 In total, 16M frames cost about 4 days and 10 hours. For Pong, test is triggered 
 every 10 episodes with no repetition. In total, 4M frames cost about 18 hours.
 
-## A3C
+## A3C, etc.
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A3C-Pong.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Async-Pong.png)
 
 The network I used here is a smaller network with only 42 * 42 input, alougth the network for DQN can also work here,
 it's quite slow. 
 
-Training took about 2 hours (16 processes) in a server with two Xeon E5-2620 v3.
+Training of A3C took about 2 hours (16 processes) in a server with two Xeon E5-2620 v3. While other async methods took about 1 day.
+Those value based async methods do work but I don't know how to make them stable.
 This is the test curve. Test is triggered in a separate deterministic test process every 50K frames.
 
 # Dependency
