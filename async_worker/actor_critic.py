@@ -9,13 +9,14 @@ from torch.autograd import Variable
 import torch.nn as nn
 
 class AdvantageActorCritic:
-    def __init__(self, config):
+    def __init__(self, config, learning_network, target_network):
         self.config = config
-        self.optimizer = config.optimizer_fn(config.learning_network.parameters())
+        self.optimizer = config.optimizer_fn(learning_network.parameters())
         self.worker_network = config.network_fn()
-        self.worker_network.load_state_dict(config.learning_network.state_dict())
+        self.worker_network.load_state_dict(learning_network.state_dict())
         self.task = config.task_fn()
         self.policy = config.policy_fn()
+        self.learning_network = learning_network
 
     def episode(self, deterministic=False):
         config = self.config
@@ -51,12 +52,16 @@ class AdvantageActorCritic:
                 GAE = torch.FloatTensor([[0]])
                 for i in reversed(range(len(pending))):
                     prob, log_prob, value, action, reward = pending[i]
-                    R = reward + config.discount * R
-                    advantage = Variable(R) - value
-                    GAE = config.discount * GAE + advantage.data
-                    loss += 0.5 * advantage.pow(2)
+                    if i == len(pending) - 1:
+                        delta = reward + config.discount * R - value.data
+                    else:
+                        delta = reward + pending[i + 1][2].data - value.data
+                    GAE = config.discount * config.gae_tau * GAE + delta
                     loss += -log_prob.gather(1, Variable(torch.LongTensor([[action]]))) * Variable(GAE)
-                    loss += 0.01 * torch.sum(torch.mul(prob, log_prob))
+                    loss += config.entropy_weight * torch.sum(torch.mul(prob, log_prob))
+
+                    R = reward + config.discount * R
+                    loss += 0.5 * (Variable(R) - value).pow(2)
 
                 pending = []
                 self.worker_network.zero_grad()
@@ -64,12 +69,12 @@ class AdvantageActorCritic:
                 loss.backward()
                 nn.utils.clip_grad_norm(self.worker_network.parameters(), config.gradient_clip)
                 for param, worker_param in zip(
-                        config.learning_network.parameters(), self.worker_network.parameters()):
+                        self.learning_network.parameters(), self.worker_network.parameters()):
                     if param.grad is not None:
                         break
                     param._grad = worker_param.grad
                 self.optimizer.step()
-                self.worker_network.load_state_dict(config.learning_network.state_dict())
+                self.worker_network.load_state_dict(self.learning_network.state_dict())
                 self.worker_network.reset(terminal)
 
             if terminal:

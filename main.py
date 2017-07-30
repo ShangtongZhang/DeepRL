@@ -31,8 +31,8 @@ def async_cart_pole():
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.network_fn = lambda: FCNet([4, 50, 200, 2])
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.5, final_step=5000, min_epsilon=0.1)
-    # config.worker = OneStepQLearning
-    config.worker = NStepQLearning
+    config.worker = OneStepQLearning
+    # config.worker = NStepQLearning
     # config.worker = OneStepSarsa
     config.discount = 0.99
     config.target_network_update_freq = 200
@@ -56,7 +56,7 @@ def a3c_cart_pole():
     config.max_episode_length = 200
     config.num_workers = 16
     config.update_interval = 6
-    config.test_interval = 100
+    config.test_interval = 1
     config.test_repetitions = 30
     config.logger = Logger('./log', gym.logger)
     config.gae_tau = 1.0
@@ -68,7 +68,7 @@ def a3c_pendulum():
     config = Config()
     config.task_fn = lambda: Pendulum()
     task = config.task_fn()
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
     config.network_fn = lambda: ContinuousActorCriticNet(
         task.env.observation_space.shape[0], 64, task.env.action_space.shape[0])
     config.policy_fn = lambda: GaussianPolicy()
@@ -78,7 +78,7 @@ def a3c_pendulum():
     config.num_workers = 16
     config.update_interval = 20
     config.test_interval = 1
-    config.test_repetitions = 50
+    config.test_repetitions = 1
     config.entropy_weight = 0.0001
     config.logger = Logger('./log', gym.logger)
     agent = AsyncAgent(config)
@@ -120,12 +120,12 @@ def async_pixel_atari(name):
         epsilons=[0.7, 0.7, 0.7], final_step=2000000, min_epsilons=[0.1, 0.01, 0.5],
         probs=[0.4, 0.3, 0.3])
     # config.worker = OneStepSarsa
-    config.worker = NStepQLearning
-    # config.worker = OneStepQLearning
+    # config.worker = NStepQLearning
+    config.worker = OneStepQLearning
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.max_episode_length = 10000
-    config.num_workers = 16
+    config.num_workers = 10
     config.update_interval = 20
     config.test_interval = 50000
     config.test_repetitions = 1
@@ -145,7 +145,7 @@ def a3c_pixel_atari(name):
     config.worker = AdvantageActorCritic
     config.discount = 0.99
     config.max_episode_length = 10000
-    config.num_workers = 16
+    config.num_workers = 10
     config.update_interval = 20
     config.test_interval = 50000
     config.test_repetitions = 1
@@ -208,12 +208,12 @@ if __name__ == '__main__':
 
     # dqn_cart_pole()
     # async_cart_pole()
-    a3c_cart_pole()
+    # a3c_cart_pole()
     # a3c_pendulum()
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
     # async_pixel_atari('PongNoFrameskip-v3')
-    # a3c_pixel_atari('PongNoFrameskip-v3')
+    a3c_pixel_atari('PongNoFrameskip-v3')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v3')
     # async_pixel_atari('BreakoutNoFrameskip-v3')
