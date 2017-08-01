@@ -10,87 +10,67 @@ from utils import *
 import pickle
 
 class DDPGAgent:
-    def __init__(self,
-                 task_fn,
-                 actor_network_fn,
-                 critic_network_fn,
-                 actor_optimizer_fn,
-                 critic_optimizer_fn,
-                 replay_fn,
-                 discount,
-                 step_limit,
-                 tau,
-                 exploration_steps,
-                 random_process_fn,
-                 test_interval,
-                 test_repetitions,
-                 noise_decay_steps,
-                 tag,
-                 logger):
-        self.task = task_fn()
-        self.actor = actor_network_fn()
-        self.critic = critic_network_fn()
-        self.target_actor = actor_network_fn()
-        self.target_critic = critic_network_fn()
+    def __init__(self, config):
+        self.config = config
+        self.task = config.task_fn()
+        self.actor = config.actor_network_fn()
+        self.critic = config.critic_network_fn()
+        self.target_actor = config.actor_network_fn()
+        self.target_critic = config.critic_network_fn()
         self.target_actor.load_state_dict(self.actor.state_dict())
         self.target_critic.load_state_dict(self.critic.state_dict())
-        self.actor_opt = actor_optimizer_fn(self.actor.parameters())
-        self.critic_opt = critic_optimizer_fn(self.critic.parameters())
-        self.replay = replay_fn()
-        self.step_limit = step_limit
-        self.tau = tau
-        self.logger = logger
-        self.discount = discount
-        self.exploration_steps = exploration_steps
-        self.random_process = random_process_fn()
+        self.actor_opt = config.actor_optimizer_fn(self.actor.parameters())
+        self.critic_opt = config.critic_optimizer_fn(self.critic.parameters())
+        self.replay = config.replay_fn()
+        self.random_process = config.random_process_fn()
         self.criterion = nn.MSELoss()
-        self.test_interval = test_interval
-        self.test_repetitions = test_repetitions
         self.total_steps = 0
-        self.tag = tag
         self.epsilon = 1.0
-        self.d_epsilon = 1.0 / noise_decay_steps
+        self.d_epsilon = 1.0 / config.noise_decay_interval
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
-            target_param.data.copy_(
-                target_param.data * (1.0 - self.tau) + param.data * self.tau
-            )
+            target_param.data.copy_(target_param.data * (1.0 - self.config.target_network_mix) +
+                                    param.data * self.config.target_network_mix)
 
     def episode(self, deterministic=False):
         self.random_process.reset_states()
         state = self.task.reset()
+        state = self.config.state_shift_fn(state)
 
         steps = 0
         total_reward = 0.0
-        while not self.step_limit or steps < self.step_limit:
+        while not self.config or steps < self.config.max_episode_length:
             action = self.actor.predict(np.stack([state])).flatten()
-            self.logger.histo_summary('action', action, self.total_steps)
+            self.config.logger.histo_summary('action', action, self.total_steps)
             if not deterministic:
-                if self.total_steps < self.exploration_steps:
+                if self.total_steps < self.config.exploration_steps:
                     action = self.task.random_action()
                 else:
                     action += max(self.epsilon, 0) * self.random_process.sample()
-            self.logger.histo_summary('noised action', action, self.total_steps)
+                    self.epsilon -= self.d_epsilon
+            self.config.logger.histo_summary('noised action', action, self.total_steps)
             next_state, reward, done, info = self.task.step(action)
+            next_state = self.config.state_shift_fn(next_state)
+            self.config.logger.scalar_summary('reward', reward, self.total_steps)
+            total_reward += reward
+            reward = self.config.reward_shift_fn(reward)
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
                 self.total_steps += 1
-                self.epsilon -= self.d_epsilon
             steps += 1
-            total_reward += reward
             state = next_state
 
             if done:
                 break
 
-            if not deterministic and self.total_steps > self.exploration_steps:
+            if not deterministic and self.total_steps > self.config.exploration_steps:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 q_next = self.target_critic.predict(next_states, self.target_actor.predict(next_states))
                 terminals = self.critic.to_torch_variable(terminals).unsqueeze(1)
                 rewards = self.critic.to_torch_variable(rewards).unsqueeze(1)
-                q_next = self.discount * q_next * (1 - terminals)
+                q_next = self.config.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
                 q_next = Variable(q_next.data)
                 q = self.critic.predict(states, actions)
@@ -126,20 +106,21 @@ class DDPGAgent:
             reward = self.episode()
             rewards.append(reward)
             avg_reward = np.mean(rewards[-window_size:])
-            self.logger.info('episode %d, reward %f, avg reward %f, total steps %d' % (
+            self.config.logger.info('episode %d, reward %f, avg reward %f, total steps %d' % (
                 ep, reward, avg_reward, self.total_steps))
 
-            if self.test_interval and ep % self.test_interval == 0:
-                self.logger.info('Testing...')
-                self.save('data/%sddpg-model-%s.bin' % (self.tag, self.task.name))
+            if self.config.test_interval and ep % self.config.test_interval == 0:
+                self.config.logger.info('Testing...')
+                with open('data/%s-ddpg-model-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
+                    pickle.dump(self.actor.state_dict(), f)
                 test_rewards = []
-                for _ in range(self.test_repetitions):
+                for _ in range(self.config.test_repetitions):
                     test_rewards.append(self.episode(True))
                 avg_reward = np.mean(test_rewards)
                 avg_test_rewards.append(avg_reward)
-                self.logger.info('Avg reward %f(%f)' % (
-                    avg_reward, np.std(test_rewards) / np.sqrt(self.test_repetitions)))
-                with open('data/%sddpg-statistics-%s.bin' % (self.tag, self.task.name), 'wb') as f:
+                self.config.logger.info('Avg reward %f(%f)' % (
+                    avg_reward, np.std(test_rewards) / np.sqrt(self.config.test_repetitions)))
+                with open('data/%s-ddpg-statistics-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
                     pickle.dump({'rewards': rewards,
                                  'test_rewards': avg_test_rewards}, f)
                 if avg_reward > self.task.success_threshold:

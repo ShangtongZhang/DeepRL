@@ -8,10 +8,14 @@ class Config:
     def __init__(self):
         self.task_fn = None
         self.optimizer_fn = None
+        self.actor_optimizer_fn = None
         self.critic_optimizer_fn = None
         self.network_fn = None
+        self.actor_network_fn = None
+        self.critic_network_fn = None
         self.policy_fn = None
         self.replay_fn = None
+        self.random_process_fn = None
         self.discount = 0.99
         self.target_network_update_freq = 0
         self.max_episode_length = 0
@@ -28,6 +32,8 @@ class Config:
         self.gradient_clip = 40
         self.entropy_weight = 0.01
         self.gae_tau = 1.0
+        self.noise_decay_interval = 0
+        self.target_network_mix = 0.001
         self.reward_shift_fn = lambda r: r
         self.state_shift_fn = lambda s: s
         self.action_shift_fn = lambda a: a

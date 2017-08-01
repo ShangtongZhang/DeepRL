@@ -47,13 +47,15 @@ class DDPGActorNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
                  action_dim,
-                 output_gate,
+                 action_gate,
+                 action_scale,
                  gpu=False):
         super(DDPGActorNet, self).__init__()
         self.layer1 = nn.Linear(state_dim, 400)
         self.layer2 = nn.Linear(400, 300)
         self.layer3 = nn.Linear(300, action_dim)
-        self.output_gate = output_gate
+        self.action_gate = action_gate
+        self.action_scale = action_scale
         BasicNet.__init__(self, None, False, False)
         self.init_weights()
 
@@ -76,7 +78,7 @@ class DDPGActorNet(nn.Module, BasicNet):
         x = F.relu(self.layer1(x))
         x = F.relu(self.layer2(x))
         x = self.layer3(x)
-        # x = self.output_gate(self.layer3(x))
+        x = self.action_scale * self.action_gate(x)
         return x
 
     def predict(self, x, to_numpy=True):
