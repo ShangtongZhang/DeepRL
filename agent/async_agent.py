@@ -29,6 +29,7 @@ def evaluate(config, task, learning_network):
     test_rewards = []
     test_points = []
     worker = config.worker(config, learning_network, None)
+    # config.logger = Logger('./evaluation_log', gym.logger)
     while True:
         steps = config.total_steps.value
         if steps % config.test_interval == 0:

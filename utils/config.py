@@ -8,6 +8,7 @@ class Config:
     def __init__(self):
         self.task_fn = None
         self.optimizer_fn = None
+        self.critic_optimizer_fn = None
         self.network_fn = None
         self.policy_fn = None
         self.replay_fn = None
@@ -27,3 +28,6 @@ class Config:
         self.gradient_clip = 40
         self.entropy_weight = 0.01
         self.gae_tau = 1.0
+        self.reward_shift_fn = lambda r: r
+        self.state_shift_fn = lambda s: s
+        self.action_shift_fn = lambda a: a

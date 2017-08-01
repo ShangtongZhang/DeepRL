@@ -48,10 +48,10 @@ class SamplePolicy:
         pass
 
 class GaussianPolicy:
-    def sample(self, mean, var, deterministic=False):
+    def sample(self, mean, std, deterministic=False):
         if deterministic:
             return mean
-        return mean + np.sqrt(var) * np.random.randn(*mean.shape)
+        return mean + std * np.random.randn(*mean.shape)
 
     def update_epsilon(self):
         pass

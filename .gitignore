@@ -10,6 +10,7 @@ upload.py
 data
 draw_*
 log
+evaluation_log
 figure
 to_plot
 

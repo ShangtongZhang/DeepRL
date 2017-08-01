@@ -11,6 +11,7 @@ Implemented algorithms:
 * Async One-Step Q-Learning
 * Async One-Step Sarsa 
 * Async N-Step Q-Learning
+* Continuous A3C
 * Deep Deterministic Policy Gradient (DDPG)
 
 # Curves
@@ -25,7 +26,7 @@ Xeon E5-2620 v3 and Titan X. For Breakout, test is triggered every 1000 episodes
 In total, 16M frames cost about 4 days and 10 hours. For Pong, test is triggered 
 every 10 episodes with no repetition. In total, 4M frames cost about 18 hours.
 
-## A3C, etc.
+## Discrete A3C
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A3C-Pong.png)
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Async-Pong.png)
@@ -36,6 +37,11 @@ it's quite slow.
 Training of A3C took about 2 hours (16 processes) in a server with two Xeon E5-2620 v3. While other async methods took about 1 day.
 Those value based async methods do work but I don't know how to make them stable.
 This is the test curve. Test is triggered in a separate deterministic test process every 50K frames.
+
+## Continuous A3C
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Continuous-A3C.png)
+
+Sometimes _Bipedal Walker_ may run into _NAN_, I'm still not able to totally solve it. And continuous A3C is very sensible to hyper parameters.
 
 # Dependency
 * Open AI gym
@@ -56,6 +62,8 @@ Detailed usage and all training details can be found in ```main.py```
 * [HOGWILD!: A Lock-Free Approach to Parallelizing Stochastic Gradient Descent](https://arxiv.org/abs/1106.5730)
 * [Deterministic Policy Gradient Algorithms](http://proceedings.mlr.press/v32/silver14.pdf)
 * [Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971)
+* [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)
 * [transedward/pytorch-dqn](https://github.com/transedward/pytorch-dqn)
 * [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)
 * [ghliu/pytorch-ddpg](https://github.com/ghliu/pytorch-ddpg)
+* [MorvanZhou/Reinforcement-learning-with-tensorflow](https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow)

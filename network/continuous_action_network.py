@@ -7,34 +7,41 @@
 from network import *
 
 class ContinuousActorCriticNet(nn.Module, BasicNet):
-    def __init__(self, state_dim, hidden_dim, action_dim):
+    def __init__(self, state_dim, action_dim, action_scale, action_gate):
         super(ContinuousActorCriticNet, self).__init__()
-        hidden_size1 = 64
-        hidden_size2 = 64
-        self.fc1 = nn.Linear(state_dim, hidden_size1)
-        self.fc2 = nn.Linear(hidden_size1, hidden_size2)
-        self.fc_mean = nn.Linear(hidden_size2, action_dim)
-        self.fc_var = nn.Linear(hidden_size2, action_dim)
-        self.fc_critic = nn.Linear(hidden_size2, 1)
+        actor_hidden = 200
+        critic_hidden = 100
+        self.fc_actor = nn.Linear(state_dim, actor_hidden)
+        self.fc_mean = nn.Linear(actor_hidden, action_dim)
+        self.fc_std = nn.Linear(actor_hidden, action_dim)
+        self.action_scale = action_scale
+        self.action_gate = action_gate
+        self.actor_params = list(self.fc_actor.parameters()) + \
+                            list(self.fc_mean.parameters()) + \
+                            list(self.fc_std.parameters())
+
+        self.fc_critic = nn.Linear(state_dim, critic_hidden)
+        self.fc_value = nn.Linear(critic_hidden, 1)
+        self.critic_params = list(self.fc_critic.parameters()) + \
+                             list(self.fc_value.parameters())
+
         BasicNet.__init__(self, None, False)
 
-    def forward(self, x):
-        x = self.to_torch_variable(x)
-        x = x.view(x.size(0), -1)
-        x = F.relu(self.fc1(x))
-        phi = F.relu(self.fc2(x))
-        return phi
-
     def predict(self, x):
-        phi = self.forward(x)
-        mean = self.fc_mean(phi)
-        var = F.softplus(self.fc_var(phi) + 1e-5)
-        value = self.fc_critic(phi)
-        return mean, var, value
+        x = self.to_torch_variable(x)
+        value = self.critic(x)
+
+        x = F.relu(self.fc_actor(x))
+        mean = self.action_scale * self.action_gate(self.fc_mean(x))
+        std = F.softplus(self.fc_std(x) + 1e-5)
+
+        return mean, std, value
 
     def critic(self, x):
-        phi = self.forward(x)
-        return self.fc_critic(phi)
+        x = self.to_torch_variable(x)
+        x = F.relu(self.fc_critic(x))
+        x = self.fc_value(x)
+        return x
 
 class DDPGActorNet(nn.Module, BasicNet):
     def __init__(self,

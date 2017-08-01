@@ -67,19 +67,47 @@ def a3c_cart_pole():
 def a3c_pendulum():
     config = Config()
     config.task_fn = lambda: Pendulum()
+    config.reward_shift_fn = lambda reward: reward / 10
+    # config.task_fn = lambda: MountainCarContinuous()
     task = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.network_fn = lambda: ContinuousActorCriticNet(
-        task.env.observation_space.shape[0], 64, task.env.action_space.shape[0])
+        task.state_dim, task.action_dim, 2, F.tanh)
     config.policy_fn = lambda: GaussianPolicy()
     config.worker = ContinuousAdvantageActorCritic
     config.discount = 0.99
     config.max_episode_length = 200
-    config.num_workers = 16
+    config.num_workers = 8
+    config.update_interval = 5
+    config.test_interval = 1
+    config.test_repetitions = 5
+    config.entropy_weight = 0.0001
+    config.gradient_clip = 40
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
+    agent.run()
+
+def a3c_walker():
+    config = Config()
+    config.task_fn = lambda: BipedalWalker()
+    shifter = Shifter()
+    config.state_shift_fn = lambda state: shifter(state)
+    task = config.task_fn()
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: ContinuousActorCriticNet(
+        task.state_dim, task.action_dim, 1, F.tanh)
+    config.policy_fn = lambda: GaussianPolicy()
+    config.worker = ContinuousAdvantageActorCritic
+    config.discount = 0.99
+    config.max_episode_length = 999
+    config.num_workers = 8
     config.update_interval = 20
     config.test_interval = 1
-    config.test_repetitions = 1
-    config.entropy_weight = 0.0001
+    config.test_repetitions = 5
+    config.entropy_weight = 0.01
+    config.gradient_clip = 30
     config.logger = Logger('./log', gym.logger)
     agent = AsyncAgent(config)
     agent.run()
@@ -209,11 +237,12 @@ if __name__ == '__main__':
     # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
-    # a3c_pendulum()
+    a3c_pendulum()
+    # a3c_walker()
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
     # async_pixel_atari('PongNoFrameskip-v3')
-    a3c_pixel_atari('PongNoFrameskip-v3')
+    # a3c_pixel_atari('PongNoFrameskip-v3')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v3')
     # async_pixel_atari('BreakoutNoFrameskip-v3')

@@ -78,7 +78,7 @@ class PixelAtari(BasicTask):
 
 class Pendulum(BasicTask):
     name = 'Pendulum-v0'
-    success_threshold = 200
+    success_threshold = -10
 
     def __init__(self):
         BasicTask.__init__(self)
@@ -88,14 +88,35 @@ class Pendulum(BasicTask):
         self.state_dim = self.env.observation_space.shape[0]
 
     def step(self, action):
-        # action = 2 * np.clip(action, -1, 1)
         action = np.clip(action, -2, 2)
+        next_state, reward, done, info = self.env.step(action)
+        return next_state, reward, done, info
+
+class MountainCarContinuous(BasicTask):
+    name = 'MountainCarContinuous-v0'
+    success_threshold = 90
+
+    def __init__(self):
+        BasicTask.__init__(self)
+        self.env = gym.make(self.name)
+        self.env._max_episode_steps = sys.maxsize
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape[0]
+
+    def normalize_state(self, state):
+        state = (state - self.env.unwrapped.low_state) / \
+                (self.env.unwrapped.high_state - self.env.unwrapped.low_state)
+        state = state * 2 - 1
+        return state
+
+    def step(self, action):
+        action = np.clip(action, -1, 1)
         next_state, reward, done, info = self.env.step(action)
         return next_state, reward, done, info
 
 class BipedalWalker(BasicTask):
     name = 'BipedalWalker-v2'
-    success_threshold = 2000
+    success_threshold = 300
 
     def __init__(self):
         BasicTask.__init__(self)
