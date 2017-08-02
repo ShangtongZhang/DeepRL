@@ -198,35 +198,36 @@ def ddpg_pendulum():
     config.noise_decay_interval = 10000
     config.random_process_fn = \
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
-    config.test_interval = 10
+    config.test_interval = 0
     config.test_repetitions = 10
     config.logger = Logger('./log', gym.logger)
     agent = DDPGAgent(config)
     agent.run()
 
-def ddpg_bipedal_walker():
+def ddpg_walker():
     task_fn = lambda: BipedalWalker()
     task = task_fn()
-    config = dict()
-    config['task_fn'] = task_fn
-    config['actor_network_fn'] = lambda: DDPGActorNet(task.state_dim, task.action_dim, F.tanh, gpu=True)
-    config['critic_network_fn'] = lambda: DDPGCriticNet(task.state_dim, task.action_dim, gpu=True)
-    config['actor_optimizer_fn'] = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config['critic_optimizer_fn'] =\
+    config = Config()
+    config.task_fn = task_fn
+    # shifter = Shifter()
+    # config.state_shift_fn = lambda state: shifter(state)
+    config.actor_network_fn = lambda: DDPGActorNet(task.state_dim, task.action_dim, F.tanh, 1, gpu=True)
+    config.critic_network_fn = lambda: DDPGCriticNet(task.state_dim, task.action_dim, gpu=True)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.critic_optimizer_fn =\
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
-    config['replay_fn'] = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
-    config['discount'] = 0.99
-    config['step_limit'] = 1000
-    config['tau'] = 0.001
-    config['exploration_steps'] = 100
-    config['noise_decay_steps'] = 10000
-    config['random_process_fn'] = \
+    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
+    config.discount = 0.99
+    config.max_episode_length = 1000
+    config.target_network_mix = 0.001
+    config.exploration_steps = 100
+    config.noise_decay_interval = 10000
+    config.random_process_fn = \
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
-    config['test_interval'] = 10
-    config['test_repetitions'] = 10
-    config['tag'] = ''
-    config['logger'] = Logger('./log', gym.logger, True)
-    agent = DDPGAgent(**config)
+    config.test_interval = 0
+    config.test_repetitions = 5
+    config.logger = Logger('./log', gym.logger)
+    agent = DDPGAgent(config)
     agent.run()
 
 if __name__ == '__main__':
@@ -238,7 +239,8 @@ if __name__ == '__main__':
     # a3c_cart_pole()
     # a3c_pendulum()
     # a3c_walker()
-    ddpg_pendulum()
+    # ddpg_pendulum()
+    ddpg_walker()
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
     # async_pixel_atari('PongNoFrameskip-v3')
@@ -248,4 +250,3 @@ if __name__ == '__main__':
     # async_pixel_atari('BreakoutNoFrameskip-v3')
     # a3c_pixel_atari('BreakoutNoFrameskip-v3')
 
-    # ddpg_bipedal_walker()

@@ -8,6 +8,7 @@ from network import *
 from component import *
 from utils import *
 import pickle
+import torch.nn as nn
 
 class DDPGAgent:
     def __init__(self, config):
@@ -19,6 +20,8 @@ class DDPGAgent:
         self.target_critic = config.critic_network_fn()
         self.target_actor.load_state_dict(self.actor.state_dict())
         self.target_critic.load_state_dict(self.critic.state_dict())
+        self.target_actor.eval()
+        self.target_critic.eval()
         self.actor_opt = config.actor_optimizer_fn(self.actor.parameters())
         self.critic_opt = config.critic_optimizer_fn(self.critic.parameters())
         self.replay = config.replay_fn()
@@ -41,8 +44,16 @@ class DDPGAgent:
         steps = 0
         total_reward = 0.0
         while not self.config or steps < self.config.max_episode_length:
+            self.actor.eval()
             action = self.actor.predict(np.stack([state])).flatten()
+            self.config.logger.histo_summary('state', state, self.total_steps)
             self.config.logger.histo_summary('action', action, self.total_steps)
+            self.config.logger.histo_summary('layer1_act', self.actor.layer1_act, self.total_steps)
+            self.config.logger.histo_summary('layer2_act', self.actor.layer2_act, self.total_steps)
+            self.config.logger.histo_summary('layer3_act', self.actor.layer3_act, self.total_steps)
+            self.config.logger.histo_summary('layer1_weight', self.actor.layer1_w, self.total_steps)
+            self.config.logger.histo_summary('layer2_weight', self.actor.layer2_w, self.total_steps)
+            self.config.logger.histo_summary('layer3_weight', self.actor.layer3_w, self.total_steps)
             if not deterministic:
                 if self.total_steps < self.config.exploration_steps:
                     action = self.task.random_action()
@@ -50,6 +61,7 @@ class DDPGAgent:
                     action += max(self.epsilon, 0) * self.random_process.sample()
                     self.epsilon -= self.d_epsilon
             self.config.logger.histo_summary('noised action', action, self.total_steps)
+            action = self.config.action_shift_fn(action)
             next_state, reward, done, info = self.task.step(action)
             next_state = self.config.state_shift_fn(next_state)
             self.config.logger.scalar_summary('reward', reward, self.total_steps)
@@ -65,6 +77,8 @@ class DDPGAgent:
                 break
 
             if not deterministic and self.total_steps > self.config.exploration_steps:
+                self.actor.train()
+                self.critic.train()
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 q_next = self.target_critic.predict(next_states, self.target_actor.predict(next_states))
@@ -85,6 +99,9 @@ class DDPGAgent:
 
                 self.actor.zero_grad()
                 actor_loss.backward()
+                self.config.logger.histo_summary('layer1_g', self.actor.layer1.weight.grad.data.numpy(), self.total_steps)
+                self.config.logger.histo_summary('layer2_g', self.actor.layer2.weight.grad.data.numpy(), self.total_steps)
+                self.config.logger.histo_summary('layer3_g', self.actor.layer3.weight.grad.data.numpy(), self.total_steps)
                 self.actor_opt.step()
 
                 self.soft_update(self.target_actor, self.actor)

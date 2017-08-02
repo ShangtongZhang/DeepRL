@@ -51,9 +51,13 @@ class DDPGActorNet(nn.Module, BasicNet):
                  action_scale,
                  gpu=False):
         super(DDPGActorNet, self).__init__()
-        self.layer1 = nn.Linear(state_dim, 400)
-        self.layer2 = nn.Linear(400, 300)
-        self.layer3 = nn.Linear(300, action_dim)
+        hidden1 = 400
+        hidden2 = 300
+        self.layer1 = nn.Linear(state_dim, hidden1)
+        self.bn1 = nn.BatchNorm1d(hidden1)
+        self.layer2 = nn.Linear(hidden1, hidden2)
+        self.bn2 = nn.BatchNorm1d(hidden2)
+        self.layer3 = nn.Linear(hidden2, action_dim)
         self.action_gate = action_gate
         self.action_scale = action_scale
         BasicNet.__init__(self, None, False, False)
@@ -76,8 +80,16 @@ class DDPGActorNet(nn.Module, BasicNet):
     def forward(self, x):
         x = self.to_torch_variable(x)
         x = F.relu(self.layer1(x))
+        self.layer1_w = self.layer1.weight.data.cpu().numpy()
+        self.layer1_act = x.data.cpu().numpy()
+        x = self.bn1(x)
         x = F.relu(self.layer2(x))
+        self.layer2_w = self.layer2.weight.data.cpu().numpy()
+        self.layer2_act = x.data.cpu().numpy()
+        x = self.bn2(x)
         x = self.layer3(x)
+        self.layer3_w = self.layer3.weight.data.cpu().numpy()
+        self.layer3_act = x.data.cpu().numpy()
         x = self.action_scale * self.action_gate(x)
         return x
 
@@ -93,9 +105,13 @@ class DDPGCriticNet(nn.Module, BasicNet):
                  action_dim,
                  gpu=False):
         super(DDPGCriticNet, self).__init__()
-        self.layer1 = nn.Linear(state_dim, 400)
-        self.layer2 = nn.Linear(400 + action_dim, 300)
-        self.layer3 = nn.Linear(300, 1)
+        hidden1 = 400
+        hidden2 = 300
+        self.layer1 = nn.Linear(state_dim, hidden1)
+        self.bn1 = nn.BatchNorm1d(hidden1)
+        self.layer2 = nn.Linear(hidden1 + action_dim, hidden2)
+        self.bn2 = nn.BatchNorm1d(hidden2)
+        self.layer3 = nn.Linear(hidden2, 1)
         BasicNet.__init__(self, None, False, False)
         self.init_weights()
 
@@ -117,7 +133,9 @@ class DDPGCriticNet(nn.Module, BasicNet):
         x = self.to_torch_variable(x)
         action = self.to_torch_variable(action)
         x = F.relu(self.layer1(x))
+        x = self.bn1(x)
         x = F.relu(self.layer2(torch.cat([x, action], dim=1)))
+        x = self.bn2(x)
         x = self.layer3(x)
         return x
 
