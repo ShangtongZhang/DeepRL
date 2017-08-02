@@ -4,25 +4,24 @@ from component import *
 from utils import *
 
 def dqn_cart_pole():
-    config = dict()
-    config['task_fn'] = lambda: CartPole()
-    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, 0.001)
-    config['network_fn'] = lambda optimizer_fn: FCNet([8, 50, 200, 2], optimizer_fn)
-    # config['network_fn'] = lambda optimizer_fn: DuelingFCNet([8, 50, 200, 2], optimizer_fn)
-    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
-    config['replay_fn'] = lambda: Replay(memory_size=10000, batch_size=10)
-    config['discount'] = 0.99
-    config['target_network_update_freq'] = 200
-    config['step_limit'] = 200
-    config['explore_steps'] = 1000
-    config['logger'] = Logger('./log', gym.logger)
-    config['history_length'] = 2
-    config['test_interval'] = 100
-    config['test_repetitions'] = 50
-    # config['double_q'] = True
-    config['double_q'] = False
-    config['tag'] = ''
-    agent = DQNAgent(**config)
+    config = Config()
+    config.task_fn = lambda: CartPole()
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    config.network_fn = lambda optimizer_fn: FCNet([8, 50, 200, 2], optimizer_fn)
+    # config.network_fn = lambda optimizer_fn: DuelingFCNet([8, 50, 200, 2], optimizer_fn)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
+    config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
+    config.discount = 0.99
+    config.target_network_update_freq = 200
+    config.max_episode_length = 200
+    config.exploration_steps = 1000
+    config.logger = Logger('./log', gym.logger)
+    config.history_length = 2
+    config.test_interval = 100
+    config.test_repetitions = 50
+    # config.double_q = True
+    config.double_q = False
+    agent = DQNAgent(config)
     agent.run()
 
 def async_cart_pole():
@@ -112,27 +111,25 @@ def a3c_walker():
     agent.run()
 
 def dqn_pixel_atari(name):
-    config = dict()
-    history_length = 4
+    config = Config()
+    config.history_length = 4
     n_actions = 6
-    config['task_fn'] = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False)
-    config['optimizer_fn'] = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config['network_fn'] = lambda optimizer_fn: NatureConvNet(history_length, n_actions, optimizer_fn)
-    # config['network_fn'] = lambda optimizer_fn: DuelingNatureConvNet(history_length, n_actions, optimizer_fn)
-    config['policy_fn'] = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
-    config['replay_fn'] = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
-    config['discount'] = 0.99
-    config['target_network_update_freq'] = 10000
-    config['step_limit'] = 0
-    config['explore_steps'] = 50000
-    config['logger'] = Logger('./log', gym.logger)
-    config['history_length'] = history_length
-    config['test_interval'] = 10
-    config['test_repetitions'] = 1
-    # config['double_q'] = True
-    config['double_q'] = False
-    config['tag'] = ''
-    agent = DQNAgent(**config)
+    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
+    config.network_fn = lambda optimizer_fn: NatureConvNet(config.history_length, n_actions, optimizer_fn)
+    # config.network_fn = lambda optimizer_fn: DuelingNatureConvNet(config.history_length, n_actions, optimizer_fn)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.max_episode_length = 0
+    config.exploration_steps= 50000
+    config.logger = Logger('./log', gym.logger)
+    config.test_interval = 10
+    config.test_repetitions = 1
+    # config.double_q = True
+    config.double_q = False
+    agent = DQNAgent(config)
     agent.run()
 
 def async_pixel_atari(name):
@@ -239,8 +236,8 @@ if __name__ == '__main__':
     # a3c_cart_pole()
     # a3c_pendulum()
     # a3c_walker()
-    # ddpg_pendulum()
-    ddpg_walker()
+    ddpg_pendulum()
+    # ddpg_walker()
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
     # async_pixel_atari('PongNoFrameskip-v3')

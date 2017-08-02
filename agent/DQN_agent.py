@@ -13,57 +13,33 @@ import os
 import pickle
 
 class DQNAgent:
-    def __init__(self,
-                 task_fn,
-                 network_fn,
-                 optimizer_fn,
-                 policy_fn,
-                 replay_fn,
-                 discount,
-                 step_limit,
-                 target_network_update_freq,
-                 explore_steps,
-                 history_length,
-                 double_q,
-                 test_interval,
-                 test_repetitions,
-                 tag,
-                 logger):
-        self.learning_network = network_fn(optimizer_fn)
-        self.target_network = network_fn(optimizer_fn)
+    def __init__(self, config):
+        self.config = config
+        self.learning_network = config.network_fn(config.optimizer_fn)
+        self.target_network = config.network_fn(config.optimizer_fn)
         self.target_network.load_state_dict(self.learning_network.state_dict())
-        self.task = task_fn()
-        self.step_limit = step_limit
-        self.replay = replay_fn()
-        self.discount = discount
-        self.target_network_update_freq = target_network_update_freq
-        self.policy = policy_fn()
+        self.task = config.task_fn()
+        self.replay = config.replay_fn()
+        self.policy = config.policy_fn()
         self.total_steps = 0
-        self.explore_steps = explore_steps
-        self.history_length = history_length
-        self.logger = logger
-        self.test_interval = test_interval
-        self.test_repetitions = test_repetitions
         self.history_buffer = None
-        self.double_q = double_q
-        self.tag = tag
 
     def episode(self, deterministic=False):
         episode_start_time = time.time()
         state = self.task.reset()
         if self.history_buffer is None:
-            self.history_buffer = [np.zeros_like(state)] * self.history_length
+            self.history_buffer = [np.zeros_like(state)] * self.config.history_length
         else:
             self.history_buffer.pop(0)
             self.history_buffer.append(state)
         state = np.vstack(self.history_buffer)
         total_reward = 0.0
         steps = 0
-        while not self.step_limit or steps < self.step_limit:
+        while not self.config.max_episode_length or steps < self.config.max_episode_length:
             value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]), True)
             if deterministic:
                 action = np.argmax(value.flatten())
-            elif self.total_steps < self.explore_steps:
+            elif self.total_steps < self.config.exploration_steps:
                 action = np.random.randint(0, len(value.flatten()))
             else:
                 action = self.policy.sample(value.flatten())
@@ -79,20 +55,20 @@ class DQNAgent:
             state = next_state
             if done:
                 break
-            if not deterministic and self.total_steps > self.explore_steps:
+            if not deterministic and self.total_steps > self.config.exploration_steps:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 states = self.task.normalize_state(states)
                 next_states = self.task.normalize_state(next_states)
                 q_next = self.target_network.predict(next_states).detach()
-                if self.double_q:
+                if self.config.double_q:
                     _, best_actions = self.learning_network.predict(next_states).detach().max(1)
                     q_next = q_next.gather(1, best_actions)
                 else:
                     q_next, _ = q_next.max(1)
                 terminals = self.learning_network.to_torch_variable(terminals).unsqueeze(1)
                 rewards = self.learning_network.to_torch_variable(rewards).unsqueeze(1)
-                q_next = self.discount * q_next * (1 - terminals)
+                q_next = self.config.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
                 actions = self.learning_network.to_torch_variable(actions, 'int64').unsqueeze(1)
                 q = self.learning_network.predict(states)
@@ -101,18 +77,14 @@ class DQNAgent:
                 self.learning_network.zero_grad()
                 loss.backward()
                 self.learning_network.optimizer.step()
-            if not deterministic and self.total_steps % self.target_network_update_freq == 0:
+            if not deterministic and self.total_steps % self.config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.learning_network.state_dict())
-            if not deterministic and self.total_steps > self.explore_steps:
+            if not deterministic and self.total_steps > self.config.exploration_steps:
                 self.policy.update_epsilon()
         episode_time = time.time() - episode_start_time
-        self.logger.debug('episode steps %d, episode time %f, time per step %f' %
+        self.config.logger.debug('episode steps %d, episode time %f, time per step %f' %
                           (steps, episode_time, episode_time / float(steps)))
         return total_reward
-
-    def save(self, file_name):
-        with open(file_name, 'wb') as f:
-            pickle.dump(self.learning_network.state_dict(), f)
 
     def run(self):
         window_size = 100
@@ -124,20 +96,21 @@ class DQNAgent:
             reward = self.episode()
             rewards.append(reward)
             avg_reward = np.mean(rewards[-window_size:])
-            self.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d' % (
+            self.config.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d' % (
                 ep, self.policy.epsilon, reward, avg_reward, self.total_steps))
 
-            if self.test_interval and ep % self.test_interval == 0:
-                self.logger.info('Testing...')
-                self.save('data/%sdqn-model-%s.bin' % (self.tag, self.task.name))
+            if self.config.test_interval and ep % self.config.test_interval == 0:
+                self.config.logger.info('Testing...')
+                with open('data/%s-dqn-model-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
+                    pickle.dump(self.learning_network.state_dict(), f)
                 test_rewards = []
-                for _ in range(self.test_repetitions):
+                for _ in range(self.config.test_repetitions):
                     test_rewards.append(self.episode(True))
                 avg_reward = np.mean(test_rewards)
                 avg_test_rewards.append(avg_reward)
-                self.logger.info('Avg reward %f(%f)' % (
-                    avg_reward, np.std(test_rewards) / np.sqrt(self.test_repetitions)))
-                with open('data/%sdqn-statistics-%s.bin' % (self.tag, self.task.name), 'wb') as f:
+                self.config.logger.info('Avg reward %f(%f)' % (
+                    avg_reward, np.std(test_rewards) / np.sqrt(self.config.test_repetitions)))
+                with open('data/%sdqn-statistics-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
                     pickle.dump({'rewards': rewards,
                                  'test_rewards': avg_test_rewards}, f)
                 if avg_reward > self.task.success_threshold:
