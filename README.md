@@ -51,7 +51,12 @@ Sometimes _Bipedal Walker_ may run into _NAN_, I'm still not able to totally sol
 * Tensorflow (We need tensorboard)
 
 # Usage
-Detailed usage and all training details can be found in ```main.py```
+Detailed usage and all training parameters can be found in ```main.py```
+And you need to create following directories before running the program:
+```
+cd DeepRL
+mkdir data log evaluation_log
+```
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)
