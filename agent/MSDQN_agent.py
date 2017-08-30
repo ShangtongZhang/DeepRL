@@ -13,7 +13,7 @@ import os
 import pickle
 import torch
 
-class DQNAgent:
+class MSDQNAgent:
     def __init__(self, config):
         self.config = config
         self.learning_network = config.network_fn(config.optimizer_fn)
@@ -23,21 +23,14 @@ class DQNAgent:
         self.replay = config.replay_fn()
         self.policy = config.policy_fn()
         self.total_steps = 0
-        self.history_buffer = None
 
     def episode(self, deterministic=False):
         episode_start_time = time.time()
         state = self.task.reset()
-        if self.history_buffer is None:
-            self.history_buffer = [np.zeros_like(state)] * self.config.history_length
-        else:
-            self.history_buffer.pop(0)
-            self.history_buffer.append(state)
-        state = np.vstack(self.history_buffer)
         total_reward = 0.0
         steps = 0
         while not self.config.max_episode_length or steps < self.config.max_episode_length:
-            value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]), False)
+            value = self.learning_network.predict(np.stack([state]), True)
             value = value.cpu().data.numpy().flatten()
             if deterministic:
                 action = np.argmax(value)
@@ -46,9 +39,6 @@ class DQNAgent:
             else:
                 action = self.policy.sample(value)
             next_state, reward, done, info = self.task.step(action)
-            self.history_buffer.pop(0)
-            self.history_buffer.append(next_state)
-            next_state = np.vstack(self.history_buffer)
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
                 self.total_steps += 1
@@ -60,10 +50,8 @@ class DQNAgent:
             if not deterministic and self.total_steps > self.config.exploration_steps:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
-                states = self.task.normalize_state(states)
-                next_states = self.task.normalize_state(next_states)
                 if self.config.hybrid_reward:
-                    q_next = self.target_network.predict(next_states, True)
+                    q_next = self.target_network.predict(next_states, False)
                     target = []
                     for q_next_ in q_next:
                         if self.config.target_type == self.config.q_target:
@@ -75,7 +63,7 @@ class DQNAgent:
                     rewards = self.learning_network.to_torch_variable(rewards)
                     target = self.config.discount * target * (1 - terminals.expand_as(target))
                     target.add_(rewards)
-                    q = self.learning_network.predict(states, True)
+                    q = self.learning_network.predict(states, False)
                     q_action = []
                     actions = self.learning_network.to_torch_variable(actions, 'int64').unsqueeze(1)
                     for q_ in q:
@@ -83,18 +71,19 @@ class DQNAgent:
                     q_action = torch.cat(q_action, dim=1)
                     loss = self.learning_network.criterion(q_action, target)
                 else:
-                    q_next = self.target_network.predict(next_states, False).detach()
+                    q_next = self.target_network.predict(next_states, True).detach()
                     if self.config.double_q:
                         _, best_actions = self.learning_network.predict(next_states).detach().max(1)
                         q_next = q_next.gather(1, best_actions)
                     else:
                         q_next, _ = q_next.max(1)
                     terminals = self.learning_network.to_torch_variable(terminals).unsqueeze(1)
+                    rewards = np.sum(rewards * self.config.reward_weight, axis=1)
                     rewards = self.learning_network.to_torch_variable(rewards).unsqueeze(1)
                     q_next = self.config.discount * q_next * (1 - terminals)
                     q_next.add_(rewards)
                     actions = self.learning_network.to_torch_variable(actions, 'int64').unsqueeze(1)
-                    q = self.learning_network.predict(states, False)
+                    q = self.learning_network.predict(states, True)
                     q = q.gather(1, actions)
                     loss = self.learning_network.criterion(q, q_next)
                 self.learning_network.zero_grad()

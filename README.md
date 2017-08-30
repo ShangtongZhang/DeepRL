@@ -13,6 +13,7 @@ Implemented algorithms:
 * Async N-Step Q-Learning
 * Continuous A3C
 * Deep Deterministic Policy Gradient (DDPG)
+* Hybrid Reward Architecture (HRA)
 
 # Curves
 > Curves for CartPole are trivial so I didn't place it here.
@@ -51,7 +52,8 @@ Sometimes _Bipedal Walker_ may run into _NAN_, I'm still not able to totally sol
 * Tensorflow (We need tensorboard)
 
 # Usage
-Detailed usage and all training parameters can be found in ```main.py```
+Detailed usage and all training parameters can be found in ```main.py```,
+For HRA, you may want to look into ```hybrid.py```.
 And you need to create following directories before running the program:
 ```
 cd DeepRL
@@ -68,6 +70,7 @@ mkdir data log evaluation_log
 * [Deterministic Policy Gradient Algorithms](http://proceedings.mlr.press/v32/silver14.pdf)
 * [Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971)
 * [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)
+* [Hybrid Reward Architecture for Reinforcement Learning](https://arxiv.org/abs/1706.04208)
 * [transedward/pytorch-dqn](https://github.com/transedward/pytorch-dqn)
 * [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)
 * [ghliu/pytorch-ddpg](https://github.com/ghliu/pytorch-ddpg)

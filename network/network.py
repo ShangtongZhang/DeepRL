@@ -43,12 +43,15 @@ class VanillaNet(BasicNet):
     def predict(self, x, to_numpy=False):
         y = self.forward(x)
         if to_numpy:
-            y = y.cpu().data.numpy()
+            if type(y) is list:
+                y = [y_.cpu().data.numpy() for y_ in y]
+            else:
+                y = y.cpu().data.numpy()
         return y
 
 # Base class for actor critic method
 class ActorCriticNet(BasicNet):
-    def predict(self, x):
+    def predict(self, x, _):
         phi = self.forward(x, True)
         pre_prob = self.fc_actor(phi)
         prob = F.softmax(pre_prob)

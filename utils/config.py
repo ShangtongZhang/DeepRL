@@ -5,6 +5,8 @@
 #######################################################################
 
 class Config:
+    q_target = 0
+    expected_sarsa_target = 1
     def __init__(self):
         self.task_fn = None
         self.optimizer_fn = None
@@ -37,3 +39,11 @@ class Config:
         self.reward_shift_fn = lambda r: r
         self.state_shift_fn = lambda s: s
         self.action_shift_fn = lambda a: a
+        self.reward_weight = 1
+        self.hybrid_reward = False
+        self.target_type = self.q_target
+        self.episode_limit = 0
+        self.min_memory_size = 200
+        self.master_fn = None
+        self.master_optimizer_fn = None
+        self.num_heads = 10
