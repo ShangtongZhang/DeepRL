@@ -13,6 +13,7 @@ import os
 import pickle
 import torch
 
+# This HRA DQN with removing irrelevant features
 class MSDQNAgent:
     def __init__(self, config):
         self.config = config

@@ -52,8 +52,7 @@ Sometimes _Bipedal Walker_ may run into _NAN_, I'm still not able to totally sol
 * Tensorflow (We need tensorboard)
 
 # Usage
-Detailed usage and all training parameters can be found in ```main.py```,
-For HRA, you may want to look into ```hybrid.py```.
+Detailed usage and all training parameters can be found in ```main.py```.
 And you need to create following directories before running the program:
 ```
 cd DeepRL

@@ -227,6 +227,81 @@ def ddpg_walker():
     agent = DDPGAgent(config)
     agent.run()
 
+def dqn_fruit():
+    config = Config()
+    config.task_fn = lambda: Fruit()
+    config.optimizer_fn = lambda params: torch.optim.SGD(params, 0.01, momentum=0.9)
+    config.reward_weight = np.ones(10) / 10
+    config.hybrid_reward = False
+    config.network_fn = lambda optimizer_fn: FruitHRFCNet(
+        98, 4, config.reward_weight, optimizer_fn)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
+    config.replay_fn = lambda: Replay(memory_size=10000, batch_size=15)
+    config.discount = 0.95
+    config.target_network_update_freq = 200
+    config.max_episode_length = 100
+    config.exploration_steps = 200
+    config.logger = Logger('./log', gym.logger)
+    config.history_length = 1
+    config.test_interval = 0
+    config.test_repetitions = 10
+    config.episode_limit = 5000
+    config.tag = 'vanilla-%f' % (0.001)
+    config.double_q = False
+    agent = DQNAgent(config)
+    agent.run()
+
+def hrdqn_fruit():
+    config = Config()
+    config.task_fn = lambda: Fruit(hybrid_reward=True)
+    config.hybrid_reward = True
+    config.reward_weight = np.ones(10) / 10
+    config.optimizer_fn = lambda params: torch.optim.SGD(params, 0.01, momentum=0.9)
+    config.network_fn = lambda optimizer_fn: FruitHRFCNet(
+        98, 4, config.reward_weight, optimizer_fn)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
+    config.replay_fn = lambda: HybridRewardReplay(memory_size=10000, batch_size=15)
+    config.discount = 0.95
+    config.target_network_update_freq = 200
+    config.max_episode_length = 100
+    config.exploration_steps = 200
+    config.logger = Logger('./log', gym.logger)
+    config.history_length = 1
+    config.test_interval = 0
+    config.test_repetitions = 10
+    config.target_type = config.expected_sarsa_target
+    # config.target_type = config.q_target
+    config.double_q = False
+    config.episode_limit = 5000
+    agent = DQNAgent(config)
+    agent.run()
+
+def hrmsdqn_fruit():
+    config = Config()
+    config.task_fn = lambda: Fruit(hybrid_reward=True, atomic_state=False)
+    config.hybrid_reward = True
+    config.reward_weight = np.ones(10) / 10
+    # config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.optimizer_fn = lambda params: torch.optim.SGD(params, 0.1, momentum=0.9)
+    config.network_fn = lambda optimizer_fn: FruitMultiStatesFCNet(
+        17, 4, config.reward_weight, optimizer_fn)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
+    config.replay_fn = lambda: HybridRewardReplay(memory_size=10000, batch_size=15)
+    config.discount = 0.95
+    config.target_network_update_freq = 200
+    config.max_episode_length = 100
+    config.exploration_steps = 200
+    config.logger = Logger('./log', gym.logger)
+    config.history_length = 1
+    config.test_interval = 0
+    config.test_repetitions = 10
+    config.target_type = config.expected_sarsa_target
+    # config.target_type = config.q_target
+    config.double_q = False
+    config.episode_limit = 5000
+    agent = MSDQNAgent(config)
+    agent.run()
+
 if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
@@ -236,8 +311,12 @@ if __name__ == '__main__':
     # a3c_cart_pole()
     # a3c_pendulum()
     # a3c_walker()
-    ddpg_pendulum()
+    # ddpg_pendulum()
     # ddpg_walker()
+
+    # dqn_fruit()
+    # hrdqn_fruit()
+    hrmsdqn_fruit()
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
     # async_pixel_atari('PongNoFrameskip-v3')
