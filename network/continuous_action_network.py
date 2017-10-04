@@ -6,43 +6,6 @@
 
 from network import *
 
-class ContinuousActorCriticNet(nn.Module, BasicNet):
-    def __init__(self, state_dim, action_dim, action_scale, action_gate):
-        super(ContinuousActorCriticNet, self).__init__()
-        actor_hidden = 200
-        critic_hidden = 100
-        self.fc_actor = nn.Linear(state_dim, actor_hidden)
-        self.fc_mean = nn.Linear(actor_hidden, action_dim)
-        self.fc_std = nn.Linear(actor_hidden, action_dim)
-        self.action_scale = action_scale
-        self.action_gate = action_gate
-        self.actor_params = list(self.fc_actor.parameters()) + \
-                            list(self.fc_mean.parameters()) + \
-                            list(self.fc_std.parameters())
-
-        self.fc_critic = nn.Linear(state_dim, critic_hidden)
-        self.fc_value = nn.Linear(critic_hidden, 1)
-        self.critic_params = list(self.fc_critic.parameters()) + \
-                             list(self.fc_value.parameters())
-
-        BasicNet.__init__(self, None, False)
-
-    def predict(self, x):
-        x = self.to_torch_variable(x)
-        value = self.critic(x)
-
-        x = F.relu(self.fc_actor(x))
-        mean = self.action_scale * self.action_gate(self.fc_mean(x))
-        std = F.softplus(self.fc_std(x) + 1e-5)
-
-        return mean, std, value
-
-    def critic(self, x):
-        x = self.to_torch_variable(x)
-        x = F.relu(self.fc_critic(x))
-        x = self.fc_value(x)
-        return x
-
 class DDPGActorNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
@@ -184,7 +147,7 @@ class GaussianActorNet(nn.Module, BasicNet):
         log_density = -(x - mean).pow(2) / (2 * var) - 0.5 * torch.log(2 * Variable(torch.FloatTensor([np.pi])).expand_as(x)) - log_std
         return log_density.sum(1)
 
-    def kl_loss(self, std):
+    def entropy(self, std):
         return 0.5 * (1 + (2 * std.pow(2) * np.pi + 1e-5).log()).sum(1).mean()
 
 class GaussianCriticNet(nn.Module, BasicNet):
@@ -205,3 +168,26 @@ class GaussianCriticNet(nn.Module, BasicNet):
 
     def predict(self, x):
         return self.forward(x)
+
+class DisjointActorCriticNet:
+    def __init__(self, actor_network_fn, critic_network_fn):
+        self.actor = actor_network_fn()
+        self.critic = critic_network_fn()
+
+    def state_dict(self):
+        return [self.actor.state_dict(), self.critic.state_dict()]
+
+    def load_state_dict(self, state_dicts):
+        self.actor.load_state_dict(state_dicts[0])
+        self.critic.load_state_dict(state_dicts[1])
+
+    def share_memory(self):
+        self.actor.share_memory()
+        self.critic.share_memory()
+
+    def parameters(self):
+        return list(self.actor.parameters()) + list(self.critic.parameters())
+
+    def zero_grad(self):
+        self.actor.zero_grad()
+        self.critic.zero_grad()

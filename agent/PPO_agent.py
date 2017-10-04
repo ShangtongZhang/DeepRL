@@ -117,7 +117,7 @@ class PPOWorker:
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip, 1.0 + self.config.ppo_ratio_clip) * advantages
                 policy_loss = -torch.min(obj, obj_clipped).mean(0)
                 if config.entropy_weight:
-                    policy_loss += config.entropy_weight * self.actor_net.kl_loss(std)
+                    policy_loss += -config.entropy_weight * self.actor_net.entropy(std)
 
                 v = self.critic_net.predict(states)
                 value_loss = 0.5 * (returns - v).pow(2).mean()
@@ -126,7 +126,6 @@ class PPOWorker:
                 value_loss.backward()
                 nn.utils.clip_grad_norm(self.critic_net.parameters(), config.gradient_clip)
                 self.critic_opt.step()
-
 
                 actor_net_old.load_state_dict(self.actor_net.state_dict())
                 self.actor_opt.zero_grad()
