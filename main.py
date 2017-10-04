@@ -308,8 +308,8 @@ def ppo_pendulum():
     # config.task_fn = lambda: BipedalWalker()
     # config.reward_shift_fn = lambda reward: reward / 10
     task = config.task_fn()
-    config.actor_network_fn = lambda: PPOActorNet(task.state_dim, task.action_dim)
-    config.critic_network_fn = lambda: PPOCriticNet(task.state_dim)
+    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim)
+    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
 
@@ -320,10 +320,9 @@ def ppo_pendulum():
     config.gae_tau = 0.97
     config.max_episode_length = 200
     config.num_workers = None
-    config.update_interval = None
     config.test_interval = None
     config.test_repetitions = None
-    config.entropy_weight = 0.001
+    config.entropy_weight = 0
     config.gradient_clip = 40
     config.rollout_length = 10000
     config.optimize_epochs = 10
@@ -339,11 +338,11 @@ if __name__ == '__main__':
     # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
-    # a3c_pendulum()
+    a3c_pendulum()
     # a3c_walker()
     # ddpg_pendulum()
     # ddpg_walker()
-    ppo_pendulum()
+    # ppo_pendulum()
 
     # dqn_fruit()
     # hrdqn_fruit()

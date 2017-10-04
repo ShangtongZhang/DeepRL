@@ -142,15 +142,20 @@ class DDPGCriticNet(nn.Module, BasicNet):
     def predict(self, x, action):
         return self.forward(x, action)
 
-class PPOActorNet(nn.Module, BasicNet):
-    def __init__(self, state_dim, action_dim, action_scale=1.0, action_gate=None, gpu=False):
-        super(PPOActorNet, self).__init__()
+class GaussianActorNet(nn.Module, BasicNet):
+    def __init__(self, state_dim, action_dim, action_scale=1.0, action_gate=None, gpu=False, unit_std=True):
+        super(GaussianActorNet, self).__init__()
         hidden_size = 64
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.action_mean = nn.Linear(hidden_size, action_dim)
-        self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
 
+        if unit_std:
+            self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
+        else:
+            self.action_std = nn.Linear(hidden_size, action_dim)
+
+        self.unit_std = unit_std
         self.action_scale = action_scale
         self.action_gate = action_gate
 
@@ -163,17 +168,28 @@ class PPOActorNet(nn.Module, BasicNet):
         mean = self.action_mean(phi)
         if self.action_gate is not None:
             mean = self.action_scale * self.action_gate(mean)
-        log_std = self.action_log_std.expand_as(mean)
-        std = log_std.exp()
+        if self.unit_std:
+            log_std = self.action_log_std.expand_as(mean)
+            std = log_std.exp()
+        else:
+            std = F.softplus(self.fc_std(x) + 1e-5)
+            log_std = std.log()
         return mean, std, log_std
 
     def predict(self, x):
         return self.forward(x)
 
+    def log_density(self, x, mean, log_std, std):
+        var = std.pow(2)
+        log_density = -(x - mean).pow(2) / (2 * var) - 0.5 * torch.log(2 * Variable(torch.FloatTensor([np.pi])).expand_as(x)) - log_std
+        return log_density.sum(1)
 
-class PPOCriticNet(nn.Module, BasicNet):
+    def kl_loss(self, std):
+        return 0.5 * (1 + (2 * std.pow(2) * np.pi + 1e-5).log()).sum(1).mean()
+
+class GaussianCriticNet(nn.Module, BasicNet):
     def __init__(self, state_dim, gpu=False):
-        super(PPOCriticNet, self).__init__()
+        super(GaussianCriticNet, self).__init__()
         hidden_size = 64
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)

@@ -30,11 +30,6 @@ class PPOWorker:
 
         # self.shared_state_shifter()
 
-    def normal_log_density(self, x, mean, log_std, std):
-        var = std.pow(2)
-        log_density = -(x - mean).pow(2) / (2 * var) - 0.5 * torch.log(2 * Variable(torch.FloatTensor([np.pi])).expand_as(x)) - log_std
-        return log_density.sum(1)
-
     def rollout(self, deterministic=False):
         config = self.config
         replay = config.replay_fn()
@@ -114,13 +109,15 @@ class PPOWorker:
                 advantages = (advantages - advantages.mean().expand_as(advantages)) / advantages.std().expand_as(advantages)
 
                 mean_old, std_old, log_std_old = actor_net_old.predict(states)
-                probs_old = self.normal_log_density(actions, mean_old, log_std_old, std_old)
+                probs_old = self.actor_net.log_density(actions, mean_old, log_std_old, std_old)
                 mean, std, log_std = self.actor_net.predict(states)
-                probs = self.normal_log_density(actions, mean, log_std, std)
+                probs = self.actor_net.log_density(actions, mean, log_std, std)
                 ratio = (probs - probs_old).exp()
                 obj = ratio * advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip, 1.0 + self.config.ppo_ratio_clip) * advantages
                 policy_loss = -torch.min(obj, obj_clipped).mean(0)
+                if config.entropy_weight:
+                    policy_loss += config.entropy_weight * self.actor_net.kl_loss(std)
 
                 v = self.critic_net.predict(states)
                 value_loss = 0.5 * (returns - v).pow(2).mean()
@@ -130,8 +127,6 @@ class PPOWorker:
                 nn.utils.clip_grad_norm(self.critic_net.parameters(), config.gradient_clip)
                 self.critic_opt.step()
 
-                # kl_loss = 0.5 * (1 + (2 * std.pow(2) * np.pi + 1e-5).log()).sum(1).mean()
-                # policy_loss += kl_loss
 
                 actor_net_old.load_state_dict(self.actor_net.state_dict())
                 self.actor_opt.zero_grad()
