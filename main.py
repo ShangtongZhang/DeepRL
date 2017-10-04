@@ -302,6 +302,36 @@ def hrmsdqn_fruit():
     agent = MSDQNAgent(config)
     agent.run()
 
+def ppo_pendulum():
+    config = Config()
+    config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: BipedalWalker()
+    # config.reward_shift_fn = lambda reward: reward / 10
+    task = config.task_fn()
+    config.actor_network_fn = lambda: PPOActorNet(task.state_dim, task.action_dim)
+    config.critic_network_fn = lambda: PPOCriticNet(task.state_dim)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+
+    config.policy_fn = lambda: GaussianPolicy()
+    config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=64)
+    config.worker = ContinuousAdvantageActorCritic
+    config.discount = 0.99
+    config.gae_tau = 0.97
+    config.max_episode_length = 200
+    config.num_workers = None
+    config.update_interval = None
+    config.test_interval = None
+    config.test_repetitions = None
+    config.entropy_weight = 0.001
+    config.gradient_clip = 40
+    config.rollout_length = 10000
+    config.optimize_epochs = 10
+    config.ppo_ratio_clip = 0.2
+    config.logger = Logger('./log', gym.logger)
+    agent = PPOAgent(config)
+    agent.run()
+
 if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
@@ -313,10 +343,11 @@ if __name__ == '__main__':
     # a3c_walker()
     # ddpg_pendulum()
     # ddpg_walker()
+    ppo_pendulum()
 
     # dqn_fruit()
     # hrdqn_fruit()
-    hrmsdqn_fruit()
+    # hrmsdqn_fruit()
 
     # dqn_pixel_atari('PongNoFrameskip-v3')
     # async_pixel_atari('PongNoFrameskip-v3')

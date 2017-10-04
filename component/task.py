@@ -88,9 +88,9 @@ class Pendulum(BasicTask):
         self.state_dim = self.env.observation_space.shape[0]
 
     def normalize_state(self, state):
-        state = (state - self.env.observation_space.low) / \
-                (self.env.observation_space.high - self.env.observation_space.low)
-        state = state * 2 - 1
+        # state = (state - self.env.observation_space.low) / \
+        #         (self.env.observation_space.high - self.env.observation_space.low)
+        # state = state * 2 - 1
         return state
 
     def step(self, action):

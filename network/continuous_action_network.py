@@ -141,3 +141,51 @@ class DDPGCriticNet(nn.Module, BasicNet):
 
     def predict(self, x, action):
         return self.forward(x, action)
+
+class PPOActorNet(nn.Module, BasicNet):
+    def __init__(self, state_dim, action_dim, action_scale=1.0, action_gate=None, gpu=False):
+        super(PPOActorNet, self).__init__()
+        hidden_size = 64
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.action_mean = nn.Linear(hidden_size, action_dim)
+        self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
+
+        self.action_scale = action_scale
+        self.action_gate = action_gate
+
+        BasicNet.__init__(self, None, gpu, False)
+
+    def forward(self, x):
+        x = self.to_torch_variable(x)
+        phi = F.tanh(self.fc1(x))
+        phi = F.tanh(self.fc2(phi))
+        mean = self.action_mean(phi)
+        if self.action_gate is not None:
+            mean = self.action_scale * self.action_gate(mean)
+        log_std = self.action_log_std.expand_as(mean)
+        std = log_std.exp()
+        return mean, std, log_std
+
+    def predict(self, x):
+        return self.forward(x)
+
+
+class PPOCriticNet(nn.Module, BasicNet):
+    def __init__(self, state_dim, gpu=False):
+        super(PPOCriticNet, self).__init__()
+        hidden_size = 64
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc_value = nn.Linear(hidden_size, 1)
+        BasicNet.__init__(self, None, gpu, False)
+
+    def forward(self, x):
+        x = self.to_torch_variable(x)
+        phi = F.tanh(self.fc1(x))
+        phi = F.tanh(self.fc2(phi))
+        value = self.fc_value(phi)
+        return value
+
+    def predict(self, x):
+        return self.forward(x)

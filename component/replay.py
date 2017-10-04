@@ -5,6 +5,8 @@
 #######################################################################
 
 import numpy as np
+import torch
+import random
 
 class Replay:
     def __init__(self, memory_size, batch_size, dtype=np.float32):
@@ -137,3 +139,24 @@ class HighDimActionReplay:
                 self.next_states[sampled_indices],
                 self.terminals[sampled_indices]]
 
+class GeneralReplay:
+    def __init__(self, memory_size, batch_size):
+        self.buffer = []
+        self.memory_size = memory_size
+        self.batch_size = batch_size
+
+    def feed(self, experiences):
+        for experience in zip(*experiences):
+            self.buffer.append(experience)
+            if len(self.buffer) > self.memory_size:
+                del self.buffer[0]
+
+    def sample(self):
+        sampled = zip(*random.sample(self.buffer, self.batch_size))
+        return sampled
+
+    def clear(self):
+        self.buffer = []
+
+    def full(self):
+        return len(self.buffer) == self.memory_size
