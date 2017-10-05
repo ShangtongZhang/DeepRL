@@ -303,36 +303,37 @@ def hrmsdqn_fruit():
 
 def ppo_pendulum():
     config = Config()
-    config.task_fn = lambda: Pendulum()
-    # config.task_fn = lambda: BipedalWalker()
+    # config.task_fn = lambda: Pendulum()
+    config.task_fn = lambda: BipedalWalker()
     # config.reward_shift_fn = lambda reward: reward / 10
     task = config.task_fn()
     config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim)
     config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
 
     config.policy_fn = lambda: GaussianPolicy()
     config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=64)
-    config.worker = ContinuousAdvantageActorCritic
+    config.worker = ProximalPolicyOptimization
     config.discount = 0.99
     config.gae_tau = 0.97
     config.max_episode_length = 200
-    config.num_workers = None
-    config.test_interval = None
-    config.test_repetitions = None
+    config.num_workers = 8
+    config.test_interval = 1
+    config.test_repetitions = 1
     config.entropy_weight = 0
     config.gradient_clip = 40
     config.rollout_length = 10000
     config.optimize_epochs = 10
     config.ppo_ratio_clip = 0.2
     config.logger = Logger('./log', gym.logger)
-    agent = PPOAgent(config)
+    agent = AsyncAgent(config)
     agent.run()
 
 if __name__ == '__main__':
-    # gym.logger.setLevel(logging.DEBUG)
-    gym.logger.setLevel(logging.INFO)
+    gym.logger.setLevel(logging.DEBUG)
+    # gym.logger.setLevel(logging.INFO)
 
     # dqn_cart_pole()
     # async_cart_pole()
@@ -341,7 +342,7 @@ if __name__ == '__main__':
     # a3c_walker()
     # ddpg_pendulum()
     # ddpg_walker()
-    # ppo_pendulum()
+    ppo_pendulum()
 
     # dqn_fruit()
     # hrdqn_fruit()

@@ -45,7 +45,6 @@ class ContinuousAdvantageActorCritic:
             next_state, reward, terminal, _ = self.task.step(action)
             terminal = (terminal or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
-            # next_state = config.state_shift_fn(next_state)
 
             # if deterministic:
             #     self.config.logger.scalar_summary('reward', reward, self.counter)

@@ -14,8 +14,8 @@ import pickle
 import os
 import time
 
-def train(id, config, learning_network, target_network):
-    worker = config.worker(config, learning_network, target_network)
+def train(id, config, learning_network, extra):
+    worker = config.worker(config, learning_network, extra)
     episode = 0
     rewards = []
     while not config.stop_signal.value:
@@ -64,14 +64,14 @@ class AsyncAgent:
         task = config.task_fn()
         learning_network = config.network_fn()
         learning_network.share_memory()
-        target_network = config.network_fn()
-        target_network.share_memory()
-        target_network.load_state_dict(learning_network.state_dict())
 
         os.environ['OMP_NUM_THREADS'] = '1'
         if config.worker == NStepQLearning or config.worker == OneStepQLearning or config.worker == OneStepSarsa:
+            target_network = config.network_fn()
+            target_network.share_memory()
+            target_network.load_state_dict(learning_network.state_dict())
             extra = target_network
-        elif config.worker == ContinuousAdvantageActorCritic:
+        elif config.worker == ContinuousAdvantageActorCritic or config.worker == ProximalPolicyOptimization:
             state_normalizer = StaticNormalizer(task.state_dim)
             reward_normalizer = StaticNormalizer(1)
             extra = [state_normalizer, reward_normalizer]

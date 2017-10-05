@@ -14,7 +14,7 @@ import pickle
 import os
 import time
 
-class PPOWorker:
+class ProximalPolicyOptimization:
     def __init__(self, config, shared_network, extra):
         self.config = config
         self.task = config.task_fn()
@@ -122,7 +122,7 @@ class PPOWorker:
         self.reward_normalizer.online_stats.zero()
 
         for _ in np.arange(self.config.optimize_epochs):
-            self.worker_network.load_state_dict(self.shared_network.state_dict())
+            # self.worker_network.load_state_dict(self.shared_network.state_dict())
 
             states, actions, returns, advantages = replay.sample()
             states = actor_net.to_torch_variable(np.stack(states))
@@ -144,7 +144,7 @@ class PPOWorker:
 
             v = critic_net.predict(states)
             value_loss = 0.5 * (returns - v).pow(2).mean()
-            actor_net_old.load_state_dict(self.actor_net.state_dict())
+            actor_net_old.load_state_dict(actor_net.state_dict())
 
             self.worker_network.zero_grad()
             self.actor_opt.zero_grad()
@@ -152,7 +152,6 @@ class PPOWorker:
             policy_loss.backward()
             value_loss.backward()
             nn.utils.clip_grad_norm(self.worker_network.parameters(), config.gradient_clip)
-
             for param, worker_param in zip(
                     self.shared_network.parameters(), self.worker_network.parameters()):
                 if param.grad is not None:
@@ -162,11 +161,3 @@ class PPOWorker:
             self.critic_opt.step()
 
         return batched_steps, batched_rewards
-
-class PPOAgent:
-    def __init__(self, config):
-        self.config = config
-
-    def run(self):
-        worker = PPOWorker(self.config, None, None)
-        worker.rollout()
