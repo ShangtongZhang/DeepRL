@@ -66,13 +66,12 @@ def a3c_cart_pole():
 def a3c_pendulum():
     config = Config()
     config.task_fn = lambda: Pendulum()
-    # config.reward_shift_fn = lambda reward: reward / 10
     task = config.task_fn()
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim)
-    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim)
-    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
+    config.network_fn = lambda: DisjointActorCriticNet(
+        lambda: GaussianActorNet(task.state_dim, task.action_dim),
+        lambda: GaussianCriticNet(task.state_dim))
     config.policy_fn = lambda: GaussianPolicy()
     config.worker = ContinuousAdvantageActorCritic
     config.discount = 0.99
@@ -81,7 +80,6 @@ def a3c_pendulum():
     config.update_interval = 5
     config.test_interval = 1
     config.test_repetitions = 5
-    # config.entropy_weight = 0.0001
     config.entropy_weight = 0
     config.gradient_clip = 40
     config.logger = Logger('./log', gym.logger)
@@ -91,14 +89,12 @@ def a3c_pendulum():
 def a3c_walker():
     config = Config()
     config.task_fn = lambda: BipedalWalker()
-    shifter = Shifter()
-    config.state_shift_fn = lambda state: shifter(state)
     task = config.task_fn()
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim)
-    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim)
-    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
+    config.network_fn = lambda: DisjointActorCriticNet(
+        lambda: GaussianActorNet(task.state_dim, task.action_dim),
+        lambda: GaussianCriticNet(task.state_dim))
     config.policy_fn = lambda: GaussianPolicy()
     config.worker = ContinuousAdvantageActorCritic
     config.discount = 0.99
@@ -107,9 +103,8 @@ def a3c_walker():
     config.update_interval = 20
     config.test_interval = 1
     config.test_repetitions = 5
-    # config.entropy_weight = 0.01
     config.entropy_weight = 0
-    config.gradient_clip = 30
+    config.gradient_clip = 40
     config.logger = Logger('./log', gym.logger)
     agent = AsyncAgent(config)
     agent.run()
@@ -343,7 +338,7 @@ if __name__ == '__main__':
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_pendulum()
-    a3c_walker()
+    # a3c_walker()
     # ddpg_pendulum()
     # ddpg_walker()
     # ppo_pendulum()

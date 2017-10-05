@@ -51,7 +51,7 @@ class VanillaNet(BasicNet):
 
 # Base class for actor critic method
 class ActorCriticNet(BasicNet):
-    def predict(self, x, _):
+    def predict(self, x):
         phi = self.forward(x, True)
         pre_prob = self.fc_actor(phi)
         prob = F.softmax(pre_prob)

@@ -7,9 +7,10 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
+from utils import *
 
 class ContinuousAdvantageActorCritic:
-    def __init__(self, config, learning_network, target_network):
+    def __init__(self, config, learning_network, extra):
         self.config = config
         self.actor_opt = config.actor_optimizer_fn(learning_network.actor.parameters())
         self.critic_opt = config.critic_optimizer_fn(learning_network.critic.parameters())
@@ -20,15 +21,21 @@ class ContinuousAdvantageActorCritic:
         self.learning_network = learning_network
         self.counter = 0
 
+        self.shared_state_normalizer = extra[0]
+        self.state_normalizer = StaticNormalizer(self.task.state_dim)
+        self.shared_reward_normalizer = extra[1]
+        self.reward_normalizer = StaticNormalizer(1)
+
     def episode(self, deterministic=False):
         config = self.config
+        self.state_normalizer.offline_stats.load(self.shared_state_normalizer.offline_stats)
+        self.reward_normalizer.offline_stats.load(self.shared_reward_normalizer.offline_stats)
         state = self.task.reset()
-        state = config.state_shift_fn(state)
+        state = self.state_normalizer(state)
         steps = 0
         total_reward = 0
         pending = []
-        while not config.stop_signal.value and \
-                (not config.max_episode_length or steps < config.max_episode_length):
+        while not config.stop_signal.value:
             mean, std, log_std = self.worker_network.actor.predict(np.stack([state]))
             value = self.worker_network.critic.predict(np.stack([state]))
             action = self.policy.sample(mean.data.numpy().flatten(),
@@ -36,7 +43,9 @@ class ContinuousAdvantageActorCritic:
                                         False)
             action = self.config.action_shift_fn(action)
             next_state, reward, terminal, _ = self.task.step(action)
-            next_state = config.state_shift_fn(next_state)
+            terminal = (terminal or (config.max_episode_length and steps >= config.max_episode_length))
+            next_state = self.state_normalizer(next_state)
+            # next_state = config.state_shift_fn(next_state)
 
             # if deterministic:
             #     self.config.logger.scalar_summary('reward', reward, self.counter)
@@ -49,7 +58,7 @@ class ContinuousAdvantageActorCritic:
 
             steps += 1
             total_reward += reward
-            reward = config.reward_shift_fn(reward)
+            reward = np.asscalar(self.reward_normalizer(np.array([reward])))
 
             if deterministic:
                 if terminal:
@@ -105,5 +114,11 @@ class ContinuousAdvantageActorCritic:
             if terminal:
                 break
             state = next_state
+
+        self.shared_state_normalizer.offline_stats.merge(self.state_normalizer.online_stats)
+        self.state_normalizer.online_stats.zero()
+
+        self.shared_reward_normalizer.offline_stats.merge(self.reward_normalizer.online_stats)
+        self.reward_normalizer.online_stats.zero()
 
         return steps, total_reward

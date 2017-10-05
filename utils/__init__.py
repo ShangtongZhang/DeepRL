@@ -1,5 +1,5 @@
 from config import *
-from shifter import *
+from normalizer import *
 try:
     from tf_logger import Logger
 except:

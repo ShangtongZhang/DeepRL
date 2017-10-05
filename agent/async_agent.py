@@ -25,10 +25,10 @@ def train(id, config, learning_network, target_network):
         config.logger.debug('worker %d, episode %d, return %f, avg return %f, episode steps %d, total steps %d' % (
             id, episode, rewards[-1], np.mean(rewards[-100:]), steps, config.total_steps.value))
 
-def evaluate(config, task, learning_network):
+def evaluate(config, task, learning_network, extra):
     test_rewards = []
     test_points = []
-    worker = config.worker(config, learning_network, None)
+    worker = config.worker(config, learning_network, extra)
     # config.logger = Logger('./evaluation_log', gym.logger)
     while True:
         steps = config.total_steps.value
@@ -69,8 +69,16 @@ class AsyncAgent:
         target_network.load_state_dict(learning_network.state_dict())
 
         os.environ['OMP_NUM_THREADS'] = '1'
-        args = [(i, config, learning_network, target_network) for i in range(config.num_workers)]
-        args.append((config, task, learning_network))
+        if config.worker == NStepQLearning or config.worker == OneStepQLearning or config.worker == OneStepSarsa:
+            extra = target_network
+        elif config.worker == ContinuousAdvantageActorCritic:
+            state_normalizer = StaticNormalizer(task.state_dim)
+            reward_normalizer = StaticNormalizer(1)
+            extra = [state_normalizer, reward_normalizer]
+        else:
+            extra = None
+        args = [(i, config, learning_network, extra) for i in range(config.num_workers)]
+        args.append((config, task, learning_network, extra))
         procs = [mp.Process(target=train, args=args[i]) for i in range(config.num_workers)]
         procs.append(mp.Process(target=evaluate, args=args[-1]))
         for p in procs: p.start()
