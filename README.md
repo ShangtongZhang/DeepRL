@@ -14,6 +14,7 @@ Implemented algorithms:
 * Continuous A3C
 * Deep Deterministic Policy Gradient (DDPG)
 * Hybrid Reward Architecture (HRA)
+* Distributed Proximal Policy Optimization (DPPO)
 
 # Curves
 > Curves for CartPole are trivial so I didn't place it here.
@@ -42,14 +43,26 @@ This is the test curve. Test is triggered in a separate deterministic test proce
 ## Continuous A3C
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Continuous-A3C.png)
 
-Sometimes _Bipedal Walker_ may run into _NAN_, I'm still not able to totally solve it. And continuous A3C is very sensible to hyper parameters.
+For continuous A3C and DPPO, I use fixed unit variance rather than a separate head, so entropy weight is simply set to 0.
+Of course you can also use another head to output variance. In that case, a good practice is to bound your mean while leave 
+variance unbounded, which is also included in the implementation.
+
+## DDPG
+
+## DPPO
+
+The difference between my implementation and [DeepMind version](https://arxiv.org/abs/1707.02286) is:
+1. PPO stands for different algorithms.
+2. I use a much simpler A3C-like synchronization protocol. 
+
+The body of PPO is based on [this](https://github.com/alexis-jacq/Pytorch-DPPO), however that implementation has some
+ critical bugs. 
 
 # Dependency
 * Open AI gym
-* PyTorch
-* PIL (pip install Pillow)
-* Python 2.7 (I didn't test with Python 3)
-* Tensorflow (We need tensorboard)
+* PyTorch (For some reason I use v0.12 now, although I really like v0.2)
+* Python 2.7 (I don't want to try Python 3 until I have to use RoboSchool)
+* Tensorflow (Optional, but tensorboard is awesome)
 
 # Usage
 Detailed usage and all training parameters can be found in ```main.py```.
@@ -70,7 +83,10 @@ mkdir data log evaluation_log
 * [Continuous control with deep reinforcement learning](https://arxiv.org/abs/1509.02971)
 * [High-Dimensional Continuous Control Using Generalized Advantage Estimation](https://arxiv.org/abs/1506.02438)
 * [Hybrid Reward Architecture for Reinforcement Learning](https://arxiv.org/abs/1706.04208)
+* [Trust Region Policy Optimization](https://arxiv.org/abs/1502.05477)
+* [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
+* [Emergence of Locomotion Behaviours in Rich Environments](https://arxiv.org/abs/1707.02286)
 * [transedward/pytorch-dqn](https://github.com/transedward/pytorch-dqn)
 * [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)
 * [ghliu/pytorch-ddpg](https://github.com/ghliu/pytorch-ddpg)
-* [MorvanZhou/Reinforcement-learning-with-tensorflow](https://github.com/MorvanZhou/Reinforcement-learning-with-tensorflow)
+* [alexis-jacq/Pytorch-DPPO](https://github.com/alexis-jacq/Pytorch-DPPO)
