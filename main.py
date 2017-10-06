@@ -329,7 +329,6 @@ def ppo_pendulum():
     config.ppo_ratio_clip = 0.2
     config.logger = Logger('./log', gym.logger)
     agent = AsyncAgent(config)
-    # agent = PPOAgent(config)
     agent.run()
 
 if __name__ == '__main__':
