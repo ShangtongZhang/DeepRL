@@ -5,6 +5,17 @@
 #######################################################################
 import torch
 
+class Normalizer:
+    def __init__(self, o_size):
+        self.stats = SharedStats(o_size)
+
+    def __call__(self, o_):
+        o = torch.FloatTensor(o_)
+        self.stats.feed(o)
+        std = (self.stats.v + 1e-6) ** .5
+        o = (o - self.stats.m) / std
+        return o.numpy().reshape(o_.shape)
+
 class StaticNormalizer:
     def __init__(self, o_size):
         self.offline_stats = SharedStats(o_size)

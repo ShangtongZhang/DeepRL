@@ -108,6 +108,22 @@ class BipedalWalker(BasicTask):
         next_state, reward, done, info = self.env.step(action)
         return next_state, reward, done, info
 
+class ContinuousLunarLander(BasicTask):
+    name = 'LunarLanderContinuous-v2'
+    success_threshold = 300
+
+    def __init__(self):
+        BasicTask.__init__(self)
+        self.env = gym.make(self.name)
+        self.env._max_episode_steps = sys.maxsize
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape[0]
+
+    def step(self, action):
+        action = np.clip(action, -1, 1)
+        next_state, reward, done, info = self.env.step(action)
+        return next_state, reward, done, info
+
 class Fruit(BasicTask):
     def __init__(self, hybrid_reward=False, pseudo_reward=False, atomic_state=True):
         self.hybrid_reward = hybrid_reward

@@ -6,53 +6,55 @@
 
 from network import *
 
-class DDPGActorNet(nn.Module, BasicNet):
+class DeterministicActorNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
                  action_dim,
                  action_gate,
                  action_scale,
-                 gpu=False):
-        super(DDPGActorNet, self).__init__()
-        hidden1 = 400
-        hidden2 = 300
-        self.layer1 = nn.Linear(state_dim, hidden1)
-        self.bn1 = nn.BatchNorm1d(hidden1)
-        self.layer2 = nn.Linear(hidden1, hidden2)
-        self.bn2 = nn.BatchNorm1d(hidden2)
-        self.layer3 = nn.Linear(hidden2, action_dim)
+                 gpu=False,
+                 batch_norm=False,
+                 non_linear=F.relu):
+        super(DeterministicActorNet, self).__init__()
+        hidden_size = 64
+        self.layer1 = nn.Linear(state_dim, hidden_size)
+        self.layer3 = nn.Linear(hidden_size, action_dim)
         self.action_gate = action_gate
         self.action_scale = action_scale
-        BasicNet.__init__(self, None, False, False)
-        self.init_weights()
+        self.non_linear = non_linear
+
+        if batch_norm:
+            self.bn1 = nn.BatchNorm1d(hidden_size)
+            self.bn2 = nn.BatchNorm1d(hidden_size)
+        self.layer2 = nn.Linear(hidden_size, hidden_size)
+
+        self.batch_norm = batch_norm
+        BasicNet.__init__(self, None, gpu, False)
+        # self.init_weights()
 
     def init_weights(self):
         bound = 3e-3
         self.layer3.weight.data.uniform_(-bound, bound)
-        # self.layer3.bias.data.uniform_(-bound, bound)
+        self.layer3.bias.data.fill_(0)
 
         def fanin(size):
             v = 1.0 / np.sqrt(size[1])
             return torch.FloatTensor(size).uniform_(-v, v)
 
         self.layer1.weight.data = fanin(self.layer1.weight.data.size())
-        # self.layer1.bias.data = fanin(self.layer1.bias.data.size())
+        self.layer1.bias.data.fill_(0)
         self.layer2.weight.data = fanin(self.layer2.weight.data.size())
-        # self.layer2.bias.data = fanin(self.layer2.bias.data.size())
+        self.layer2.bias.data.fill_(0)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
-        x = F.relu(self.layer1(x))
-        self.layer1_w = self.layer1.weight.data.cpu().numpy()
-        self.layer1_act = x.data.cpu().numpy()
-        x = self.bn1(x)
-        x = F.relu(self.layer2(x))
-        self.layer2_w = self.layer2.weight.data.cpu().numpy()
-        self.layer2_act = x.data.cpu().numpy()
-        x = self.bn2(x)
+        x = self.non_linear(self.layer1(x))
+        if self.batch_norm:
+            x = self.bn1(x)
+        x = self.non_linear(self.layer2(x))
+        if self.batch_norm:
+            x = self.bn2(x)
         x = self.layer3(x)
-        self.layer3_w = self.layer3.weight.data.cpu().numpy()
-        self.layer3_act = x.data.cpu().numpy()
         x = self.action_scale * self.action_gate(x)
         return x
 
@@ -62,43 +64,51 @@ class DDPGActorNet(nn.Module, BasicNet):
             y = y.cpu().data.numpy()
         return y
 
-class DDPGCriticNet(nn.Module, BasicNet):
+class DeterministicCriticNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
                  action_dim,
-                 gpu=False):
-        super(DDPGCriticNet, self).__init__()
-        hidden1 = 400
-        hidden2 = 300
-        self.layer1 = nn.Linear(state_dim, hidden1)
-        self.bn1 = nn.BatchNorm1d(hidden1)
-        self.layer2 = nn.Linear(hidden1 + action_dim, hidden2)
-        self.bn2 = nn.BatchNorm1d(hidden2)
-        self.layer3 = nn.Linear(hidden2, 1)
-        BasicNet.__init__(self, None, False, False)
-        self.init_weights()
+                 gpu=False,
+                 batch_norm=False,
+                 non_linear=F.relu):
+        super(DeterministicCriticNet, self).__init__()
+        hidden_size = 64
+        self.layer1 = nn.Linear(state_dim, hidden_size)
+        self.layer2 = nn.Linear(hidden_size + action_dim, hidden_size)
+        self.layer3 = nn.Linear(hidden_size, 1)
+        self.non_linear = non_linear
+
+        if batch_norm:
+            self.bn1 = nn.BatchNorm1d(hidden_size)
+            self.bn2 = nn.BatchNorm1d(hidden_size)
+        self.batch_norm = batch_norm
+
+        BasicNet.__init__(self, None, gpu, False)
+        # self.init_weights()
 
     def init_weights(self):
         bound = 3e-3
         self.layer3.weight.data.uniform_(-bound, bound)
-        # self.layer3.bias.data.uniform_(-bound, bound)
+        self.layer3.bias.data.fill_(0)
 
         def fanin(size):
             v = 1.0 / np.sqrt(size[1])
             return torch.FloatTensor(size).uniform_(-v, v)
 
         self.layer1.weight.data = fanin(self.layer1.weight.data.size())
-        # self.layer1.bias.data = fanin(self.layer1.bias.data.size())
+        self.layer1.bias.data.fill_(0)
         self.layer2.weight.data = fanin(self.layer2.weight.data.size())
-        # self.layer2.bias.data = fanin(self.layer2.bias.data.size())
+        self.layer2.bias.data.fill_(0)
 
     def forward(self, x, action):
         x = self.to_torch_variable(x)
         action = self.to_torch_variable(action)
-        x = F.relu(self.layer1(x))
-        x = self.bn1(x)
-        x = F.relu(self.layer2(torch.cat([x, action], dim=1)))
-        x = self.bn2(x)
+        x = self.non_linear(self.layer1(x))
+        if self.batch_norm:
+            x = self.bn1(x)
+        x = self.non_linear(self.layer2(torch.cat([x, action], dim=1)))
+        if self.batch_norm:
+            x = self.bn2(x)
         x = self.layer3(x)
         return x
 
@@ -191,3 +201,11 @@ class DisjointActorCriticNet:
     def zero_grad(self):
         self.actor.zero_grad()
         self.critic.zero_grad()
+
+    def train(self):
+        self.actor.train()
+        self.critic.train()
+
+    def eval(self):
+        self.actor.eval()
+        self.critic.eval()

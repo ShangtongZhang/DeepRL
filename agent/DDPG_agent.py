@@ -14,22 +14,21 @@ class DDPGAgent:
     def __init__(self, config):
         self.config = config
         self.task = config.task_fn()
-        self.actor = config.actor_network_fn()
-        self.critic = config.critic_network_fn()
-        self.target_actor = config.actor_network_fn()
-        self.target_critic = config.critic_network_fn()
-        self.target_actor.load_state_dict(self.actor.state_dict())
-        self.target_critic.load_state_dict(self.critic.state_dict())
-        self.target_actor.eval()
-        self.target_critic.eval()
-        self.actor_opt = config.actor_optimizer_fn(self.actor.parameters())
-        self.critic_opt = config.critic_optimizer_fn(self.critic.parameters())
+        self.learning_network = config.network_fn()
+        self.target_network = config.network_fn()
+        self.target_network.load_state_dict(self.learning_network.state_dict())
+        self.target_network.eval()
+        self.actor_opt = config.actor_optimizer_fn(self.learning_network.actor.parameters())
+        self.critic_opt = config.critic_optimizer_fn(self.learning_network.critic.parameters())
         self.replay = config.replay_fn()
         self.random_process = config.random_process_fn()
         self.criterion = nn.MSELoss()
         self.total_steps = 0
         self.epsilon = 1.0
         self.d_epsilon = 1.0 / config.noise_decay_interval
+
+        self.state_normalizer = Normalizer(self.task.state_dim)
+        self.reward_normalizer = Normalizer(1)
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -39,34 +38,31 @@ class DDPGAgent:
     def episode(self, deterministic=False):
         self.random_process.reset_states()
         state = self.task.reset()
-        state = self.config.state_shift_fn(state)
+        state = self.state_normalizer(state)
+
+        config = self.config
+        actor = self.learning_network.actor
+        critic = self.learning_network.critic
+        target_actor = self.target_network.actor
+        target_critic = self.target_network.critic
 
         steps = 0
         total_reward = 0.0
-        while not self.config or steps < self.config.max_episode_length:
-            self.actor.eval()
-            action = self.actor.predict(np.stack([state])).flatten()
-            self.config.logger.histo_summary('state', state, self.total_steps)
-            self.config.logger.histo_summary('action', action, self.total_steps)
-            self.config.logger.histo_summary('layer1_act', self.actor.layer1_act, self.total_steps)
-            self.config.logger.histo_summary('layer2_act', self.actor.layer2_act, self.total_steps)
-            self.config.logger.histo_summary('layer3_act', self.actor.layer3_act, self.total_steps)
-            self.config.logger.histo_summary('layer1_weight', self.actor.layer1_w, self.total_steps)
-            self.config.logger.histo_summary('layer2_weight', self.actor.layer2_w, self.total_steps)
-            self.config.logger.histo_summary('layer3_weight', self.actor.layer3_w, self.total_steps)
+        while True:
+            actor.eval()
+            action = actor.predict(np.stack([state])).flatten()
             if not deterministic:
-                if self.total_steps < self.config.exploration_steps:
+                if self.total_steps < config.exploration_steps:
                     action = self.task.random_action()
                 else:
-                    action += max(self.epsilon, 0) * self.random_process.sample()
+                    action += max(self.epsilon, config.min_epsilon) * self.random_process.sample()
                     self.epsilon -= self.d_epsilon
-            self.config.logger.histo_summary('noised action', action, self.total_steps)
-            action = self.config.action_shift_fn(action)
             next_state, reward, done, info = self.task.step(action)
-            next_state = self.config.state_shift_fn(next_state)
-            self.config.logger.scalar_summary('reward', reward, self.total_steps)
+            done = (done or (config.max_episode_length and steps >= config.max_episode_length))
+            next_state = self.state_normalizer(next_state)
             total_reward += reward
-            reward = self.config.reward_shift_fn(reward)
+            reward = np.asscalar(self.reward_normalizer(np.array([reward])))
+
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
                 self.total_steps += 1
@@ -76,36 +72,31 @@ class DDPGAgent:
             if done:
                 break
 
-            if not deterministic and self.total_steps > self.config.exploration_steps:
-                self.actor.train()
-                self.critic.train()
+            if not deterministic and self.total_steps > config.exploration_steps:
+                self.learning_network.train()
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
-                q_next = self.target_critic.predict(next_states, self.target_actor.predict(next_states))
-                terminals = self.critic.to_torch_variable(terminals).unsqueeze(1)
-                rewards = self.critic.to_torch_variable(rewards).unsqueeze(1)
-                q_next = self.config.discount * q_next * (1 - terminals)
+                q_next = target_critic.predict(next_states, target_actor.predict(next_states))
+                terminals = critic.to_torch_variable(terminals).unsqueeze(1)
+                rewards = critic.to_torch_variable(rewards).unsqueeze(1)
+                q_next = config.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
-                q_next = Variable(q_next.data)
-                q = self.critic.predict(states, actions)
+                q_next = q_next.detach()
+                q = critic.predict(states, actions)
                 critic_loss = self.criterion(q, q_next)
 
-                self.critic.zero_grad()
+                critic.zero_grad()
                 critic_loss.backward()
                 self.critic_opt.step()
 
-                actor_loss = -self.critic.predict(states, self.actor.predict(states, False))
+                actor_loss = -critic.predict(states, actor.predict(states, False))
                 actor_loss = actor_loss.mean()
 
-                self.actor.zero_grad()
+                actor.zero_grad()
                 actor_loss.backward()
-                self.config.logger.histo_summary('layer1_g', self.actor.layer1.weight.grad.data.numpy(), self.total_steps)
-                self.config.logger.histo_summary('layer2_g', self.actor.layer2.weight.grad.data.numpy(), self.total_steps)
-                self.config.logger.histo_summary('layer3_g', self.actor.layer3.weight.grad.data.numpy(), self.total_steps)
                 self.actor_opt.step()
 
-                self.soft_update(self.target_actor, self.actor)
-                self.soft_update(self.target_critic, self.critic)
+                self.soft_update(self.target_network, self.learning_network)
 
         return total_reward
 

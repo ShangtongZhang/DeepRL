@@ -181,8 +181,11 @@ def ddpg_pendulum():
     task = task_fn()
     config = Config()
     config.task_fn = task_fn
-    config.actor_network_fn = lambda: DDPGActorNet(task.state_dim, task.action_dim, F.tanh, 2)
-    config.critic_network_fn = lambda: DDPGCriticNet(task.state_dim, task.action_dim)
+    config.actor_network_fn = lambda: DeterministicActorNet(
+        task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.tanh)
+    config.critic_network_fn = lambda: DeterministicCriticNet(
+        task.state_dim, task.action_dim, non_linear=F.tanh)
+    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
@@ -200,15 +203,14 @@ def ddpg_pendulum():
     agent = DDPGAgent(config)
     agent.run()
 
-def ddpg_walker():
-    task_fn = lambda: BipedalWalker()
+def ddpg_lunar_lander():
+    task_fn = lambda: ContinuousLunarLander()
     task = task_fn()
     config = Config()
     config.task_fn = task_fn
-    # shifter = Shifter()
-    # config.state_shift_fn = lambda state: shifter(state)
-    config.actor_network_fn = lambda: DDPGActorNet(task.state_dim, task.action_dim, F.tanh, 1, gpu=True)
-    config.critic_network_fn = lambda: DDPGCriticNet(task.state_dim, task.action_dim, gpu=True)
+    config.actor_network_fn = lambda: DeterministicActorNet(task.state_dim, task.action_dim, F.tanh, 1)
+    config.critic_network_fn = lambda: DeterministicCriticNet(task.state_dim, task.action_dim)
+    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
@@ -218,6 +220,34 @@ def ddpg_walker():
     config.target_network_mix = 0.001
     config.exploration_steps = 100
     config.noise_decay_interval = 10000
+    config.random_process_fn = \
+        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
+    config.test_interval = 0
+    config.test_repetitions = 10
+    config.logger = Logger('./log', gym.logger)
+    agent = DDPGAgent(config)
+    agent.run()
+
+def ddpg_walker():
+    task_fn = lambda: BipedalWalker()
+    task = task_fn()
+    config = Config()
+    config.task_fn = task_fn
+    config.actor_network_fn = lambda: DeterministicActorNet(
+        task.state_dim, task.action_dim, F.tanh, 1, gpu=True, batch_norm=False, non_linear=F.tanh)
+    config.critic_network_fn = lambda: DeterministicCriticNet(
+        task.state_dim, task.action_dim, gpu=True, batch_norm=False, non_linear=F.tanh)
+    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.critic_optimizer_fn =\
+        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
+    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
+    config.discount = 0.99
+    config.min_epsilon = 0.1
+    config.max_episode_length = 999
+    config.target_network_mix = 0.001
+    config.exploration_steps = 10000
+    config.noise_decay_interval = 1000000
     config.random_process_fn = \
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
     config.test_interval = 0
@@ -341,8 +371,9 @@ if __name__ == '__main__':
     # a3c_pendulum()
     # a3c_walker()
     # ddpg_pendulum()
+    ddpg_lunar_lander()
     # ddpg_walker()
-    ppo_pendulum()
+    # ppo_pendulum()
 
     # dqn_fruit()
     # hrdqn_fruit()

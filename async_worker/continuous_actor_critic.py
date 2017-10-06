@@ -46,15 +46,6 @@ class ContinuousAdvantageActorCritic:
             terminal = (terminal or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
 
-            # if deterministic:
-            #     self.config.logger.scalar_summary('reward', reward, self.counter)
-            #     self.config.logger.histo_summary('std', std.data.numpy(), self.counter)
-            #     self.config.logger.histo_summary('mean', mean.data.numpy(), self.counter)
-            #     self.config.logger.histo_summary('action', action, self.counter)
-            #     self.config.logger.scalar_summary('steps', steps, self.counter)
-            #     self.config.logger.histo_summary('states', state, self.counter)
-            #     self.counter += 1
-
             steps += 1
             total_reward += reward
             reward = np.asscalar(self.reward_normalizer(np.array([reward])))
