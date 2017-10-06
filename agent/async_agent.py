@@ -24,6 +24,7 @@ def train(id, config, learning_network, extra):
         if len(rewards) > 100: rewards.pop(0)
         config.logger.debug('worker %d, episode %d, return %f, avg return %f, episode steps %d, total steps %d' % (
             id, episode, rewards[-1], np.mean(rewards[-100:]), steps, config.total_steps.value))
+        episode += 1
 
 def evaluate(config, task, learning_network, extra):
     test_rewards = []
@@ -32,7 +33,7 @@ def evaluate(config, task, learning_network, extra):
     # config.logger = Logger('./evaluation_log', gym.logger)
     while True:
         steps = config.total_steps.value
-        if steps % config.test_interval == 0:
+        if config.test_interval and steps % config.test_interval == 0:
             worker.worker_network.load_state_dict(learning_network.state_dict())
             with open('data/%s-%s-model-%s.bin' % (
                     config.tag, config.worker.__name__, task.name), 'wb') as f:

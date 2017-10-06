@@ -27,6 +27,9 @@ class PPOWorker:
         self.worker_network = config.network_fn()
         self.worker_network.load_state_dict(shared_network.state_dict())
 
+        # self.actor_opt = config.actor_optimizer_fn(self.worker_network.actor.parameters())
+        # self.critic_opt = config.critic_optimizer_fn(self.worker_network.critic.parameters())
+
         self.shared_state_normalizer = extra[0]
         self.state_normalizer = StaticNormalizer(self.task.state_dim)
         self.shared_reward_normalizer = extra[1]
@@ -78,8 +81,6 @@ class PPOWorker:
                 batched_steps += 1
                 episode_length += 1
 
-
-
                 reward = np.asscalar(self.reward_normalizer(np.array([reward])))
                 rewards.append(reward)
 
@@ -112,8 +113,8 @@ class PPOWorker:
         if deterministic:
             return batched_steps, batched_rewards
 
-        with config.steps_lock:
-            config.total_steps.value += replay.memory_size
+        # with config.steps_lock:
+        #     config.total_steps.value += replay.memory_size
 
         self.shared_state_normalizer.offline_stats.merge(self.state_normalizer.online_stats)
         self.state_normalizer.online_stats.zero()
@@ -144,7 +145,7 @@ class PPOWorker:
 
             v = critic_net.predict(states)
             value_loss = 0.5 * (returns - v).pow(2).mean()
-            actor_net_old.load_state_dict(self.actor_net.state_dict())
+            actor_net_old.load_state_dict(actor_net.state_dict())
 
             self.worker_network.zero_grad()
             self.actor_opt.zero_grad()
@@ -153,11 +154,10 @@ class PPOWorker:
             value_loss.backward()
             nn.utils.clip_grad_norm(self.worker_network.parameters(), config.gradient_clip)
 
+            self.shared_network.zero_grad()
             for param, worker_param in zip(
                     self.shared_network.parameters(), self.worker_network.parameters()):
-                if param.grad is not None:
-                    break
-                param._grad = worker_param.grad
+                param._grad = worker_param.grad.clone()
             self.actor_opt.step()
             self.critic_opt.step()
 
@@ -168,5 +168,13 @@ class PPOAgent:
         self.config = config
 
     def run(self):
-        worker = PPOWorker(self.config, None, None)
-        worker.rollout()
+        state_normalizer = StaticNormalizer(3)
+        reward_normalizer = StaticNormalizer(1)
+        extra = [state_normalizer, reward_normalizer]
+        shared_network = self.config.network_fn()
+        worker = PPOWorker(self.config, shared_network, extra)
+        i = 0
+        while True:
+            _, rewards = worker.episode()
+            print i, rewards
+            i += 1

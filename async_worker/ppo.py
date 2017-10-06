@@ -72,13 +72,12 @@ class ProximalPolicyOptimization:
                 values.append(value)
                 state, reward, done, _ = self.task.step(action)
                 state = self.state_normalizer(state)
+                # print state
                 done = (done or (config.max_episode_length and episode_length > config.max_episode_length))
 
                 batched_rewards += reward
                 batched_steps += 1
                 episode_length += 1
-
-
 
                 reward = np.asscalar(self.reward_normalizer(np.array([reward])))
                 rewards.append(reward)
@@ -122,7 +121,7 @@ class ProximalPolicyOptimization:
         self.reward_normalizer.online_stats.zero()
 
         for _ in np.arange(self.config.optimize_epochs):
-            # self.worker_network.load_state_dict(self.shared_network.state_dict())
+            self.worker_network.load_state_dict(self.shared_network.state_dict())
 
             states, actions, returns, advantages = replay.sample()
             states = actor_net.to_torch_variable(np.stack(states))
@@ -147,17 +146,16 @@ class ProximalPolicyOptimization:
             actor_net_old.load_state_dict(actor_net.state_dict())
 
             self.worker_network.zero_grad()
-            self.actor_opt.zero_grad()
-            self.critic_opt.zero_grad()
             policy_loss.backward()
             value_loss.backward()
             nn.utils.clip_grad_norm(self.worker_network.parameters(), config.gradient_clip)
-            for param, worker_param in zip(
-                    self.shared_network.parameters(), self.worker_network.parameters()):
-                if param.grad is not None:
-                    break
-                param._grad = worker_param.grad
-            self.actor_opt.step()
-            self.critic_opt.step()
+            with config.network_lock:
+                self.shared_network.zero_grad()
+                self.actor_opt.zero_grad()
+                self.critic_opt.zero_grad()
+                for param, worker_param in zip(self.shared_network.parameters(), self.worker_network.parameters()):
+                    param._grad = worker_param.grad.clone()
+                self.actor_opt.step()
+                self.critic_opt.step()
 
         return batched_steps, batched_rewards

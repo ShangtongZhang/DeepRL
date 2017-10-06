@@ -13,6 +13,8 @@ class StaticNormalizer:
     def __call__(self, o_):
         o = torch.FloatTensor(o_)
         self.online_stats.feed(o)
+        if self.offline_stats.n[0] == 0:
+            return o_
         std = (self.offline_stats.v + 1e-6) ** .5
         o = (o - self.offline_stats.m) / std
         return o.numpy().reshape(o_.shape)
