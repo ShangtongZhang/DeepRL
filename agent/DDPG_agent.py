@@ -98,38 +98,8 @@ class DDPGAgent:
 
                 self.soft_update(self.target_network, self.learning_network)
 
-        return total_reward
+        return total_reward, steps
 
     def save(self, file_name):
         with open(file_name, 'wb') as f:
-            pickle.dump(self.actor.state_dict(), f)
-
-    def run(self):
-        window_size = 100
-        ep = 0
-        rewards = []
-        avg_test_rewards = []
-        while True:
-            ep += 1
-            reward = self.episode()
-            rewards.append(reward)
-            avg_reward = np.mean(rewards[-window_size:])
-            self.config.logger.info('episode %d, reward %f, avg reward %f, total steps %d' % (
-                ep, reward, avg_reward, self.total_steps))
-
-            if self.config.test_interval and ep % self.config.test_interval == 0:
-                self.config.logger.info('Testing...')
-                with open('data/%s-ddpg-model-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
-                    pickle.dump(self.actor.state_dict(), f)
-                test_rewards = []
-                for _ in range(self.config.test_repetitions):
-                    test_rewards.append(self.episode(True))
-                avg_reward = np.mean(test_rewards)
-                avg_test_rewards.append(avg_reward)
-                self.config.logger.info('Avg reward %f(%f)' % (
-                    avg_reward, np.std(test_rewards) / np.sqrt(self.config.test_repetitions)))
-                with open('data/%s-ddpg-statistics-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
-                    pickle.dump({'rewards': rewards,
-                                 'test_rewards': avg_test_rewards}, f)
-                if avg_reward > self.task.success_threshold:
-                    break
+            pickle.dump(self.learning_network.state_dict(), f)

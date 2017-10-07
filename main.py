@@ -21,8 +21,7 @@ def dqn_cart_pole():
     config.test_repetitions = 50
     # config.double_q = True
     config.double_q = False
-    agent = DQNAgent(config)
-    agent.run()
+    run_episodes(DQNAgent(config))
 
 def async_cart_pole():
     config = Config()
@@ -128,8 +127,7 @@ def dqn_pixel_atari(name):
     config.test_repetitions = 1
     # config.double_q = True
     config.double_q = False
-    agent = DQNAgent(config)
-    agent.run()
+    run_episodes(DQNAgent(config))
 
 def async_pixel_atari(name):
     config = Config()
@@ -182,9 +180,9 @@ def ddpg_pendulum():
     config = Config()
     config.task_fn = task_fn
     config.actor_network_fn = lambda: DeterministicActorNet(
-        task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.tanh)
+        task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.relu, batch_norm=False)
     config.critic_network_fn = lambda: DeterministicCriticNet(
-        task.state_dim, task.action_dim, non_linear=F.tanh)
+        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
@@ -199,17 +197,19 @@ def ddpg_pendulum():
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
     config.test_interval = 0
     config.test_repetitions = 10
+    config.save_interval = 50
     config.logger = Logger('./log', gym.logger)
-    agent = DDPGAgent(config)
-    agent.run()
+    run_episodes(DDPGAgent(config))
 
 def ddpg_lunar_lander():
     task_fn = lambda: ContinuousLunarLander()
     task = task_fn()
     config = Config()
     config.task_fn = task_fn
-    config.actor_network_fn = lambda: DeterministicActorNet(task.state_dim, task.action_dim, F.tanh, 1)
-    config.critic_network_fn = lambda: DeterministicCriticNet(task.state_dim, task.action_dim)
+    config.actor_network_fn = lambda: DeterministicActorNet(
+        task.state_dim, task.action_dim, F.tanh, 1, batch_norm=True)
+    config.critic_network_fn = lambda: DeterministicCriticNet(
+        task.state_dim, task.action_dim, batch_norm=True)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
@@ -224,9 +224,9 @@ def ddpg_lunar_lander():
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
     config.test_interval = 0
     config.test_repetitions = 10
+    config.save_interval = 50
     config.logger = Logger('./log', gym.logger)
-    agent = DDPGAgent(config)
-    agent.run()
+    run_episodes(DDPGAgent(config))
 
 def ddpg_walker():
     task_fn = lambda: BipedalWalker()
@@ -252,9 +252,9 @@ def ddpg_walker():
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
     config.test_interval = 0
     config.test_repetitions = 5
+    config.save_interval = 50
     config.logger = Logger('./log', gym.logger)
-    agent = DDPGAgent(config)
-    agent.run()
+    run_episodes(DDPGAgent(config))
 
 def dqn_fruit():
     config = Config()
@@ -275,10 +275,8 @@ def dqn_fruit():
     config.test_interval = 0
     config.test_repetitions = 10
     config.episode_limit = 5000
-    config.tag = 'vanilla-%f' % (0.001)
     config.double_q = False
-    agent = DQNAgent(config)
-    agent.run()
+    run_episodes(DQNAgent(config))
 
 def hrdqn_fruit():
     config = Config()
@@ -302,8 +300,7 @@ def hrdqn_fruit():
     # config.target_type = config.q_target
     config.double_q = False
     config.episode_limit = 5000
-    agent = DQNAgent(config)
-    agent.run()
+    run_episodes(DQNAgent(config))
 
 def hrmsdqn_fruit():
     config = Config()
@@ -328,13 +325,11 @@ def hrmsdqn_fruit():
     # config.target_type = config.q_target
     config.double_q = False
     config.episode_limit = 5000
-    agent = MSDQNAgent(config)
-    agent.run()
+    run_episodes(MSDQNAgent(config))
 
 def ppo_pendulum():
     config = Config()
     config.task_fn = lambda: Pendulum()
-    # config.task_fn = lambda: BipedalWalker()
     task = config.task_fn()
     config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim)
     config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim)
@@ -351,7 +346,34 @@ def ppo_pendulum():
     config.test_interval = 1
     config.test_repetitions = 1
     config.max_episode_length = 200
-    # config.max_episode_length = 999
+    config.entropy_weight = 0
+    config.gradient_clip = 40
+    config.rollout_length = 10000
+    config.optimize_epochs = 1
+    config.ppo_ratio_clip = 0.2
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
+    agent.run()
+
+def ppo_walker():
+    config = Config()
+    config.task_fn = lambda: BipedalWalker()
+    task = config.task_fn()
+    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim)
+    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim)
+    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+
+    config.policy_fn = lambda: GaussianPolicy()
+    config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=2048)
+    config.worker = ProximalPolicyOptimization
+    config.discount = 0.99
+    config.gae_tau = 0.97
+    config.num_workers = 8
+    config.test_interval = 1
+    config.test_repetitions = 1
+    config.max_episode_length = 999
     config.entropy_weight = 0
     config.gradient_clip = 40
     config.rollout_length = 10000
@@ -362,18 +384,19 @@ def ppo_pendulum():
     agent.run()
 
 if __name__ == '__main__':
-    gym.logger.setLevel(logging.DEBUG)
-    # gym.logger.setLevel(logging.INFO)
+    # gym.logger.setLevel(logging.DEBUG)
+    gym.logger.setLevel(logging.INFO)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_pendulum()
     # a3c_walker()
     # ddpg_pendulum()
-    ddpg_lunar_lander()
+    # ddpg_lunar_lander()
     # ddpg_walker()
     # ppo_pendulum()
+    # ppo_walker()
 
     # dqn_fruit()
     # hrdqn_fruit()

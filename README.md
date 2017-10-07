@@ -49,14 +49,25 @@ variance unbounded, which is also included in the implementation.
 
 ## DDPG
 
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG-Pendulum-v0.png)
+
+DDPG is extremely unstable and is the most difficult algorithm to tune from my experience. And it cannot solve 
+Continuous Lunar Lander or Bipedal Walker. I never see a public DDPG implementation without a fixed random seed
+ that can solve tasks other than the family of Pendulum. If you find a bug or some successful practice, it will 
+ be much appreciated to let me know that.
+
 ## DPPO
 
-The difference between my implementation and [DeepMind version](https://arxiv.org/abs/1707.02286) is:
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DPPO.png)
+
+The difference between my implementation and [DeepMind's DPPO](https://arxiv.org/abs/1707.02286) is:
 1. PPO stands for different algorithms.
 2. I use a much simpler A3C-like synchronization protocol. 
 
 The body of PPO is based on [this](https://github.com/alexis-jacq/Pytorch-DPPO), however that implementation has some
  critical bugs. 
+ 
+I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hidden units.
 
 # Dependency
 * Open AI gym

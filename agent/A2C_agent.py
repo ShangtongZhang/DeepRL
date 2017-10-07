@@ -27,10 +27,11 @@ class A2CAgent:
         state = self.task.reset()
         total_reward = 0.0
         steps = 0
-        while not self.config.max_episode_length or steps < self.config.max_episode_length:
+        while True:
             prob = self.learning_network.predict(np.stack([state]), True)
             action = self.policy.sample(prob, deterministic=deterministic)
             next_state, reward, done, info = self.task.step(action)
+            done = (done or (self.config.max_episode_length and steps > self.config.max_episode_length))
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
                 self.total_steps += 1

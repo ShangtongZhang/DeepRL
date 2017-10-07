@@ -25,11 +25,11 @@ class OneStepQLearning:
         steps = 0
         total_reward = 0
         pending = []
-        while not config.stop_signal.value and \
-                (not config.max_episode_length or steps < config.max_episode_length):
+        while not config.stop_signal.value:
             q = self.worker_network.predict(np.stack([state]))
             action = self.policy.sample(q.data.numpy().flatten(), deterministic)
             next_state, reward, terminal, _ = self.task.step(action)
+            terminal = (terminal or (config.max_episode_length and steps >= config.max_episode_length))
 
             steps += 1
             total_reward += reward

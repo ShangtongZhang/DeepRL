@@ -27,9 +27,9 @@ class OneStepSarsa:
         steps = 0
         total_reward = 0
         pending = []
-        while not config.stop_signal.value and \
-                (not config.max_episode_length or steps < config.max_episode_length):
+        while not config.stop_signal.value:
             next_state, reward, terminal, _ = self.task.step(action)
+            terminal = (terminal or (config.max_episode_length and steps >= config.max_episode_length))
             next_q = self.worker_network.predict(np.stack([next_state]))
             next_action = self.policy.sample(next_q.data.numpy().flatten(), deterministic)
             pending.append([q, action, reward, next_state, next_action])

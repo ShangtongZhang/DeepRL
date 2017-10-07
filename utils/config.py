@@ -46,3 +46,4 @@ class Config:
         self.master_optimizer_fn = None
         self.num_heads = 10
         self.min_epsilon = 0
+        self.save_interval = 0

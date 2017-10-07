@@ -36,7 +36,7 @@ class DQNAgent:
         state = np.vstack(self.history_buffer)
         total_reward = 0.0
         steps = 0
-        while not self.config.max_episode_length or steps < self.config.max_episode_length:
+        while True:
             value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]), False)
             value = value.cpu().data.numpy().flatten()
             if deterministic:
@@ -46,6 +46,7 @@ class DQNAgent:
             else:
                 action = self.policy.sample(value)
             next_state, reward, done, info = self.task.step(action)
+            done = (done or (self.config.max_episode_length and steps > self.config.max_episode_length))
             self.history_buffer.pop(0)
             self.history_buffer.append(next_state)
             next_state = np.vstack(self.history_buffer)
@@ -109,42 +110,6 @@ class DQNAgent:
                           (steps, episode_time, episode_time / float(steps)))
         return total_reward, steps
 
-    def run(self):
-        window_size = 100
-        ep = 0
-        rewards = []
-        steps = []
-        avg_test_rewards = []
-        while True:
-            ep += 1
-            reward, step = self.episode()
-            steps.append(step)
-            rewards.append(reward)
-            avg_reward = np.mean(rewards[-window_size:])
-            self.config.logger.info('episode %d, epsilon %f, reward %f, avg reward %f, total steps %d, episode step %d' % (
-                ep, self.policy.epsilon, reward, avg_reward, self.total_steps, step))
-            if self.config.episode_limit and ep > self.config.episode_limit:
-                return rewards, steps
-
-            if ep % 100 == 0:
-                with open('data/%s-dqn-statistics-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
-                    pickle.dump({'rewards': rewards,
-                                 'steps': steps}, f)
-
-            if self.config.test_interval and ep % self.config.test_interval == 0:
-                self.config.logger.info('Testing...')
-                with open('data/%s-dqn-model-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
-                    pickle.dump(self.learning_network.state_dict(), f)
-                test_rewards = []
-                for _ in range(self.config.test_repetitions):
-                    test_rewards.append(self.episode(True))
-                avg_reward = np.mean(test_rewards)
-                avg_test_rewards.append(avg_reward)
-                self.config.logger.info('Avg reward %f(%f)' % (
-                    avg_reward, np.std(test_rewards) / np.sqrt(self.config.test_repetitions)))
-                with open('data/%s-dqn-statistics-%s.bin' % (self.config.tag, self.task.name), 'wb') as f:
-                    pickle.dump({'rewards': rewards,
-                                 'steps': steps,
-                                 'test_rewards': avg_test_rewards}, f)
-                if avg_reward > self.task.success_threshold:
-                    break
+    def save(self, file_name):
+        with open(file_name, 'wb') as f:
+            pickle.dump(self.learning_network.state_dict(), f)
