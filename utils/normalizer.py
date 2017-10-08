@@ -4,6 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 import torch
+import numpy as np
 
 class Normalizer:
     def __init__(self, o_size):
@@ -22,13 +23,21 @@ class StaticNormalizer:
         self.online_stats = SharedStats(o_size)
 
     def __call__(self, o_):
-        o = torch.FloatTensor(o_)
+        if np.isscalar(o_):
+            o = torch.FloatTensor([o_])
+        else:
+            o = torch.FloatTensor(o_)
         self.online_stats.feed(o)
         if self.offline_stats.n[0] == 0:
             return o_
         std = (self.offline_stats.v + 1e-6) ** .5
         o = (o - self.offline_stats.m) / std
-        return o.numpy().reshape(o_.shape)
+        o = o.numpy()
+        if np.isscalar(o_):
+            o = np.asscalar(o)
+        else:
+            o = o.reshape(o_.shape)
+        return o
 
 class SharedStats:
     def __init__(self, o_size):

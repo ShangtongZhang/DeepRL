@@ -79,7 +79,7 @@ class ProximalPolicyOptimization:
                 batched_steps += 1
                 episode_length += 1
 
-                reward = np.asscalar(self.reward_normalizer(np.array([reward])))
+                reward = self.reward_normalizer(reward)
                 rewards.append(reward)
 
                 if done:

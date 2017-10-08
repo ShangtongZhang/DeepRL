@@ -48,7 +48,7 @@ class ContinuousAdvantageActorCritic:
 
             steps += 1
             total_reward += reward
-            reward = np.asscalar(self.reward_normalizer(np.array([reward])))
+            reward = self.reward_normalizer(reward)
 
             if deterministic:
                 if terminal:
