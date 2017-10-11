@@ -51,10 +51,7 @@ variance unbounded, which is also included in the implementation.
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG-Pendulum-v0.png)
 
-DDPG is extremely unstable and is the most difficult algorithm to tune from my experience. And it cannot solve 
-Continuous Lunar Lander or Bipedal Walker. I never see a public DDPG implementation without a fixed random seed
- that can solve tasks other than the family of Pendulum. If you find a bug or some successful practice, it will 
- be much appreciated to let me know that.
+Current DDPG implementation seems to have potential bugs, I'm now actively working on it.
 
 ## DPPO
 
