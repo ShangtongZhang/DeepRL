@@ -85,6 +85,29 @@ def a3c_pendulum():
     agent = AsyncAgent(config)
     agent.run()
 
+def a3c_lunar_lander():
+    config = Config()
+    config.task_fn = lambda: ContinuousLunarLander()
+    task = config.task_fn()
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: DisjointActorCriticNet(
+        lambda: GaussianActorNet(task.state_dim, task.action_dim),
+        lambda: GaussianCriticNet(task.state_dim))
+    config.policy_fn = lambda: GaussianPolicy()
+    config.worker = ContinuousAdvantageActorCritic
+    config.discount = 0.99
+    config.max_episode_length = 1000
+    config.num_workers = 8
+    config.update_interval = 5
+    config.test_interval = 1
+    config.test_repetitions = 5
+    config.entropy_weight = 0
+    config.gradient_clip = 40
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
+    agent.run()
+
 def a3c_walker():
     config = Config()
     config.task_fn = lambda: BipedalWalker()
@@ -331,8 +354,8 @@ def ppo_pendulum():
     config = Config()
     config.task_fn = lambda: Pendulum()
     task = config.task_fn()
-    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim)
-    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim)
+    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim, gpu=False)
+    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=False)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
@@ -355,12 +378,40 @@ def ppo_pendulum():
     agent = AsyncAgent(config)
     agent.run()
 
+def ppo_lunar_lander():
+    config = Config()
+    config.task_fn = lambda: ContinuousLunarLander()
+    task = config.task_fn()
+    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim, gpu=False)
+    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=False)
+    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+
+    config.policy_fn = lambda: GaussianPolicy()
+    config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=2048)
+    config.worker = ProximalPolicyOptimization
+    config.discount = 0.99
+    config.gae_tau = 0.97
+    config.num_workers = 8
+    config.test_interval = 1
+    config.test_repetitions = 1
+    config.max_episode_length = 1000
+    config.entropy_weight = 0
+    config.gradient_clip = 40
+    config.rollout_length = 10000
+    config.optimize_epochs = 1
+    config.ppo_ratio_clip = 0.2
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
+    agent.run()
+
 def ppo_walker():
     config = Config()
     config.task_fn = lambda: BipedalWalker()
     task = config.task_fn()
-    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim)
-    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim)
+    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim, gpu=False)
+    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=False)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
@@ -387,16 +438,18 @@ if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_pendulum()
+    # a3c_lunar_lander()
     # a3c_walker()
     # ddpg_pendulum()
     # ddpg_lunar_lander()
     # ddpg_walker()
     # ppo_pendulum()
-    # ppo_walker()
+    # ppo_lunar_lander()
+    ppo_walker()
 
     # dqn_fruit()
     # hrdqn_fruit()

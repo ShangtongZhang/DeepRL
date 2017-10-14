@@ -19,6 +19,9 @@ class BasicNet:
         self.LSTM = LSTM
         if self.gpu:
             self.cuda()
+            self.FloatTensor = torch.cuda.FloatTensor
+        else:
+            self.FloatTensor = torch.FloatTensor
 
     def to_torch_variable(self, x, dtype='float32'):
         if isinstance(x, Variable):

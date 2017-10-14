@@ -47,3 +47,4 @@ class Config:
         self.num_heads = 10
         self.min_epsilon = 0
         self.save_interval = 0
+        self.max_steps = 0

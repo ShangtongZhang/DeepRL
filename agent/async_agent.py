@@ -29,6 +29,8 @@ def train(id, config, learning_network, extra):
 def evaluate(config, task, learning_network, extra):
     test_rewards = []
     test_points = []
+    test_wall_times = []
+    initial_time = time.time()
     worker = config.worker(config, learning_network, extra)
     # config.logger = Logger('./evaluation_log', gym.logger)
     while True:
@@ -45,10 +47,11 @@ def evaluate(config, task, learning_network, extra):
                                (steps, np.mean(rewards), np.std(rewards) / np.sqrt(config.test_repetitions)))
             test_rewards.append(np.mean(rewards))
             test_points.append(steps)
+            test_wall_times.append(time.time() - initial_time)
             with open('data/%s-%s-statistics-%s.bin' % (
                     config.tag, config.worker.__name__, task.name), 'wb') as f:
-                pickle.dump([test_points, test_rewards], f)
-            if np.mean(rewards) > task.success_threshold:
+                pickle.dump([test_rewards, test_points, test_wall_times], f)
+            if np.mean(rewards) > task.success_threshold or (config.max_steps and steps >= config.max_steps):
                 config.stop_signal.value = True
                 break
 
@@ -80,8 +83,8 @@ class AsyncAgent:
             extra = None
         args = [(i, config, learning_network, extra) for i in range(config.num_workers)]
         args.append((config, task, learning_network, extra))
-        procs = [mp.Process(target=train, args=args[i]) for i in range(config.num_workers)]
-        procs.append(mp.Process(target=evaluate, args=args[-1]))
+        procs = [mp.Process(target=evaluate, args=args[-1])]
+        procs.extend([mp.Process(target=train, args=args[i]) for i in range(config.num_workers)])
         for p in procs: p.start()
         while True:
             time.sleep(1)
