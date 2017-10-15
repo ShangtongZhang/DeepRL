@@ -17,7 +17,7 @@ Implemented algorithms:
 * Distributed Proximal Policy Optimization (DPPO)
 
 # Curves
-> Curves for CartPole are trivial so I didn't place it here.
+> Curves for CartPole are trivial so I didn't place it here. There isn't any fixed random seed.
 ## DQN, Double DQN, Dueling DQN 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DQN-breakout.png)
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DQN-Pong.png)
@@ -51,7 +51,8 @@ variance unbounded, which is also included in the implementation.
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG-Pendulum-v0.png)
 
-Current DDPG implementation seems to have potential bugs, I'm now actively working on it.
+Extra caution is necessary when computing gradients, the [repo](https://github.com/ghliu/pytorch-ddpg) I referred
+seems to have critical bugs. Anyway DDPG is fairly unstable.
 
 ## DPPO
 

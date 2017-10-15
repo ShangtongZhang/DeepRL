@@ -62,75 +62,6 @@ def a3c_cart_pole():
     agent = AsyncAgent(config)
     agent.run()
 
-def a3c_pendulum():
-    config = Config()
-    config.task_fn = lambda: Pendulum()
-    task = config.task_fn()
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda: DisjointActorCriticNet(
-        lambda: GaussianActorNet(task.state_dim, task.action_dim),
-        lambda: GaussianCriticNet(task.state_dim))
-    config.policy_fn = lambda: GaussianPolicy()
-    config.worker = ContinuousAdvantageActorCritic
-    config.discount = 0.99
-    config.max_episode_length = 200
-    config.num_workers = 8
-    config.update_interval = 5
-    config.test_interval = 1
-    config.test_repetitions = 5
-    config.entropy_weight = 0
-    config.gradient_clip = 40
-    config.logger = Logger('./log', gym.logger)
-    agent = AsyncAgent(config)
-    agent.run()
-
-def a3c_lunar_lander():
-    config = Config()
-    config.task_fn = lambda: ContinuousLunarLander()
-    task = config.task_fn()
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda: DisjointActorCriticNet(
-        lambda: GaussianActorNet(task.state_dim, task.action_dim),
-        lambda: GaussianCriticNet(task.state_dim))
-    config.policy_fn = lambda: GaussianPolicy()
-    config.worker = ContinuousAdvantageActorCritic
-    config.discount = 0.99
-    config.max_episode_length = 1000
-    config.num_workers = 8
-    config.update_interval = 5
-    config.test_interval = 1
-    config.test_repetitions = 5
-    config.entropy_weight = 0
-    config.gradient_clip = 40
-    config.logger = Logger('./log', gym.logger)
-    agent = AsyncAgent(config)
-    agent.run()
-
-def a3c_walker():
-    config = Config()
-    config.task_fn = lambda: BipedalWalker()
-    task = config.task_fn()
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda: DisjointActorCriticNet(
-        lambda: GaussianActorNet(task.state_dim, task.action_dim),
-        lambda: GaussianCriticNet(task.state_dim))
-    config.policy_fn = lambda: GaussianPolicy()
-    config.worker = ContinuousAdvantageActorCritic
-    config.discount = 0.99
-    config.max_episode_length = 999
-    config.num_workers = 8
-    config.update_interval = 20
-    config.test_interval = 1
-    config.test_repetitions = 5
-    config.entropy_weight = 0
-    config.gradient_clip = 40
-    config.logger = Logger('./log', gym.logger)
-    agent = AsyncAgent(config)
-    agent.run()
-
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
@@ -196,88 +127,6 @@ def a3c_pixel_atari(name):
     config.logger = Logger('./log', gym.logger)
     agent = AsyncAgent(config)
     agent.run()
-
-def ddpg_pendulum():
-    task_fn = lambda: Pendulum()
-    task = task_fn()
-    config = Config()
-    config.task_fn = task_fn
-    config.actor_network_fn = lambda: DeterministicActorNet(
-        task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.relu, batch_norm=False)
-    config.critic_network_fn = lambda: DeterministicCriticNet(
-        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False)
-    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn =\
-        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
-    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
-    config.discount = 0.99
-    config.max_episode_length = 200
-    config.target_network_mix = 0.001
-    config.exploration_steps = 100
-    config.noise_decay_interval = 10000
-    config.random_process_fn = \
-        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
-    config.test_interval = 0
-    config.test_repetitions = 10
-    config.save_interval = 50
-    config.logger = Logger('./log', gym.logger)
-    run_episodes(DDPGAgent(config))
-
-def ddpg_lunar_lander():
-    task_fn = lambda: ContinuousLunarLander()
-    task = task_fn()
-    config = Config()
-    config.task_fn = task_fn
-    config.actor_network_fn = lambda: DeterministicActorNet(
-        task.state_dim, task.action_dim, F.tanh, 1, batch_norm=True)
-    config.critic_network_fn = lambda: DeterministicCriticNet(
-        task.state_dim, task.action_dim, batch_norm=True)
-    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn =\
-        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
-    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
-    config.discount = 0.99
-    config.max_episode_length = 1000
-    config.target_network_mix = 0.001
-    config.exploration_steps = 100
-    config.noise_decay_interval = 10000
-    config.random_process_fn = \
-        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
-    config.test_interval = 0
-    config.test_repetitions = 10
-    config.save_interval = 50
-    config.logger = Logger('./log', gym.logger)
-    run_episodes(DDPGAgent(config))
-
-def ddpg_walker():
-    task_fn = lambda: BipedalWalker()
-    task = task_fn()
-    config = Config()
-    config.task_fn = task_fn
-    config.actor_network_fn = lambda: DeterministicActorNet(
-        task.state_dim, task.action_dim, F.tanh, 1, gpu=True, batch_norm=False, non_linear=F.tanh)
-    config.critic_network_fn = lambda: DeterministicCriticNet(
-        task.state_dim, task.action_dim, gpu=True, batch_norm=False, non_linear=F.tanh)
-    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn =\
-        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
-    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
-    config.discount = 0.99
-    config.min_epsilon = 0.1
-    config.max_episode_length = 999
-    config.target_network_mix = 0.001
-    config.exploration_steps = 10000
-    config.noise_decay_interval = 1000000
-    config.random_process_fn = \
-        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
-    config.test_interval = 0
-    config.test_repetitions = 5
-    config.save_interval = 50
-    config.logger = Logger('./log', gym.logger)
-    run_episodes(DDPGAgent(config))
 
 def dqn_fruit():
     config = Config()
@@ -350,11 +199,38 @@ def hrmsdqn_fruit():
     config.episode_limit = 5000
     run_episodes(MSDQNAgent(config))
 
-def ppo_pendulum():
+def a3c_continuous():
     config = Config()
-    config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: Pendulum()
+    config.task_fn = lambda: BipedalWalkerHardcore()
     task = config.task_fn()
-    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim, gpu=False)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: DisjointActorCriticNet(
+        # lambda: GaussianActorNet(task.state_dim, task.action_dim, unit_std=False, action_gate=F.tanh, action_scale=2.0),
+        lambda: GaussianActorNet(task.state_dim, task.action_dim, unit_std=True),
+        lambda: GaussianCriticNet(task.state_dim))
+    config.policy_fn = lambda: GaussianPolicy()
+    config.worker = ContinuousAdvantageActorCritic
+    config.discount = 0.99
+    config.max_episode_length = task.default_max_episode
+    config.num_workers = 8
+    config.update_interval = 20
+    config.test_interval = 1
+    config.test_repetitions = 1
+    config.entropy_weight = 0
+    config.gradient_clip = 40
+    config.logger = Logger('./log', gym.logger)
+    agent = AsyncAgent(config)
+    agent.run()
+
+def dppo_continuous():
+    config = Config()
+    # config.task_fn = lambda: Pendulum()
+    config.task_fn = lambda: BipedalWalkerHardcore()
+    task = config.task_fn()
+    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim,
+                                                       gpu=False, unit_std=True)
     config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=False)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
@@ -368,7 +244,7 @@ def ppo_pendulum():
     config.num_workers = 8
     config.test_interval = 1
     config.test_repetitions = 1
-    config.max_episode_length = 200
+    config.max_episode_length = task.default_max_episode
     config.entropy_weight = 0
     config.gradient_clip = 40
     config.rollout_length = 10000
@@ -378,61 +254,32 @@ def ppo_pendulum():
     agent = AsyncAgent(config)
     agent.run()
 
-def ppo_lunar_lander():
+def ddpg_continuous():
+    task_fn = lambda: Pendulum()
+    task = task_fn()
     config = Config()
-    config.task_fn = lambda: ContinuousLunarLander()
-    task = config.task_fn()
-    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim, gpu=False)
-    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=False)
+    config.task_fn = task_fn
+    config.actor_network_fn = lambda: DeterministicActorNet(
+        task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.relu, batch_norm=False)
+    config.critic_network_fn = lambda: DeterministicCriticNet(
+        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-
-    config.policy_fn = lambda: GaussianPolicy()
-    config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=2048)
-    config.worker = ProximalPolicyOptimization
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.critic_optimizer_fn =\
+        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
+    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
-    config.gae_tau = 0.97
-    config.num_workers = 8
-    config.test_interval = 1
-    config.test_repetitions = 1
-    config.max_episode_length = 1000
-    config.entropy_weight = 0
-    config.gradient_clip = 40
-    config.rollout_length = 10000
-    config.optimize_epochs = 1
-    config.ppo_ratio_clip = 0.2
+    config.max_episode_length = task.default_max_episode
+    config.target_network_mix = 0.001
+    config.exploration_steps = 100
+    config.noise_decay_interval = 10000
+    config.random_process_fn = \
+        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
+    config.test_interval = 0
+    config.test_repetitions = 10
+    config.save_interval = 50
     config.logger = Logger('./log', gym.logger)
-    agent = AsyncAgent(config)
-    agent.run()
-
-def ppo_walker():
-    config = Config()
-    config.task_fn = lambda: BipedalWalker()
-    task = config.task_fn()
-    config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim, gpu=False)
-    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=False)
-    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-
-    config.policy_fn = lambda: GaussianPolicy()
-    config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=2048)
-    config.worker = ProximalPolicyOptimization
-    config.discount = 0.99
-    config.gae_tau = 0.97
-    config.num_workers = 8
-    config.test_interval = 1
-    config.test_repetitions = 1
-    config.max_episode_length = 999
-    config.entropy_weight = 0
-    config.gradient_clip = 40
-    config.rollout_length = 10000
-    config.optimize_epochs = 1
-    config.ppo_ratio_clip = 0.2
-    config.logger = Logger('./log', gym.logger)
-    agent = AsyncAgent(config)
-    agent.run()
+    run_episodes(DDPGAgent(config))
 
 if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
@@ -441,15 +288,9 @@ if __name__ == '__main__':
     # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
-    # a3c_pendulum()
-    # a3c_lunar_lander()
-    # a3c_walker()
-    # ddpg_pendulum()
-    # ddpg_lunar_lander()
-    # ddpg_walker()
-    # ppo_pendulum()
-    # ppo_lunar_lander()
-    ppo_walker()
+    # a3c_continuous()
+    # dppo_continuous()
+    ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()

@@ -89,11 +89,13 @@ class DDPGAgent:
                 critic_loss.backward()
                 self.critic_opt.step()
 
-                actor_loss = -critic.predict(states, actor.predict(states, False))
-                actor_loss = actor_loss.mean()
+                actions = actor.predict(states, False)
+                var_actions = Variable(actions.data, requires_grad=True)
+                q = critic.predict(states, var_actions)
+                q.backward(torch.ones(q.size()))
 
                 actor.zero_grad()
-                actor_loss.backward()
+                actions.backward(-var_actions.grad.data)
                 self.actor_opt.step()
 
                 self.soft_update(self.target_network, self.learning_network)
