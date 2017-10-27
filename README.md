@@ -69,8 +69,8 @@ I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hi
 
 # Dependency
 * Open AI gym
-* PyTorch (For some reason I use v0.12 now, although I really like v0.2)
-* Python 2.7 (I don't want to try Python 3 until I have to use RoboSchool)
+* PyTorch v0.12 + Python 2.7 (Well tested)
+* PyTorch v0.2 + Python 3.6 (Experimental)
 * Tensorflow (Optional, but tensorboard is awesome)
 
 # Usage
