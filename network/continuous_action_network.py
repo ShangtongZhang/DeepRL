@@ -4,7 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 
-from network import *
+from .base_network import *
 
 class DeterministicActorNet(nn.Module, BasicNet):
     def __init__(self,

@@ -4,7 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 
-from network import *
+from .base_network import *
 
 # Network for CartPole with value based methods
 class FCNet(nn.Module, VanillaNet):

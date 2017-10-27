@@ -3,6 +3,7 @@
 import tensorflow as tf
 import numpy as np
 import scipy.misc
+import logging
 
 try:
     from StringIO import StringIO  # Python 2.7
@@ -18,6 +19,7 @@ class Logger(object):
         self.debug = vanilla_logger.debug
         self.warning = vanilla_logger.warning
         self.skip = skip
+        logging.info('')
 
     def scalar_summary(self, tag, value, step):
         if self.skip:

@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 
 class Logger(object):
     def __init__(self, log_dir, vanilla_logger, skip=False):
@@ -7,6 +8,7 @@ class Logger(object):
         self.debug = vanilla_logger.debug
         self.warning = vanilla_logger.warning
         self.skip = skip
+        logging.info('')
 
     def scalar_summary(self, tag, value, step):
         if self.skip:

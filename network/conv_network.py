@@ -4,7 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 
-from network import *
+from .base_network import *
 
 # Network for pixel Atari game with value based methods
 class NatureConvNet(nn.Module, VanillaNet):
