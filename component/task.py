@@ -7,6 +7,10 @@ import gym
 import sys
 import numpy as np
 from .atari_wrapper import *
+try:
+    import roboschool
+except:
+    gym.logger.info('Roboschool not found')
 
 class BasicTask:
     def __init__(self):
@@ -79,11 +83,11 @@ class PixelAtari(BasicTask):
 class ContinuousMountainCar(BasicTask):
     name = 'MountainCarContinuous-v0'
     success_threshold = 90
-    default_max_episode = 999
 
     def __init__(self):
         BasicTask.__init__(self)
         self.env = gym.make(self.name)
+        self.max_episode_steps = self.env._max_episode_steps
         self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
@@ -97,11 +101,11 @@ class ContinuousMountainCar(BasicTask):
 class Pendulum(BasicTask):
     name = 'Pendulum-v0'
     success_threshold = -10
-    default_max_episode = 200
 
     def __init__(self):
         BasicTask.__init__(self)
         self.env = gym.make(self.name)
+        self.max_episode_steps = self.env._max_episode_steps
         self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
@@ -114,11 +118,11 @@ class Pendulum(BasicTask):
 class BipedalWalker(BasicTask):
     name = 'BipedalWalker-v2'
     success_threshold = 300
-    default_max_episode = 999
 
     def __init__(self):
         BasicTask.__init__(self)
         self.env = gym.make(self.name)
+        self.max_episode_steps = self.env._max_episode_steps
         self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
@@ -131,11 +135,11 @@ class BipedalWalker(BasicTask):
 class BipedalWalkerHardcore(BasicTask):
     name = 'BipedalWalkerHardcore-v2'
     success_threshold = 300
-    default_max_episode = 2000
 
     def __init__(self):
         BasicTask.__init__(self)
         self.env = gym.make(self.name)
+        self.max_episode_steps = self.env._max_episode_steps
         self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
@@ -148,11 +152,30 @@ class BipedalWalkerHardcore(BasicTask):
 class ContinuousLunarLander(BasicTask):
     name = 'LunarLanderContinuous-v2'
     success_threshold = 300
-    default_max_episode = 1000
 
     def __init__(self):
         BasicTask.__init__(self)
         self.env = gym.make(self.name)
+        self.max_episode_steps = self.env._max_episode_steps
+        self.env._max_episode_steps = sys.maxsize
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape[0]
+
+    def step(self, action):
+        action = np.clip(action, -1, 1)
+        next_state, reward, done, info = self.env.step(action)
+        return next_state, reward, done, info
+
+class Roboschool(BasicTask):
+    def __init__(self, name, success_threshold=sys.maxsize, max_episode_steps=None):
+        BasicTask.__init__(self)
+        self.name = name
+        self.env = gym.make(self.name)
+        self.success_threshold = success_threshold
+        if max_episode_steps is None:
+            self.max_episode_steps = self.env._max_episode_steps
+        else:
+            self.max_episode_steps = max_episode_steps
         self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]

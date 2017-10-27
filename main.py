@@ -213,7 +213,7 @@ def a3c_continuous():
     config.policy_fn = lambda: GaussianPolicy()
     config.worker = ContinuousAdvantageActorCritic
     config.discount = 0.99
-    config.max_episode_length = task.default_max_episode
+    config.max_episode_length = task.max_episode_steps
     config.num_workers = 8
     config.update_interval = 20
     config.test_interval = 1
@@ -226,8 +226,9 @@ def a3c_continuous():
 
 def dppo_continuous():
     config = Config()
-    # config.task_fn = lambda: Pendulum()
-    config.task_fn = lambda: BipedalWalkerHardcore()
+    config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: BipedalWalkerHardcore()
+    # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     task = config.task_fn()
     config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim,
                                                        gpu=False, unit_std=True)
@@ -244,9 +245,9 @@ def dppo_continuous():
     config.num_workers = 8
     config.test_interval = 1
     config.test_repetitions = 1
-    config.max_episode_length = task.default_max_episode
+    config.max_episode_length = task.max_episode_steps
     config.entropy_weight = 0
-    config.gradient_clip = 40
+    config.gradient_clip = 20
     config.rollout_length = 10000
     config.optimize_epochs = 1
     config.ppo_ratio_clip = 0.2
@@ -255,10 +256,10 @@ def dppo_continuous():
     agent.run()
 
 def ddpg_continuous():
-    task_fn = lambda: Pendulum()
-    task = task_fn()
     config = Config()
-    config.task_fn = task_fn
+    # config.task_fn = lambda: Pendulum()
+    config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
+    task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
         task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.relu, batch_norm=False)
     config.critic_network_fn = lambda: DeterministicCriticNet(
@@ -269,7 +270,7 @@ def ddpg_continuous():
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
     config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
-    config.max_episode_length = task.default_max_episode
+    config.max_episode_length = task.max_episode_steps
     config.target_network_mix = 0.001
     config.exploration_steps = 100
     config.noise_decay_interval = 10000
@@ -289,8 +290,8 @@ if __name__ == '__main__':
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
-    # dppo_continuous()
-    ddpg_continuous()
+    dppo_continuous()
+    # ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()
