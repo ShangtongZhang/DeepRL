@@ -69,11 +69,11 @@ I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hi
 
 # Dependency
 * Open AI gym
-* [RoboSchool](https://github.com/openai/roboschool) (Optional)
-* PyTorch v0.12 
+* [Roboschool](https://github.com/openai/roboschool) (Optional)
+* PyTorch v0.2.0
 * Python 2.7 or Python 3.6
 * Tensorflow (Optional, but tensorboard is awesome)
-> If you want to use Roboschool, you have to use python3. And don't try to use Roboschool with parallelized algorithms,
+> If you want to use Roboschool, you have to use Python3. And don't try to use Roboschool with parallelized algorithms,
 > there is a known [critical bug](https://github.com/openai/roboschool/issues/86).
 
 # Usage
