@@ -30,7 +30,7 @@ class DeterministicActorNet(nn.Module, BasicNet):
 
         self.batch_norm = batch_norm
         BasicNet.__init__(self, None, gpu, False)
-        # self.init_weights()
+        self.init_weights()
 
     def init_weights(self):
         bound = 3e-3
@@ -84,7 +84,7 @@ class DeterministicCriticNet(nn.Module, BasicNet):
         self.batch_norm = batch_norm
 
         BasicNet.__init__(self, None, gpu, False)
-        # self.init_weights()
+        self.init_weights()
 
     def init_weights(self):
         bound = 3e-3

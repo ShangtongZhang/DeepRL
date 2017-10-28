@@ -49,10 +49,10 @@ variance unbounded, which is also included in the implementation.
 
 ## DDPG
 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG-Pendulum-v0.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG.png)
 
 Extra caution is necessary when computing gradients, the [repo](https://github.com/ghliu/pytorch-ddpg) I referred
-seems to have critical bugs. Anyway DDPG is fairly unstable.
+seems to have critical bugs. DDPG is not very stable. 
 
 ## DPPO
 
@@ -69,9 +69,12 @@ I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hi
 
 # Dependency
 * Open AI gym
-* PyTorch v0.12 + Python 2.7 (Well tested)
-* PyTorch v0.2 + Python 3.6 (Experimental)
+* [RoboSchool](https://github.com/openai/roboschool) (Optional)
+* PyTorch v0.12 
+* Python 2.7 or Python 3.6
 * Tensorflow (Optional, but tensorboard is awesome)
+> If you want to use Roboschool, you have to use python3. And don't try to use Roboschool with parallelized algorithms,
+> there is a known [critical bug](https://github.com/openai/roboschool/issues/86).
 
 # Usage
 Detailed usage and all training parameters can be found in ```main.py```.

@@ -259,6 +259,7 @@ def ddpg_continuous():
     config = Config()
     # config.task_fn = lambda: Pendulum()
     config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
     task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
         task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.relu, batch_norm=False)
@@ -274,6 +275,7 @@ def ddpg_continuous():
     config.target_network_mix = 0.001
     config.exploration_steps = 100
     config.noise_decay_interval = 10000
+    config.min_epsilon = 0.1
     config.random_process_fn = \
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
     config.test_interval = 0
@@ -290,8 +292,8 @@ if __name__ == '__main__':
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
-    dppo_continuous()
-    # ddpg_continuous()
+    # dppo_continuous()
+    ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()

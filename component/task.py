@@ -7,10 +7,6 @@ import gym
 import sys
 import numpy as np
 from .atari_wrapper import *
-try:
-    import roboschool
-except:
-    gym.logger.info('Roboschool not found')
 
 class BasicTask:
     def __init__(self):
@@ -168,6 +164,7 @@ class ContinuousLunarLander(BasicTask):
 
 class Roboschool(BasicTask):
     def __init__(self, name, success_threshold=sys.maxsize, max_episode_steps=None):
+        import roboschool
         BasicTask.__init__(self)
         self.name = name
         self.env = gym.make(self.name)
