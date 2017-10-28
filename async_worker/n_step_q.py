@@ -47,7 +47,7 @@ class NStepQLearning:
             if terminal or len(pending) >= config.update_interval:
                 loss = 0
                 if terminal:
-                    R = torch.FloatTensor([[0]])
+                    R = torch.FloatTensor([0])
                 else:
                     R, _ = self.target_network.predict(
                         np.stack([next_state])).data.max(1)
@@ -55,7 +55,8 @@ class NStepQLearning:
                 for i in reversed(range(len(pending))):
                     q, action, reward = pending[i]
                     R = reward + config.discount * R
-                    loss += 0.5 * (Variable(R) - q.gather(1, Variable(torch.LongTensor([[action]])))).pow(2)
+                    q = q.gather(1, Variable(torch.LongTensor([[action]]))).unsqueeze(1)
+                    loss += 0.5 * (Variable(R) - q).pow(2)
 
                 pending = []
                 self.worker_network.zero_grad()

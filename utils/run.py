@@ -38,7 +38,7 @@ def run_episodes(agent):
             agent.save('data/%s-%s-model-%s.bin' % (agent_type, config.tag, agent.task.name))
             test_rewards = []
             for _ in range(config.test_repetitions):
-                test_rewards.append(agent.episode(True))
+                test_rewards.append(agent.episode(True)[0])
             avg_reward = np.mean(test_rewards)
             avg_test_rewards.append(avg_reward)
             config.logger.info('Avg reward %f(%f)' % (

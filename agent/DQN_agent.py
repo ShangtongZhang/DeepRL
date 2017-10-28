@@ -71,10 +71,10 @@ class DQNAgent:
                             target.append(q_next_.detach().max(1)[0])
                         elif self.config.target_type == self.config.expected_sarsa_target:
                             target.append(q_next_.detach().mean(1))
-                    target = torch.cat(target, dim=1).detach()
+                    target = torch.stack(target, dim=1).detach()
                     terminals = self.learning_network.to_torch_variable(terminals).unsqueeze(1)
                     rewards = self.learning_network.to_torch_variable(rewards)
-                    target = self.config.discount * target * (1 - terminals.expand_as(target))
+                    target = self.config.discount * target * (1 - terminals)
                     target.add_(rewards)
                     q = self.learning_network.predict(states, True)
                     q_action = []
@@ -87,16 +87,16 @@ class DQNAgent:
                     q_next = self.target_network.predict(next_states, False).detach()
                     if self.config.double_q:
                         _, best_actions = self.learning_network.predict(next_states).detach().max(1)
-                        q_next = q_next.gather(1, best_actions)
+                        q_next = q_next.gather(1, best_actions.unsqueeze(1)).squeeze(1)
                     else:
                         q_next, _ = q_next.max(1)
-                    terminals = self.learning_network.to_torch_variable(terminals).unsqueeze(1)
-                    rewards = self.learning_network.to_torch_variable(rewards).unsqueeze(1)
+                    terminals = self.learning_network.to_torch_variable(terminals)
+                    rewards = self.learning_network.to_torch_variable(rewards)
                     q_next = self.config.discount * q_next * (1 - terminals)
                     q_next.add_(rewards)
                     actions = self.learning_network.to_torch_variable(actions, 'int64').unsqueeze(1)
                     q = self.learning_network.predict(states, False)
-                    q = q.gather(1, actions)
+                    q = q.gather(1, actions).squeeze(1)
                     loss = self.learning_network.criterion(q, q_next)
                 self.learning_network.zero_grad()
                 loss.backward()

@@ -19,8 +19,8 @@ def dqn_cart_pole():
     config.history_length = 2
     config.test_interval = 100
     config.test_repetitions = 50
-    # config.double_q = True
-    config.double_q = False
+    config.double_q = True
+    # config.double_q = False
     run_episodes(DQNAgent(config))
 
 def async_cart_pole():
@@ -174,35 +174,10 @@ def hrdqn_fruit():
     config.episode_limit = 5000
     run_episodes(DQNAgent(config))
 
-def hrmsdqn_fruit():
-    config = Config()
-    config.task_fn = lambda: Fruit(hybrid_reward=True, atomic_state=False)
-    config.hybrid_reward = True
-    config.reward_weight = np.ones(10) / 10
-    # config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.optimizer_fn = lambda params: torch.optim.SGD(params, 0.1, momentum=0.9)
-    config.network_fn = lambda optimizer_fn: FruitMultiStatesFCNet(
-        17, 4, config.reward_weight, optimizer_fn)
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
-    config.replay_fn = lambda: HybridRewardReplay(memory_size=10000, batch_size=15)
-    config.discount = 0.95
-    config.target_network_update_freq = 200
-    config.max_episode_length = 100
-    config.exploration_steps = 200
-    config.logger = Logger('./log', gym.logger)
-    config.history_length = 1
-    config.test_interval = 0
-    config.test_repetitions = 10
-    config.target_type = config.expected_sarsa_target
-    # config.target_type = config.q_target
-    config.double_q = False
-    config.episode_limit = 5000
-    run_episodes(MSDQNAgent(config))
-
 def a3c_continuous():
     config = Config()
-    # config.task_fn = lambda: Pendulum()
-    config.task_fn = lambda: BipedalWalkerHardcore()
+    config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: BipedalWalkerHardcore()
     task = config.task_fn()
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
@@ -257,8 +232,8 @@ def dppo_continuous():
 
 def ddpg_continuous():
     config = Config()
-    # config.task_fn = lambda: Pendulum()
-    config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
+    config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
     task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
@@ -288,22 +263,21 @@ if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
     # dppo_continuous()
-    ddpg_continuous()
+    # ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()
-    # hrmsdqn_fruit()
 
-    # dqn_pixel_atari('PongNoFrameskip-v3')
-    # async_pixel_atari('PongNoFrameskip-v3')
-    # a3c_pixel_atari('PongNoFrameskip-v3')
+    # dqn_pixel_atari('PongNoFrameskip-v4')
+    # async_pixel_atari('PongNoFrameskip-v4')
+    # a3c_pixel_atari('PongNoFrameskip-v4')
 
-    # dqn_pixel_atari('BreakoutNoFrameskip-v3')
-    # async_pixel_atari('BreakoutNoFrameskip-v3')
-    # a3c_pixel_atari('BreakoutNoFrameskip-v3')
+    # dqn_pixel_atari('BreakoutNoFrameskip-v4')
+    # async_pixel_atari('BreakoutNoFrameskip-v4')
+    # a3c_pixel_atari('BreakoutNoFrameskip-v4')
 

@@ -127,8 +127,8 @@ class ProximalPolicyOptimization:
             states = actor_net.to_torch_variable(np.stack(states))
             actions = actor_net.to_torch_variable(np.stack(actions))
             returns = torch.cat(returns, 0)
-            advantages = torch.cat(advantages, 0)
-            advantages = (advantages - advantages.mean().expand_as(advantages)) / advantages.std().expand_as(advantages)
+            advantages = torch.cat(advantages, 0).squeeze(1)
+            advantages = (advantages - advantages.mean()) / advantages.std()
 
             mean_old, std_old, log_std_old = actor_net_old.predict(states)
             probs_old = actor_net.log_density(actions, mean_old, log_std_old, std_old)

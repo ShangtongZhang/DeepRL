@@ -52,7 +52,7 @@ class OneStepQLearning:
                     if terminal and i == len(pending) - 1:
                         q_next = torch.FloatTensor([[0]])
                     q_next = config.discount * q_next + reward
-                    q = q.gather(1, Variable(torch.LongTensor([[action]])))
+                    q = q.gather(1, Variable(torch.LongTensor([[action]]))).unsqueeze(1)
                     loss += 0.5 * (q - Variable(q_next)).pow(2)
 
                 pending = []
