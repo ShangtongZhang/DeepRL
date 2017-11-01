@@ -145,7 +145,7 @@ class GaussianActorNet(nn.Module, BasicNet):
             log_std = self.action_log_std.expand_as(mean)
             std = log_std.exp()
         else:
-            std = F.softplus(self.action_std(phi) + 1e-5)
+            std = F.softplus(self.action_std(phi)) + 1e-5
             log_std = std.log()
         return mean, std, log_std
 
