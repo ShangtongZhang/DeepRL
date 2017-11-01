@@ -61,7 +61,7 @@ class DDPGAgent:
             done = (done or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
             total_reward += reward
-            # reward = self.reward_normalizer(reward)
+            reward = self.reward_normalizer(reward)
 
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
