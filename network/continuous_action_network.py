@@ -158,7 +158,7 @@ class GaussianActorNet(nn.Module, BasicNet):
         return log_density.sum(1)
 
     def entropy(self, std):
-        return 0.5 * (1 + (2 * std.pow(2) * np.pi + 1e-5).log()).sum(1).mean()
+        return 0.5 * (2 * var * np.pi * np.e).log().sum(1).mean()
 
 class GaussianCriticNet(nn.Module, BasicNet):
     def __init__(self, state_dim, gpu=False):
