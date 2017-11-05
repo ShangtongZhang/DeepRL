@@ -14,7 +14,7 @@ Implemented algorithms:
 * Continuous A3C
 * Deep Deterministic Policy Gradient (DDPG)
 * Hybrid Reward Architecture (HRA)
-* Distributed Proximal Policy Optimization (DPPO)
+* Parallelized Proximal Policy Optimization (P3O, similar to DPPO)
 
 # Curves
 > Curves for CartPole are trivial so I didn't place it here. There isn't any fixed random seed.
@@ -51,10 +51,12 @@ variance unbounded, which is also included in the implementation.
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG.png)
 
-Extra caution is necessary when computing gradients, the [repo](https://github.com/ghliu/pytorch-ddpg) I referred
-seems to have critical bugs. DDPG is not very stable. 
+Extra caution is necessary when computing gradients. The [repo](https://github.com/ghliu/pytorch-ddpg) I referred
+is wrong in computing the deterministic gradients at least at this [commit](https://github.com/ghliu/pytorch-ddpg/tree/ffea335ee53f2ff90b6d7eaf9d0cee705270c0f1).
+Theoretically I believe that implementation should work, but in practice it doesn't work. Even this is PyTorch you need to manually deal with gradients in this case.
+DDPG is not very stable. 
 
-## DPPO
+## P3O 
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DPPO.png)
 
@@ -62,8 +64,10 @@ The difference between my implementation and [DeepMind's DPPO](https://arxiv.org
 1. PPO stands for different algorithms.
 2. I use a much simpler A3C-like synchronization protocol. 
 
-The body of PPO is based on [this](https://github.com/alexis-jacq/Pytorch-DPPO), however that implementation has some
- critical bugs. 
+The body of PPO is based on [this](https://github.com/alexis-jacq/Pytorch-DPPO). 
+However that implementation has two critical bugs at least at this [commit](https://github.com/ghliu/pytorch-ddpg/tree/ffea335ee53f2ff90b6d7eaf9d0cee705270c0f1).
+Its computation of the clipped loss is correct with one-dimensional action by accident, 
+but is wrong with high-dimensional action. And its computation of entropy is wrong in any case.
  
 I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hidden units.
 
