@@ -58,7 +58,7 @@ DDPG is not very stable.
 
 ## P3O 
 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DPPO.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/P3O.png)
 
 The difference between my implementation and [DeepMind's DPPO](https://arxiv.org/abs/1707.02286) is:
 1. PPO stands for different algorithms.
