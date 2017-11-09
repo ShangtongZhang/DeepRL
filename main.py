@@ -199,11 +199,12 @@ def a3c_continuous():
     agent = AsyncAgent(config)
     agent.run()
 
-def dppo_continuous():
+def p3o_continuous():
     config = Config()
     config.task_fn = lambda: Pendulum()
     # config.task_fn = lambda: BipedalWalkerHardcore()
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
     task = config.task_fn()
     config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim,
                                                        gpu=False, unit_std=True)
@@ -263,11 +264,11 @@ if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
-    # dppo_continuous()
+    p3o_continuous()
     # ddpg_continuous()
 
     # dqn_fruit()
