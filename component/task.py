@@ -72,6 +72,7 @@ class PixelAtari(BasicTask):
             env = FireResetEnv(env)
         env = ProcessFrame(env, frame_size)
         self.env = ClippedRewardsWrapper(env)
+        self.action_dim = self.env.action_space.n
 
     def normalize_state(self, state):
         return np.asarray(state, dtype=np.float32) / 255.0

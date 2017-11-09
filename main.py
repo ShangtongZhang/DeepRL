@@ -65,10 +65,10 @@ def a3c_cart_pole():
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
-    n_actions = 6
     config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False)
+    action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda optimizer_fn: NatureConvNet(config.history_length, n_actions, optimizer_fn)
+    config.network_fn = lambda optimizer_fn: NatureConvNet(config.history_length, action_dim, optimizer_fn)
     # config.network_fn = lambda optimizer_fn: DuelingNatureConvNet(config.history_length, n_actions, optimizer_fn)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
@@ -268,13 +268,13 @@ if __name__ == '__main__':
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
-    p3o_continuous()
+    # p3o_continuous()
     # ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()
 
-    # dqn_pixel_atari('PongNoFrameskip-v4')
+    dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
 
