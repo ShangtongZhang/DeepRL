@@ -233,7 +233,9 @@ def p3o_continuous():
 
 def ddpg_continuous():
     config = Config()
-    config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: BipedalWalker()
+    config.task_fn = lambda: ContinuousLunarLander()
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
     task = config.task_fn()
@@ -250,10 +252,9 @@ def ddpg_continuous():
     config.max_episode_length = task.max_episode_steps
     config.target_network_mix = 0.001
     config.exploration_steps = 100
-    config.noise_decay_interval = 10000
-    config.min_epsilon = 0.1
     config.random_process_fn = \
-        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2)
+        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2,
+                                         n_steps_annealing=10000)
     config.test_interval = 0
     config.test_repetitions = 10
     config.save_interval = 50
@@ -269,12 +270,12 @@ if __name__ == '__main__':
     # a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
-    # ddpg_continuous()
+    ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()
 
-    dqn_pixel_atari('PongNoFrameskip-v4')
+    # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
 

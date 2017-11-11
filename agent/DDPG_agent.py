@@ -24,8 +24,6 @@ class DDPGAgent:
         self.random_process = config.random_process_fn()
         self.criterion = nn.MSELoss()
         self.total_steps = 0
-        self.epsilon = 1.0
-        self.d_epsilon = 1.0 / config.noise_decay_interval
 
         self.state_normalizer = Normalizer(self.task.state_dim)
         self.reward_normalizer = Normalizer(1)
@@ -55,8 +53,7 @@ class DDPGAgent:
                 if self.total_steps < config.exploration_steps:
                     action = self.task.random_action()
                 else:
-                    action += max(self.epsilon, config.min_epsilon) * self.random_process.sample()
-                    self.epsilon -= self.d_epsilon
+                    action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
             done = (done or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
