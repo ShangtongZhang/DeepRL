@@ -28,6 +28,8 @@ Xeon E5-2620 v3 and Titan X. For Breakout, test is triggered every 1000 episodes
 In total, 16M frames cost about 4 days and 10 hours. For Pong, test is triggered 
 every 10 episodes with no repetition. In total, 4M frames cost about 18 hours.
 
+I referred this [repo](https://github.com/transedward/pytorch-dqn).
+
 ## Discrete A3C
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A3C-Pong.png)
@@ -39,6 +41,8 @@ it's quite slow.
 Training of A3C took about 2 hours (16 processes) in a server with two Xeon E5-2620 v3. While other async methods took about 1 day.
 Those value based async methods do work but I don't know how to make them stable.
 This is the test curve. Test is triggered in a separate deterministic test process every 50K frames.
+
+I referred this [repo](https://github.com/ikostrikov/pytorch-a3c) for the parallelization.
 
 ## Continuous A3C
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Continuous-A3C.png)
@@ -68,7 +72,7 @@ The difference between my implementation and [DeepMind's DPPO](https://arxiv.org
 1. PPO stands for different algorithms.
 2. I use a much simpler A3C-like synchronization protocol. 
 
-The body of PPO is based on [this](https://github.com/alexis-jacq/Pytorch-DPPO). 
+The body of PPO is based on this [repo](https://github.com/alexis-jacq/Pytorch-DPPO). 
 However that implementation has two critical bugs at least at this [commit](https://github.com/ghliu/pytorch-ddpg/tree/ffea335ee53f2ff90b6d7eaf9d0cee705270c0f1).
 Its computation of the clipped loss is correct with one-dimensional action by accident, 
 but is wrong with high-dimensional action. And its computation of entropy is wrong in any case.
@@ -106,7 +110,3 @@ mkdir data log
 * [Trust Region Policy Optimization](https://arxiv.org/abs/1502.05477)
 * [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
 * [Emergence of Locomotion Behaviours in Rich Environments](https://arxiv.org/abs/1707.02286)
-* [transedward/pytorch-dqn](https://github.com/transedward/pytorch-dqn)
-* [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)
-* [ghliu/pytorch-ddpg](https://github.com/ghliu/pytorch-ddpg)
-* [alexis-jacq/Pytorch-DPPO](https://github.com/alexis-jacq/Pytorch-DPPO)
