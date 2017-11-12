@@ -202,7 +202,7 @@ def a3c_continuous():
 def p3o_continuous():
     config = Config()
     config.task_fn = lambda: Pendulum()
-    config.task_fn = lambda: BipedalWalker()
+    # config.task_fn = lambda: BipedalWalker()
     # config.task_fn = lambda: BipedalWalkerHardcore()
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')

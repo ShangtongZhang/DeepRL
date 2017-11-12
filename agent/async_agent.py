@@ -32,7 +32,6 @@ def evaluate(config, task, learning_network, extra):
     test_wall_times = []
     initial_time = time.time()
     worker = config.worker(config, learning_network, extra)
-    # config.logger = Logger('./evaluation_log', gym.logger)
     while True:
         steps = config.total_steps.value
         if config.test_interval and steps % config.test_interval == 0:

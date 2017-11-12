@@ -89,7 +89,7 @@ Detailed usage and all training parameters can be found in ```main.py```.
 And you need to create following directories before running the program:
 ```
 cd DeepRL
-mkdir data log evaluation_log
+mkdir data log
 ```
 
 # References
