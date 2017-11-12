@@ -75,14 +75,19 @@ class AsyncAgent:
             target_network.share_memory()
             target_network.load_state_dict(learning_network.state_dict())
             extra = target_network
-        elif config.worker == ContinuousAdvantageActorCritic or config.worker == ProximalPolicyOptimization:
+        elif config.worker == ContinuousAdvantageActorCritic \
+                or config.worker == ProximalPolicyOptimization\
+                or config.worker == DeterministicPolicyGradient:
             state_normalizer = StaticNormalizer(task.state_dim)
             reward_normalizer = StaticNormalizer(1)
             extra = [state_normalizer, reward_normalizer]
+            if config.worker == DeterministicPolicyGradient:
+                extra.append(config.replay_fn())
         else:
             extra = None
         args = [(i, config, learning_network, extra) for i in range(config.num_workers)]
         args.append((config, task, learning_network, extra))
+        # procs = []
         procs = [mp.Process(target=evaluate, args=args[-1])]
         procs.extend([mp.Process(target=train, args=args[i]) for i in range(config.num_workers)])
         for p in procs: p.start()
