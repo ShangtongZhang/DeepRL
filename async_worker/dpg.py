@@ -30,11 +30,9 @@ class DeterministicPolicyGradient:
         self.random_process = config.random_process_fn()
         self.criterion = nn.MSELoss()
 
-        # self.state_normalizer = Normalizer(self.task.state_dim)
-        self.shared_state_normalizer = extra[0]
+        self.shared_state_normalizer, self.shared_reward_normalizer, self.replay = extra
         self.state_normalizer = StaticNormalizer(self.task.state_dim)
-        # self.replay = config.replay_fn()
-        self.replay = extra[-1]
+        self.reward_normalizer = StaticNormalizer(1)
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -63,6 +61,7 @@ class DeterministicPolicyGradient:
             done = (done or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
             total_reward += reward
+            reward = self.reward_normalizer(reward)
 
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
@@ -92,10 +91,7 @@ class DeterministicPolicyGradient:
                 self.critic_opt.zero_grad()
                 critic_loss.backward()
                 with config.network_lock:
-                    for param, worker_param in zip(self.shared_network.critic.parameters(), critic.parameters()):
-                        if param.grad is not None:
-                            break
-                        param._grad = worker_param.grad
+                    sync_grad(self.shared_network.critic, critic)
                     self.critic_opt.step()
 
                 actions = actor.predict(states, False)
@@ -107,14 +103,17 @@ class DeterministicPolicyGradient:
                 self.actor_opt.zero_grad()
                 actions.backward(-var_actions.grad.data)
                 with config.network_lock:
-                    for param, worker_param in zip(self.shared_network.actor.parameters(), actor.parameters()):
-                        if param.grad is not None:
-                            break
-                        param._grad = worker_param.grad
+                    sync_grad(self.shared_network.actor, actor)
                     self.actor_opt.step()
 
                 self.worker_network.load_state_dict(self.shared_network.state_dict())
 
                 self.soft_update(self.target_network, self.worker_network)
+
+        self.shared_state_normalizer.offline_stats.merge(self.state_normalizer.online_stats)
+        self.state_normalizer.online_stats.zero()
+
+        self.shared_reward_normalizer.offline_stats.merge(self.reward_normalizer.online_stats)
+        self.reward_normalizer.online_stats.zero()
 
         return steps, total_reward

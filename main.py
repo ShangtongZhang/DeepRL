@@ -201,9 +201,10 @@ def a3c_continuous():
 
 def p3o_continuous():
     config = Config()
-    # config.task_fn = lambda: Pendulum()
+    config.task_fn = lambda: Pendulum()
+    config.task_fn = lambda: BipedalWalker()
     # config.task_fn = lambda: BipedalWalkerHardcore()
-    config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
     task = config.task_fn()
     config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim,
@@ -214,60 +215,29 @@ def p3o_continuous():
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
 
     config.policy_fn = lambda: GaussianPolicy()
-    # config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=2048)
-    config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=64)
+    config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=2048)
     config.worker = ProximalPolicyOptimization
     config.discount = 0.99
     config.gae_tau = 0.97
-    config.num_workers = 8
+    config.num_workers = 6
     config.test_interval = 1
     config.test_repetitions = 1
     config.max_episode_length = task.max_episode_steps
     config.entropy_weight = 0
     config.gradient_clip = 20
     config.rollout_length = 10000
-    config.optimize_epochs = 10
+    config.optimize_epochs = 1
     config.ppo_ratio_clip = 0.2
     config.logger = Logger('./log', gym.logger)
     agent = AsyncAgent(config)
     agent.run()
 
-def ddpg_continuous():
-    config = Config()
-    # config.task_fn = lambda: Pendulum()
-    # config.task_fn = lambda: BipedalWalker()
-    config.task_fn = lambda: ContinuousLunarLander()
-    # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
-    # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
-    task = config.task_fn()
-    config.actor_network_fn = lambda: DeterministicActorNet(
-        task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.relu, batch_norm=False)
-    config.critic_network_fn = lambda: DeterministicCriticNet(
-        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False)
-    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn =\
-        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
-    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
-    config.discount = 0.99
-    config.max_episode_length = task.max_episode_steps
-    config.target_network_mix = 0.001
-    config.exploration_steps = 100
-    config.random_process_fn = \
-        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2,
-                                         n_steps_annealing=10000)
-    config.test_interval = 0
-    config.test_repetitions = 10
-    config.save_interval = 50
-    config.logger = Logger('./log', gym.logger)
-    run_episodes(DDPGAgent(config))
-
-def addpg_continuous():
+def d3pg_continuous():
     config = Config()
     # config.task_fn = lambda: Pendulum()
     # config.task_fn = lambda: ContinuousLunarLander()
-    config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
-    # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
+    config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
     # config.task_fn = lambda: BipedalWalker()
     task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
@@ -278,10 +248,8 @@ def addpg_continuous():
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
         lambda params: torch.optim.Adam(params, lr=1e-4)
-    # config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.replay_fn = lambda: SharedReplay(memory_size=1000000, batch_size=64,
                                             state_shape=(task.state_dim, ), action_shape=(task.action_dim, ))
-    # config.replay_fn = lambda: GeneralReplay(memory_size=256, batch_size=64)
     config.discount = 0.99
     config.max_episode_length = task.max_episode_steps
     config.random_process_fn = \
@@ -291,27 +259,23 @@ def addpg_continuous():
     config.num_workers = 6
     config.min_memory_size = 50
     config.target_network_mix = 0.001
-    # config.update_interval = 10
     config.test_interval = 500
     config.test_repetitions = 1
     config.gradient_clip = 20
-    config.rollout_length = 16
-    config.optimize_epochs = 1
     config.logger = Logger('./log', gym.logger)
     agent = AsyncAgent(config)
     agent.run()
 
 if __name__ == '__main__':
-    gym.logger.setLevel(logging.DEBUG)
-    # gym.logger.setLevel(logging.INFO)
+    # gym.logger.setLevel(logging.DEBUG)
+    gym.logger.setLevel(logging.INFO)
 
     # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
-    # ddpg_continuous()
-    addpg_continuous()
+    d3pg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()

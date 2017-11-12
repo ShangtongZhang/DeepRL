@@ -12,7 +12,7 @@ Implemented algorithms:
 * Async One-Step Sarsa 
 * Async N-Step Q-Learning
 * Continuous A3C
-* Deep Deterministic Policy Gradient (DDPG)
+* Distributed Deep Deterministic Policy Gradient (Distributed DDPG, aka D3PG)
 * Hybrid Reward Architecture (HRA)
 * Parallelized Proximal Policy Optimization (P3O, similar to DPPO)
 
@@ -47,14 +47,18 @@ For continuous A3C and DPPO, I use fixed unit variance rather than a separate he
 Of course you can also use another head to output variance. In that case, a good practice is to bound your mean while leave 
 variance unbounded, which is also included in the implementation.
 
-## DDPG
+## D3PG 
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG.png)
 
 Extra caution is necessary when computing gradients. The [repo](https://github.com/ghliu/pytorch-ddpg) I referred
-is wrong in computing the deterministic gradients at least at this [commit](https://github.com/ghliu/pytorch-ddpg/tree/ffea335ee53f2ff90b6d7eaf9d0cee705270c0f1).
+for DDPG is wrong in computing the deterministic gradients at least at this [commit](https://github.com/ghliu/pytorch-ddpg/tree/ffea335ee53f2ff90b6d7eaf9d0cee705270c0f1).
 Theoretically I believe that implementation should work, but in practice it doesn't work. Even this is PyTorch you need to manually deal with gradients in this case.
 DDPG is not very stable. 
+
+Setting the number of workers to 1 will reduce the implementation to exact DDPG. I have to adopt the most straightforward distribution method, as
+P3O and A3C style distribution doesn't work for DDPG. The figures were done with 6 workers.
+
 
 ## P3O 
 

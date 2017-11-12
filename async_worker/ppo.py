@@ -152,8 +152,7 @@ class ProximalPolicyOptimization:
                 self.shared_network.zero_grad()
                 self.actor_opt.zero_grad()
                 self.critic_opt.zero_grad()
-                for param, worker_param in zip(self.shared_network.parameters(), self.worker_network.parameters()):
-                    param._grad = worker_param.grad.clone()
+                sync_grad(self.shared_network, self.worker_network)
                 self.actor_opt.step()
                 self.critic_opt.step()
 

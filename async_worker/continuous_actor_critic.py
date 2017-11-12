@@ -92,11 +92,7 @@ class ContinuousAdvantageActorCritic:
                 actor_loss.backward()
                 critic_loss.backward()
                 nn.utils.clip_grad_norm(self.worker_network.parameters(), config.gradient_clip)
-                for param, worker_param in zip(
-                        self.learning_network.parameters(), self.worker_network.parameters()):
-                    if param.grad is not None:
-                        break
-                    param._grad = worker_param.grad
+                sync_grad(self.learning_network, self.worker_network)
                 self.actor_opt.step()
                 self.critic_opt.step()
                 self.worker_network.load_state_dict(self.learning_network.state_dict())

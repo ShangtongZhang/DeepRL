@@ -7,6 +7,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
+from utils import *
 
 class AdvantageActorCritic:
     def __init__(self, config, learning_network, target_network):
@@ -68,11 +69,7 @@ class AdvantageActorCritic:
                 self.optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm(self.worker_network.parameters(), config.gradient_clip)
-                for param, worker_param in zip(
-                        self.learning_network.parameters(), self.worker_network.parameters()):
-                    if param.grad is not None:
-                        break
-                    param._grad = worker_param.grad
+                sync_grad(self.learning_network, self.worker_network)
                 self.optimizer.step()
                 self.worker_network.load_state_dict(self.learning_network.state_dict())
                 self.worker_network.reset(terminal)
