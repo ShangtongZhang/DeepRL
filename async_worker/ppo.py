@@ -65,7 +65,7 @@ class ProximalPolicyOptimization:
             for i in range(config.rollout_length):
                 mean, std, log_std = actor_net.predict(np.stack([state]))
                 value = critic_net.predict(np.stack([state]))
-                action = self.policy.sample(mean.data.numpy().flatten(), std.data.numpy().flatten(), deterministic)
+                action = self.policy.sample(mean.data.cpu().numpy().flatten(), std.data.cpu().numpy().flatten(), deterministic)
                 action = self.config.action_shift_fn(action)
                 states.append(state)
                 actions.append(action)
@@ -92,12 +92,15 @@ class ProximalPolicyOptimization:
             if not done:
                 R = critic_net.predict(np.stack([state])).data
 
-            values.append(Variable(R))
-            A = Variable(torch.zeros((1, 1)))
+
+            values.append(actor_net.to_torch_variable(R))
+            A = actor_net.to_torch_variable(torch.zeros((1, 1)))
+            discount = actor_net.to_torch_variable([self.config.discount])
+            gae_tau = actor_net.to_torch_variable([self.config.gae_tau])
             for i in reversed(range(len(rewards))):
-                R = Variable(torch.FloatTensor([[rewards[i]]]))
-                ret = R + self.config.discount * values[i + 1]
-                A = ret - values[i] + self.config.discount * self.config.gae_tau * A
+                R = actor_net.to_torch_variable([[rewards[i]]])
+                ret = R + discount * values[i + 1]
+                A = ret - values[i] + discount * gae_tau * A
                 advantages.append(A.detach())
                 returns.append(ret.detach())
             advantages = list(reversed(advantages))
