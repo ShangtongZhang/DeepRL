@@ -32,7 +32,6 @@ def evaluate(config, task, learning_network, extra):
     test_wall_times = []
     initial_time = time.time()
     worker = config.worker(config, learning_network, extra)
-    # config.logger = Logger('./evaluation_log', gym.logger)
     while True:
         steps = config.total_steps.value
         if config.test_interval and steps % config.test_interval == 0:
@@ -51,7 +50,7 @@ def evaluate(config, task, learning_network, extra):
             with open('data/%s-%s-statistics-%s.bin' % (
                     config.tag, config.worker.__name__, task.name), 'wb') as f:
                 pickle.dump([test_rewards, test_points, test_wall_times], f)
-            if np.mean(rewards) > task.success_threshold or (config.max_steps and steps >= config.max_steps):
+            if np.mean(rewards) >= config.success_threshold or (config.max_steps and steps >= config.max_steps):
                 config.stop_signal.value = True
                 break
 
@@ -75,10 +74,14 @@ class AsyncAgent:
             target_network.share_memory()
             target_network.load_state_dict(learning_network.state_dict())
             extra = target_network
-        elif config.worker == ContinuousAdvantageActorCritic or config.worker == ProximalPolicyOptimization:
+        elif config.worker == ContinuousAdvantageActorCritic \
+                or config.worker == ProximalPolicyOptimization\
+                or config.worker == DeterministicPolicyGradient:
             state_normalizer = StaticNormalizer(task.state_dim)
             reward_normalizer = StaticNormalizer(1)
             extra = [state_normalizer, reward_normalizer]
+            if config.worker == DeterministicPolicyGradient:
+                extra.append(config.replay_fn())
         else:
             extra = None
         args = [(i, config, learning_network, extra) for i in range(config.num_workers)]

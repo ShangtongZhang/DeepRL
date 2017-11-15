@@ -72,7 +72,6 @@ class ProximalPolicyOptimization:
                 values.append(value)
                 state, reward, done, _ = self.task.step(action)
                 state = self.state_normalizer(state)
-                # print state
                 done = (done or (config.max_episode_length and episode_length > config.max_episode_length))
 
                 batched_rewards += reward
@@ -153,8 +152,7 @@ class ProximalPolicyOptimization:
                 self.shared_network.zero_grad()
                 self.actor_opt.zero_grad()
                 self.critic_opt.zero_grad()
-                for param, worker_param in zip(self.shared_network.parameters(), self.worker_network.parameters()):
-                    param._grad = worker_param.grad.clone()
+                sync_grad(self.shared_network, self.worker_network)
                 self.actor_opt.step()
                 self.critic_opt.step()
 

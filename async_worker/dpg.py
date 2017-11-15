@@ -4,31 +4,35 @@
 # declaration at the top                                              #
 #######################################################################
 
+import numpy as np
+import torch.multiprocessing as mp
 from network import *
-from component import *
 from utils import *
+from component import *
+from async_worker import *
 import pickle
-import torch.nn as nn
+import os
+import time
 
-class DDPGAgent:
-    def __init__(self, config):
+class DeterministicPolicyGradient:
+    def __init__(self, config, shared_network, extra):
         self.config = config
         self.task = config.task_fn()
-        self.learning_network = config.network_fn()
+
+        self.shared_network = shared_network
+        self.worker_network = config.network_fn()
+        self.worker_network.load_state_dict(self.shared_network.state_dict())
         self.target_network = config.network_fn()
-        self.target_network.load_state_dict(self.learning_network.state_dict())
-        self.target_network.eval()
-        self.actor_opt = config.actor_optimizer_fn(self.learning_network.actor.parameters())
-        self.critic_opt = config.critic_optimizer_fn(self.learning_network.critic.parameters())
-        self.replay = config.replay_fn()
+        self.target_network.load_state_dict(self.worker_network.state_dict())
+        self.actor_opt = config.actor_optimizer_fn(self.shared_network.actor.parameters())
+        self.critic_opt = config.critic_optimizer_fn(self.shared_network.critic.parameters())
+
         self.random_process = config.random_process_fn()
         self.criterion = nn.MSELoss()
-        self.total_steps = 0
-        self.epsilon = 1.0
-        self.d_epsilon = 1.0 / config.noise_decay_interval
 
-        self.state_normalizer = Normalizer(self.task.state_dim)
-        self.reward_normalizer = Normalizer(1)
+        self.shared_state_normalizer, self.shared_reward_normalizer, self.replay = extra
+        self.state_normalizer = StaticNormalizer(self.task.state_dim)
+        self.reward_normalizer = StaticNormalizer(1)
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -41,8 +45,8 @@ class DDPGAgent:
         state = self.state_normalizer(state)
 
         config = self.config
-        actor = self.learning_network.actor
-        critic = self.learning_network.critic
+        actor = self.worker_network.actor
+        critic = self.worker_network.critic
         target_actor = self.target_network.actor
         target_critic = self.target_network.critic
 
@@ -52,11 +56,7 @@ class DDPGAgent:
             actor.eval()
             action = actor.predict(np.stack([state])).flatten()
             if not deterministic:
-                if self.total_steps < config.exploration_steps:
-                    action = self.task.random_action()
-                else:
-                    action += max(self.epsilon, config.min_epsilon) * self.random_process.sample()
-                    self.epsilon -= self.d_epsilon
+                action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
             done = (done or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
@@ -65,15 +65,17 @@ class DDPGAgent:
 
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
-                self.total_steps += 1
+                with config.steps_lock:
+                    config.total_steps.value += 1
+
             steps += 1
             state = next_state
 
             if done:
                 break
 
-            if not deterministic and self.total_steps > config.exploration_steps:
-                self.learning_network.train()
+            if not deterministic and self.replay.size() >= config.min_memory_size:
+                self.worker_network.train()
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 q_next = target_critic.predict(next_states, target_actor.predict(next_states))
@@ -86,8 +88,11 @@ class DDPGAgent:
                 critic_loss = self.criterion(q, q_next)
 
                 critic.zero_grad()
+                self.critic_opt.zero_grad()
                 critic_loss.backward()
-                self.critic_opt.step()
+                with config.network_lock:
+                    sync_grad(self.shared_network.critic, critic)
+                    self.critic_opt.step()
 
                 actions = actor.predict(states, False)
                 var_actions = Variable(actions.data, requires_grad=True)
@@ -95,13 +100,20 @@ class DDPGAgent:
                 q.backward(torch.ones(q.size()))
 
                 actor.zero_grad()
+                self.actor_opt.zero_grad()
                 actions.backward(-var_actions.grad.data)
-                self.actor_opt.step()
+                with config.network_lock:
+                    sync_grad(self.shared_network.actor, actor)
+                    self.actor_opt.step()
 
-                self.soft_update(self.target_network, self.learning_network)
+                self.worker_network.load_state_dict(self.shared_network.state_dict())
 
-        return total_reward, steps
+                self.soft_update(self.target_network, self.worker_network)
 
-    def save(self, file_name):
-        with open(file_name, 'wb') as f:
-            pickle.dump(self.learning_network.state_dict(), f)
+        self.shared_state_normalizer.offline_stats.merge(self.state_normalizer.online_stats)
+        self.state_normalizer.online_stats.zero()
+
+        self.shared_reward_normalizer.offline_stats.merge(self.reward_normalizer.online_stats)
+        self.reward_normalizer.online_stats.zero()
+
+        return steps, total_reward

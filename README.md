@@ -12,9 +12,9 @@ Implemented algorithms:
 * Async One-Step Sarsa 
 * Async N-Step Q-Learning
 * Continuous A3C
-* Deep Deterministic Policy Gradient (DDPG)
+* Distributed Deep Deterministic Policy Gradient (Distributed DDPG, aka D3PG)
 * Hybrid Reward Architecture (HRA)
-* Distributed Proximal Policy Optimization (DPPO)
+* Parallelized Proximal Policy Optimization (P3O, similar to DPPO)
 
 # Curves
 > Curves for CartPole are trivial so I didn't place it here. There isn't any fixed random seed.
@@ -28,6 +28,8 @@ Xeon E5-2620 v3 and Titan X. For Breakout, test is triggered every 1000 episodes
 In total, 16M frames cost about 4 days and 10 hours. For Pong, test is triggered 
 every 10 episodes with no repetition. In total, 4M frames cost about 18 hours.
 
+I referred this [repo](https://github.com/transedward/pytorch-dqn).
+
 ## Discrete A3C
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A3C-Pong.png)
@@ -40,6 +42,8 @@ Training of A3C took about 2 hours (16 processes) in a server with two Xeon E5-2
 Those value based async methods do work but I don't know how to make them stable.
 This is the test curve. Test is triggered in a separate deterministic test process every 50K frames.
 
+I referred this [repo](https://github.com/ikostrikov/pytorch-a3c) for the parallelization.
+
 ## Continuous A3C
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Continuous-A3C.png)
 
@@ -47,23 +51,31 @@ For continuous A3C and DPPO, I use fixed unit variance rather than a separate he
 Of course you can also use another head to output variance. In that case, a good practice is to bound your mean while leave 
 variance unbounded, which is also included in the implementation.
 
-## DDPG
+## D3PG 
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG.png)
 
-Extra caution is necessary when computing gradients, the [repo](https://github.com/ghliu/pytorch-ddpg) I referred
-seems to have critical bugs. DDPG is not very stable. 
+Extra caution is necessary when computing gradients. The [repo](https://github.com/ghliu/pytorch-ddpg) I referred
+for DDPG is wrong in computing the deterministic gradients at least at this [commit](https://github.com/ghliu/pytorch-ddpg/tree/ffea335ee53f2ff90b6d7eaf9d0cee705270c0f1).
+Theoretically I believe that implementation should work, but in practice it doesn't work. Even this is PyTorch you need to manually deal with gradients in this case.
+DDPG is not very stable. 
 
-## DPPO
+Setting the number of workers to 1 will reduce the implementation to exact DDPG. I have to adopt the most straightforward distribution method, as
+P3O and A3C style distribution doesn't work for DDPG. The figures were done with 6 workers.
 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DPPO.png)
+
+## P3O 
+
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/P3O.png)
 
 The difference between my implementation and [DeepMind's DPPO](https://arxiv.org/abs/1707.02286) is:
 1. PPO stands for different algorithms.
 2. I use a much simpler A3C-like synchronization protocol. 
 
-The body of PPO is based on [this](https://github.com/alexis-jacq/Pytorch-DPPO), however that implementation has some
- critical bugs. 
+The body of PPO is based on this [repo](https://github.com/alexis-jacq/Pytorch-DPPO). 
+However that implementation has two critical bugs at least at this [commit](https://github.com/ghliu/pytorch-ddpg/tree/ffea335ee53f2ff90b6d7eaf9d0cee705270c0f1).
+Its computation of the clipped loss is correct with one-dimensional action by accident, 
+but is wrong with high-dimensional action. And its computation of entropy is wrong in any case.
  
 I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hidden units.
 
@@ -81,7 +93,7 @@ Detailed usage and all training parameters can be found in ```main.py```.
 And you need to create following directories before running the program:
 ```
 cd DeepRL
-mkdir data log evaluation_log
+mkdir data log
 ```
 
 # References
@@ -98,7 +110,3 @@ mkdir data log evaluation_log
 * [Trust Region Policy Optimization](https://arxiv.org/abs/1502.05477)
 * [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
 * [Emergence of Locomotion Behaviours in Rich Environments](https://arxiv.org/abs/1707.02286)
-* [transedward/pytorch-dqn](https://github.com/transedward/pytorch-dqn)
-* [ikostrikov/pytorch-a3c](https://github.com/ikostrikov/pytorch-a3c)
-* [ghliu/pytorch-ddpg](https://github.com/ghliu/pytorch-ddpg)
-* [alexis-jacq/Pytorch-DPPO](https://github.com/alexis-jacq/Pytorch-DPPO)

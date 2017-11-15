@@ -154,7 +154,7 @@ class GaussianActorNet(nn.Module, BasicNet):
 
     def log_density(self, x, mean, log_std, std):
         var = std.pow(2)
-        log_density = -(x - mean).pow(2) / (2 * var) - 0.5 * torch.log(2 * Variable(torch.FloatTensor([np.pi])).expand_as(x)) - log_std
+        log_density = -(x - mean).pow(2) / (2 * var + 1e-5) - 0.5 * torch.log(2 * Variable(torch.FloatTensor([np.pi])).expand_as(x)) - log_std
         return log_density.sum(1)
 
     def entropy(self, std):

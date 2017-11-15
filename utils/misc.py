@@ -51,3 +51,7 @@ def run_episodes(agent):
                 break
 
     return steps, rewards, avg_test_rewards
+
+def sync_grad(target_network, src_network):
+    for param, src_param in zip(target_network.parameters(), src_network.parameters()):
+        param._grad = src_param.grad.clone()
