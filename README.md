@@ -90,11 +90,19 @@ I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hi
 
 # Usage
 Detailed usage and all training parameters can be found in ```main.py```.
-And you need to create following directories before running the program:
+
+You need to create following directories before running the program:
 ```
 cd DeepRL
 mkdir data log
 ```
+
+Code is only tested in macOS 10.12 and CentO/S 6.8. And for CentO/S 6.8, you need 
+```
+export OMP_NUM_THREADS=1
+``` 
+manually in shell before running parallelized implementation.
+
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)

@@ -100,7 +100,7 @@ def async_pixel_atari(name):
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.max_episode_length = 10000
-    config.num_workers = 10
+    config.num_workers = 6
     config.update_interval = 20
     config.test_interval = 50000
     config.test_repetitions = 1
@@ -120,7 +120,7 @@ def a3c_pixel_atari(name):
     config.worker = AdvantageActorCritic
     config.discount = 0.99
     config.max_episode_length = 10000
-    config.num_workers = 10
+    config.num_workers = 6
     config.update_interval = 20
     config.test_interval = 50000
     config.test_repetitions = 1
@@ -270,7 +270,7 @@ if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
     # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
-    # a3c_pixel_atari('PongNoFrameskip-v4')
+    a3c_pixel_atari('PongNoFrameskip-v4')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')
