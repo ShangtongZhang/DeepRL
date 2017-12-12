@@ -29,8 +29,8 @@ def async_cart_pole():
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.network_fn = lambda: FCNet([4, 50, 200, 2])
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.5, final_step=5000, min_epsilon=0.1)
-    config.worker = OneStepQLearning
-    # config.worker = NStepQLearning
+    # config.worker = OneStepQLearning
+    config.worker = NStepQLearning
     # config.worker = OneStepSarsa
     config.discount = 0.99
     config.target_network_update_freq = 200
@@ -234,10 +234,10 @@ def p3o_continuous():
 
 def d3pg_continuous():
     config = Config()
-    # config.task_fn = lambda: Pendulum()
+    config.task_fn = lambda: Pendulum()
     # config.task_fn = lambda: ContinuousLunarLander()
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
-    config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
     # config.task_fn = lambda: BipedalWalker()
     task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
@@ -270,12 +270,12 @@ if __name__ == '__main__':
     # gym.logger.setLevel(logging.DEBUG)
     gym.logger.setLevel(logging.INFO)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
-    d3pg_continuous()
+    # d3pg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()

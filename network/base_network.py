@@ -57,8 +57,8 @@ class ActorCriticNet(BasicNet):
     def predict(self, x):
         phi = self.forward(x, True)
         pre_prob = self.fc_actor(phi)
-        prob = F.softmax(pre_prob)
-        log_prob = F.log_softmax(pre_prob)
+        prob = F.softmax(pre_prob, dim=1)
+        log_prob = F.log_softmax(pre_prob, dim=1)
         value = self.fc_critic(phi)
         return prob, log_prob, value
 
