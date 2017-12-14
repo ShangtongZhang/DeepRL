@@ -15,7 +15,7 @@ def dqn_cart_pole():
     config.target_network_update_freq = 200
     config.max_episode_length = 200
     config.exploration_steps = 1000
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     config.history_length = 2
     config.test_interval = 100
     config.test_repetitions = 50
@@ -39,7 +39,7 @@ def async_cart_pole():
     config.update_interval = 6
     config.test_interval = 1
     config.test_repetitions = 50
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     agent = AsyncAgent(config)
     agent.run()
 
@@ -56,7 +56,7 @@ def a3c_cart_pole():
     config.update_interval = 6
     config.test_interval = 1
     config.test_repetitions = 30
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     config.gae_tau = 1.0
     config.entropy_weight = 0.01
     agent = AsyncAgent(config)
@@ -76,7 +76,7 @@ def dqn_pixel_atari(name):
     config.target_network_update_freq = 10000
     config.max_episode_length = 0
     config.exploration_steps= 50000
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     config.test_interval = 10
     config.test_repetitions = 1
     # config.double_q = True
@@ -104,7 +104,7 @@ def async_pixel_atari(name):
     config.update_interval = 20
     config.test_interval = 50000
     config.test_repetitions = 1
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     agent = AsyncAgent(config)
     agent.run()
 
@@ -124,7 +124,7 @@ def a3c_pixel_atari(name):
     config.update_interval = 20
     config.test_interval = 50000
     config.test_repetitions = 1
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     agent = AsyncAgent(config)
     agent.run()
 
@@ -142,7 +142,7 @@ def dqn_fruit():
     config.target_network_update_freq = 200
     config.max_episode_length = 100
     config.exploration_steps = 200
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     config.history_length = 1
     config.test_interval = 0
     config.test_repetitions = 10
@@ -164,7 +164,7 @@ def hrdqn_fruit():
     config.target_network_update_freq = 200
     config.max_episode_length = 100
     config.exploration_steps = 200
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     config.history_length = 1
     config.test_interval = 0
     config.test_repetitions = 10
@@ -195,7 +195,7 @@ def a3c_continuous():
     config.test_repetitions = 1
     config.entropy_weight = 0
     config.gradient_clip = 40
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     agent = AsyncAgent(config)
     agent.run()
 
@@ -228,7 +228,7 @@ def p3o_continuous():
     config.rollout_length = 10000
     config.optimize_epochs = 1
     config.ppo_ratio_clip = 0.2
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     agent = AsyncAgent(config)
     agent.run()
 
@@ -262,17 +262,17 @@ def d3pg_continuous():
     config.test_interval = 500
     config.test_repetitions = 1
     config.gradient_clip = 20
-    config.logger = Logger('./log', gym.logger)
+    config.logger = Logger('./log', logger)
     agent = AsyncAgent(config)
     agent.run()
 
 if __name__ == '__main__':
-    # gym.logger.setLevel(logging.DEBUG)
-    gym.logger.setLevel(logging.INFO)
+    # logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # dqn_cart_pole()
     # async_cart_pole()
-    # a3c_cart_pole()
+    a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()
@@ -282,7 +282,7 @@ if __name__ == '__main__':
 
     # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
-    a3c_pixel_atari('PongNoFrameskip-v4')
+    # a3c_pixel_atari('PongNoFrameskip-v4')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')

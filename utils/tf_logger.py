@@ -19,7 +19,6 @@ class Logger(object):
         self.debug = vanilla_logger.debug
         self.warning = vanilla_logger.warning
         self.skip = skip
-        logging.info('')
 
     def scalar_summary(self, tag, value, step):
         if self.skip:
