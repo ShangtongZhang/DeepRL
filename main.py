@@ -267,6 +267,9 @@ def d3pg_continuous():
     agent.run()
 
 if __name__ == '__main__':
+    mkdir('data')
+    mkdir('log')
+    os.system('export OMP_NUM_THREADS=1')
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 

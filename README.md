@@ -80,6 +80,7 @@ but is wrong with high-dimensional action. And its computation of entropy is wro
 I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hidden units.
 
 # Dependency
+> Tested in macOS 10.12 and CentO/S 6.8
 * Open AI gym
 * [Roboschool](https://github.com/openai/roboschool) (Optional)
 * PyTorch v0.3.0
@@ -88,21 +89,9 @@ I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hi
 > If you want to use Roboschool, you have to use Python3. And don't try to use Roboschool with parallelized algorithms,
 > there is a known [critical bug](https://github.com/openai/roboschool/issues/86).
 
+
 # Usage
 Detailed usage and all training parameters can be found in ```main.py```.
-
-You need to create following directories before running the program:
-```
-cd DeepRL
-mkdir data log
-```
-
-Code is only tested in macOS 10.12 and CentO/S 6.8. And for CentO/S 6.8, you need 
-```
-export OMP_NUM_THREADS=1
-``` 
-manually in shell before running parallelized implementation.
-
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)

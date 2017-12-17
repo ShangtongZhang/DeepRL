@@ -6,7 +6,7 @@
 
 import numpy as np
 import pickle
-
+import os
 
 def run_episodes(agent):
     config = agent.config
@@ -33,6 +33,9 @@ def run_episodes(agent):
         if config.episode_limit and ep > config.episode_limit:
             break
 
+        if config.max_steps and agent.total_steps > config.max_steps:
+            break
+
         if config.test_interval and ep % config.test_interval == 0:
             config.logger.info('Testing...')
             agent.save('data/%s-%s-model-%s.bin' % (agent_type, config.tag, agent.task.name))
@@ -47,7 +50,7 @@ def run_episodes(agent):
                 pickle.dump({'rewards': rewards,
                              'steps': steps,
                              'test_rewards': avg_test_rewards}, f)
-            if avg_reward > agent.task.success_threshold:
+            if avg_reward > config.success_threshold:
                 break
 
     return steps, rewards, avg_test_rewards
@@ -55,3 +58,7 @@ def run_episodes(agent):
 def sync_grad(target_network, src_network):
     for param, src_param in zip(target_network.parameters(), src_network.parameters()):
         param._grad = src_param.grad.clone()
+
+def mkdir(path):
+    if not os.path.exists(path):
+        os.mkdir(path)

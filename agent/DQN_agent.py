@@ -112,4 +112,4 @@ class DQNAgent:
 
     def save(self, file_name):
         with open(file_name, 'wb') as f:
-            pickle.dump(self.learning_network.state_dict(), f)
+            torch.save(self.learning_network.state_dict(), f)

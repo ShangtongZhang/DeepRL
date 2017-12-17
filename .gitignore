@@ -8,6 +8,7 @@ exp_*
 upload.py
 *.sh
 data
+dataset
 draw_*
 log
 evaluation_log

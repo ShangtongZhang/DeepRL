@@ -105,6 +105,39 @@ class MaxAndSkipEnv(gym.Wrapper):
         self._obs_buffer.append(obs)
         return obs
 
+def _process_frame84_rgb(frame):
+    img = np.reshape(frame, [210, 160, 3]).astype(np.float32)
+    img = Image.fromarray(img)
+    resized_screen = img.resize((84, 110, 3), Image.BILINEAR)
+    resized_screen = np.array(resized_screen)
+    x_t = resized_screen[18:102, :, :]
+    x_t = x_t.reshape((84, 84, 3))
+    return x_t
+
+class DatasetEnv(gym.Wrapper):
+    def __init__(self, env=None):
+        super(DatasetEnv, self).__init__(env)
+        self.saved_obs = []
+        self.saved_actions = []
+
+    def get_saved(self):
+        return self.saved_obs, self.saved_actions
+
+    def clear_saved(self):
+        self.saved_obs = []
+        self.saved_actions = []
+
+    def _step(self, action):
+        obs, reward, done, info = self.env.step(action)
+        self.saved_actions.append(action)
+        self.saved_obs.append(obs)
+        return obs, reward, done, info
+
+    def _reset(self):
+        obs = self.env.reset()
+        self.saved_obs.append(obs)
+        return obs
+
 def _process_frame84(frame):
     img = np.reshape(frame, [210, 160, 3]).astype(np.float32)
     img = img[:, :, 0] * 0.299 + img[:, :, 1] * 0.587 + img[:, :, 2] * 0.114
@@ -147,3 +180,17 @@ class ClippedRewardsWrapper(gym.Wrapper):
     def _step(self, action):
         obs, reward, done, info = self.env.step(action)
         return obs, np.sign(reward), done, info
+
+class NormalizeFrame(gym.Wrapper):
+    def __init__(self, env=None):
+        super(NormalizeFrame, self).__init__(env)
+
+    def _normalize(self, obs):
+        return np.asarray(obs, dtype=np.float32) / 255.0
+
+    def _step(self, action):
+        obs, reward, done, info = self.env.step(action)
+        return self._normalize(obs), reward, done, info
+
+    def _reset(self):
+        return self._normalize(self.env.reset())
