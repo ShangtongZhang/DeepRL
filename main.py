@@ -2,6 +2,7 @@ import logging
 from agent import *
 from component import *
 from utils import *
+import model.action_conditional_video_prediction as acvp
 
 def dqn_cart_pole():
     config = Config()
@@ -275,7 +276,7 @@ if __name__ == '__main__':
 
     # dqn_cart_pole()
     # async_cart_pole()
-    a3c_cart_pole()
+    # a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()
@@ -290,4 +291,6 @@ if __name__ == '__main__':
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')
     # a3c_pixel_atari('BreakoutNoFrameskip-v4')
+
+    acvp.train('PongNoFrameskip-v4')
 

@@ -66,7 +66,7 @@ def generate_dateset(game):
     env = ClippedRewardsWrapper(env)
 
     ep = 0
-    max_ep = 10
+    max_ep = 50
     mkdir('dataset/%s' % game)
     while True:
         rewards, steps = episode(env, agent)
@@ -82,8 +82,11 @@ def generate_dateset(game):
         dataset_env.clear_saved()
         if ep >= max_ep:
             break
+    with open('dataset/%s/meta.bin' % (game), 'wb') as f:
+        pickle.dump({'episodes': ep}, f)
 
 if __name__ == '__main__':
+    mkdir('dataset')
     game = 'PongNoFrameskip-v4'
     # train_dqn(game)
     generate_dateset(game)
