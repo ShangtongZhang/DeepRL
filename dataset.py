@@ -66,11 +66,10 @@ def generate_dateset(game):
     env = ClippedRewardsWrapper(env)
 
     ep = 0
-    max_ep = 50
+    max_ep = 200
     mkdir('dataset/%s' % game)
     while True:
         rewards, steps = episode(env, agent)
-        ep += 1
         path = 'dataset/%s/%05d' % (game, ep)
         mkdir(path)
         logger.info('Episode %d, reward %f, steps %d' % (ep, rewards, steps))
@@ -80,6 +79,7 @@ def generate_dateset(game):
             obs = torch.from_numpy(np.transpose(obs, (2, 0, 1)))
             torchvision.utils.save_image(obs, '%s/%05d.png' % (path, ind))
         dataset_env.clear_saved()
+        ep += 1
         if ep >= max_ep:
             break
     with open('dataset/%s/meta.bin' % (game), 'wb') as f:

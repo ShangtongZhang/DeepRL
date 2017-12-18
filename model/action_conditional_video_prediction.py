@@ -15,6 +15,10 @@ from skimage import io
 from collections import deque
 import gym
 import torch.optim
+from utils import *
+
+# PREFIX = '.'
+PREFIX = '/local/data'
 
 class Network(nn.Module):
     def __init__(self, num_actions, gpu=True):
@@ -76,7 +80,7 @@ class Network(nn.Module):
         return x
 
 def load_episode(game, ep, num_actions):
-    path = 'dataset/%s/%05d' % (game, ep)
+    path = '%s/dataset/%s/%05d' % (PREFIX, game, ep)
     with open('%s/action.bin' % (path), 'rb') as f:
         actions = pickle.load(f)
     num_frames = len(actions) + 1
@@ -98,48 +102,66 @@ def load_episode(game, ep, num_actions):
 
     return frames, encoded_actions
 
+def extend_frames(frames, actions):
+    buffer = deque(maxlen=4)
+    extended_frames = []
+    targets = []
+
+    for i in range(len(frames) - 1):
+        buffer.append(frames[i])
+        if len(buffer) >= 4:
+            extended_frames.append(np.vstack(buffer))
+            targets.append(frames[i + 1])
+    actions = actions[3:, :]
+
+    return np.stack(extended_frames), actions, np.stack(targets)
+
 def train(game):
     env = gym.make(game)
     num_actions = env.action_space.n
 
     net = Network(num_actions)
     criterion = nn.MSELoss()
-    opt = torch.optim.Adam(net.parameters(), 0.001)
+    opt = torch.optim.Adam(net.parameters(), 0.0001)
 
-    with open('dataset/%s/meta.bin' % (game), 'rb') as f:
+    with open('%s/dataset/%s/meta.bin' % (PREFIX, game), 'rb') as f:
         meta = pickle.load(f)
     episodes = meta['episodes']
-    train_episodes = int(episodes * 0.8)
+    train_episodes = int(episodes * 0.9)
     indices_train = np.arange(train_episodes)
+    iteration = 0
     while True:
         np.random.shuffle(indices_train)
         for ep in indices_train:
+            iteration += 1
             frames, actions = load_episode(game, ep, num_actions)
-
-            buffer = deque(maxlen=4)
-            extended_frames = []
-            targets = []
-
-            for i in range(len(frames) - 1):
-                buffer.append(frames[i])
-                if len(buffer) >= 4:
-                    extended_frames.append(np.vstack(buffer))
-                    targets.append(frames[i + 1])
-            actions = actions[3:, :]
-
-            batch_size = 4
-            batch_start = 0
-            batch_end = batch_start + batch_size
-            while batch_start < len(extended_frames):
-                x = np.asarray(np.stack(extended_frames[batch_start: batch_end]))
-                a = actions[batch_start: batch_end]
-                y = np.asarray(np.stack(targets[batch_start: batch_end]))
+            frames, actions, targets = extend_frames(frames, actions)
+            batcher = Batcher(32, [frames, actions, targets])
+            total_loss = []
+            while not batcher.end():
+                x, a, y = batcher.next_batch()
                 y = net.to_torch_variable(y)
                 y_ = net(x, a)
                 loss = criterion(y_, y)
-                print loss.cpu().data.numpy()
+                total_loss.append(loss.cpu().data.numpy()[0])
                 opt.zero_grad()
                 loss.backward()
                 opt.step()
-                batch_start = batch_end
-                batch_end = min(batch_start + batch_size, len(extended_frames))
+            logger.info('Iteration %d, avg loss %f' % (iteration, np.mean(total_loss)))
+
+            if iteration % 200 == 0:
+                test_loss = []
+                for test_ep in range(train_episodes, episodes):
+                    frames, actions = load_episode(game, test_ep, num_actions)
+                    frames, actions, targets = extend_frames(frames, actions)
+                    batcher = Batcher(32, [frames, actions, targets])
+                    ep_loss = []
+                    while not batcher.end():
+                        x, a, y = batcher.next_batch()
+                        y = net.to_torch_variable(y)
+                        y_ = net(x, a)
+                        loss = criterion(y_, y)
+                        ep_loss.append(loss.cpu().data.numpy()[0])
+                    test_loss.append(np.mean(ep_loss))
+                    logger.info('Testing... episode %d, loss %f' % (test_ep, test_loss[-1]))
+                logger.info('Test avg loss %f' % (np.mean(test_loss)))
