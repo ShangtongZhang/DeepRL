@@ -14,9 +14,9 @@ class DeterministicActorNet(nn.Module, BasicNet):
                  action_scale,
                  gpu=False,
                  batch_norm=False,
-                 non_linear=F.relu):
+                 non_linear=F.relu,
+                 hidden_size=64):
         super(DeterministicActorNet, self).__init__()
-        hidden_size = 64
         self.layer1 = nn.Linear(state_dim, hidden_size)
         self.layer3 = nn.Linear(hidden_size, action_dim)
         self.action_gate = action_gate
@@ -70,9 +70,9 @@ class DeterministicCriticNet(nn.Module, BasicNet):
                  action_dim,
                  gpu=False,
                  batch_norm=False,
-                 non_linear=F.relu):
+                 non_linear=F.relu,
+                 hidden_size=64):
         super(DeterministicCriticNet, self).__init__()
-        hidden_size = 64
         self.layer1 = nn.Linear(state_dim, hidden_size)
         self.layer2 = nn.Linear(hidden_size + action_dim, hidden_size)
         self.layer3 = nn.Linear(hidden_size, 1)
@@ -116,9 +116,15 @@ class DeterministicCriticNet(nn.Module, BasicNet):
         return self.forward(x, action)
 
 class GaussianActorNet(nn.Module, BasicNet):
-    def __init__(self, state_dim, action_dim, action_scale=1.0, action_gate=None, gpu=False, unit_std=True):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 action_scale=1.0,
+                 action_gate=None,
+                 gpu=False,
+                 unit_std=True,
+                 hidden_size=64):
         super(GaussianActorNet, self).__init__()
-        hidden_size = 64
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.action_mean = nn.Linear(hidden_size, action_dim)
@@ -161,9 +167,11 @@ class GaussianActorNet(nn.Module, BasicNet):
         return 0.5 * (1 + (2 * std.pow(2) * np.pi + 1e-5).log()).sum(1).mean()
 
 class GaussianCriticNet(nn.Module, BasicNet):
-    def __init__(self, state_dim, gpu=False):
+    def __init__(self,
+                 state_dim,
+                 gpu=False,
+                 hidden_size=64):
         super(GaussianCriticNet, self).__init__()
-        hidden_size = 64
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc_value = nn.Linear(hidden_size, 1)
