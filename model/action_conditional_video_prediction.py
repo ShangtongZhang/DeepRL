@@ -18,8 +18,8 @@ import torch.optim
 from utils import *
 from tqdm import tqdm
 
-# PREFIX = '.'
-PREFIX = '/local/data'
+PREFIX = '.'
+# PREFIX = '/local/data'
 
 class Network(nn.Module):
     def __init__(self, num_actions, gpu=True):
@@ -172,22 +172,6 @@ def train(game):
         return (y * 255 + mean_obs).astype(np.uint8)
 
     train_episodes = int(episodes * 0.95)
-    # train_episodes = 10
-    # obs, actions, targets, mean_obs = load_dataset(game, np.arange(train_episodes), num_actions)
-    # stacked_mean_obs = np.vstack([mean_obs] * 4)
-    # batcher = Batcher(32, [obs, actions, targets])
-    # iteration = 0
-    # while True:
-    #     while not batcher.end():
-    #         x, a, y = batcher.next_batch()
-    #         x = (x - stacked_mean_obs) / 255.0
-    #         y = (y - mean_obs) / 255.0
-    #         loss = net.fit(x, a, y)
-    #         if iteration % 100 == 0:
-    #             logger.info('Iteration %d, loss %f' % (iteration, loss))
-    #         iteration += 1
-    #     batcher.reset()
-
     indices_train = np.arange(train_episodes)
     iteration = 0
     while True:
@@ -226,27 +210,3 @@ def train(game):
                     logger.info('Iteration %d, loss %f' % (iteration, loss))
 
                 iteration += 1
-
-def test(game):
-    env = gym.make(game)
-    num_actions = env.action_space.n
-    net = Network(num_actions)
-    saved_state = torch.load('data/acvp-%s.bin' % (game), map_location=lambda storage, loc: storage)
-    net.load_state_dict(saved_state)
-
-    with open('%s/dataset/%s/meta.bin' % (PREFIX, game), 'rb') as f:
-        meta = pickle.load(f)
-    episodes = meta['episodes']
-    mean_obs = meta['mean_obs']
-    train_episodes = int(episodes * 0.9)
-    ep = np.random.choice(np.arange(train_episodes, episodes))
-    frames, actions = load_episode(game, ep, num_actions)
-    frames, actions, targets = extend_frames(frames, actions)
-
-    batcher = Batcher(32, [frames, actions, targets])
-    x, a, y = batcher.next_batch()
-    y_ = net.predict((x - np.vstack([mean_obs] * 4)) / 255.0, a)
-    print y_.shape
-    y_ = (y_ * 255 + mean_obs).astype(np.uint8)
-    torchvision.utils.save_image(torch.from_numpy(y_), 'dataset/sample.png')
-    torchvision.utils.save_image(torch.from_numpy(y), 'dataset/truth.png')

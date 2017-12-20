@@ -1,3 +1,9 @@
+#######################################################################
+# Copyright (C) 2017 Shangtong Zhang(zhangshangtong.cpp@gmail.com)    #
+# Permission given to modify the code as long as you keep this        #
+# declaration at the top                                              #
+#######################################################################
+
 import logging
 from agent import *
 from component import *
@@ -274,7 +280,7 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
@@ -292,6 +298,5 @@ if __name__ == '__main__':
     # async_pixel_atari('BreakoutNoFrameskip-v4')
     # a3c_pixel_atari('BreakoutNoFrameskip-v4')
 
-    acvp.train('PongNoFrameskip-v4')
-    # acvp.test('PongNoFrameskip-v4')
+    # acvp.train('PongNoFrameskip-v4')
 
