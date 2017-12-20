@@ -293,4 +293,5 @@ if __name__ == '__main__':
     # a3c_pixel_atari('BreakoutNoFrameskip-v4')
 
     acvp.train('PongNoFrameskip-v4')
+    # acvp.test('PongNoFrameskip-v4')
 

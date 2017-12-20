@@ -84,3 +84,8 @@ class Batcher:
         self.batch_start = self.batch_end
         self.batch_end = min(self.batch_start + self.batch_size, self.num_entries)
         return batch
+
+    def shuffle(self):
+        indices = np.arange(self.num_entries)
+        np.random.shuffle(indices)
+        self.data = [d[indices] for d in self.data]

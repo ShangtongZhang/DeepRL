@@ -4,6 +4,9 @@ from utils import *
 import torchvision
 import torch
 
+# PREFIX = '.'
+PREFIX = '/local/data'
+
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
@@ -67,14 +70,18 @@ def generate_dateset(game):
 
     ep = 0
     max_ep = 200
-    mkdir('dataset/%s' % game)
+    mkdir('%s/dataset/%s' % (PREFIX, game))
+    obs_sum = 0.0
+    obs_count = 0
     while True:
         rewards, steps = episode(env, agent)
-        path = 'dataset/%s/%05d' % (game, ep)
+        path = '%s/dataset/%s/%05d' % (PREFIX, game, ep)
         mkdir(path)
         logger.info('Episode %d, reward %f, steps %d' % (ep, rewards, steps))
         with open('%s/action.bin' % (path), 'wb') as f:
             pickle.dump(dataset_env.saved_actions, f)
+        obs_sum += np.asarray(dataset_env.saved_obs).sum(0)
+        obs_count += len(dataset_env.saved_obs)
         for ind, obs in enumerate(dataset_env.saved_obs):
             obs = torch.from_numpy(np.transpose(obs, (2, 0, 1)))
             torchvision.utils.save_image(obs, '%s/%05d.png' % (path, ind))
@@ -82,8 +89,10 @@ def generate_dateset(game):
         ep += 1
         if ep >= max_ep:
             break
-    with open('dataset/%s/meta.bin' % (game), 'wb') as f:
-        pickle.dump({'episodes': ep}, f)
+    obs_mean = np.transpose(obs_sum, (2, 0, 1)) / obs_count
+    with open('%s/dataset/%s/meta.bin' % (PREFIX, game), 'wb') as f:
+        pickle.dump({'episodes': ep,
+                     'mean_obs': obs_mean}, f)
 
 if __name__ == '__main__':
     mkdir('dataset')

@@ -16,6 +16,7 @@ from collections import deque
 import gym
 import torch.optim
 from utils import *
+from tqdm import tqdm
 
 # PREFIX = '.'
 PREFIX = '/local/data'
@@ -32,9 +33,9 @@ class Network(nn.Module):
         self.hidden_units = 128 * 11 * 8
 
         self.fc5 = nn.Linear(self.hidden_units, 2048)
-        self.fc6 = nn.Linear(2048, 2048)
+        self.fc_encode = nn.Linear(2048, 2048)
         self.fc_action = nn.Linear(num_actions, 2048)
-        self.fc7 = nn.Linear(2048, 2048)
+        self.fc_decode = nn.Linear(2048, 2048)
         self.fc8 = nn.Linear(2048, self.hidden_units)
 
         self.deconv9 = nn.ConvTranspose2d(128, 128, 4, 2)
@@ -49,6 +50,19 @@ class Network(nn.Module):
         else:
             self.FloatTensor = torch.FloatTensor
 
+        self.init_weights()
+        self.criterion = nn.MSELoss()
+        self.opt = torch.optim.Adam(self.parameters(), 1e-4)
+
+    def init_weights(self):
+        for layer in self.children():
+            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.ConvTranspose2d):
+                nn.init.xavier_uniform(layer.weight.data)
+            nn.init.constant(layer.bias.data, 0)
+        nn.init.uniform(self.fc_encode.weight.data, -1, 1)
+        nn.init.uniform(self.fc_decode.weight.data, -1, 1)
+        nn.init.uniform(self.fc_action.weight.data, -0.1, 0.1)
+
     def to_torch_variable(self, x, dtype='float32'):
         if isinstance(x, Variable):
             return x
@@ -59,18 +73,16 @@ class Network(nn.Module):
         return Variable(x)
 
     def forward(self, obs, action):
-        x = self.to_torch_variable(obs)
-        action = self.to_torch_variable(action)
-        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv1(obs))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))
         x = F.relu(self.conv4(x))
         x = x.view((-1, self.hidden_units))
         x = F.relu(self.fc5(x))
-        x = self.fc6(x)
+        x = self.fc_encode(x)
         action = self.fc_action(action)
         x = torch.mul(x, action)
-        x = self.fc7(x)
+        x = self.fc_decode(x)
         x = F.relu(self.fc8(x))
         x = x.view((-1, 128, 11, 8))
         x = F.relu(self.deconv9(x))
@@ -79,22 +91,43 @@ class Network(nn.Module):
         x = self.deconv12(x)
         return x
 
+    def fit(self, x, a, y):
+        x = self.to_torch_variable(x)
+        a = self.to_torch_variable(a)
+        y = self.to_torch_variable(y)
+        y_ = self.forward(x, a)
+        loss = self.criterion(y_, y)
+        self.opt.zero_grad()
+        loss.backward()
+        for param in self.parameters():
+            param.grad.data.clamp_(-0.1, 0.1)
+        self.opt.step()
+        return np.asscalar(loss.cpu().data.numpy())
+
+    def evaluate(self, x, a, y):
+        x = self.to_torch_variable(x)
+        a = self.to_torch_variable(a)
+        y = self.to_torch_variable(y)
+        y_ = self.forward(x, a)
+        loss = self.criterion(y_, y)
+        return np.asscalar(loss.cpu().data.numpy())
+
+    def predict(self, x, a):
+        x = self.to_torch_variable(x)
+        a = self.to_torch_variable(a)
+        return self.forward(x, a).cpu().data.numpy()
+
 def load_episode(game, ep, num_actions):
     path = '%s/dataset/%s/%05d' % (PREFIX, game, ep)
     with open('%s/action.bin' % (path), 'rb') as f:
         actions = pickle.load(f)
     num_frames = len(actions) + 1
     frames = []
-    mean_frame = 0.0
 
     for i in range(1, num_frames):
         frame = io.imread('%s/%05d.png' % (path, i))
         frame = np.transpose(frame, (2, 0, 1))
-        mean_frame += frame
-        frames.append(frame)
-
-    mean_frame /= num_frames - 1
-    frames = [(frame - mean_frame) / 255.0 for frame in frames]
+        frames.append(frame.astype(np.uint8))
 
     actions = actions[1:]
     encoded_actions = np.zeros((len(actions), num_actions))
@@ -121,47 +154,99 @@ def train(game):
     num_actions = env.action_space.n
 
     net = Network(num_actions)
-    criterion = nn.MSELoss()
-    opt = torch.optim.Adam(net.parameters(), 0.0001)
 
     with open('%s/dataset/%s/meta.bin' % (PREFIX, game), 'rb') as f:
         meta = pickle.load(f)
     episodes = meta['episodes']
-    train_episodes = int(episodes * 0.9)
+    mean_obs = meta['mean_obs']
+
+    def pre_process(x):
+        if x.shape[1] == 12:
+            return (x - np.vstack([mean_obs] * 4)) / 255.0
+        elif x.shape[1] == 3:
+            return (x - mean_obs) / 255.0
+        else:
+            assert False
+
+    def post_process(y):
+        return (y * 255 + mean_obs).astype(np.uint8)
+
+    train_episodes = int(episodes * 0.95)
+    # train_episodes = 10
+    # obs, actions, targets, mean_obs = load_dataset(game, np.arange(train_episodes), num_actions)
+    # stacked_mean_obs = np.vstack([mean_obs] * 4)
+    # batcher = Batcher(32, [obs, actions, targets])
+    # iteration = 0
+    # while True:
+    #     while not batcher.end():
+    #         x, a, y = batcher.next_batch()
+    #         x = (x - stacked_mean_obs) / 255.0
+    #         y = (y - mean_obs) / 255.0
+    #         loss = net.fit(x, a, y)
+    #         if iteration % 100 == 0:
+    #             logger.info('Iteration %d, loss %f' % (iteration, loss))
+    #         iteration += 1
+    #     batcher.reset()
+
     indices_train = np.arange(train_episodes)
     iteration = 0
     while True:
         np.random.shuffle(indices_train)
         for ep in indices_train:
-            iteration += 1
             frames, actions = load_episode(game, ep, num_actions)
             frames, actions, targets = extend_frames(frames, actions)
             batcher = Batcher(32, [frames, actions, targets])
-            total_loss = []
+            batcher.shuffle()
             while not batcher.end():
-                x, a, y = batcher.next_batch()
-                y = net.to_torch_variable(y)
-                y_ = net(x, a)
-                loss = criterion(y_, y)
-                total_loss.append(loss.cpu().data.numpy()[0])
-                opt.zero_grad()
-                loss.backward()
-                opt.step()
-            logger.info('Iteration %d, avg loss %f' % (iteration, np.mean(total_loss)))
+                if iteration % 10000 == 0:
+                    mkdir('data/acvp-sample')
+                    losses = []
+                    test_indices = range(train_episodes, episodes)
+                    ep_to_print = np.random.choice(test_indices)
+                    for test_ep in tqdm(test_indices):
+                        frames, actions = load_episode(game, test_ep, num_actions)
+                        frames, actions, targets = extend_frames(frames, actions)
+                        test_batcher = Batcher(32, [frames, actions, targets])
+                        while not test_batcher.end():
+                            x, a, y = test_batcher.next_batch()
+                            losses.append(net.evaluate(pre_process(x), a, pre_process(y)))
+                        if test_ep == ep_to_print:
+                            test_batcher.reset()
+                            x, a, y = test_batcher.next_batch()
+                            y_ = post_process(net.predict(pre_process(x), a))
+                            torchvision.utils.save_image(torch.from_numpy(y_), 'data/acvp-sample/%s-%09d.png' % (game, iteration))
+                            torchvision.utils.save_image(torch.from_numpy(y), 'data/acvp-sample/%s-%09d-truth.png' % (game, iteration))
 
-            if iteration % 200 == 0:
-                test_loss = []
-                for test_ep in range(train_episodes, episodes):
-                    frames, actions = load_episode(game, test_ep, num_actions)
-                    frames, actions, targets = extend_frames(frames, actions)
-                    batcher = Batcher(32, [frames, actions, targets])
-                    ep_loss = []
-                    while not batcher.end():
-                        x, a, y = batcher.next_batch()
-                        y = net.to_torch_variable(y)
-                        y_ = net(x, a)
-                        loss = criterion(y_, y)
-                        ep_loss.append(loss.cpu().data.numpy()[0])
-                    test_loss.append(np.mean(ep_loss))
-                    logger.info('Testing... episode %d, loss %f' % (test_ep, test_loss[-1]))
-                logger.info('Test avg loss %f' % (np.mean(test_loss)))
+                    logger.info('Iteration %d, test loss %f' % (iteration, np.mean(losses)))
+                    torch.save(net.state_dict(), 'data/acvp-%s.bin' % (game))
+
+                x, a, y = batcher.next_batch()
+                loss = net.fit(pre_process(x), a, pre_process(y))
+                if iteration % 100 == 0:
+                    logger.info('Iteration %d, loss %f' % (iteration, loss))
+
+                iteration += 1
+
+def test(game):
+    env = gym.make(game)
+    num_actions = env.action_space.n
+    net = Network(num_actions)
+    saved_state = torch.load('data/acvp-%s.bin' % (game), map_location=lambda storage, loc: storage)
+    net.load_state_dict(saved_state)
+
+    with open('%s/dataset/%s/meta.bin' % (PREFIX, game), 'rb') as f:
+        meta = pickle.load(f)
+    episodes = meta['episodes']
+    mean_obs = meta['mean_obs']
+    train_episodes = int(episodes * 0.9)
+    ep = np.random.choice(np.arange(train_episodes, episodes))
+    frames, actions = load_episode(game, ep, num_actions)
+    frames, actions, targets = extend_frames(frames, actions)
+
+    batcher = Batcher(32, [frames, actions, targets])
+    x, a, y = batcher.next_batch()
+    y_ = net.predict((x - np.vstack([mean_obs] * 4)) / 255.0, a)
+    print y_.shape
+    y_ = (y_ * 255 + mean_obs).astype(np.uint8)
+    torchvision.utils.save_image(torch.from_numpy(y_), 'dataset/sample.png')
+    torchvision.utils.save_image(torch.from_numpy(y), 'dataset/truth.png')
