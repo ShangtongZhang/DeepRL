@@ -80,7 +80,7 @@ but is wrong with high-dimensional action. And its computation of entropy is wro
  
 I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hidden units.
 
-## Video Prediction
+## Action Conditional Video Prediction
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ACVP.png)
 
