@@ -1,1 +1,1 @@
-import action_conditional_video_prediction
+from .action_conditional_video_prediction import train
