@@ -4,9 +4,9 @@
 # declaration at the top                                              #
 #######################################################################
 
-from agent import *
-from component import *
-from utils import *
+from ..agent import *
+from ..component import *
+from ..utils import *
 import torchvision
 import torch
 

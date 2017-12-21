@@ -4,9 +4,9 @@
 # declaration at the top                                              #
 #######################################################################
 
-from network import *
-from component import *
-from utils import *
+from ..network import *
+from ..component import *
+from ..utils import *
 import numpy as np
 import time
 import os

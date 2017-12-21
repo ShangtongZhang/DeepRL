@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
-from utils import *
+from ..utils import *
 
 class OneStepSarsa:
     def __init__(self, config, learning_network, target_network):

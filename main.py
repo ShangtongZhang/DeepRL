@@ -5,10 +5,10 @@
 #######################################################################
 
 import logging
-from agent import *
-from component import *
-from utils import *
-import model.action_conditional_video_prediction as acvp
+from deeprl.agent import *
+from deeprl.component import *
+from deeprl.utils import *
+from deeprl.model import action_conditional_video_prediction as acvp
 
 def dqn_cart_pole():
     config = Config()
@@ -280,12 +280,12 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
-    # d3pg_continuous()
+    d3pg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()

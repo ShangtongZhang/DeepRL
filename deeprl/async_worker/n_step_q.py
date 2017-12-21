@@ -7,9 +7,9 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
-from utils import *
+from ..utils import *
 
-class OneStepQLearning:
+class NStepQLearning:
     def __init__(self, config, learning_network, target_network):
         self.config = config
         self.optimizer = config.optimizer_fn(learning_network.parameters())
@@ -43,18 +43,21 @@ class OneStepQLearning:
 
             with config.steps_lock:
                 config.total_steps.value += 1
-            pending.append([q, action, reward, next_state])
+            pending.append([q, action, reward])
 
             if terminal or len(pending) >= config.update_interval:
                 loss = 0
-                for i in range(len(pending)):
-                    q, action, reward, next_state = pending[i]
-                    q_next, _ = self.target_network.predict(np.stack([next_state])).data.max(1)
-                    if terminal and i == len(pending) - 1:
-                        q_next = torch.FloatTensor([[0]])
-                    q_next = config.discount * q_next + reward
+                if terminal:
+                    R = torch.FloatTensor([0])
+                else:
+                    R, _ = self.target_network.predict(
+                        np.stack([next_state])).data.max(1)
+
+                for i in reversed(range(len(pending))):
+                    q, action, reward = pending[i]
+                    R = reward + config.discount * R
                     q = q.gather(1, Variable(torch.LongTensor([[action]]))).unsqueeze(1)
-                    loss += 0.5 * (q - Variable(q_next)).pow(2)
+                    loss += 0.5 * (Variable(R) - q).pow(2)
 
                 pending = []
                 self.worker_network.zero_grad()
