@@ -7,7 +7,7 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
-from utils import *
+from ..utils import *
 
 class AdvantageActorCritic:
     def __init__(self, config, learning_network, target_network):
@@ -58,7 +58,7 @@ class AdvantageActorCritic:
                     else:
                         delta = reward + config.discount * pending[i + 1][2].data - value.data
                     GAE = config.discount * config.gae_tau * GAE + delta
-                    loss += -log_prob.gather(1, Variable(torch.LongTensor([[action]]))) * Variable(GAE)
+                    loss += -log_prob.gather(1, Variable(torch.LongTensor([[np.asscalar(action)]]))) * Variable(GAE)
                     loss += config.entropy_weight * torch.sum(torch.mul(prob, log_prob))
 
                     R = reward + config.discount * R

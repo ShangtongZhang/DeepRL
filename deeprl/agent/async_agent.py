@@ -6,10 +6,10 @@
 
 import numpy as np
 import torch.multiprocessing as mp
-from network import *
-from utils import *
-from component import *
-from async_worker import *
+from ..network import *
+from ..utils import *
+from ..component import *
+from ..async_worker import *
 import pickle
 import os
 import time

@@ -15,7 +15,7 @@ from skimage import io
 from collections import deque
 import gym
 import torch.optim
-from utils import *
+from ..utils import *
 from tqdm import tqdm
 
 PREFIX = '.'
