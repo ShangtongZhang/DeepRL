@@ -13,8 +13,6 @@ import numpy as np
 # Base class for all kinds of network
 class BasicNet:
     def __init__(self, optimizer_fn, gpu, LSTM=False):
-        if optimizer_fn is not None:
-            self.optimizer = optimizer_fn(self.parameters())
         self.gpu = gpu and torch.cuda.is_available()
         self.LSTM = LSTM
         if self.gpu:

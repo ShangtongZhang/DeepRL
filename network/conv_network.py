@@ -15,8 +15,7 @@ class NatureConvNet(nn.Module, VanillaNet):
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
         self.fc4 = nn.Linear(7 * 7 * 64, 512)
         self.fc5 = nn.Linear(512, n_actions)
-        self.criterion = nn.MSELoss()
-        BasicNet.__init__(self, optimizer_fn, gpu)
+        BasicNet.__init__(self, None, gpu)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
@@ -37,8 +36,7 @@ class DuelingNatureConvNet(nn.Module, DuelingNet):
         self.fc4 = nn.Linear(7 * 7 * 64, 512)
         self.fc_advantage = nn.Linear(512, n_actions)
         self.fc_value = nn.Linear(512, 1)
-        self.criterion = nn.MSELoss()
-        BasicNet.__init__(self, optimizer_fn, gpu)
+        BasicNet.__init__(self, None, gpu)
 
     def forward(self, x):
         x = self.to_torch_variable(x)

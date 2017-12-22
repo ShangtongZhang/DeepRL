@@ -16,29 +16,25 @@ import torch
 class DQNAgent:
     def __init__(self, config):
         self.config = config
-        self.learning_network = config.network_fn(config.optimizer_fn)
-        self.target_network = config.network_fn(config.optimizer_fn)
+        self.learning_network = config.network_fn()
+        self.target_network = config.network_fn()
+        self.optimizer = config.optimizer_fn(self.learning_network.parameters())
+        self.criterion = nn.MSELoss()
         self.target_network.load_state_dict(self.learning_network.state_dict())
         self.task = config.task_fn()
         self.replay = config.replay_fn()
         self.policy = config.policy_fn()
         self.total_steps = 0
-        self.history_buffer = None
 
     def episode(self, deterministic=False):
         episode_start_time = time.time()
         state = self.task.reset()
-        if self.history_buffer is None:
-            self.history_buffer = [np.zeros_like(state)] * self.config.history_length
-        else:
-            self.history_buffer.pop(0)
-            self.history_buffer.append(state)
+        self.history_buffer = [state] * self.config.history_length
         state = np.vstack(self.history_buffer)
         total_reward = 0.0
         steps = 0
         while True:
-            value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]), False)
-            value = value.cpu().data.numpy().flatten()
+            value = self.learning_network.predict(np.stack([self.task.normalize_state(state)]), True).flatten()
             if deterministic:
                 action = np.argmax(value)
             elif self.total_steps < self.config.exploration_steps:
@@ -97,10 +93,10 @@ class DQNAgent:
                     actions = self.learning_network.to_torch_variable(actions, 'int64').unsqueeze(1)
                     q = self.learning_network.predict(states, False)
                     q = q.gather(1, actions).squeeze(1)
-                    loss = self.learning_network.criterion(q, q_next)
-                self.learning_network.zero_grad()
+                    loss = self.criterion(q, q_next)
+                self.optimizer.zero_grad()
                 loss.backward()
-                self.learning_network.optimizer.step()
+                self.optimizer.step()
             if not deterministic and self.total_steps % self.config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.learning_network.state_dict())
             if not deterministic and self.total_steps > self.config.exploration_steps:

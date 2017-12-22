@@ -14,7 +14,7 @@ def dqn_cart_pole():
     config = Config()
     config.task_fn = lambda: CartPole()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda optimizer_fn: FCNet([8, 50, 200, 2], optimizer_fn)
+    config.network_fn = lambda: FCNet([8, 50, 200, 2])
     # config.network_fn = lambda optimizer_fn: DuelingFCNet([8, 50, 200, 2], optimizer_fn)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
@@ -75,7 +75,7 @@ def dqn_pixel_atari(name):
     config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False)
     action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda optimizer_fn: NatureConvNet(config.history_length, action_dim, optimizer_fn)
+    config.network_fn = lambda: NatureConvNet(config.history_length, action_dim)
     # config.network_fn = lambda optimizer_fn: DuelingNatureConvNet(config.history_length, n_actions, optimizer_fn)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
@@ -141,8 +141,7 @@ def dqn_fruit():
     config.optimizer_fn = lambda params: torch.optim.SGD(params, 0.01, momentum=0.9)
     config.reward_weight = np.ones(10) / 10
     config.hybrid_reward = False
-    config.network_fn = lambda optimizer_fn: FruitHRFCNet(
-        98, 4, config.reward_weight, optimizer_fn)
+    config.network_fn = lambda: FruitHRFCNet(98, 4, config.reward_weight)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=15)
     config.discount = 0.95
@@ -163,8 +162,7 @@ def hrdqn_fruit():
     config.hybrid_reward = True
     config.reward_weight = np.ones(10) / 10
     config.optimizer_fn = lambda params: torch.optim.SGD(params, 0.01, momentum=0.9)
-    config.network_fn = lambda optimizer_fn: FruitHRFCNet(
-        98, 4, config.reward_weight, optimizer_fn)
+    config.network_fn = lambda optimizer_fn: FruitHRFCNet(98, 4, config.reward_weight)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config.replay_fn = lambda: HybridRewardReplay(memory_size=10000, batch_size=15)
     config.discount = 0.95
@@ -280,7 +278,7 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
@@ -290,7 +288,7 @@ if __name__ == '__main__':
     # dqn_fruit()
     # hrdqn_fruit()
 
-    # dqn_pixel_atari('PongNoFrameskip-v4')
+    dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
 

@@ -13,7 +13,6 @@ class FCNet(nn.Module, VanillaNet):
         self.fc1 = nn.Linear(dims[0], dims[1])
         self.fc2 = nn.Linear(dims[1], dims[2])
         self.fc3 = nn.Linear(dims[2], dims[3])
-        self.criterion = nn.MSELoss()
         BasicNet.__init__(self, optimizer_fn, gpu)
 
     def forward(self, x):
@@ -32,7 +31,6 @@ class DuelingFCNet(nn.Module, DuelingNet):
         self.fc2 = nn.Linear(dims[1], dims[2])
         self.fc_value = nn.Linear(dims[2], 1)
         self.fc_advantage = nn.Linear(dims[2], dims[3])
-        self.criterion = nn.MSELoss()
         BasicNet.__init__(self, optimizer_fn, gpu)
 
     def forward(self, x):
@@ -67,7 +65,6 @@ class FruitHRFCNet(nn.Module, VanillaNet):
         hidden_size = 250
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.ModuleList([nn.Linear(hidden_size, action_dim) for _ in head_weights])
-        self.criterion = nn.MSELoss()
         self.head_weights = head_weights
         BasicNet.__init__(self, optimizer_fn, gpu)
 
@@ -93,7 +90,6 @@ class FruitMultiStatesFCNet(nn.Module, BasicNet):
         hidden_size = 250
         self.fc1 = nn.ModuleList([nn.Linear(state_dim, hidden_size) for _ in head_weights])
         self.fc2 = nn.ModuleList([nn.Linear(hidden_size, action_dim) for _ in head_weights])
-        self.criterion = nn.MSELoss()
         self.head_weights = head_weights
         self.state_dim = state_dim
         self.n_heads = head_weights.shape[0]
