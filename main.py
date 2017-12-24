@@ -79,6 +79,7 @@ def dqn_pixel_atari(name):
     # config.network_fn = lambda optimizer_fn: DuelingNatureConvNet(config.history_length, n_actions, optimizer_fn)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.reward_shift_fn = lambda r: np.sign(r)
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.max_episode_length = 0
@@ -104,6 +105,7 @@ def async_pixel_atari(name):
     # config.worker = OneStepSarsa
     # config.worker = NStepQLearning
     config.worker = OneStepQLearning
+    config.reward_shift_fn = lambda r: np.sign(r)
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.max_episode_length = 10000
@@ -123,6 +125,7 @@ def a3c_pixel_atari(name):
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
     config.network_fn = lambda: OpenAIActorCriticConvNet(
         config.history_length, task.env.action_space.n, LSTM=True)
+    config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.worker = AdvantageActorCritic
     config.discount = 0.99

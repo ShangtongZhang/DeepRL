@@ -176,11 +176,6 @@ class ProcessFrame(gym.Wrapper):
     def _reset(self):
         return self.process_fn(self.env.reset())
 
-class ClippedRewardsWrapper(gym.Wrapper):
-    def _step(self, action):
-        obs, reward, done, info = self.env.step(action)
-        return obs, np.sign(reward), done, info
-
 class NormalizeFrame(gym.Wrapper):
     def __init__(self, env=None):
         super(NormalizeFrame, self).__init__(env)

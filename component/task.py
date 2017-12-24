@@ -70,8 +70,7 @@ class PixelAtari(BasicTask):
         env = MaxAndSkipEnv(env, skip=frame_skip)
         if 'FIRE' in env.unwrapped.get_action_meanings():
             env = FireResetEnv(env)
-        env = ProcessFrame(env, frame_size)
-        self.env = ClippedRewardsWrapper(env)
+        self.env = ProcessFrame(env, frame_size)
         self.action_dim = self.env.action_space.n
 
     def normalize_state(self, state):

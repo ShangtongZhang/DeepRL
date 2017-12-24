@@ -37,6 +37,7 @@ class Config:
         self.noise_decay_interval = 0
         self.target_network_mix = 0.001
         self.action_shift_fn = lambda a: a
+        self.reward_shift_fn = lambda r: r
         self.reward_weight = 1
         self.hybrid_reward = False
         self.target_type = self.q_target

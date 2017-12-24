@@ -46,10 +46,11 @@ class DQNAgent:
             self.history_buffer.pop(0)
             self.history_buffer.append(next_state)
             next_state = np.vstack(self.history_buffer)
+            total_reward += np.sum(reward * self.config.reward_weight)
+            reward = self.config.reward_shift_fn(reward)
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
                 self.total_steps += 1
-            total_reward += np.sum(reward * self.config.reward_weight)
             steps += 1
             state = next_state
             if done:

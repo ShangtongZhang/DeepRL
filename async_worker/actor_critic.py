@@ -33,6 +33,7 @@ class AdvantageActorCritic:
 
             steps += 1
             total_reward += reward
+            reward = config.reward_shift_fn(reward)
 
             if deterministic:
                 if terminal:
