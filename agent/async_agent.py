@@ -13,8 +13,11 @@ from async_worker import *
 import pickle
 import os
 import time
+import sys
 
 def train(id, config, learning_network, extra):
+    np.random.seed()
+    torch.manual_seed(np.random.randint(sys.maxsize))
     worker = config.worker(config, learning_network, extra)
     episode = 0
     rewards = []
@@ -27,6 +30,8 @@ def train(id, config, learning_network, extra):
         episode += 1
 
 def evaluate(config, task, learning_network, extra):
+    np.random.seed()
+    torch.manual_seed(np.random.randint(sys.maxsize))
     test_rewards = []
     test_points = []
     test_wall_times = []
