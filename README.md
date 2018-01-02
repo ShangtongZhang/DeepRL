@@ -94,9 +94,7 @@ Prediction is sampled after 110K iterations and I only implemented one-step trai
 * [Roboschool](https://github.com/openai/roboschool) (Optional)
 * PyTorch v0.3.0
 * Python 2.7 or Python 3.6
-* Tensorflow (Optional, but tensorboard is awesome)
-> If you want to use Roboschool, you have to use Python3. And don't try to use Roboschool with parallelized algorithms,
-> there is a known [critical bug](https://github.com/openai/roboschool/issues/86).
+* [TensorboardX](https://github.com/lanpa/tensorboard-pytorch)
 
 
 # Usage

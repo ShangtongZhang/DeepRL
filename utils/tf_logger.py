@@ -22,4 +22,4 @@ class Logger(object):
     def histo_summary(self, tag, values, step):
         if self.skip:
             return
-        self.writer.add_histogram(tag, values, step)
+        self.writer.add_histogram(tag, values, step, bins=1000)
