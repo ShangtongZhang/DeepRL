@@ -11,7 +11,7 @@ class Config:
         self.task_fn = None
         self.optimizer_fn = None
         self.actor_optimizer_fn = None
-        self.critic_optimizer_fn = None
+        self.critic_optimizer_fn = Nonea
         self.network_fn = None
         self.actor_network_fn = None
         self.critic_network_fn = None
@@ -50,3 +50,4 @@ class Config:
         self.save_interval = 0
         self.max_steps = 0
         self.success_threshold = float('inf')
+        self.render_episode_freq = 0

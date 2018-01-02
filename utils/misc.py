@@ -7,6 +7,7 @@
 import numpy as np
 import pickle
 import os
+import gym.monitoring
 
 def run_episodes(agent):
     config = agent.config
@@ -29,6 +30,12 @@ def run_episodes(agent):
             with open('data/%s-%s-online-stats-%s.bin' % (
                     agent_type, config.tag, agent.task.name), 'wb') as f:
                 pickle.dump([steps, rewards], f)
+
+        if config.render_episode_freq and ep % config.render_episode_freq == 0:
+            video_recoder = gym.monitoring.VideoRecorder(
+                env=agent.task.env, base_path='./data/video/%s-%s-%s-%d' % (agent_type, config.tag, agent.task.name, ep))
+            agent.episode(True, video_recoder)
+            video_recoder.close()
 
         if config.episode_limit and ep > config.episode_limit:
             break

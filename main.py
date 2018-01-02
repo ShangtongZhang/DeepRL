@@ -274,8 +274,45 @@ def d3pg_continuous():
     agent = AsyncAgent(config)
     agent.run()
 
+def ddpg_continuous():
+    config = Config()
+    # config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: ContinuousLunarLander()
+    # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
+    config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1')
+    # config.task_fn = lambda: BipedalWalker()
+    task = config.task_fn()
+    config.actor_network_fn = lambda: DeterministicActorNet(
+        task.state_dim, task.action_dim, F.tanh, 1, non_linear=F.relu, batch_norm=False)
+    config.critic_network_fn = lambda: DeterministicCriticNet(
+        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False)
+    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.critic_optimizer_fn =\
+        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
+    config.replay_fn = lambda: SharedReplay(memory_size=1000000, batch_size=64,
+                                            state_shape=(task.state_dim, ), action_shape=(task.action_dim, ))
+    config.discount = 0.99
+    config.max_episode_length = task.max_episode_steps
+    config.random_process_fn = \
+        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2,
+                                         n_steps_annealing=100000)
+    config.worker = DeterministicPolicyGradient
+    config.min_memory_size = 50
+    config.target_network_mix = 0.001
+    config.test_interval = 0
+    config.test_repetitions = 1
+    config.gradient_clip = 40
+    config.render_episode_freq = 0
+    config.logger = Logger('./log', logger)
+    run_episodes(DDPGAgent(config))
+
 if __name__ == '__main__':
     mkdir('data')
+    mkdir('data/video')
     mkdir('log')
     os.system('export OMP_NUM_THREADS=1')
     # logger.setLevel(logging.DEBUG)
@@ -283,10 +320,11 @@ if __name__ == '__main__':
 
     # dqn_cart_pole()
     # async_cart_pole()
-    a3c_cart_pole()
+    # a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()
+    ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()
