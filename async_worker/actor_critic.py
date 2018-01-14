@@ -59,7 +59,7 @@ class AdvantageActorCritic:
                     else:
                         delta = reward + config.discount * pending[i + 1][2].data - value.data
                     GAE = config.discount * config.gae_tau * GAE + delta
-                    loss += -log_prob.gather(1, Variable(torch.LongTensor([[action]]))) * Variable(GAE)
+                    loss += -log_prob.gather(1, Variable(torch.LongTensor([[int(action)]]))) * Variable(GAE)
                     loss += config.entropy_weight * torch.sum(torch.mul(prob, log_prob))
 
                     R = reward + config.discount * R
