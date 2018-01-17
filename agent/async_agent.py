@@ -91,8 +91,8 @@ class AsyncAgent:
             extra = None
         args = [(i, config, learning_network, extra) for i in range(config.num_workers)]
         args.append((config, task, learning_network, extra))
-        procs = [mp.Process(target=evaluate, args=args[-1])]
-        procs.extend([mp.Process(target=train, args=args[i]) for i in range(config.num_workers)])
+        procs = [mp.Process(target=train, args=args[i]) for i in range(config.num_workers)]
+        procs.append(mp.Process(target=evaluate, args=args[-1]))
         for p in procs: p.start()
         while True:
             time.sleep(1)

@@ -320,11 +320,11 @@ if __name__ == '__main__':
 
     # dqn_cart_pole()
     # async_cart_pole()
-    # a3c_cart_pole()
+    a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()
-    ddpg_continuous()
+    # ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()
