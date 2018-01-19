@@ -15,7 +15,7 @@ class NatureConvNet(nn.Module, VanillaNet):
         self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
         self.fc4 = nn.Linear(7 * 7 * 64, 512)
         self.fc5 = nn.Linear(512, n_actions)
-        BasicNet.__init__(self, None, gpu)
+        BasicNet.__init__(self, gpu)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
@@ -36,7 +36,7 @@ class DuelingNatureConvNet(nn.Module, DuelingNet):
         self.fc4 = nn.Linear(7 * 7 * 64, 512)
         self.fc_advantage = nn.Linear(512, n_actions)
         self.fc_value = nn.Linear(512, 1)
-        BasicNet.__init__(self, None, gpu)
+        BasicNet.__init__(self, gpu)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
@@ -65,7 +65,7 @@ class ActorCriticNatureConvNet(nn.Module, ActorCriticNet):
         self.fc_critic = nn.Linear(512, 1)
         self.xentropy_weight = xentropy_weight
         self.grad_threshold = grad_threshold
-        BasicNet.__init__(self, optimizer_fn=None, gpu=gpu)
+        BasicNet.__init__(self, gpu)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
@@ -96,7 +96,7 @@ class OpenAIActorCriticConvNet(nn.Module, ActorCriticNet):
 
         self.fc_actor = nn.Linear(hidden_units, n_actions)
         self.fc_critic = nn.Linear(hidden_units, 1)
-        BasicNet.__init__(self, optimizer_fn=None, gpu=False, LSTM=LSTM)
+        BasicNet.__init__(self, gpu=False, LSTM=LSTM)
         if LSTM:
             self.h = self.to_torch_variable(np.zeros((1, hidden_units)))
             self.c = self.to_torch_variable(np.zeros((1, hidden_units)))
@@ -132,7 +132,7 @@ class OpenAIConvNet(nn.Module, VanillaNet):
         self.layer5 = nn.Linear(32 * 3 * 3, hidden_units)
         self.fc6 = nn.Linear(hidden_units, n_actions)
 
-        BasicNet.__init__(self, optimizer_fn=None, gpu=False, LSTM=False)
+        BasicNet.__init__(self, gpu=False, LSTM=False)
 
     def forward(self, x, update_LSTM=True):
         x = self.to_torch_variable(x)

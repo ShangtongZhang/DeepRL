@@ -30,7 +30,7 @@ class DeterministicActorNet(nn.Module, BasicNet):
 
         self.batch_norm = batch_norm
         self.init_weights()
-        BasicNet.__init__(self, None, gpu, False)
+        BasicNet.__init__(self, gpu, False)
 
     def init_weights(self):
         bound = 3e-3
@@ -80,7 +80,7 @@ class DeterministicCriticNet(nn.Module, BasicNet):
         self.batch_norm = batch_norm
 
         self.init_weights()
-        BasicNet.__init__(self, None, gpu, False)
+        BasicNet.__init__(self, gpu, False)
 
     def init_weights(self):
         bound = 3e-3
@@ -130,7 +130,7 @@ class GaussianActorNet(nn.Module, BasicNet):
         self.action_scale = action_scale
         self.action_gate = action_gate
 
-        BasicNet.__init__(self, None, gpu, False)
+        BasicNet.__init__(self, gpu, False)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
@@ -167,7 +167,7 @@ class GaussianCriticNet(nn.Module, BasicNet):
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc_value = nn.Linear(hidden_size, 1)
-        BasicNet.__init__(self, None, gpu, False)
+        BasicNet.__init__(self, gpu, False)
 
     def forward(self, x):
         x = self.to_torch_variable(x)

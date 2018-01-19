@@ -8,12 +8,12 @@ from .base_network import *
 
 # Network for CartPole with value based methods
 class FCNet(nn.Module, VanillaNet):
-    def __init__(self, dims, optimizer_fn=None, gpu=True):
+    def __init__(self, dims, gpu=True):
         super(FCNet, self).__init__()
         self.fc1 = nn.Linear(dims[0], dims[1])
         self.fc2 = nn.Linear(dims[1], dims[2])
         self.fc3 = nn.Linear(dims[2], dims[3])
-        BasicNet.__init__(self, optimizer_fn, gpu)
+        BasicNet.__init__(self, gpu)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
@@ -25,13 +25,13 @@ class FCNet(nn.Module, VanillaNet):
 
 # Network for CartPole with dueling architecture
 class DuelingFCNet(nn.Module, DuelingNet):
-    def __init__(self, dims, optimizer_fn=None, gpu=True):
+    def __init__(self, dims, gpu=True):
         super(DuelingFCNet, self).__init__()
         self.fc1 = nn.Linear(dims[0], dims[1])
         self.fc2 = nn.Linear(dims[1], dims[2])
         self.fc_value = nn.Linear(dims[2], 1)
         self.fc_advantage = nn.Linear(dims[2], dims[3])
-        BasicNet.__init__(self, optimizer_fn, gpu)
+        BasicNet.__init__(self, gpu)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
@@ -50,7 +50,7 @@ class ActorCriticFCNet(nn.Module, ActorCriticNet):
         self.fc2 = nn.Linear(hidden_size1, hidden_size2)
         self.fc_actor = nn.Linear(hidden_size2, action_dim)
         self.fc_critic = nn.Linear(hidden_size2, 1)
-        BasicNet.__init__(self, None, False)
+        BasicNet.__init__(self, False)
 
     def forward(self, x, update_LSTM=True):
         x = self.to_torch_variable(x)
@@ -60,13 +60,13 @@ class ActorCriticFCNet(nn.Module, ActorCriticNet):
         return phi
 
 class FruitHRFCNet(nn.Module, VanillaNet):
-    def __init__(self, state_dim, action_dim, head_weights, optimizer_fn=None, gpu=True):
+    def __init__(self, state_dim, action_dim, head_weights, gpu=True):
         super(FruitHRFCNet, self).__init__()
         hidden_size = 250
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.ModuleList([nn.Linear(hidden_size, action_dim) for _ in head_weights])
         self.head_weights = head_weights
-        BasicNet.__init__(self, optimizer_fn, gpu)
+        BasicNet.__init__(self, gpu)
 
     def forward(self, x, heads_only):
         x = self.to_torch_variable(x)
@@ -85,7 +85,7 @@ class FruitHRFCNet(nn.Module, VanillaNet):
         return self.forward(x, heads_only)
 
 class FruitMultiStatesFCNet(nn.Module, BasicNet):
-    def __init__(self, state_dim, action_dim, head_weights, optimizer_fn=None, gpu=True):
+    def __init__(self, state_dim, action_dim, head_weights, gpu=True):
         super(FruitMultiStatesFCNet, self).__init__()
         hidden_size = 250
         self.fc1 = nn.ModuleList([nn.Linear(state_dim, hidden_size) for _ in head_weights])
@@ -93,7 +93,7 @@ class FruitMultiStatesFCNet(nn.Module, BasicNet):
         self.head_weights = head_weights
         self.state_dim = state_dim
         self.n_heads = head_weights.shape[0]
-        BasicNet.__init__(self, optimizer_fn, gpu)
+        BasicNet.__init__(self, gpu)
 
     def predict(self, x, merge):
         head_q = []

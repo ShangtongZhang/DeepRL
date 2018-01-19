@@ -15,7 +15,7 @@ def dqn_cart_pole():
     config.task_fn = lambda: CartPole()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: FCNet([8, 50, 200, 2])
-    # config.network_fn = lambda optimizer_fn: DuelingFCNet([8, 50, 200, 2], optimizer_fn)
+    # config.network_fn = lambda: DuelingFCNet([8, 50, 200, 2])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
     config.discount = 0.99
@@ -76,7 +76,7 @@ def dqn_pixel_atari(name):
     action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
     config.network_fn = lambda: NatureConvNet(config.history_length, action_dim)
-    # config.network_fn = lambda optimizer_fn: DuelingNatureConvNet(config.history_length, n_actions, optimizer_fn)
+    # config.network_fn = lambda: DuelingNatureConvNet(config.history_length, n_actions)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
     config.reward_shift_fn = lambda r: np.sign(r)
@@ -317,13 +317,13 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()
-    ddpg_continuous()
+    # ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()
