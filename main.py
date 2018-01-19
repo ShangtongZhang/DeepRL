@@ -286,15 +286,14 @@ def ddpg_continuous():
     # config.task_fn = lambda: BipedalWalker()
     task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
-        task.state_dim, task.action_dim, F.tanh, 1, non_linear=F.relu, batch_norm=False)
+        task.state_dim, task.action_dim, F.tanh, 1, non_linear=F.relu, batch_norm=False, gpu=False)
     config.critic_network_fn = lambda: DeterministicCriticNet(
-        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False)
+        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False, gpu=False)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
-    config.replay_fn = lambda: SharedReplay(memory_size=1000000, batch_size=64,
-                                            state_shape=(task.state_dim, ), action_shape=(task.action_dim, ))
+    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.max_episode_length = task.max_episode_steps
     config.random_process_fn = \
@@ -320,11 +319,11 @@ if __name__ == '__main__':
 
     # dqn_cart_pole()
     # async_cart_pole()
-    a3c_cart_pole()
+    # a3c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()
-    # ddpg_continuous()
+    ddpg_continuous()
 
     # dqn_fruit()
     # hrdqn_fruit()

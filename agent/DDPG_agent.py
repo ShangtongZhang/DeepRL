@@ -97,7 +97,7 @@ class DDPGAgent:
                 actions = actor.predict(states, False)
                 var_actions = Variable(actions.data, requires_grad=True)
                 q = critic.predict(states, var_actions)
-                q.backward(torch.ones(q.size()))
+                q.backward(critic.FloatTensor(np.ones(q.size())))
 
                 actor.zero_grad()
                 self.actor_opt.zero_grad()

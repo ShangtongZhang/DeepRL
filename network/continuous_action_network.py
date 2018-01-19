@@ -29,22 +29,18 @@ class DeterministicActorNet(nn.Module, BasicNet):
         self.layer2 = nn.Linear(hidden_size, hidden_size)
 
         self.batch_norm = batch_norm
-        BasicNet.__init__(self, None, gpu, False)
         self.init_weights()
+        BasicNet.__init__(self, None, gpu, False)
 
     def init_weights(self):
         bound = 3e-3
-        self.layer3.weight.data.uniform_(-bound, bound)
-        self.layer3.bias.data.fill_(0)
+        nn.init.uniform(self.layer3.weight.data, -bound, bound)
+        nn.init.constant(self.layer3.bias.data, 0)
 
-        def fanin(size):
-            v = 1.0 / np.sqrt(size[1])
-            return torch.FloatTensor(size).uniform_(-v, v)
-
-        self.layer1.weight.data = fanin(self.layer1.weight.data.size())
-        self.layer1.bias.data.fill_(0)
-        self.layer2.weight.data = fanin(self.layer2.weight.data.size())
-        self.layer2.bias.data.fill_(0)
+        nn.init.xavier_uniform(self.layer1.weight.data)
+        nn.init.constant(self.layer1.bias.data, 0)
+        nn.init.xavier_uniform(self.layer2.weight.data)
+        nn.init.constant(self.layer2.bias.data, 0)
 
     def forward(self, x):
         x = self.to_torch_variable(x)
@@ -83,22 +79,18 @@ class DeterministicCriticNet(nn.Module, BasicNet):
             self.bn2 = nn.BatchNorm1d(hidden_size)
         self.batch_norm = batch_norm
 
-        BasicNet.__init__(self, None, gpu, False)
         self.init_weights()
+        BasicNet.__init__(self, None, gpu, False)
 
     def init_weights(self):
         bound = 3e-3
-        self.layer3.weight.data.uniform_(-bound, bound)
-        self.layer3.bias.data.fill_(0)
+        nn.init.uniform(self.layer3.weight.data, -bound, bound)
+        nn.init.constant(self.layer3.bias.data, 0)
 
-        def fanin(size):
-            v = 1.0 / np.sqrt(size[1])
-            return torch.FloatTensor(size).uniform_(-v, v)
-
-        self.layer1.weight.data = fanin(self.layer1.weight.data.size())
-        self.layer1.bias.data.fill_(0)
-        self.layer2.weight.data = fanin(self.layer2.weight.data.size())
-        self.layer2.bias.data.fill_(0)
+        nn.init.xavier_uniform(self.layer1.weight.data)
+        nn.init.constant(self.layer1.bias.data, 0)
+        nn.init.xavier_uniform(self.layer2.weight.data)
+        nn.init.constant(self.layer2.bias.data, 0)
 
     def forward(self, x, action):
         x = self.to_torch_variable(x)
