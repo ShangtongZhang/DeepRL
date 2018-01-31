@@ -51,3 +51,4 @@ class Config:
         self.max_steps = 0
         self.success_threshold = float('inf')
         self.render_episode_freq = 0
+        self.rollout_length = None

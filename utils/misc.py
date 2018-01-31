@@ -60,6 +60,7 @@ def run_episodes(agent):
             if avg_reward > config.success_threshold:
                 break
 
+    agent.close()
     return steps, rewards, avg_test_rewards
 
 def sync_grad(target_network, src_network):

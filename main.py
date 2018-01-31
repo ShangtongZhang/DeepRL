@@ -69,6 +69,24 @@ def a3c_cart_pole():
     agent = AsyncAgent(config)
     agent.run()
 
+def a2c_cart_pole():
+    config = Config()
+    task_fn = lambda: CartPole(max_steps=200)
+    config.num_workers = 3
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: ActorCriticFCNet(4, 2)
+    config.policy_fn = SamplePolicy
+    config.discount = 0.99
+    config.test_interval = 20
+    config.test_repetitions = 10
+    config.logger = Logger('./log', logger)
+    config.gae_tau = 1.0
+    config.entropy_weight = 0.01
+    config.rollout_length = 50
+    config.success_threshold = 195
+    run_episodes(A2CAgent(config))
+
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
@@ -317,9 +335,10 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
+    a2c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()

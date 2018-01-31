@@ -7,15 +7,20 @@ import gym
 import sys
 import numpy as np
 from .atari_wrapper import *
+import torch.multiprocessing as mp
+import sys
 
 class BasicTask:
-    def __init__(self):
+    def __init__(self, max_steps=sys.maxsize):
         self.normalized_state = True
+        self.steps = 0
+        self.max_steps = max_steps
 
     def normalize_state(self, state):
         return state
 
     def reset(self):
+        self.steps = 0
         state = self.env.reset()
         if self.normalized_state:
             return self.normalize_state(state)
@@ -23,6 +28,8 @@ class BasicTask:
 
     def step(self, action):
         next_state, reward, done, info = self.env.step(action)
+        self.steps += 1
+        done = (done or self.steps >= self.max_steps)
         if self.normalized_state:
             next_state = self.normalize_state(next_state)
         return next_state, np.sign(reward), done, info
@@ -34,8 +41,8 @@ class MountainCar(BasicTask):
     name = 'MountainCar-v0'
     success_threshold = -110
 
-    def __init__(self):
-        BasicTask.__init__(self)
+    def __init__(self, max_steps=200):
+        BasicTask.__init__(self, max_steps)
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
 
@@ -43,8 +50,8 @@ class CartPole(BasicTask):
     name = 'CartPole-v0'
     success_threshold = 195
 
-    def __init__(self):
-        BasicTask.__init__(self)
+    def __init__(self, max_steps=200):
+        BasicTask.__init__(self, max_steps)
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
 
@@ -182,121 +189,50 @@ class Roboschool(BasicTask):
         next_state, reward, done, info = self.env.step(action)
         return next_state, reward, done, info
 
-class Fruit(BasicTask):
-    def __init__(self, hybrid_reward=False, pseudo_reward=False, atomic_state=True):
-        self.hybrid_reward = hybrid_reward
-        self.atomic_state = atomic_state
-        self.pseudo_reward = pseudo_reward
-        self.name = "Fruit"
-        self.success_threshold = 5
-        self.width = 10
-        self.height = 10
-        self.possible_fruits = 10
-        self.actual_fruits = 5
-        xs = np.random.randint(0, self.width, size=self.possible_fruits)
-        ys = np.random.randint(0, self.height, size=self.possible_fruits)
-        self.possible_locations = list(zip(xs, ys))
-        self.x = 0
-        self.y = 0
-        self.indices = np.arange(self.possible_fruits)
-        self.taken = []
-        self.remaining_fruits = 0
-
-    def get_nearest(self):
-        def distance(i):
-            x, y = self.possible_locations[i]
-            return np.abs(self.x - x) + np.abs(self.y - y)
-        pool = []
-        for i in range(self.possible_fruits):
-            if not self.taken[i]:
-                pool.append([i, distance(i)])
-        pool = sorted(pool, key=lambda x:x[1])
-        return pool[0][0]
-
-    def encode_pos(self, x, y):
-        return '{:04b}'.format(x) + '{:04b}'.format(y)
-
-    def encode_atomic_state(self):
-        offset = 8 * self.possible_fruits
-        state = np.copy(self.base_state)
-        str = self.encode_pos(self.x, self.y)
-        for i in range(len(str)):
-            state[offset + i] = int(str[i])
-        offset += 8
-        for i in range(len(self.taken)):
-            state[offset + i] = self.taken[i]
-        return state
-
-    def encode_decomposed_state(self):
-        state_size = (4 + 4) * 2 + 1
-        base_state = np.zeros(state_size)
-        str = self.encode_pos(self.x, self.y)
-        for i in range(len(str)):
-            base_state[i] = int(str[i])
-        states = []
-        for i in range(self.possible_fruits):
-            states.append(np.copy(base_state))
-            str = self.encode_pos(*self.possible_locations[i])
-            for j in range(len(str)):
-                states[-1][8 + j] = int(str[j])
-            states[-1][-1] = self.taken[i]
-        return np.asarray(states)
-
-    def encode_state(self):
-        if self.atomic_state:
-            return self.encode_atomic_state()
-        return self.encode_decomposed_state()
-
-    def reset(self):
-        self.x = np.random.randint(0, self.width)
-        self.y = np.random.randint(0, self.height)
-        np.random.shuffle(self.indices)
-        self.taken = np.ones(self.possible_fruits, dtype=np.bool)
-        self.taken[self.indices[: self.actual_fruits]] = False
-        self.remaining_fruits = self.actual_fruits
-        state_size = (4 + 4) * (self.possible_fruits + 1) + self.possible_fruits
-        self.base_state = np.zeros(state_size)
-        offset = 0
-        for x, y in self.possible_locations:
-            str = self.encode_pos(x, y)
-            for i in range(len(str)):
-                self.base_state[offset + i] = int(str[i])
-            offset += 8
-        return self.encode_state()
-
-    def step(self, action):
-        # action = action[0]
-        if action == 0:
-            self.x -= 1
-        elif action == 1:
-            self.x += 1
-        elif action == 2:
-            self.y -= 1
-        elif action == 3:
-            self.y += 1
+def sub_task(parent_pipe, pipe, task_fn):
+    parent_pipe.close()
+    task = task_fn()
+    while True:
+        op, data = pipe.recv()
+        if op == 'step':
+            pipe.send(task.step(data))
+        elif op == 'reset':
+            pipe.send(task.reset())
+        elif op == 'exit':
+            pipe.close()
+            return
         else:
-            assert False
-        self.x = min(max(self.x, 0), self.width - 1)
-        self.y = min(max(self.y, 0), self.height - 1)
-        try:
-            pos = self.possible_locations.index((self.x, self.y))
-        except ValueError:
-            pos = -1
-        if self.hybrid_reward:
-            reward = np.zeros(self.possible_fruits)
-            if pos >= 0 and not self.taken[pos]:
-                reward[pos] = 10
-                self.taken[pos] = True
-                self.remaining_fruits -= 1
-            if self.pseudo_reward:
-                pseudo_reward = np.zeros(self.possible_fruits)
-                if pos >= 0:
-                    pseudo_reward[pos] = 1
-                reward = (reward, pseudo_reward)
+            assert False, 'Unknown Operation'
+
+class ParallelizedTask:
+    def __init__(self, task_fn, num_workers):
+        self.task_fn = task_fn
+        self.task = task_fn()
+        self.name = self.task.name
+        self.pipes, worker_pipes = zip(*[mp.Pipe() for _ in range(num_workers)])
+        args = [(p, wp, task_fn) for p, wp in zip(self.pipes, worker_pipes)]
+        self.workers = [mp.Process(target=sub_task, args=arg) for arg in args]
+        for p in self.workers: p.start()
+        for p in worker_pipes: p.close()
+
+    def step(self, actions):
+        for pipe, action in zip(self.pipes, actions):
+            pipe.send(('step', action))
+        results = [p.recv() for p in self.pipes]
+        results = map(lambda x: np.stack(x), zip(*results))
+        return results
+
+    def reset(self, i=None):
+        if i is None:
+            for pipe in self.pipes:
+                pipe.send(('reset', None))
+            results = [p.recv() for p in self.pipes]
         else:
-            reward = 0.0
-            if pos >= 0 and not self.taken[pos]:
-                reward = 1.0
-                self.taken[pos] = True
-                self.remaining_fruits -= 1
-        return self.encode_state(), reward, not self.remaining_fruits, self.taken
+            self.pipes[i].send(('reset', None))
+            results = self.pipes[i].recv()
+        return np.stack(results)
+
+    def close(self):
+        for pipe in self.pipes:
+            pipe.send(('exit', None))
+        for p in self.workers: p.join()

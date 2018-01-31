@@ -18,8 +18,10 @@ class BasicNet:
         if self.gpu:
             self.cuda()
             self.FloatTensor = torch.cuda.FloatTensor
+            self.LongTensor = torch.cuda.LongTensor
         else:
             self.FloatTensor = torch.FloatTensor
+            self.LongTensor = torch.LongTensor
 
     def to_torch_variable(self, x, dtype='float32'):
         if isinstance(x, Variable):
