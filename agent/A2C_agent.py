@@ -100,7 +100,7 @@ class A2CAgent:
         value_loss = 0.5 * (Variable(returns) - value).pow(2)
 
         self.optimizer.zero_grad()
-        (policy_loss + value_loss).mean().backward()
+        (policy_loss + value_loss).sum().backward()
         nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
 
