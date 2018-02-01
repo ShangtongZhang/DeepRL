@@ -44,7 +44,7 @@ class A2CAgent:
         steps = 0
         while True:
             prob, _, _ = self.network.predict(np.stack([state]))
-            action = self.policy.sample(prob.data.numpy().flatten(), True)
+            action = self.policy.sample(prob.data.cpu().numpy().flatten(), True)
             state, reward, done, _ = self.evaluator.step(action)
             total_rewards += reward
             steps += 1
@@ -61,7 +61,7 @@ class A2CAgent:
         states = self.states
         for i in range(config.rollout_length):
             prob, log_prob, value = self.network.predict(states)
-            actions = [self.policy.sample(p, deterministic) for p in prob.data.numpy()]
+            actions = [self.policy.sample(p, deterministic) for p in prob.data.cpu().numpy()]
             actions = config.action_shift_fn(actions)
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards

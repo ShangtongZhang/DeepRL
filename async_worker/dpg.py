@@ -58,7 +58,6 @@ class DeterministicPolicyGradient:
             if not deterministic:
                 action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
-            done = (done or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
             total_reward += reward
             reward = self.reward_normalizer(reward)

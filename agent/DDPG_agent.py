@@ -40,6 +40,9 @@ class DDPGAgent:
         with open(file_name, 'wb') as f:
             torch.save(self.worker_network.state_dict(), f)
 
+    def close(self):
+        pass
+
     def episode(self, deterministic=False, video_recorder=None):
         self.random_process.reset_states()
         state = self.task.reset()
@@ -61,7 +64,6 @@ class DDPGAgent:
             next_state, reward, done, info = self.task.step(action)
             if video_recorder is not None:
                 video_recorder.capture_frame()
-            done = (done or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
             total_reward += reward
             reward = self.reward_normalizer(reward)

@@ -32,7 +32,7 @@ class BasicTask:
         done = (done or self.steps >= self.max_steps)
         if self.normalized_state:
             next_state = self.normalize_state(next_state)
-        return next_state, np.sign(reward), done, info
+        return next_state, reward, done, info
 
     def random_action(self):
         return self.env.action_space.sample()
@@ -59,17 +59,16 @@ class LunarLander(BasicTask):
     name = 'LunarLander-v2'
     success_threshold = 200
 
-    def __init__(self):
-        BasicTask.__init__(self)
+    def __init__(self, max_steps=sys.maxsize):
+        BasicTask.__init__(self, max_steps)
         self.env = gym.make(self.name)
 
 class PixelAtari(BasicTask):
     def __init__(self, name, no_op, frame_skip, normalized_state=True,
-                 frame_size=84, success_threshold=1000):
-        BasicTask.__init__(self)
+                 frame_size=84, max_steps=sys.maxsize):
+        BasicTask.__init__(self, max_steps)
         self.normalized_state = normalized_state
         self.name = name
-        self.success_threshold = success_threshold
         env = gym.make(name)
         assert 'NoFrameskip' in env.spec.id
         env = EpisodicLifeEnv(env)
@@ -87,107 +86,49 @@ class ContinuousMountainCar(BasicTask):
     name = 'MountainCarContinuous-v0'
     success_threshold = 90
 
-    def __init__(self):
-        BasicTask.__init__(self)
+    def __init__(self, max_steps=sys.maxsize):
+        BasicTask.__init__(self, max_steps)
         self.env = gym.make(self.name)
         self.max_episode_steps = self.env._max_episode_steps
         self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
-
-    def step(self, action):
-        action = np.clip(action, -1, 1)
-        next_state, reward, done, info = self.env.step(action)
-        return next_state, reward, done, info
-
 
 class Pendulum(BasicTask):
     name = 'Pendulum-v0'
     success_threshold = -10
 
-    def __init__(self):
-        BasicTask.__init__(self)
+    def __init__(self, max_steps=sys.maxsize):
+        BasicTask.__init__(self, max_steps)
         self.env = gym.make(self.name)
-        self.max_episode_steps = self.env._max_episode_steps
-        self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
 
     def step(self, action):
-        action = np.clip(action, -2, 2)
-        next_state, reward, done, info = self.env.step(action)
-        return next_state, reward, done, info
+        return BasicTask.step(self, np.clip(action, -2, 2))
 
-class BipedalWalker(BasicTask):
-    name = 'BipedalWalker-v2'
-    success_threshold = 300
-
-    def __init__(self):
-        BasicTask.__init__(self)
-        self.env = gym.make(self.name)
-        self.max_episode_steps = self.env._max_episode_steps
-        self.env._max_episode_steps = sys.maxsize
-        self.action_dim = self.env.action_space.shape[0]
-        self.state_dim = self.env.observation_space.shape[0]
-
-    def step(self, action):
-        action = np.clip(action, -1, 1)
-        next_state, reward, done, info = self.env.step(action)
-        return next_state, reward, done, info
-
-class BipedalWalkerHardcore(BasicTask):
-    name = 'BipedalWalkerHardcore-v2'
-    success_threshold = 300
-
-    def __init__(self):
-        BasicTask.__init__(self)
-        self.env = gym.make(self.name)
-        self.max_episode_steps = self.env._max_episode_steps
-        self.env._max_episode_steps = sys.maxsize
-        self.action_dim = self.env.action_space.shape[0]
-        self.state_dim = self.env.observation_space.shape[0]
-
-    def step(self, action):
-        action = np.clip(action, -1, 1)
-        next_state, reward, done, info = self.env.step(action)
-        return next_state, reward, done, info
-
-class ContinuousLunarLander(BasicTask):
-    name = 'LunarLanderContinuous-v2'
-    success_threshold = 300
-
-    def __init__(self):
-        BasicTask.__init__(self)
-        self.env = gym.make(self.name)
-        self.max_episode_steps = self.env._max_episode_steps
-        self.env._max_episode_steps = sys.maxsize
-        self.action_dim = self.env.action_space.shape[0]
-        self.state_dim = self.env.observation_space.shape[0]
-
-    def step(self, action):
-        action = np.clip(action, -1, 1)
-        next_state, reward, done, info = self.env.step(action)
-        return next_state, reward, done, info
-
-class Roboschool(BasicTask):
-    def __init__(self, name, success_threshold=sys.maxsize, max_episode_steps=None):
-        import roboschool
-        BasicTask.__init__(self)
+class Box2DContinuous(BasicTask):
+    def __init__(self, name, max_steps=sys.maxsize):
+        BasicTask.__init__(self, max_steps)
         self.name = name
         self.env = gym.make(self.name)
-        self.success_threshold = success_threshold
-        if max_episode_steps is None:
-            self.max_episode_steps = self.env._max_episode_steps
-        else:
-            self.max_episode_steps = max_episode_steps
-        self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
 
     def step(self, action):
-        action = np.clip(action, -1, 1)
-        next_state, reward, done, info = self.env.step(action)
-        return next_state, reward, done, info
+        return BasicTask.step(self, np.clip(action, -1, 1))
+
+class Roboschool(BasicTask):
+    def __init__(self, name, success_threshold=sys.maxsize, max_steps=sys.maxsize):
+        import roboschool
+        BasicTask.__init__(self, max_steps)
+        self.name = name
+        self.env = gym.make(self.name)
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape[0]
+
+    def step(self, action):
+        return BasicTask.step(self, np.clip(action, -1, 1))
 
 def sub_task(parent_pipe, pipe, task_fn):
     parent_pipe.close()

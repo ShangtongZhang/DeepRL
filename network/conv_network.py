@@ -79,7 +79,8 @@ class OpenAIActorCriticConvNet(nn.Module, ActorCriticNet):
     def __init__(self,
                  in_channels,
                  n_actions,
-                 LSTM=False):
+                 LSTM=False,
+                 gpu=True):
         super(OpenAIActorCriticConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, 3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
@@ -96,7 +97,7 @@ class OpenAIActorCriticConvNet(nn.Module, ActorCriticNet):
 
         self.fc_actor = nn.Linear(hidden_units, n_actions)
         self.fc_critic = nn.Linear(hidden_units, 1)
-        BasicNet.__init__(self, gpu=False, LSTM=LSTM)
+        BasicNet.__init__(self, gpu=gpu, LSTM=LSTM)
         if LSTM:
             self.h = self.to_torch_variable(np.zeros((1, hidden_units)))
             self.c = self.to_torch_variable(np.zeros((1, hidden_units)))
@@ -121,7 +122,8 @@ class OpenAIActorCriticConvNet(nn.Module, ActorCriticNet):
 class OpenAIConvNet(nn.Module, VanillaNet):
     def __init__(self,
                  in_channels,
-                 n_actions):
+                 n_actions,
+                 gpu=False):
         super(OpenAIConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, 3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
@@ -132,7 +134,7 @@ class OpenAIConvNet(nn.Module, VanillaNet):
         self.layer5 = nn.Linear(32 * 3 * 3, hidden_units)
         self.fc6 = nn.Linear(hidden_units, n_actions)
 
-        BasicNet.__init__(self, gpu=False, LSTM=False)
+        BasicNet.__init__(self, gpu=gpu, LSTM=False)
 
     def forward(self, x, update_LSTM=True):
         x = self.to_torch_variable(x)

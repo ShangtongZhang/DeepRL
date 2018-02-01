@@ -29,7 +29,6 @@ class AdvantageActorCritic:
             prob, log_prob, value = self.worker_network.predict(np.stack([state]))
             action = self.policy.sample(prob.data.numpy().flatten(), deterministic)
             next_state, reward, terminal, _ = self.task.step(action)
-            terminal = (terminal or (self.config.max_episode_length and steps > self.config.max_episode_length))
 
             steps += 1
             total_reward += reward

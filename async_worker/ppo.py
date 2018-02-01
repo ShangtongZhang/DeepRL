@@ -72,7 +72,6 @@ class ProximalPolicyOptimization:
                 values.append(value)
                 state, reward, done, _ = self.task.step(action)
                 state = self.state_normalizer(state)
-                done = (done or (config.max_episode_length and episode_length > config.max_episode_length))
 
                 batched_rewards += reward
                 batched_steps += 1

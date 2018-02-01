@@ -30,7 +30,6 @@ class NStepQLearning:
             q = self.worker_network.predict(np.stack([state]))
             action = self.policy.sample(q.data.numpy().flatten(), deterministic)
             next_state, reward, terminal, _ = self.task.step(action)
-            terminal = (terminal or (config.max_episode_length and steps >= config.max_episode_length))
 
             steps += 1
             total_reward += reward

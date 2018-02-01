@@ -20,7 +20,6 @@ def dqn_cart_pole():
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
     config.discount = 0.99
     config.target_network_update_freq = 200
-    config.max_episode_length = 200
     config.exploration_steps = 1000
     config.logger = Logger('./log', logger)
     config.history_length = 2
@@ -41,7 +40,6 @@ def async_cart_pole():
     # config.worker = OneStepSarsa
     config.discount = 0.99
     config.target_network_update_freq = 200
-    config.max_episode_length = 200
     config.num_workers = 16
     config.update_interval = 6
     config.test_interval = 1
@@ -156,54 +154,33 @@ def a3c_pixel_atari(name):
     agent = AsyncAgent(config)
     agent.run()
 
-def dqn_fruit():
+def a2c_pixel_atari(name):
     config = Config()
-    config.task_fn = lambda: Fruit()
-    config.optimizer_fn = lambda params: torch.optim.SGD(params, 0.01, momentum=0.9)
-    config.reward_weight = np.ones(10) / 10
-    config.hybrid_reward = False
-    config.network_fn = lambda: FruitHRFCNet(98, 4, config.reward_weight)
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
-    config.replay_fn = lambda: Replay(memory_size=10000, batch_size=15)
-    config.discount = 0.95
-    config.target_network_update_freq = 200
-    config.max_episode_length = 100
-    config.exploration_steps = 200
-    config.logger = Logger('./log', logger)
     config.history_length = 1
-    config.test_interval = 0
+    config.num_workers = 16
+    task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42, max_steps=10000)
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
+    task = config.task_fn()
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
+    config.network_fn = lambda: OpenAIActorCriticConvNet(
+        config.history_length, task.task.env.action_space.n, LSTM=False, gpu=True)
+    config.reward_shift_fn = lambda r: np.sign(r)
+    config.policy_fn = SamplePolicy
+    config.discount = 0.99
+    config.gae_tau = 0.97
+    config.entropy_weight = 0.01
+    config.rollout_length = 20
+    config.test_interval = 1000
     config.test_repetitions = 10
-    config.episode_limit = 5000
-    config.double_q = False
-    run_episodes(DQNAgent(config))
-
-def hrdqn_fruit():
-    config = Config()
-    config.task_fn = lambda: Fruit(hybrid_reward=True)
-    config.hybrid_reward = True
-    config.reward_weight = np.ones(10) / 10
-    config.optimizer_fn = lambda params: torch.optim.SGD(params, 0.01, momentum=0.9)
-    config.network_fn = lambda optimizer_fn: FruitHRFCNet(98, 4, config.reward_weight)
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
-    config.replay_fn = lambda: HybridRewardReplay(memory_size=10000, batch_size=15)
-    config.discount = 0.95
-    config.target_network_update_freq = 200
-    config.max_episode_length = 100
-    config.exploration_steps = 200
     config.logger = Logger('./log', logger)
-    config.history_length = 1
-    config.test_interval = 0
-    config.test_repetitions = 10
-    config.target_type = config.expected_sarsa_target
-    # config.target_type = config.q_target
-    config.double_q = False
-    config.episode_limit = 5000
-    run_episodes(DQNAgent(config))
+    run_episodes(A2CAgent(config))
 
 def a3c_continuous():
     config = Config()
     config.task_fn = lambda: Pendulum()
-    # config.task_fn = lambda: BipedalWalkerHardcore()
+    # config.task_fn = lambda: Box2DContinuous('BipedalWalker-v2')
+    # config.task_fn = lambda: Box2DContinuous('BipedalWalkerHardcore-v2')
+    # config.task_fn = lambda: Box2DContinuous('LunarLanderContinuous-v2')
     task = config.task_fn()
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
@@ -214,7 +191,6 @@ def a3c_continuous():
     config.policy_fn = lambda: GaussianPolicy()
     config.worker = ContinuousAdvantageActorCritic
     config.discount = 0.99
-    config.max_episode_length = task.max_episode_steps
     config.num_workers = 8
     config.update_interval = 20
     config.test_interval = 1
@@ -228,8 +204,9 @@ def a3c_continuous():
 def p3o_continuous():
     config = Config()
     config.task_fn = lambda: Pendulum()
-    # config.task_fn = lambda: BipedalWalker()
-    # config.task_fn = lambda: BipedalWalkerHardcore()
+    # config.task_fn = lambda: Box2DContinuous('BipedalWalker-v2')
+    # config.task_fn = lambda: Box2DContinuous('BipedalWalkerHardcore-v2')
+    # config.task_fn = lambda: Box2DContinuous('LunarLanderContinuous-v2')
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
     task = config.task_fn()
@@ -248,7 +225,6 @@ def p3o_continuous():
     config.num_workers = 6
     config.test_interval = 1
     config.test_repetitions = 1
-    config.max_episode_length = task.max_episode_steps
     config.entropy_weight = 0
     config.gradient_clip = 20
     config.rollout_length = 10000
@@ -261,10 +237,11 @@ def p3o_continuous():
 def d3pg_continuous():
     config = Config()
     config.task_fn = lambda: Pendulum()
-    # config.task_fn = lambda: ContinuousLunarLander()
+    # config.task_fn = lambda: Box2DContinuous('BipedalWalker-v2')
+    # config.task_fn = lambda: Box2DContinuous('BipedalWalkerHardcore-v2')
+    # config.task_fn = lambda: Box2DContinuous('LunarLanderContinuous-v2')
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
-    # config.task_fn = lambda: BipedalWalker()
     task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
         task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.relu, batch_norm=False)
@@ -277,7 +254,6 @@ def d3pg_continuous():
     config.replay_fn = lambda: SharedReplay(memory_size=1000000, batch_size=64,
                                             state_shape=(task.state_dim, ), action_shape=(task.action_dim, ))
     config.discount = 0.99
-    config.max_episode_length = task.max_episode_steps
     config.random_process_fn = \
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2,
                                          n_steps_annealing=100000)
@@ -294,14 +270,15 @@ def d3pg_continuous():
 
 def ddpg_continuous():
     config = Config()
-    # config.task_fn = lambda: Pendulum()
-    # config.task_fn = lambda: ContinuousLunarLander()
+    config.task_fn = lambda: Pendulum()
+    # config.task_fn = lambda: Box2DContinuous('BipedalWalker-v2')
+    # config.task_fn = lambda: Box2DContinuous('BipedalWalkerHardcore-v2')
+    # config.task_fn = lambda: Box2DContinuous('LunarLanderContinuous-v2')
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
-    config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1')
-    # config.task_fn = lambda: BipedalWalker()
     task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
         task.state_dim, task.action_dim, F.tanh, 1, non_linear=F.relu, batch_norm=False, gpu=False)
@@ -313,7 +290,6 @@ def ddpg_continuous():
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
     config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
-    config.max_episode_length = task.max_episode_steps
     config.random_process_fn = \
         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2,
                                          n_steps_annealing=100000)
@@ -335,21 +311,19 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
-    a2c_cart_pole()
+    # a2c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()
     # ddpg_continuous()
 
-    # dqn_fruit()
-    # hrdqn_fruit()
-
     # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
+    # a2c_pixel_atari('PongNoFrameskip-v4')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')

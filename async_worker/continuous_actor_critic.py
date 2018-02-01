@@ -43,7 +43,6 @@ class ContinuousAdvantageActorCritic:
                                         False)
             action = self.config.action_shift_fn(action)
             next_state, reward, terminal, _ = self.task.step(action)
-            terminal = (terminal or (config.max_episode_length and steps >= config.max_episode_length))
             next_state = self.state_normalizer(next_state)
 
             steps += 1
