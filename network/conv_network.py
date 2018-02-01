@@ -47,40 +47,12 @@ class DuelingNatureConvNet(nn.Module, DuelingNet):
         phi = F.relu(self.fc4(y))
         return phi
 
-
-# Network for pixel Atari game with actor critic
-class ActorCriticNatureConvNet(nn.Module, ActorCriticNet):
-    def __init__(self,
-                 in_channels,
-                 n_actions,
-                 xentropy_weight=0.01,
-                 grad_threshold=40,
-                 gpu=True):
-        super(ActorCriticNatureConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 64, 512)
-        self.fc_actor = nn.Linear(512, n_actions)
-        self.fc_critic = nn.Linear(512, 1)
-        self.xentropy_weight = xentropy_weight
-        self.grad_threshold = grad_threshold
-        BasicNet.__init__(self, gpu)
-
-    def forward(self, x):
-        x = self.to_torch_variable(x)
-        y = F.elu(self.conv1(x))
-        y = F.elu(self.conv2(y))
-        y = F.elu(self.conv3(y))
-        y = y.view(y.size(0), -1)
-        return F.elu(self.fc4(y))
-
 class OpenAIActorCriticConvNet(nn.Module, ActorCriticNet):
     def __init__(self,
                  in_channels,
                  n_actions,
                  LSTM=False,
-                 gpu=True):
+                 gpu=False):
         super(OpenAIActorCriticConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, 3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)

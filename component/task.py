@@ -37,23 +37,14 @@ class BasicTask:
     def random_action(self):
         return self.env.action_space.sample()
 
-class MountainCar(BasicTask):
-    name = 'MountainCar-v0'
-    success_threshold = -110
-
-    def __init__(self, max_steps=200):
+class ClassicalControl(BasicTask):
+    def __init__(self, name='CartPole-v0', max_steps=200):
         BasicTask.__init__(self, max_steps)
+        self.name = name
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
-
-class CartPole(BasicTask):
-    name = 'CartPole-v0'
-    success_threshold = 195
-
-    def __init__(self, max_steps=200):
-        BasicTask.__init__(self, max_steps)
-        self.env = gym.make(self.name)
-        self.env._max_episode_steps = sys.maxsize
+        self.action_dim = self.env.action_space.n
+        self.state_dim = self.env.observation_space.shape[0]
 
 class LunarLander(BasicTask):
     name = 'LunarLander-v2'
@@ -62,10 +53,12 @@ class LunarLander(BasicTask):
     def __init__(self, max_steps=sys.maxsize):
         BasicTask.__init__(self, max_steps)
         self.env = gym.make(self.name)
+        self.action_dim = self.env.action_space.n
+        self.state_dim = self.env.observation_space.shape[0]
 
 class PixelAtari(BasicTask):
     def __init__(self, name, no_op, frame_skip, normalized_state=True,
-                 frame_size=84, max_steps=sys.maxsize):
+                 frame_size=84, max_steps=10000):
         BasicTask.__init__(self, max_steps)
         self.normalized_state = normalized_state
         self.name = name

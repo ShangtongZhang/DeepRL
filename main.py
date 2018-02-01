@@ -12,7 +12,7 @@ import model.action_conditional_video_prediction as acvp
 
 def dqn_cart_pole():
     config = Config()
-    config.task_fn = lambda: CartPole()
+    config.task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: FCNet([8, 50, 200, 2])
     # config.network_fn = lambda: DuelingFCNet([8, 50, 200, 2])
@@ -31,7 +31,7 @@ def dqn_cart_pole():
 
 def async_cart_pole():
     config = Config()
-    config.task_fn= lambda: CartPole()
+    config.task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.network_fn = lambda: FCNet([4, 50, 200, 2])
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.5, final_step=5000, min_epsilon=0.1)
@@ -50,14 +50,18 @@ def async_cart_pole():
 
 def a3c_cart_pole():
     config = Config()
-    config.task_fn = lambda: CartPole()
+    name = 'CartPole-v0'
+    # name = 'MountainCar-v0'
+    config.task_fn = lambda: ClassicalControl(name, max_steps=200)
+    # config.task_fn = lambda: LunarLander()
+    task = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda: ActorCriticFCNet(4, 2)
+    config.network_fn = lambda: ActorCriticFCNet(task.state_dim, task.action_dim)
     config.policy_fn = SamplePolicy
     config.worker = AdvantageActorCritic
     config.discount = 0.99
     config.max_episode_length = 200
-    config.num_workers = 16
+    config.num_workers = 7
     config.update_interval = 6
     config.test_interval = 1
     config.test_repetitions = 30
@@ -69,20 +73,23 @@ def a3c_cart_pole():
 
 def a2c_cart_pole():
     config = Config()
-    task_fn = lambda: CartPole(max_steps=200)
-    config.num_workers = 3
+    name = 'CartPole-v0'
+    # name = 'MountainCar-v0'
+    task_fn = lambda: ClassicalControl(name, max_steps=200)
+    # task_fn = lambda: LunarLander()
+    task = task_fn()
+    config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda: ActorCriticFCNet(4, 2)
+    config.network_fn = lambda: ActorCriticFCNet(task.state_dim, task.action_dim)
     config.policy_fn = SamplePolicy
     config.discount = 0.99
-    config.test_interval = 20
+    config.test_interval = 200
     config.test_repetitions = 10
     config.logger = Logger('./log', logger)
     config.gae_tau = 1.0
     config.entropy_weight = 0.01
-    config.rollout_length = 50
-    config.success_threshold = 195
+    config.rollout_length = 20
     run_episodes(A2CAgent(config))
 
 def dqn_pixel_atari(name):
@@ -140,12 +147,11 @@ def a3c_pixel_atari(name):
     task = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
     config.network_fn = lambda: OpenAIActorCriticConvNet(
-        config.history_length, task.env.action_space.n, LSTM=True)
+        config.history_length, task.env.action_space.n, LSTM=False)
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.worker = AdvantageActorCritic
     config.discount = 0.99
-    config.max_episode_length = 10000
     config.num_workers = 6
     config.update_interval = 20
     config.test_interval = 50000
@@ -309,8 +315,8 @@ if __name__ == '__main__':
     mkdir('log')
     os.system('export OMP_NUM_THREADS=1')
     os.system('export CUDA_VISIBLE_DEVICES=0')
-    # logger.setLevel(logging.DEBUG)
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
+    # logger.setLevel(logging.INFO)
 
     # dqn_cart_pole()
     # async_cart_pole()
