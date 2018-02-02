@@ -24,6 +24,12 @@ class Normalizer:
         else:
             o = o.reshape(o_.shape)
         return o
+   
+    def state_dict(self):
+        return self.stats.state_dict()
+
+    def load_state_dict(self, saved):
+        self.stats.load_state_dict(saved)
 
 class StaticNormalizer:
     def __init__(self, o_size):
@@ -46,6 +52,12 @@ class StaticNormalizer:
         else:
             o = o.reshape(o_.shape)
         return o
+    
+    def state_dict(self):
+        return self.offline_stats.state_dict()
+
+    def load_state_dict(self, saved):
+        self.offline_stats.load_state_dict(saved)
 
 class SharedStats:
     def __init__(self, o_size):
