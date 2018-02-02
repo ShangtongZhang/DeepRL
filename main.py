@@ -163,7 +163,7 @@ def a3c_pixel_atari(name):
 def a2c_pixel_atari(name):
     config = Config()
     config.history_length = 1
-    config.num_workers = 16
+    config.num_workers = 8
     task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42, max_steps=10000)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     task = config.task_fn()
@@ -173,11 +173,12 @@ def a2c_pixel_atari(name):
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.discount = 0.99
-    config.gae_tau = 0.97
+    config.gae_tau = 1.0
     config.entropy_weight = 0.01
     config.rollout_length = 20
     config.test_interval = 1000
     config.test_repetitions = 10
+    config.value_loss_weight = 0.5
     config.logger = Logger('./log', logger)
     run_episodes(A2CAgent(config))
 
@@ -321,7 +322,7 @@ if __name__ == '__main__':
     # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
-    a2c_cart_pole()
+    # a2c_cart_pole()
     # a3c_continuous()
     # p3o_continuous()
     # d3pg_continuous()
@@ -330,7 +331,7 @@ if __name__ == '__main__':
     # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
-    # a2c_pixel_atari('PongNoFrameskip-v4')
+    a2c_pixel_atari('PongNoFrameskip-v4')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')

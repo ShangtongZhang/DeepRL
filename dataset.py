@@ -19,7 +19,7 @@ def dqn_pixel_atari(name):
     config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False)
     action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda optimizer_fn: NatureConvNet(config.history_length, action_dim, optimizer_fn)
+    config.network_fn = lambda: NatureConvNet(config.history_length, action_dim)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
     config.discount = 0.99

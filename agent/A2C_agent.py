@@ -97,7 +97,7 @@ class A2CAgent:
         prob, log_prob, value, actions, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
         policy_loss = -log_prob.gather(1, Variable(actions)) * Variable(advantages)
         policy_loss += config.entropy_weight * torch.sum(prob * log_prob, dim=1, keepdim=True)
-        value_loss = 0.5 * (Variable(returns) - value).pow(2)
+        value_loss = config.value_loss_weight * 0.5 * (Variable(returns) - value).pow(2)
 
         self.optimizer.zero_grad()
         (policy_loss + value_loss).sum().backward()

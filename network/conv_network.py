@@ -8,7 +8,7 @@ from .base_network import *
 
 # Network for pixel Atari game with value based methods
 class NatureConvNet(nn.Module, VanillaNet):
-    def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
+    def __init__(self, in_channels, n_actions, gpu=True):
         super(NatureConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
@@ -28,7 +28,7 @@ class NatureConvNet(nn.Module, VanillaNet):
 
 # Network for pixel Atari game with dueling architecture
 class DuelingNatureConvNet(nn.Module, DuelingNet):
-    def __init__(self, in_channels, n_actions, optimizer_fn=None, gpu=True):
+    def __init__(self, in_channels, n_actions, gpu=True):
         super(DuelingNatureConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
