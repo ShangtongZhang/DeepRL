@@ -72,7 +72,6 @@ def generate_dateset(game):
     dataset_env = DatasetEnv(env)
     env = ProcessFrame(dataset_env, 84)
     env = NormalizeFrame(env)
-    env = ClippedRewardsWrapper(env)
 
     ep = 0
     max_ep = 200
