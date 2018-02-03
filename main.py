@@ -14,7 +14,7 @@ def dqn_cart_pole():
     config = Config()
     config.task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda: FCNet([8, 50, 200, 2])
+    config.network_fn = lambda: FCNet([4, 50, 200, 2])
     # config.network_fn = lambda: DuelingFCNet([8, 50, 200, 2])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
@@ -22,7 +22,6 @@ def dqn_cart_pole():
     config.target_network_update_freq = 200
     config.exploration_steps = 1000
     config.logger = Logger('./log', logger)
-    config.history_length = 2
     config.test_interval = 100
     config.test_repetitions = 50
     config.double_q = True
@@ -99,7 +98,7 @@ def dqn_pixel_atari(name):
                                         history_length=config.history_length)
     action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda: NatureConvNet(config.history_length, action_dim)
+    config.network_fn = lambda: NatureConvNet(config.history_length, action_dim, gpu=0)
     # config.network_fn = lambda: DuelingNatureConvNet(config.history_length, n_actions)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
@@ -173,7 +172,7 @@ def a2c_pixel_atari(name):
     # config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
     # config.network_fn = lambda: OpenAIActorCriticConvNet(
     config.network_fn = lambda: NatureActorCriticConvNet(
-        config.history_length, task.task.env.action_space.n, gpu=True)
+        config.history_length, task.task.env.action_space.n, gpu=0)
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.discount = 0.99
@@ -222,8 +221,8 @@ def p3o_continuous():
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
     task = config.task_fn()
     config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim,
-                                                       gpu=False, unit_std=True)
-    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=False)
+                                                       gpu=-1, unit_std=True)
+    config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=-1)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
@@ -292,9 +291,9 @@ def ddpg_continuous():
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1')
     task = config.task_fn()
     config.actor_network_fn = lambda: DeterministicActorNet(
-        task.state_dim, task.action_dim, F.tanh, 1, non_linear=F.relu, batch_norm=False, gpu=False)
+        task.state_dim, task.action_dim, F.tanh, 1, non_linear=F.relu, batch_norm=False, gpu=-1)
     config.critic_network_fn = lambda: DeterministicCriticNet(
-        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False, gpu=False)
+        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False, gpu=-1)
     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
@@ -319,11 +318,10 @@ if __name__ == '__main__':
     mkdir('data/video')
     mkdir('log')
     os.system('export OMP_NUM_THREADS=1')
-    os.system('export CUDA_VISIBLE_DEVICES=0')
-    logger.setLevel(logging.DEBUG)
-    # logger.setLevel(logging.INFO)
+    # logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a2c_cart_pole()
@@ -335,7 +333,7 @@ if __name__ == '__main__':
     # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
-    a2c_pixel_atari('PongNoFrameskip-v4')
+    # a2c_pixel_atari('PongNoFrameskip-v4')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')

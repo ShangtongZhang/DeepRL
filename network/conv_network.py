@@ -8,7 +8,7 @@ from .base_network import *
 
 # Network for pixel Atari game with value based methods
 class NatureConvNet(nn.Module, VanillaNet):
-    def __init__(self, in_channels, n_actions, gpu=True):
+    def __init__(self, in_channels, n_actions, gpu=0):
         super(NatureConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
@@ -18,7 +18,7 @@ class NatureConvNet(nn.Module, VanillaNet):
         BasicNet.__init__(self, gpu)
 
     def forward(self, x):
-        x = self.to_torch_variable(x)
+        x = self.variable(x)
         y = F.relu(self.conv1(x))
         y = F.relu(self.conv2(y))
         y = F.relu(self.conv3(y))
@@ -28,7 +28,7 @@ class NatureConvNet(nn.Module, VanillaNet):
 
 # Network for pixel Atari game with dueling architecture
 class DuelingNatureConvNet(nn.Module, DuelingNet):
-    def __init__(self, in_channels, n_actions, gpu=True):
+    def __init__(self, in_channels, n_actions, gpu=0):
         super(DuelingNatureConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
@@ -39,7 +39,7 @@ class DuelingNatureConvNet(nn.Module, DuelingNet):
         BasicNet.__init__(self, gpu)
 
     def forward(self, x):
-        x = self.to_torch_variable(x)
+        x = self.variable(x)
         y = F.relu(self.conv1(x))
         y = F.relu(self.conv2(y))
         y = F.relu(self.conv3(y))
@@ -52,7 +52,7 @@ class OpenAIActorCriticConvNet(nn.Module, ActorCriticNet):
                  in_channels,
                  n_actions,
                  LSTM=False,
-                 gpu=False):
+                 gpu=-1):
         super(OpenAIActorCriticConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, 3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
@@ -71,11 +71,11 @@ class OpenAIActorCriticConvNet(nn.Module, ActorCriticNet):
         self.fc_critic = nn.Linear(hidden_units, 1)
         BasicNet.__init__(self, gpu=gpu, LSTM=LSTM)
         if LSTM:
-            self.h = self.to_torch_variable(np.zeros((1, hidden_units)))
-            self.c = self.to_torch_variable(np.zeros((1, hidden_units)))
+            self.h = self.variable(np.zeros((1, hidden_units)))
+            self.c = self.variable(np.zeros((1, hidden_units)))
 
     def forward(self, x, update_LSTM=True):
-        x = self.to_torch_variable(x)
+        x = self.variable(x)
         y = F.elu(self.conv1(x))
         y = F.elu(self.conv2(y))
         y = F.elu(self.conv3(y))
@@ -95,7 +95,7 @@ class OpenAIConvNet(nn.Module, VanillaNet):
     def __init__(self,
                  in_channels,
                  n_actions,
-                 gpu=False):
+                 gpu=0):
         super(OpenAIConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, 3, stride=2, padding=1)
         self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
@@ -109,7 +109,7 @@ class OpenAIConvNet(nn.Module, VanillaNet):
         BasicNet.__init__(self, gpu=gpu, LSTM=False)
 
     def forward(self, x, update_LSTM=True):
-        x = self.to_torch_variable(x)
+        x = self.variable(x)
         y = F.elu(self.conv1(x))
         y = F.elu(self.conv2(y))
         y = F.elu(self.conv3(y))
@@ -122,7 +122,7 @@ class NatureActorCriticConvNet(nn.Module, ActorCriticNet):
     def __init__(self,
                  in_channels,
                  n_actions,
-                 gpu=False):
+                 gpu=-1):
         super(NatureActorCriticConvNet, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
@@ -134,7 +134,7 @@ class NatureActorCriticConvNet(nn.Module, ActorCriticNet):
         BasicNet.__init__(self, gpu=gpu)
 
     def forward(self, x, _):
-        x = self.to_torch_variable(x)
+        x = self.variable(x)
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
         x = F.relu(self.conv3(x))

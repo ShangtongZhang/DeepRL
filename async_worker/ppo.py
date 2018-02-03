@@ -92,10 +92,10 @@ class ProximalPolicyOptimization:
                 R = critic_net.predict(np.stack([state])).data
 
 
-            values.append(actor_net.to_torch_variable(R))
-            A = actor_net.to_torch_variable(torch.zeros((1, 1)))
+            values.append(actor_net.variable(R))
+            A = actor_net.variable(torch.zeros((1, 1)))
             for i in reversed(range(len(rewards))):
-                R = actor_net.to_torch_variable([[rewards[i]]])
+                R = actor_net.variable([[rewards[i]]])
                 ret = R + self.config.discount * values[i + 1]
                 A = ret - values[i] + self.config.discount * self.config.gae_tau * A
                 advantages.append(A.detach())
@@ -123,8 +123,8 @@ class ProximalPolicyOptimization:
             self.worker_network.load_state_dict(self.shared_network.state_dict())
 
             states, actions, returns, advantages = replay.sample()
-            states = actor_net.to_torch_variable(np.stack(states))
-            actions = actor_net.to_torch_variable(np.stack(actions))
+            states = actor_net.variable(np.stack(states))
+            actions = actor_net.variable(np.stack(actions))
             returns = torch.cat(returns, 0)
             advantages = torch.cat(advantages, 0).squeeze(1)
             advantages = (advantages - advantages.mean()) / advantages.std()

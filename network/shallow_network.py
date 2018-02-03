@@ -8,7 +8,7 @@ from .base_network import *
 
 # Network for CartPole with value based methods
 class FCNet(nn.Module, VanillaNet):
-    def __init__(self, dims, gpu=True):
+    def __init__(self, dims, gpu=0):
         super(FCNet, self).__init__()
         self.fc1 = nn.Linear(dims[0], dims[1])
         self.fc2 = nn.Linear(dims[1], dims[2])
@@ -16,8 +16,7 @@ class FCNet(nn.Module, VanillaNet):
         BasicNet.__init__(self, gpu)
 
     def forward(self, x):
-        x = self.to_torch_variable(x)
-        x = x.view(x.size(0), -1)
+        x = self.variable(x)
         y = F.relu(self.fc1(x))
         y = F.relu(self.fc2(y))
         y = self.fc3(y)
@@ -25,7 +24,7 @@ class FCNet(nn.Module, VanillaNet):
 
 # Network for CartPole with dueling architecture
 class DuelingFCNet(nn.Module, DuelingNet):
-    def __init__(self, dims, gpu=True):
+    def __init__(self, dims, gpu=0):
         super(DuelingFCNet, self).__init__()
         self.fc1 = nn.Linear(dims[0], dims[1])
         self.fc2 = nn.Linear(dims[1], dims[2])
@@ -34,8 +33,7 @@ class DuelingFCNet(nn.Module, DuelingNet):
         BasicNet.__init__(self, gpu)
 
     def forward(self, x):
-        x = self.to_torch_variable(x)
-        x = x.view(x.size(0), -1)
+        x = self.variable(x)
         y = F.relu(self.fc1(x))
         phi = F.relu(self.fc2(y))
         return phi
@@ -53,8 +51,7 @@ class ActorCriticFCNet(nn.Module, ActorCriticNet):
         BasicNet.__init__(self, False)
 
     def forward(self, x, update_LSTM=True):
-        x = self.to_torch_variable(x)
-        x = x.view(x.size(0), -1)
+        x = self.variable(x)
         x = F.relu(self.fc1(x))
         phi = self.fc2(x)
         return phi

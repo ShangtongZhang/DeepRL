@@ -17,12 +17,13 @@ import gym
 import torch.optim
 from utils import *
 from tqdm import tqdm
+from network import *
 
 PREFIX = '.'
 # PREFIX = '/local/data'
 
-class Network(nn.Module):
-    def __init__(self, num_actions, gpu=True):
+class Network(nn.Module, BasicNet):
+    def __init__(self, num_actions, gpu=0):
         super(Network, self).__init__()
 
         self.conv1 = nn.Conv2d(12, 64, 8, 2, (0, 1))
@@ -43,16 +44,11 @@ class Network(nn.Module):
         self.deconv11 = nn.ConvTranspose2d(128, 128, 6, 2, (1, 1))
         self.deconv12 = nn.ConvTranspose2d(128, 3, 8, 2, (0, 1))
 
-        self.gpu = gpu and torch.cuda.is_available()
-        if self.gpu:
-            self.cuda()
-            self.FloatTensor = torch.cuda.FloatTensor
-        else:
-            self.FloatTensor = torch.FloatTensor
-
         self.init_weights()
         self.criterion = nn.MSELoss()
         self.opt = torch.optim.Adam(self.parameters(), 1e-4)
+
+        BasicNet.__init__(self, gpu)
 
     def init_weights(self):
         for layer in self.children():
@@ -62,15 +58,6 @@ class Network(nn.Module):
         nn.init.uniform(self.fc_encode.weight.data, -1, 1)
         nn.init.uniform(self.fc_decode.weight.data, -1, 1)
         nn.init.uniform(self.fc_action.weight.data, -0.1, 0.1)
-
-    def to_torch_variable(self, x, dtype='float32'):
-        if isinstance(x, Variable):
-            return x
-        if not isinstance(x, torch.FloatTensor):
-            x = torch.from_numpy(np.asarray(x, dtype=dtype))
-        if self.gpu:
-            x = x.cuda()
-        return Variable(x)
 
     def forward(self, obs, action):
         x = F.relu(self.conv1(obs))
@@ -92,9 +79,9 @@ class Network(nn.Module):
         return x
 
     def fit(self, x, a, y):
-        x = self.to_torch_variable(x)
-        a = self.to_torch_variable(a)
-        y = self.to_torch_variable(y)
+        x = self.variable(x)
+        a = self.variable(a)
+        y = self.variable(y)
         y_ = self.forward(x, a)
         loss = self.criterion(y_, y)
         self.opt.zero_grad()
@@ -105,16 +92,16 @@ class Network(nn.Module):
         return np.asscalar(loss.cpu().data.numpy())
 
     def evaluate(self, x, a, y):
-        x = self.to_torch_variable(x)
-        a = self.to_torch_variable(a)
-        y = self.to_torch_variable(y)
+        x = self.variable(x)
+        a = self.variable(a)
+        y = self.variable(y)
         y_ = self.forward(x, a)
         loss = self.criterion(y_, y)
         return np.asscalar(loss.cpu().data.numpy())
 
     def predict(self, x, a):
-        x = self.to_torch_variable(x)
-        a = self.to_torch_variable(a)
+        x = self.variable(x)
+        a = self.variable(a)
         return self.forward(x, a).cpu().data.numpy()
 
 def load_episode(game, ep, num_actions):

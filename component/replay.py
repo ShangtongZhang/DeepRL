@@ -16,10 +16,10 @@ class Replay:
         self.dtype = dtype
 
         self.states = None
-        self.actions = np.empty(self.memory_size, dtype=np.int8)
+        self.actions = np.empty(self.memory_size, dtype=np.uint8)
         self.rewards = np.empty(self.memory_size)
         self.next_states = None
-        self.terminals = np.empty(self.memory_size, dtype=np.int8)
+        self.terminals = np.empty(self.memory_size, dtype=np.uint8)
 
         self.pos = 0
         self.full = False
@@ -59,10 +59,10 @@ class HybridRewardReplay:
         self.dtype = dtype
 
         self.states = None
-        self.actions = np.empty(self.memory_size, dtype=np.int8)
+        self.actions = np.empty(self.memory_size, dtype=np.uint8)
         self.rewards = None
         self.next_states = None
-        self.terminals = np.empty(self.memory_size, dtype=np.int8)
+        self.terminals = np.empty(self.memory_size, dtype=np.uint8)
 
         self.pos = 0
         self.full = False

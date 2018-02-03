@@ -13,24 +13,32 @@ import numpy as np
 # Base class for all kinds of network
 class BasicNet:
     def __init__(self, gpu, LSTM=False):
-        self.gpu = gpu and torch.cuda.is_available()
+        if not torch.cuda.is_available():
+            gpu = -1
+        self.gpu = gpu
         self.LSTM = LSTM
-        if self.gpu:
-            self.cuda()
-            self.FloatTensor = torch.cuda.FloatTensor
-            self.LongTensor = torch.cuda.LongTensor
-        else:
-            self.FloatTensor = torch.FloatTensor
-            self.LongTensor = torch.LongTensor
+        if self.gpu >= 0:
+            self.cuda(self.gpu)
 
-    def to_torch_variable(self, x, dtype='float32'):
+    def supported_dtype(self, x, torch_type):
+        if torch_type == torch.FloatTensor:
+            return np.asarray(x, dtype=np.float32)
+        if torch_type == torch.LongTensor:
+            return np.asarray(x, dtype=np.int64)
+
+    def variable(self, x, dtype=torch.FloatTensor):
         if isinstance(x, Variable):
             return x
-        if not isinstance(x, torch.FloatTensor):
-            x = torch.from_numpy(np.asarray(x, dtype=dtype))
-        if self.gpu:
-            x = x.cuda()
+        x = dtype(torch.from_numpy(self.supported_dtype(x, dtype)))
+        if self.gpu >= 0:
+            x = x.cuda(self.gpu)
         return Variable(x)
+
+    def tensor(self, x, dtype=torch.FloatTensor):
+        x = dtype(torch.from_numpy(self.supported_dtype(x, dtype)))
+        if self.gpu >= 0:
+            x = x.cuda(self.gpu)
+        return x
 
     def reset(self, terminal):
         if not self.LSTM:

@@ -83,8 +83,8 @@ class DDPGAgent:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 q_next = target_critic.predict(next_states, target_actor.predict(next_states))
-                terminals = critic.to_torch_variable(terminals).unsqueeze(1)
-                rewards = critic.to_torch_variable(rewards).unsqueeze(1)
+                terminals = critic.variable(terminals).unsqueeze(1)
+                rewards = critic.variable(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
                 q_next = q_next.detach()
@@ -99,7 +99,7 @@ class DDPGAgent:
                 actions = actor.predict(states, False)
                 var_actions = Variable(actions.data, requires_grad=True)
                 q = critic.predict(states, var_actions)
-                q.backward(critic.FloatTensor(np.ones(q.size())))
+                q.backward(critic.tensor(np.ones(q.size())))
 
                 actor.zero_grad()
                 self.actor_opt.zero_grad()

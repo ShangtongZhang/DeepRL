@@ -12,7 +12,7 @@ class DeterministicActorNet(nn.Module, BasicNet):
                  action_dim,
                  action_gate,
                  action_scale,
-                 gpu=False,
+                 gpu=-1,
                  batch_norm=False,
                  non_linear=F.relu,
                  hidden_size=64):
@@ -43,7 +43,7 @@ class DeterministicActorNet(nn.Module, BasicNet):
         nn.init.constant(self.layer2.bias.data, 0)
 
     def forward(self, x):
-        x = self.to_torch_variable(x)
+        x = self.variable(x)
         x = self.non_linear(self.layer1(x))
         if self.batch_norm:
             x = self.bn1(x)
@@ -64,7 +64,7 @@ class DeterministicCriticNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
                  action_dim,
-                 gpu=False,
+                 gpu=-1,
                  batch_norm=False,
                  non_linear=F.relu,
                  hidden_size=64):
@@ -93,8 +93,8 @@ class DeterministicCriticNet(nn.Module, BasicNet):
         nn.init.constant(self.layer2.bias.data, 0)
 
     def forward(self, x, action):
-        x = self.to_torch_variable(x)
-        action = self.to_torch_variable(action)
+        x = self.variable(x)
+        action = self.variable(action)
         x = self.non_linear(self.layer1(x))
         if self.batch_norm:
             x = self.bn1(x)
@@ -113,7 +113,7 @@ class GaussianActorNet(nn.Module, BasicNet):
                  action_dim,
                  action_scale=1.0,
                  action_gate=None,
-                 gpu=False,
+                 gpu=-1,
                  unit_std=True,
                  hidden_size=64):
         super(GaussianActorNet, self).__init__()
@@ -133,7 +133,7 @@ class GaussianActorNet(nn.Module, BasicNet):
         BasicNet.__init__(self, gpu, False)
 
     def forward(self, x):
-        x = self.to_torch_variable(x)
+        x = self.variable(x)
         phi = F.tanh(self.fc1(x))
         phi = F.tanh(self.fc2(phi))
         mean = self.action_mean(phi)
@@ -161,7 +161,7 @@ class GaussianActorNet(nn.Module, BasicNet):
 class GaussianCriticNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
-                 gpu=False,
+                 gpu=-1,
                  hidden_size=64):
         super(GaussianCriticNet, self).__init__()
         self.fc1 = nn.Linear(state_dim, hidden_size)
@@ -170,7 +170,7 @@ class GaussianCriticNet(nn.Module, BasicNet):
         BasicNet.__init__(self, gpu, False)
 
     def forward(self, x):
-        x = self.to_torch_variable(x)
+        x = self.variable(x)
         phi = F.tanh(self.fc1(x))
         phi = F.tanh(self.fc2(phi))
         value = self.fc_value(phi)

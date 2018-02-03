@@ -94,15 +94,15 @@ class A2CAgent:
         rollout.append([None, None, pending_value, None, None, None])
 
         processed_rollout = [None] * (len(rollout) - 1)
-        advantages = self.network.FloatTensor(np.zeros((config.num_workers, 1)))
+        advantages = self.network.tensor(np.zeros((config.num_workers, 1)))
         returns = pending_value.data
         for i in reversed(range(len(rollout) - 1)):
             prob, log_prob, value, actions, rewards, terminals = rollout[i]
-            terminals = self.network.FloatTensor(terminals).unsqueeze(1)
-            rewards = self.network.FloatTensor(rewards).unsqueeze(1)
-            actions = self.network.LongTensor(actions).unsqueeze(1)
+            terminals = self.network.tensor(terminals).unsqueeze(1)
+            rewards = self.network.tensor(rewards).unsqueeze(1)
+            actions = self.network.tensor(actions, torch.LongTensor).unsqueeze(1)
             next_value = rollout[i + 1][2]
-            returns = rewards + terminals * config.discount * returns
+            returns = rewards + config.discount * terminals * returns
             td_error = rewards + config.discount * terminals * next_value.data - value.data
             advantages = advantages * config.gae_tau * config.discount * terminals + td_error
             processed_rollout[i] = [prob, log_prob, value, actions, returns, advantages]
