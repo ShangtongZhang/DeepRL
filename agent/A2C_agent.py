@@ -53,6 +53,19 @@ class A2CAgent:
         return total_rewards, steps
 
     def episode(self, deterministic=False):
+        config = self.config
+        for _ in range(config.iteration_log_interval):
+            self.iteration(deterministic)
+        new_episode_counts = np.sum(self.episode_counts)
+        new_total_rewards = np.sum(self.total_rewards)
+        avg_reward = (new_total_rewards - self.prev_total_rewards) / \
+                     (new_episode_counts - self.prev_episode_counts + 1e-5)
+        self.prev_total_rewards = new_total_rewards
+        self.prev_episode_counts = new_episode_counts
+        return avg_reward, config.rollout_length * config.num_workers * \
+               config.iteration_log_interval
+
+    def iteration(self, deterministic=False):
         if deterministic:
             return self.evaluate()
 
@@ -100,19 +113,9 @@ class A2CAgent:
         value_loss = config.value_loss_weight * 0.5 * (Variable(returns) - value).pow(2)
 
         self.optimizer.zero_grad()
-        (policy_loss + value_loss).sum().backward()
+        (policy_loss + value_loss).mean().backward()
         nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
 
         steps = config.rollout_length * config.num_workers
         self.total_steps += steps
-        new_episode_counts = np.sum(self.episode_counts)
-        new_total_rewards = np.sum(self.total_rewards)
-        avg_reward = (new_total_rewards - self.prev_total_rewards) / \
-                     (new_episode_counts - self.prev_episode_counts + 1e-5)
-        self.prev_total_rewards = new_total_rewards
-        self.prev_episode_counts = new_episode_counts
-        return avg_reward, steps
-
-
-

@@ -29,8 +29,6 @@ class DQNAgent:
     def episode(self, deterministic=False):
         episode_start_time = time.time()
         state = self.task.reset()
-        self.history_buffer = [state] * self.config.history_length
-        state = np.vstack(self.history_buffer)
         total_reward = 0.0
         steps = 0
         while True:
@@ -42,9 +40,6 @@ class DQNAgent:
             else:
                 action = self.policy.sample(value)
             next_state, reward, done, _ = self.task.step(action)
-            self.history_buffer.pop(0)
-            self.history_buffer.append(next_state)
-            next_state = np.vstack(self.history_buffer)
             total_reward += np.sum(reward * self.config.reward_weight)
             reward = self.config.reward_shift_fn(reward)
             if not deterministic:

@@ -1,4 +1,4 @@
-# This file is copied/apdated from
+# This file is apdated from
 # https://raw.githubusercontent.com/transedward/pytorch-dqn/master/utils/atari_wrapper.py
 
 import numpy as np
@@ -189,3 +189,20 @@ class NormalizeFrame(gym.Wrapper):
 
     def _reset(self):
         return self._normalize(self.env.reset())
+
+class StackFrame(gym.Wrapper):
+    def __init__(self, env=None, history_length=1):
+        super(StackFrame, self).__init__(env)
+        self.history_length = history_length
+        self.buffer = None
+
+    def _reset(self):
+        state = self.env.reset()
+        self.buffer = [state] * self.history_length
+        return np.vstack(self.buffer)
+
+    def _step(self, action):
+        state, reward, done, info = self.env.step(action)
+        self.buffer.pop(0)
+        self.buffer.append(state)
+        return np.vstack(self.buffer), reward, done, info

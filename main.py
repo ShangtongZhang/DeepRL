@@ -95,7 +95,8 @@ def a2c_cart_pole():
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
-    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False)
+    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False,
+                                        history_length=config.history_length)
     action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
     config.network_fn = lambda: NatureConvNet(config.history_length, action_dim)
@@ -162,23 +163,25 @@ def a3c_pixel_atari(name):
 
 def a2c_pixel_atari(name):
     config = Config()
-    config.history_length = 1
-    config.num_workers = 8
-    task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42, max_steps=10000)
+    config.history_length = 4
+    config.num_workers = 5
+    task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42,
+                                 history_length=config.history_length)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     task = config.task_fn()
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007, eps=1e-5, alpha=0.99)
+    # config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
     config.network_fn = lambda: OpenAIActorCriticConvNet(
         config.history_length, task.task.env.action_space.n, LSTM=False, gpu=True)
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.discount = 0.99
-    config.gae_tau = 1.0
+    config.gae_tau = 0.97
     config.entropy_weight = 0.01
-    config.rollout_length = 20
-    config.test_interval = 1000
-    config.test_repetitions = 10
-    config.value_loss_weight = 0.5
+    config.rollout_length = 5
+    config.test_interval = 0
+    config.iteration_log_interval = 100
+    config.gradient_clip = 0.5
     config.logger = Logger('./log', logger)
     run_episodes(A2CAgent(config))
 

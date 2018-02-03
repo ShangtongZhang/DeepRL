@@ -58,7 +58,7 @@ class LunarLander(BasicTask):
 
 class PixelAtari(BasicTask):
     def __init__(self, name, no_op, frame_skip, normalized_state=True,
-                 frame_size=84, max_steps=10000):
+                 frame_size=84, max_steps=10000, history_length=1):
         BasicTask.__init__(self, max_steps)
         self.normalized_state = normalized_state
         self.name = name
@@ -69,7 +69,8 @@ class PixelAtari(BasicTask):
         env = MaxAndSkipEnv(env, skip=frame_skip)
         if 'FIRE' in env.unwrapped.get_action_meanings():
             env = FireResetEnv(env)
-        self.env = ProcessFrame(env, frame_size)
+        env = ProcessFrame(env, frame_size)
+        self.env = StackFrame(env, history_length)
         self.action_dim = self.env.action_space.n
 
     def normalize_state(self, state):

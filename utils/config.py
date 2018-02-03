@@ -53,3 +53,4 @@ class Config:
         self.render_episode_freq = 0
         self.rollout_length = None
         self.value_loss_weight = 1.0
+        self.iteration_log_interval = 30
