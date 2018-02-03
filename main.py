@@ -176,6 +176,7 @@ def a2c_pixel_atari(name):
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.discount = 0.99
+    config.no_gae = True
     config.gae_tau = 0.97
     config.entropy_weight = 0.01
     config.rollout_length = 5
@@ -321,7 +322,7 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a2c_cart_pole()
@@ -333,7 +334,7 @@ if __name__ == '__main__':
     # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
-    # a2c_pixel_atari('PongNoFrameskip-v4')
+    a2c_pixel_atari('PongNoFrameskip-v4')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')

@@ -103,8 +103,11 @@ class A2CAgent:
             actions = self.network.tensor(actions, torch.LongTensor).unsqueeze(1)
             next_value = rollout[i + 1][2]
             returns = rewards + config.discount * terminals * returns
-            td_error = rewards + config.discount * terminals * next_value.data - value.data
-            advantages = advantages * config.gae_tau * config.discount * terminals + td_error
+            if config.no_gae:
+                advantages = returns - value.data
+            else:
+                td_error = rewards + config.discount * terminals * next_value.data - value.data
+                advantages = advantages * config.gae_tau * config.discount * terminals + td_error
             processed_rollout[i] = [prob, log_prob, value, actions, returns, advantages]
 
         prob, log_prob, value, actions, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
