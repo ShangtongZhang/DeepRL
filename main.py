@@ -165,14 +165,15 @@ def a2c_pixel_atari(name):
     config = Config()
     config.history_length = 4
     config.num_workers = 5
-    task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=42,
+    task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, frame_size=84,
                                  history_length=config.history_length)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     task = config.task_fn()
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007, eps=1e-5, alpha=0.99)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
     # config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
-    config.network_fn = lambda: OpenAIActorCriticConvNet(
-        config.history_length, task.task.env.action_space.n, LSTM=False, gpu=True)
+    # config.network_fn = lambda: OpenAIActorCriticConvNet(
+    config.network_fn = lambda: NatureActorCriticConvNet(
+        config.history_length, task.task.env.action_space.n, gpu=True)
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.discount = 0.99

@@ -117,3 +117,27 @@ class OpenAIConvNet(nn.Module, VanillaNet):
         y = y.view(y.size(0), -1)
         phi = F.elu(self.layer5(y))
         return self.fc6(phi)
+
+class NatureActorCriticConvNet(nn.Module, ActorCriticNet):
+    def __init__(self,
+                 in_channels,
+                 n_actions,
+                 gpu=False):
+        super(NatureActorCriticConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 64, 512)
+
+        self.fc_actor = nn.Linear(512, n_actions)
+        self.fc_critic = nn.Linear(512, 1)
+        BasicNet.__init__(self, gpu=gpu)
+
+    def forward(self, x, _):
+        x = self.to_torch_variable(x)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = x.view(x.size(0), -1)
+        phi = F.relu(self.fc4(x))
+        return phi
