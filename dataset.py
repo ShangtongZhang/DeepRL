@@ -9,6 +9,7 @@ from component import *
 from utils import *
 import torchvision
 import torch
+from skimage import io
 
 # PREFIX = '.'
 PREFIX = '/local/data'
@@ -88,8 +89,7 @@ def generate_dateset(game):
         obs_sum += np.asarray(dataset_env.saved_obs).sum(0)
         obs_count += len(dataset_env.saved_obs)
         for ind, obs in enumerate(dataset_env.saved_obs):
-            obs = torch.from_numpy(np.transpose(obs, (2, 0, 1)))
-            torchvision.utils.save_image(obs, '%s/%05d.png' % (path, ind))
+            io.imsave('%s/%05d.png' % (path, ind), obs)
         dataset_env.clear_saved()
         ep += 1
         if ep >= max_ep:
