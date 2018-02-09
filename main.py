@@ -168,22 +168,22 @@ def a2c_pixel_atari(name):
                                  history_length=config.history_length)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     task = config.task_fn()
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
-    # config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
+    # config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
     # config.network_fn = lambda: OpenAIActorCriticConvNet(
     config.network_fn = lambda: NatureActorCriticConvNet(
-        config.history_length, task.task.env.action_space.n, gpu=0)
+        config.history_length, task.task.env.action_space.n, gpu=2)
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.discount = 0.99
-    config.no_gae = True
+    config.no_gae = False
     config.gae_tau = 0.97
     config.entropy_weight = 0.01
     config.rollout_length = 5
     config.test_interval = 0
     config.iteration_log_interval = 100
     config.gradient_clip = 0.5
-    config.logger = Logger('./log', logger)
+    config.logger = Logger('./log', logger, skip=True)
     run_episodes(A2CAgent(config))
 
 def a3c_continuous():

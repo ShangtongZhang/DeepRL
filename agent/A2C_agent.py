@@ -25,11 +25,8 @@ class A2CAgent:
         self.total_steps = 0
         self.states = self.task.reset()
 
-        self.episode_counts = np.zeros(config.num_workers)
         self.episode_rewards = np.zeros(config.num_workers)
-        self.total_rewards = np.zeros(config.num_workers)
-        self.prev_episode_counts = 0.0
-        self.prev_total_rewards = 0.0
+        self.last_episode_rewards = np.zeros(config.num_workers)
 
     def close(self):
         self.task.close()
@@ -56,13 +53,9 @@ class A2CAgent:
         config = self.config
         for _ in range(config.iteration_log_interval):
             self.iteration(deterministic)
-        new_episode_counts = np.sum(self.episode_counts)
-        new_total_rewards = np.sum(self.total_rewards)
-        avg_reward = (new_total_rewards - self.prev_total_rewards) / \
-                     (new_episode_counts - self.prev_episode_counts + 1e-5)
-        self.prev_total_rewards = new_total_rewards
-        self.prev_episode_counts = new_episode_counts
-        return avg_reward, config.rollout_length * config.num_workers * \
+        config.logger.info('max/min reward %f/%f' %
+                           (np.max(self.last_episode_rewards), np.min(self.last_episode_rewards)))
+        return self.last_episode_rewards.mean(), config.rollout_length * config.num_workers * \
                config.iteration_log_interval
 
     def iteration(self, deterministic=False):
@@ -82,8 +75,7 @@ class A2CAgent:
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
                     next_states[i] = self.task.reset(i)
-                    self.episode_counts[i] += 1
-                    self.total_rewards[i] += self.episode_rewards[i]
+                    self.last_episode_rewards[i] = self.episode_rewards[i]
                     self.episode_rewards[i] = 0
 
             rollout.append([prob, log_prob, value, actions, rewards, 1 - terminals])
@@ -112,11 +104,16 @@ class A2CAgent:
 
         prob, log_prob, value, actions, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
         policy_loss = -log_prob.gather(1, Variable(actions)) * Variable(advantages)
-        policy_loss += config.entropy_weight * torch.sum(prob * log_prob, dim=1, keepdim=True)
-        value_loss = config.value_loss_weight * 0.5 * (Variable(returns) - value).pow(2)
+        entropy_loss = torch.sum(prob * log_prob, dim=1, keepdim=True)
+        value_loss = 0.5 * (Variable(returns) - value).pow(2)
+
+        self.config.logger.scalar_summary('policy_loss', np.mean(policy_loss.data.cpu().numpy()))
+        self.config.logger.scalar_summary('entropy_loss', np.mean(entropy_loss.data.cpu().numpy()))
+        self.config.logger.scalar_summary('value_loss', np.mean(value_loss.data.cpu().numpy()))
 
         self.optimizer.zero_grad()
-        (policy_loss + value_loss).mean().backward()
+        (policy_loss + config.entropy_weight * entropy_loss +
+         config.value_loss_weight * value_loss).mean().backward()
         nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
 

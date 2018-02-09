@@ -1,11 +1,8 @@
-# This file is apdated from
-# https://raw.githubusercontent.com/transedward/pytorch-dqn/master/utils/atari_wrapper.py
-
 import numpy as np
 from collections import deque
 import gym
 from gym import spaces
-from PIL import Image
+from skimage import color, transform
 
 class NoopResetEnv(gym.Wrapper):
     def __init__(self, env=None, noop_max=30):
@@ -105,15 +102,6 @@ class MaxAndSkipEnv(gym.Wrapper):
         self._obs_buffer.append(obs)
         return obs
 
-def _process_frame84_rgb(frame):
-    img = np.reshape(frame, [210, 160, 3]).astype(np.float32)
-    img = Image.fromarray(img)
-    resized_screen = img.resize((84, 110, 3), Image.BILINEAR)
-    resized_screen = np.array(resized_screen)
-    x_t = resized_screen[18:102, :, :]
-    x_t = x_t.reshape((84, 84, 3))
-    return x_t
-
 class DatasetEnv(gym.Wrapper):
     def __init__(self, env=None):
         super(DatasetEnv, self).__init__(env)
@@ -138,43 +126,24 @@ class DatasetEnv(gym.Wrapper):
         self.saved_obs.append(obs)
         return obs
 
-def _process_frame84(frame):
-    img = np.reshape(frame, [210, 160, 3]).astype(np.float32)
-    img = img[:, :, 0] * 0.299 + img[:, :, 1] * 0.587 + img[:, :, 2] * 0.114
-    img = Image.fromarray(img)
-    resized_screen = img.resize((84, 110), Image.BILINEAR)
-    resized_screen = np.array(resized_screen)
-    x_t = resized_screen[18:102, :]
-    x_t = np.reshape(x_t, [1, 84, 84])
-    return x_t.astype(np.uint8)
-
-def _process_frame42(frame):
-    img = np.reshape(frame, [210, 160, 3]).astype(np.float32)
-    img = img[:, :, 0] * 0.299 + img[:, :, 1] * 0.587 + img[:, :, 2] * 0.114
-    img = img[34:34 + 160, :160]
-    img = Image.fromarray(img)
-    img = img.resize((80, 80), Image.BILINEAR)
-    img = img.resize((42, 42), Image.BILINEAR)
-    resized_screen = np.array(img).reshape(1, 42, 42)
-    return resized_screen.astype(np.uint8)
-
 class ProcessFrame(gym.Wrapper):
     def __init__(self, env=None, frame_size=84):
         super(ProcessFrame, self).__init__(env)
+        self.frame_size = frame_size
         self.observation_space = spaces.Box(low=0, high=255, shape=(1, frame_size, frame_size))
-        if frame_size == 84:
-            self.process_fn = _process_frame84
-        elif frame_size == 42:
-            self.process_fn = _process_frame42
-        else:
-            assert False, "Unknown frame size"
+
+    def process(self, obs):
+        obs = color.rgb2gray(obs)
+        obs = transform.resize(obs, (self.frame_size, self.frame_size), mode='constant')
+        obs = (255 * obs).astype(np.uint8).reshape((1, ) + obs.shape)
+        return obs
 
     def _step(self, action):
         obs, reward, done, info = self.env.step(action)
-        return self.process_fn(obs), reward, done, info
+        return self.process(obs), reward, done, info
 
     def _reset(self):
-        return self.process_fn(self.env.reset())
+        return self.process(self.env.reset())
 
 class NormalizeFrame(gym.Wrapper):
     def __init__(self, env=None):
