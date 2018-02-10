@@ -12,7 +12,6 @@ from component import *
 import pickle
 import os
 import time
-import gym.monitoring
 
 class A2CAgent:
     def __init__(self, config):
@@ -53,8 +52,9 @@ class A2CAgent:
         config = self.config
         for _ in range(config.iteration_log_interval):
             self.iteration(deterministic)
-        config.logger.info('max/min reward %f/%f' %
-                           (np.max(self.last_episode_rewards), np.min(self.last_episode_rewards)))
+        config.logger.info('max/min reward %f/%f, policy loss %f, entropy loss %f, value loss %f' %
+                           (np.max(self.last_episode_rewards), np.min(self.last_episode_rewards),
+                            self.policy_loss, self.entropy_loss, self.value_loss))
         return self.last_episode_rewards.mean(), config.rollout_length * config.num_workers * \
                config.iteration_log_interval
 
@@ -107,9 +107,9 @@ class A2CAgent:
         entropy_loss = torch.sum(prob * log_prob, dim=1, keepdim=True)
         value_loss = 0.5 * (Variable(returns) - value).pow(2)
 
-        self.config.logger.scalar_summary('policy_loss', np.mean(policy_loss.data.cpu().numpy()))
-        self.config.logger.scalar_summary('entropy_loss', np.mean(entropy_loss.data.cpu().numpy()))
-        self.config.logger.scalar_summary('value_loss', np.mean(value_loss.data.cpu().numpy()))
+        self.policy_loss = np.mean(policy_loss.data.cpu().numpy())
+        self.entropy_loss = np.mean(entropy_loss.data.cpu().numpy())
+        self.value_loss = np.mean(value_loss.data.cpu().numpy())
 
         self.optimizer.zero_grad()
         (policy_loss + config.entropy_weight * entropy_loss +

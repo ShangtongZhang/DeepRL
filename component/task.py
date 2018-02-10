@@ -127,6 +127,7 @@ class Roboschool(BasicTask):
 def sub_task(parent_pipe, pipe, task_fn):
     parent_pipe.close()
     task = task_fn()
+    task.env.seed(np.random.randint(0, sys.maxsize))
     while True:
         op, data = pipe.recv()
         if op == 'step':

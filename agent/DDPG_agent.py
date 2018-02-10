@@ -12,7 +12,6 @@ from component import *
 import pickle
 import os
 import time
-import gym.monitoring
 
 class DDPGAgent:
     def __init__(self, config):
