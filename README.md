@@ -92,7 +92,7 @@ Prediction is sampled after 110K iterations and I only implemented one-step trai
 * Open AI gym
 * [Roboschool](https://github.com/openai/roboschool) (Optional)
 * PyTorch v0.3.0
-* Python 2.7 or Python 3.6
+* Python 2.7 
 * [TensorboardX](https://github.com/lanpa/tensorboard-pytorch)
 
 

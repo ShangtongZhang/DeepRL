@@ -333,8 +333,8 @@ if __name__ == '__main__':
 
     # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
-    # a3c_pixel_atari('PongNoFrameskip-v4')
-    a2c_pixel_atari('PongNoFrameskip-v4')
+    a3c_pixel_atari('PongNoFrameskip-v4')
+    # a2c_pixel_atari('PongNoFrameskip-v4')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')
