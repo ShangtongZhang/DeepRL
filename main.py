@@ -172,7 +172,7 @@ def a2c_pixel_atari(name):
     # config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.0001)
     # config.network_fn = lambda: OpenAIActorCriticConvNet(
     config.network_fn = lambda: NatureActorCriticConvNet(
-        config.history_length, task.task.env.action_space.n, gpu=0)
+        config.history_length, task.task.env.action_space.n, gpu=3)
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.discount = 0.99

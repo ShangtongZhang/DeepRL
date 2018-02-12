@@ -7,7 +7,7 @@ import gym
 import sys
 import numpy as np
 from .atari_wrapper import *
-import torch.multiprocessing as mp
+import multiprocessing as mp
 import sys
 
 class BasicTask:
@@ -72,9 +72,22 @@ class PixelAtari(BasicTask):
         env = ProcessFrame(env, frame_size)
         self.env = StackFrame(env, history_length)
         self.action_dim = self.env.action_space.n
+        self.observation_space = self.env.observation_space
+        self.action_space = self.env.action_space
 
     def normalize_state(self, state):
         return np.asarray(state, dtype=np.float32) / 255.0
+
+    def step(self, action):
+        next_state, reward, done, info = self.env.step(action)
+        self.steps += 1
+        done = (done or self.steps >= self.max_steps)
+        if done:
+            self.steps = 0
+            next_state = self.env.reset()
+        if self.normalized_state:
+            next_state = self.normalize_state(next_state)
+        return next_state, reward, done, info
 
 class ContinuousMountainCar(BasicTask):
     name = 'MountainCarContinuous-v0'
@@ -150,6 +163,8 @@ class ParallelizedTask:
         self.workers = [mp.Process(target=sub_task, args=arg) for arg in args]
         for p in self.workers: p.start()
         for p in worker_pipes: p.close()
+        self.observation_space = self.task.env.observation_space
+        self.action_space = self.task.env.action_space
 
     def step(self, actions):
         for pipe, action in zip(self.pipes, actions):
