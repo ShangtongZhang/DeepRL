@@ -17,6 +17,7 @@ class BasicNet:
             gpu = -1
         self.gpu = gpu
         self.LSTM = LSTM
+        self.init_weights()
         if self.gpu >= 0:
             self.cuda(self.gpu)
 
@@ -48,6 +49,13 @@ class BasicNet:
             self.c.data.zero_()
         self.h = Variable(self.h.data)
         self.c = Variable(self.c.data)
+
+    def init_weights(self):
+        for layer in self.children():
+            relu_gain = nn.init.calculate_gain('relu')
+            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
+                nn.init.orthogonal(layer.weight.data, relu_gain)
+            nn.init.constant(layer.bias.data, 0)
 
 # Base class for value based methods
 class VanillaNet(BasicNet):

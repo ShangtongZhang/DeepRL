@@ -56,6 +56,20 @@ def run_episodes(agent):
     agent.close()
     return steps, rewards, avg_test_rewards
 
+def run_iterations(agent):
+    config = agent.config
+    agent_type = agent.__class__.__name__
+    iteration = 0
+    while True:
+        agent.iteration()
+        if iteration % config.iteration_log_interval == 0:
+            config.logger.info('total steps %d, mean/max/min reward %f/%f/%f' % (
+                agent.total_steps, np.mean(agent.last_episode_rewards),
+                np.max(agent.last_episode_rewards),
+                np.min(agent.last_episode_rewards)
+            ))
+        iteration += 1
+
 def sync_grad(target_network, src_network):
     for param, src_param in zip(target_network.parameters(), src_network.parameters()):
         param._grad = src_param.grad.clone()

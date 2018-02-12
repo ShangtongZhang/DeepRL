@@ -33,7 +33,7 @@ class Config:
         self.update_interval = 1
         self.gradient_clip = 40
         self.entropy_weight = 0.01
-        self.no_gae = False
+        self.use_gae = True
         self.gae_tau = 1.0
         self.noise_decay_interval = 0
         self.target_network_mix = 0.001

@@ -12,26 +12,21 @@ import sys
 
 class BasicTask:
     def __init__(self, max_steps=sys.maxsize):
-        self.normalized_state = True
         self.steps = 0
         self.max_steps = max_steps
-
-    def normalize_state(self, state):
-        return state
 
     def reset(self):
         self.steps = 0
         state = self.env.reset()
-        if self.normalized_state:
-            return self.normalize_state(state)
+        return state
+
+    def normalize_state(self, state):
         return state
 
     def step(self, action):
         next_state, reward, done, info = self.env.step(action)
         self.steps += 1
         done = (done or self.steps >= self.max_steps)
-        if self.normalized_state:
-            next_state = self.normalize_state(next_state)
         return next_state, reward, done, info
 
     def random_action(self):
@@ -70,24 +65,13 @@ class PixelAtari(BasicTask):
         if 'FIRE' in env.unwrapped.get_action_meanings():
             env = FireResetEnv(env)
         env = ProcessFrame(env, frame_size)
+        if normalized_state:
+            env = NormalizeFrame(env)
         self.env = StackFrame(env, history_length)
         self.action_dim = self.env.action_space.n
-        self.observation_space = self.env.observation_space
-        self.action_space = self.env.action_space
 
     def normalize_state(self, state):
-        return np.asarray(state, dtype=np.float32) / 255.0
-
-    def step(self, action):
-        next_state, reward, done, info = self.env.step(action)
-        self.steps += 1
-        done = (done or self.steps >= self.max_steps)
-        if done:
-            self.steps = 0
-            next_state = self.env.reset()
-        if self.normalized_state:
-            next_state = self.normalize_state(next_state)
-        return next_state, reward, done, info
+        return np.asarray(state) / 255.0
 
 class ContinuousMountainCar(BasicTask):
     name = 'MountainCarContinuous-v0'

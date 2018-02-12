@@ -89,7 +89,7 @@ def a2c_cart_pole():
     config.gae_tau = 1.0
     config.entropy_weight = 0.01
     config.rollout_length = 20
-    run_episodes(A2CAgent(config))
+    run_iterations(A2CAgent(config))
 
 def dqn_pixel_atari(name):
     config = Config()
@@ -176,7 +176,7 @@ def a2c_pixel_atari(name):
     config.reward_shift_fn = lambda r: np.sign(r)
     config.policy_fn = SamplePolicy
     config.discount = 0.99
-    config.no_gae = False
+    config.use_gae = True
     config.gae_tau = 0.97
     config.entropy_weight = 0.01
     config.rollout_length = 5
@@ -184,7 +184,7 @@ def a2c_pixel_atari(name):
     config.iteration_log_interval = 100
     config.gradient_clip = 0.5
     config.logger = Logger('./log', logger, skip=True)
-    run_episodes(A2CAgent(config))
+    run_iterations(A2CAgent(config))
 
 def a3c_continuous():
     config = Config()

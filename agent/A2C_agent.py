@@ -23,7 +23,6 @@ class A2CAgent:
         self.policy = config.policy_fn()
         self.total_steps = 0
         self.states = self.task.reset()
-
         self.episode_rewards = np.zeros(config.num_workers)
         self.last_episode_rewards = np.zeros(config.num_workers)
 
@@ -48,26 +47,13 @@ class A2CAgent:
                 break
         return total_rewards, steps
 
-    def episode(self, deterministic=False):
-        config = self.config
-        for _ in range(config.iteration_log_interval):
-            self.iteration(deterministic)
-        config.logger.info('max/min reward %f/%f, policy loss %f, entropy loss %f, value loss %f' %
-                           (np.max(self.last_episode_rewards), np.min(self.last_episode_rewards),
-                            self.policy_loss, self.entropy_loss, self.value_loss))
-        return self.last_episode_rewards.mean(), config.rollout_length * config.num_workers * \
-               config.iteration_log_interval
-
-    def iteration(self, deterministic=False):
-        if deterministic:
-            return self.evaluate()
-
+    def iteration(self):
         config = self.config
         rollout = []
         states = self.states
         for i in range(config.rollout_length):
             prob, log_prob, value = self.network.predict(states)
-            actions = [self.policy.sample(p, deterministic) for p in prob.data.cpu().numpy()]
+            actions = [self.policy.sample(p) for p in prob.data.cpu().numpy()]
             actions = config.action_shift_fn(actions)
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
@@ -95,7 +81,7 @@ class A2CAgent:
             actions = self.network.tensor(actions, torch.LongTensor).unsqueeze(1)
             next_value = rollout[i + 1][2]
             returns = rewards + config.discount * terminals * returns
-            if config.no_gae:
+            if config.use_gae:
                 advantages = returns - value.data
             else:
                 td_error = rewards + config.discount * terminals * next_value.data - value.data

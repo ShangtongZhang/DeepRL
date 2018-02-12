@@ -131,15 +131,7 @@ class NatureActorCriticConvNet(nn.Module, ActorCriticNet):
 
         self.fc_actor = nn.Linear(512, n_actions)
         self.fc_critic = nn.Linear(512, 1)
-        self.init_weights()
         BasicNet.__init__(self, gpu=gpu)
-
-    def init_weights(self):
-        relu_gain = nn.init.calculate_gain('relu')
-        for layer in self.children():
-            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-                nn.init.orthogonal(layer.weight.data, relu_gain)
-            nn.init.constant(layer.bias.data, 0)
 
     def forward(self, x, _):
         x = self.variable(x)
