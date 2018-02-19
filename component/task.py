@@ -73,6 +73,23 @@ class PixelAtari(BasicTask):
     def normalize_state(self, state):
         return np.asarray(state) / 255.0
 
+class RamAtari(BasicTask):
+    def __init__(self, name, no_op, frame_skip, max_steps=10000):
+        BasicTask.__init__(self, max_steps)
+        self.name = name
+        env = gym.make(name)
+        assert 'NoFrameskip' in env.spec.id
+        env = EpisodicLifeEnv(env)
+        env = NoopResetEnv(env, noop_max=no_op)
+        env = SkipEnv(env, skip=frame_skip)
+        if 'FIRE' in env.unwrapped.get_action_meanings():
+            env = FireResetEnv(env)
+        self.env = env
+        self.action_dim = self.env.action_space.n
+
+    def normalize_state(self, state):
+        return np.asarray(state) / 255.0
+
 class ContinuousMountainCar(BasicTask):
     name = 'MountainCarContinuous-v0'
     success_threshold = 90

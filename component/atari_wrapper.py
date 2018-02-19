@@ -108,6 +108,27 @@ class MaxAndSkipEnv(gym.Wrapper):
         self._obs_buffer.append(obs)
         return obs
 
+class SkipEnv(gym.Wrapper):
+    def __init__(self, env=None, skip=4):
+        """Return only every `skip`-th frame"""
+        super(SkipEnv, self).__init__(env)
+        self._skip       = skip
+
+    def step(self, action):
+        total_reward = 0.0
+        done = None
+        for _ in range(self._skip):
+            obs, reward, done, info = self.env.step(action)
+            total_reward += reward
+            if done:
+                break
+
+        return obs, total_reward, done, info
+
+    def reset(self):
+        obs = self.env.reset()
+        return obs
+
 class DatasetEnv(gym.Wrapper):
     def __init__(self, env=None):
         super(DatasetEnv, self).__init__(env)
@@ -174,10 +195,10 @@ class StackFrame(gym.Wrapper):
     def reset(self):
         state = self.env.reset()
         self.buffer = [state] * self.history_length
-        return np.vstack(self.buffer)
+        return np.asarray(np.vstack(self.buffer))
 
     def step(self, action):
         state, reward, done, info = self.env.step(action)
         self.buffer.pop(0)
         self.buffer.append(state)
-        return np.vstack(self.buffer), reward, done, info
+        return np.asarray(np.vstack(self.buffer)), reward, done, info

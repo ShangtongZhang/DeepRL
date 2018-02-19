@@ -114,6 +114,27 @@ def dqn_pixel_atari(name):
     config.double_q = False
     run_episodes(DQNAgent(config))
 
+def dqn_ram_atari(name):
+    config = Config()
+    config.history_length = 1
+    config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4)
+    action_dim = config.task_fn().action_dim
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
+    config.network_fn = lambda: FCNet([128, 64, 64, action_dim], gpu=2)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=1000000, min_epsilon=0.1)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
+    config.reward_shift_fn = lambda r: np.sign(r)
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.max_episode_length = 0
+    config.exploration_steps= 100
+    config.logger = Logger('./log', logger)
+    config.test_interval = 0
+    config.test_repetitions = 10
+    config.double_q = True
+    # config.double_q = False
+    run_episodes(DQNAgent(config))
+
 def async_pixel_atari(name):
     config = Config()
     config.history_length = 1
@@ -322,7 +343,7 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a2c_cart_pole()
@@ -334,11 +355,13 @@ if __name__ == '__main__':
     # dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
-    a2c_pixel_atari('PongNoFrameskip-v4')
+    # a2c_pixel_atari('PongNoFrameskip-v4')
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # async_pixel_atari('BreakoutNoFrameskip-v4')
     # a3c_pixel_atari('BreakoutNoFrameskip-v4')
+
+    dqn_ram_atari('Pong-ramNoFrameskip-v4')
 
     # acvp.train('PongNoFrameskip-v4')
 
