@@ -17,7 +17,8 @@ PREFIX = '/local/data'
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
-    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False)
+    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False,
+                                        history_length=config.history_length)
     action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
     config.network_fn = lambda: NatureConvNet(config.history_length, action_dim)
@@ -26,7 +27,7 @@ def dqn_pixel_atari(name):
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.max_episode_length = 0
-    config.exploration_steps= 50000
+    config.exploration_steps = 50000
     config.logger = Logger('./log', logger)
     config.test_interval = 10
     config.test_repetitions = 1
