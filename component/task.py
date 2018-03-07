@@ -86,9 +86,10 @@ class RamAtari(BasicTask):
             env = FireResetEnv(env)
         self.env = env
         self.action_dim = self.env.action_space.n
+        self.state_dim = reduce(lambda x, y: x * y, self.env.observation_space.shape)
 
     def normalize_state(self, state):
-        return np.asarray(state) / 255.0
+        return np.asarray(state).reshape((-1, self.state_dim)) / 255.0
 
 class ContinuousMountainCar(BasicTask):
     name = 'MountainCarContinuous-v0'
