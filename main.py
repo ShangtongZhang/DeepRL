@@ -119,8 +119,9 @@ def dqn_ram_atari(name):
     config.history_length = 1
     config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4)
     action_dim = config.task_fn().action_dim
+    state_dim = config.task_fn().state_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda: FCNet([128, 64, 64, action_dim], gpu=2)
+    config.network_fn = lambda: FCNet([state_dim, 64, 64, action_dim], gpu=2)
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
     config.reward_shift_fn = lambda r: np.sign(r)
