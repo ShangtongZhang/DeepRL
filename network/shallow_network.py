@@ -55,3 +55,21 @@ class ActorCriticFCNet(nn.Module, ActorCriticNet):
         x = F.relu(self.fc1(x))
         phi = self.fc2(x)
         return phi
+
+class CategoricalFCNet(nn.Module, CategoricalNet):
+    def __init__(self, state_dim, n_actions, n_atoms, gpu=0):
+        super(CategoricalFCNet, self).__init__()
+        self.n_actions = n_actions
+        self.n_atoms = n_atoms
+
+        hidden_size = 64
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc_categorical = nn.Linear(hidden_size, n_actions * n_atoms)
+        BasicNet.__init__(self, gpu)
+
+    def forward(self, x):
+        x = self.variable(x)
+        phi = F.relu(self.fc1(x))
+        phi = F.relu(self.fc2(phi))
+        return phi

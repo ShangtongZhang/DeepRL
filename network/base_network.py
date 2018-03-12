@@ -92,3 +92,12 @@ class DuelingNet(BasicNet):
         if to_numpy:
             return q.cpu().data.numpy()
         return q
+
+class CategoricalNet(BasicNet):
+    def predict(self, x, to_numpy=False):
+        phi = self.forward(x)
+        pre_prob = self.fc_categorical(phi).view((-1, self.n_actions, self.n_atoms))
+        prob = F.softmax(pre_prob, dim=-1)
+        if to_numpy:
+            return pre_prob.cpu().data.numpy()
+        return prob

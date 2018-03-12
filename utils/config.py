@@ -55,3 +55,6 @@ class Config:
         self.rollout_length = None
         self.value_loss_weight = 1.0
         self.iteration_log_interval = 30
+        self.categorical_v_min = -10
+        self.categorical_v_max = 10
+        self.categorical_n_atoms = 51

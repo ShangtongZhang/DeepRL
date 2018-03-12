@@ -335,6 +335,25 @@ def ddpg_continuous():
     config.logger = Logger('./log', logger)
     run_episodes(DDPGAgent(config))
 
+def categorical_dqn_cart_pole():
+    config = Config()
+    config.task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
+    task = config.task_fn()
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    config.network_fn = lambda: CategoricalFCNet(task.state_dim, task.action_dim, config.categorical_n_atoms)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=10000, min_epsilon=0.1)
+    config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
+    config.discount = 0.99
+    config.target_network_update_freq = 200
+    config.exploration_steps = 0
+    config.logger = Logger('./log', logger)
+    config.test_interval = 100
+    config.test_repetitions = 50
+    config.categorical_v_max = 200
+    config.categorical_v_min = -config.categorical_v_min
+    config.categorical_n_atoms = 10
+    run_episodes(CategoricalDQNAgent(config))
+
 if __name__ == '__main__':
     mkdir('data')
     mkdir('data/video')
@@ -343,7 +362,8 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
+    categorical_dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a2c_cart_pole()
@@ -361,7 +381,7 @@ if __name__ == '__main__':
     # async_pixel_atari('BreakoutNoFrameskip-v4')
     # a3c_pixel_atari('BreakoutNoFrameskip-v4')
 
-    dqn_ram_atari('Pong-ramNoFrameskip-v4')
+    # dqn_ram_atari('Pong-ramNoFrameskip-v4')
 
     # acvp.train('PongNoFrameskip-v4')
 
