@@ -378,6 +378,39 @@ def categorical_dqn_pixel_atari(name):
     config.categorical_n_atoms = 51
     run_episodes(CategoricalDQNAgent(config))
 
+def n_step_dqn_cart_pole():
+    config = Config()
+    task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
+    task = task_fn()
+    config.num_workers = 5
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    config.network_fn = lambda: FCNet([task.state_dim, 50, 200, task.action_dim])
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
+    config.discount = 0.99
+    config.target_network_update_freq = 200
+    config.rollout_length = 20
+    config.logger = Logger('./log', logger)
+    run_iterations(NStepDQNAgent(config))
+
+def n_step_dqn_pixel_atari(name):
+    config = Config()
+    config.history_length = 4
+    task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=True,
+                                 history_length=config.history_length)
+    task = task_fn()
+    config.num_workers = 8
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
+    config.network_fn = lambda: NatureConvNet(config.history_length, task.action_dim, gpu=0)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    config.reward_shift_fn = lambda r: np.sign(r)
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.rollout_length = 20
+    config.logger = Logger('./log', logger)
+    run_iterations(NStepDQNAgent(config))
+
 if __name__ == '__main__':
     mkdir('data')
     mkdir('data/video')
@@ -395,9 +428,11 @@ if __name__ == '__main__':
     # p3o_continuous()
     # d3pg_continuous()
     # ddpg_continuous()
+    # n_step_dqn_cart_pole()
 
     # dqn_pixel_atari('PongNoFrameskip-v4')
-    categorical_dqn_pixel_atari('PongNoFrameskip-v4')
+    # categorical_dqn_pixel_atari('PongNoFrameskip-v4')
+    n_step_dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
     # a2c_pixel_atari('PongNoFrameskip-v4')
