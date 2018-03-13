@@ -402,7 +402,7 @@ def n_step_dqn_pixel_atari(name):
     config.num_workers = 8
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda: NatureConvNet(config.history_length, task.action_dim, gpu=0)
+    config.network_fn = lambda: NatureConvNet(config.history_length, task.action_dim, gpu=1)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.reward_shift_fn = lambda r: np.sign(r)
     config.discount = 0.99

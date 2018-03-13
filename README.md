@@ -15,6 +15,8 @@ Implemented algorithms:
 * Distributed Deep Deterministic Policy Gradient (Distributed DDPG, aka D3PG)
 * Parallelized Proximal Policy Optimization (P3O, similar to DPPO)
 * Action Conditional Video Prediction
+* Categorical DQN (C51, Distributional DQN)
+* N-Step DQN (similar to A2C)
 
 # Curves
 > Curves for CartPole are trivial so I didn't place it here. There isn't any fixed random seed.
@@ -87,6 +89,11 @@ I use 8 threads and a two tanh hidden layer network, each hidden layer has 64 hi
 
 Prediction is sampled after 110K iterations and I only implemented one-step training
 
+## Categorical DQN
+
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/CategoricalDQN.png)
+A deterministic test episode is triggered every 10 episodes. 2.5M steps and 14 hours in total.
+
 # Dependency
 > Tested in macOS 10.12 and CentO/S 6.8
 * Open AI gym
@@ -116,3 +123,4 @@ Prediction is sampled after 110K iterations and I only implemented one-step trai
 * [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
 * [Emergence of Locomotion Behaviours in Rich Environments](https://arxiv.org/abs/1707.02286)
 * [Action-Conditional Video Prediction using Deep Networks in Atari Games](https://arxiv.org/abs/1507.08750)
+* [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)
