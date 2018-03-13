@@ -99,7 +99,7 @@ def dqn_pixel_atari(name):
     action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
     config.network_fn = lambda: NatureConvNet(config.history_length, action_dim, gpu=0)
-    # config.network_fn = lambda: DuelingNatureConvNet(config.history_length, n_actions)
+    # config.network_fn = lambda: DuelingNatureConvNet(config.history_length, action_dim)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
     config.reward_shift_fn = lambda r: np.sign(r)
