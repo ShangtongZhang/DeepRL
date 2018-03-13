@@ -40,7 +40,7 @@ class DQNAgent:
             else:
                 action = self.policy.sample(value)
             next_state, reward, done, _ = self.task.step(action)
-            total_reward += np.sum(reward * self.config.reward_weight)
+            total_reward += reward
             reward = self.config.reward_shift_fn(reward)
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])

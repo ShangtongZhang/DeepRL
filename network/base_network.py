@@ -99,5 +99,5 @@ class CategoricalNet(BasicNet):
         pre_prob = self.fc_categorical(phi).view((-1, self.n_actions, self.n_atoms))
         prob = F.softmax(pre_prob, dim=-1)
         if to_numpy:
-            return pre_prob.cpu().data.numpy()
+            return prob.cpu().data.numpy()
         return prob

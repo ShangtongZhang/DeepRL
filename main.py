@@ -345,13 +345,14 @@ def categorical_dqn_cart_pole():
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
     config.discount = 0.99
     config.target_network_update_freq = 200
-    config.exploration_steps = 0
-    config.logger = Logger('./log', logger)
+    config.exploration_steps = 100
+    config.logger = Logger('./log', logger, skip=True)
+    # config.logger = Logger('./log', logger)
     config.test_interval = 100
     config.test_repetitions = 50
-    config.categorical_v_max = 200
-    config.categorical_v_min = -config.categorical_v_min
-    config.categorical_n_atoms = 10
+    config.categorical_v_max = 100
+    config.categorical_v_min = -100
+    config.categorical_n_atoms = 50
     run_episodes(CategoricalDQNAgent(config))
 
 if __name__ == '__main__':

@@ -38,7 +38,9 @@ class CategoricalDQNAgent:
         steps = 0
         while True:
             value = self.learning_network.predict(np.stack([self.task.normalize_state(state)])).squeeze(0).data
-            value = torch.mm(value, self.atoms.unsqueeze(1)).cpu().numpy().flatten()
+            # self.config.logger.histo_summary('prob', value, self.total_steps)
+            value = (value * self.atoms).sum(-1).cpu().numpy().flatten()
+            # self.config.logger.histo_summary('q', value, self.total_steps)
             if deterministic:
                 action = np.argmax(value)
             elif self.total_steps < self.config.exploration_steps:
@@ -46,7 +48,7 @@ class CategoricalDQNAgent:
             else:
                 action = self.policy.sample(value)
             next_state, reward, done, _ = self.task.step(action)
-            total_reward += np.sum(reward * self.config.reward_weight)
+            total_reward += reward
             reward = self.config.reward_shift_fn(reward)
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
@@ -62,18 +64,21 @@ class CategoricalDQNAgent:
                 next_states = self.task.normalize_state(next_states)
                 prob_next = self.target_network.predict(next_states).data
                 q_next = (prob_next * self.atoms).sum(-1)
+                # self.config.logger.histo_summary('q next', q_next.cpu().numpy(), self.total_steps)
                 _, a_next = torch.max(q_next, dim=1)
                 a_next = a_next.view(-1, 1, 1).expand(-1, -1, prob_next.size(2))
                 prob_next = prob_next.gather(1, a_next).squeeze(1)
+                # self.config.logger.histo_summary('prob next', prob_next.cpu().numpy(), self.total_steps)
 
                 rewards = self.learning_network.tensor(rewards)
-                atoms_next = rewards.view(-1, 1) + self.config.discount * self.atoms.view(1, -1)
-                epsilon = 1e-5
-                atoms_next.clamp_(self.config.categorical_v_min + epsilon, self.config.categorical_v_max - epsilon)
+                terminals = self.learning_network.tensor(terminals)
+                atoms_next = rewards.view(-1, 1) + self.config.discount * (1 - terminals.view(-1, 1)) * self.atoms.view(1, -1)
+                # epsilon = 1e-5
+                atoms_next.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
                 b = (atoms_next - self.config.categorical_v_min) / self.delta_atom
                 l = b.floor()
                 u = b.ceil()
-                d_m_l = (u - b) * prob_next
+                d_m_l = (u + (l == u).float() - b) * prob_next
                 d_m_u = (b - l) * prob_next
                 target_prob = self.learning_network.tensor(np.zeros(prob_next.size()))
                 for i in range(target_prob.size(0)):
@@ -85,6 +90,7 @@ class CategoricalDQNAgent:
                 actions = actions.view(-1, 1, 1).expand(-1, -1, prob.size(2))
                 prob = prob.gather(1, Variable(actions)).squeeze(1)
                 loss = -(Variable(target_prob) * prob.log()).sum(-1).mean()
+                # self.config.logger.scalar_summary('loss', loss.data.cpu().numpy().flatten(), self.total_steps)
                 self.optimizer.zero_grad()
                 loss.backward()
                 self.optimizer.step()
