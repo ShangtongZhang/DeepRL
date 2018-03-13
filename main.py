@@ -355,6 +355,29 @@ def categorical_dqn_cart_pole():
     config.categorical_n_atoms = 50
     run_episodes(CategoricalDQNAgent(config))
 
+def categorical_dqn_pixel_atari(name):
+    config = Config()
+    config.history_length = 4
+    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False,
+                                        history_length=config.history_length)
+    action_dim = config.task_fn().action_dim
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00025, eps=0.01 / 32)
+    config.network_fn = lambda: CategoricalConvNet(config.history_length, action_dim, config.categorical_n_atoms, gpu=0)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.reward_shift_fn = lambda r: np.sign(r)
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.exploration_steps= 50000
+    config.logger = Logger('./log', logger)
+    config.test_interval = 10
+    config.test_repetitions = 1
+    config.double_q = False
+    config.categorical_v_max = 10
+    config.categorical_v_min = -10
+    config.categorical_n_atoms = 51
+    run_episodes(CategoricalDQNAgent(config))
+
 if __name__ == '__main__':
     mkdir('data')
     mkdir('data/video')
@@ -364,7 +387,7 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
 
     # dqn_cart_pole()
-    categorical_dqn_cart_pole()
+    # categorical_dqn_cart_pole()
     # async_cart_pole()
     # a3c_cart_pole()
     # a2c_cart_pole()
@@ -374,6 +397,7 @@ if __name__ == '__main__':
     # ddpg_continuous()
 
     # dqn_pixel_atari('PongNoFrameskip-v4')
+    categorical_dqn_pixel_atari('PongNoFrameskip-v4')
     # async_pixel_atari('PongNoFrameskip-v4')
     # a3c_pixel_atari('PongNoFrameskip-v4')
     # a2c_pixel_atari('PongNoFrameskip-v4')

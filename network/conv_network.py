@@ -141,3 +141,24 @@ class NatureActorCriticConvNet(nn.Module, ActorCriticNet):
         x = x.view(x.size(0), -1)
         phi = F.relu(self.fc4(x))
         return phi
+
+class CategoricalConvNet(nn.Module, CategoricalNet):
+    def __init__(self, in_channels, n_actions, n_atoms, gpu=0):
+        super(CategoricalConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 64, 512)
+        self.fc_categorical = nn.Linear(512, n_actions * n_atoms)
+        self.n_actions = n_actions
+        self.n_atoms = n_atoms
+        BasicNet.__init__(self, gpu)
+
+    def forward(self, x):
+        x = self.variable(x)
+        y = F.relu(self.conv1(x))
+        y = F.relu(self.conv2(y))
+        y = F.relu(self.conv3(y))
+        y = y.view(y.size(0), -1)
+        y = F.relu(self.fc4(y))
+        return y
