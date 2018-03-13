@@ -58,16 +58,25 @@ def run_episodes(agent):
 
 def run_iterations(agent):
     config = agent.config
-    agent_type = agent.__class__.__name__
+    agent_name = agent.__class__.__name__
     iteration = 0
+    steps = []
+    rewards = []
     while True:
         agent.iteration()
+        steps.append(agent.total_steps)
+        rewards.append(np.mean(agent.last_episode_rewards))
         if iteration % config.iteration_log_interval == 0:
             config.logger.info('total steps %d, mean/max/min reward %f/%f/%f' % (
                 agent.total_steps, np.mean(agent.last_episode_rewards),
                 np.max(agent.last_episode_rewards),
                 np.min(agent.last_episode_rewards)
             ))
+        if iteration % (config.iteration_log_interval * 100) == 0:
+            with open('data/%s-%s-online-stats-%s.bin' % (agent_name, config.tag, agent.task.name), 'wb') as f:
+                pickle.dump({'rewards': rewards,
+                             'steps': steps}, f)
+            agent.save('data/%s-%s-model-%s.bin' % (agent_name, config.tag, agent.task.name))
         iteration += 1
 
 def sync_grad(target_network, src_network):

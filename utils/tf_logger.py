@@ -13,7 +13,7 @@ class Logger(object):
         try:
             for f in os.listdir(log_dir):
                 os.remove('%s/%s' % (log_dir, f))
-        except FileNotFoundError:
+        except IOError:
             os.mkdir(log_dir)
         if not skip:
             self.writer = SummaryWriter(log_dir)
