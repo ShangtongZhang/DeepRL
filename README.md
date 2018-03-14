@@ -94,6 +94,10 @@ Prediction is sampled after 110K iterations and I only implemented one-step trai
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/CategoricalDQN.png)
 A deterministic test episode is triggered every 10 episodes. 2.5M steps and 14 hours in total.
 
+## A2C & N-Step DQN
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A2C-NStepQ.png)
+Online training progression of a single run. Entropy regularization is used for A2C, resulting in the variance in the curve. 
+
 # Dependency
 > Tested in macOS 10.12 and CentO/S 6.8
 * Open AI gym
