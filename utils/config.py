@@ -58,3 +58,4 @@ class Config:
         self.categorical_v_min = -10
         self.categorical_v_max = 10
         self.categorical_n_atoms = 51
+        self.num_quantiles = 10

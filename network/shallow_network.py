@@ -73,3 +73,22 @@ class CategoricalFCNet(nn.Module, CategoricalNet):
         phi = F.relu(self.fc1(x))
         phi = F.relu(self.fc2(phi))
         return phi
+
+class QuantileFCNet(nn.Module, QuantileNet):
+    def __init__(self, state_dim, n_actions, n_quantiles, gpu=0):
+        super(QuantileFCNet, self).__init__()
+        self.n_actions = n_actions
+        self.n_quantiles = n_quantiles
+
+        hidden_size = 64
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc3 = nn.Linear(hidden_size, n_actions * n_quantiles)
+        BasicNet.__init__(self, gpu)
+
+    def forward(self, x):
+        x = self.variable(x)
+        phi = F.relu(self.fc1(x))
+        phi = F.relu(self.fc2(phi))
+        quantiles = self.fc3(phi)
+        return quantiles

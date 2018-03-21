@@ -101,3 +101,8 @@ class CategoricalNet(BasicNet):
         if to_numpy:
             return prob.cpu().data.numpy()
         return prob
+
+class QuantileNet(BasicNet):
+    def predict(self, x, to_numpy=False):
+        quantiles = self.forward(x)
+        return quantiles.view((-1, self.n_actions, self.n_quantiles))
