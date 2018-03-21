@@ -162,3 +162,25 @@ class CategoricalConvNet(nn.Module, CategoricalNet):
         y = y.view(y.size(0), -1)
         y = F.relu(self.fc4(y))
         return y
+
+class QuantileConvNet(nn.Module, QuantileNet):
+    def __init__(self, in_channels, n_actions, n_quantiles, gpu=0):
+        super(QuantileConvNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 64, 512)
+        self.fc5 = nn.Linear(512, n_actions * n_quantiles)
+        self.n_actions = n_actions
+        self.n_quantiles = n_quantiles
+        BasicNet.__init__(self, gpu)
+
+    def forward(self, x):
+        x = self.variable(x)
+        y = F.relu(self.conv1(x))
+        y = F.relu(self.conv2(y))
+        y = F.relu(self.conv3(y))
+        y = y.view(y.size(0), -1)
+        y = F.relu(self.fc4(y))
+        y = self.fc5(y)
+        return y
