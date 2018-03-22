@@ -15,7 +15,8 @@ Implemented algorithms:
 * Distributed Deep Deterministic Policy Gradient (Distributed DDPG, aka D3PG)
 * Parallelized Proximal Policy Optimization (P3O, similar to DPPO)
 * Action Conditional Video Prediction
-* Categorical DQN (C51, Distributional DQN)
+* Categorical DQN (C51, Distributional DQN with KL Distance)
+* Quantile Regression DQN (Distributional DQN with Wasserstein Distance)
 * N-Step DQN (similar to A2C)
 
 # Curves
@@ -94,6 +95,10 @@ Prediction is sampled after 110K iterations and I only implemented one-step trai
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/CategoricalDQN.png)
 A deterministic test episode is triggered every 10 episodes. 2.5M steps and 14 hours in total.
 
+## Quantile Regression DQN
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/QRDQN.png)
+A deterministic test episode is triggered every 10 episodes. 2M steps and 8 hours in total.
+
 ## A2C & N-Step DQN
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/A2C-NStepQ.png)
 Online training progression of a single run. Entropy regularization is used for A2C, resulting in the variance in the curve. 
@@ -128,3 +133,4 @@ Online training progression of a single run. Entropy regularization is used for 
 * [Emergence of Locomotion Behaviours in Rich Environments](https://arxiv.org/abs/1707.02286)
 * [Action-Conditional Video Prediction using Deep Networks in Atari Games](https://arxiv.org/abs/1507.08750)
 * [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)
+* [Distributional Reinforcement Learning with Quantile Regression](https://arxiv.org/abs/1710.10044)
