@@ -437,7 +437,7 @@ def quantile_regression_dqn_pixel_atari(name):
     action_dim = config.task_fn().action_dim
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
     config.network_fn = lambda: QuantileConvNet(config.history_length, action_dim, config.num_quantiles, gpu=0)
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
     config.reward_shift_fn = lambda r: np.sign(r)
     config.discount = 0.99
