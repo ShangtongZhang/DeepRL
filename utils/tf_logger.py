@@ -12,6 +12,8 @@ class Logger(object):
     def __init__(self, log_dir, vanilla_logger, skip=False):
         try:
             for f in os.listdir(log_dir):
+                if not f.startswith('events'):
+                    continue
                 os.remove('%s/%s' % (log_dir, f))
         except IOError:
             os.mkdir(log_dir)

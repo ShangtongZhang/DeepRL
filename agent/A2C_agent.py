@@ -81,7 +81,7 @@ class A2CAgent:
             actions = self.network.tensor(actions, torch.LongTensor).unsqueeze(1)
             next_value = rollout[i + 1][2]
             returns = rewards + config.discount * terminals * returns
-            if config.use_gae:
+            if not config.use_gae:
                 advantages = returns - value.data
             else:
                 td_error = rewards + config.discount * terminals * next_value.data - value.data

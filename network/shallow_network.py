@@ -53,7 +53,7 @@ class ActorCriticFCNet(nn.Module, ActorCriticNet):
     def forward(self, x, update_LSTM=True):
         x = self.variable(x)
         x = F.relu(self.fc1(x))
-        phi = self.fc2(x)
+        phi = F.relu(self.fc2(x))
         return phi
 
 class CategoricalFCNet(nn.Module, CategoricalNet):
