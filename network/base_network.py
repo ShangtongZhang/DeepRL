@@ -88,7 +88,7 @@ class DuelingNet(BasicNet):
         phi = self.forward(x)
         value = self.fc_value(phi)
         advantange = self.fc_advantage(phi)
-        q = value.expand_as(advantange) + (advantange - advantange.mean(1).expand_as(advantange))
+        q = value.expand_as(advantange) + (advantange - advantange.mean(1, keepdim=True).expand_as(advantange))
         if to_numpy:
             return q.cpu().data.numpy()
         return q
