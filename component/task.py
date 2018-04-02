@@ -9,6 +9,8 @@ import numpy as np
 from .atari_wrapper import *
 import multiprocessing as mp
 import sys
+from .bench import Monitor
+from utils import *
 
 class BasicTask:
     def __init__(self, max_steps=sys.maxsize):
@@ -31,6 +33,9 @@ class BasicTask:
 
     def random_action(self):
         return self.env.action_space.sample()
+
+    def set_monitor(self, filename):
+        self.env = Monitor(self.env, filename)
 
 class ClassicalControl(BasicTask):
     def __init__(self, name='CartPole-v0', max_steps=200):
@@ -138,9 +143,11 @@ class Roboschool(BasicTask):
     def step(self, action):
         return BasicTask.step(self, np.clip(action, -1, 1))
 
-def sub_task(parent_pipe, pipe, task_fn):
+def sub_task(parent_pipe, pipe, task_fn, filename=None):
     parent_pipe.close()
     task = task_fn()
+    if filename is not None:
+        task.set_monitor(filename)
     task.env.seed(np.random.randint(0, sys.maxsize))
     while True:
         op, data = pipe.recv()
@@ -155,12 +162,17 @@ def sub_task(parent_pipe, pipe, task_fn):
             assert False, 'Unknown Operation'
 
 class ParallelizedTask:
-    def __init__(self, task_fn, num_workers):
+    def __init__(self, task_fn, num_workers, tag='vanilla'):
         self.task_fn = task_fn
         self.task = task_fn()
         self.name = self.task.name
+        # date = datetime.datetime.now().strftime("%I:%M%p-on-%B-%d-%Y")
+        mkdir('./log/%s-%s' % (self.name, tag))
+        filenames = ['./log/%s-%s/worker-%d' % (self.name, tag, i)
+                     for i in range(num_workers)]
         self.pipes, worker_pipes = zip(*[mp.Pipe() for _ in range(num_workers)])
-        args = [(p, wp, task_fn) for p, wp in zip(self.pipes, worker_pipes)]
+        args = [(p, wp, task_fn, filename)
+                for p, wp, filename in zip(self.pipes, worker_pipes, filenames)]
         self.workers = [mp.Process(target=sub_task, args=arg) for arg in args]
         for p in self.workers: p.start()
         for p in worker_pipes: p.close()

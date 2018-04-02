@@ -11,8 +11,9 @@ from utils import *
 import model.action_conditional_video_prediction as acvp
 
 def dqn_cart_pole():
+    game = 'CartPole-v0'
     config = Config()
-    config.task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
+    config.task_fn = lambda: ClassicalControl(game, max_steps=200)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: FCNet([4, 50, 200, 2])
     # config.network_fn = lambda: DuelingFCNet([8, 50, 200, 2])
