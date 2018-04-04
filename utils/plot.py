@@ -50,7 +50,7 @@ def plot_curves(xy_list, xaxis, title):
     plt.ylabel("Episode Rewards")
     plt.tight_layout()
 
-def plot_results(dirs, num_timesteps, xaxis, task_name):
+def plot_results(dirs, num_timesteps=1e8, xaxis=X_TIMESTEPS, task_name=''):
     tslist = []
     for dir in dirs:
         ts = load_results(dir)

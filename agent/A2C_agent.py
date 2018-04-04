@@ -52,6 +52,7 @@ class A2CAgent:
         rollout = []
         states = self.states
         for i in range(config.rollout_length):
+            states = self.task.normalize_state(states)
             prob, log_prob, value = self.network.predict(states)
             actions = [self.policy.sample(p) for p in prob.data.cpu().numpy()]
             actions = config.action_shift_fn(actions)
@@ -68,7 +69,7 @@ class A2CAgent:
             states = next_states
 
         self.states = states
-        _, _, pending_value = self.network.predict(states)
+        _, _, pending_value = self.network.predict(self.task.normalize_state(states))
         rollout.append([None, None, pending_value, None, None, None])
 
         processed_rollout = [None] * (len(rollout) - 1)

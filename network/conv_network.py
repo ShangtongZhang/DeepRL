@@ -184,3 +184,59 @@ class QuantileConvNet(nn.Module, QuantileNet):
         y = F.relu(self.fc4(y))
         y = self.fc5(y)
         return y
+
+class GammaConvNet(nn.Module, GammaNet):
+    def __init__(self, in_channels, action_dim, num_peers, gpu=-1):
+        super(GammaConvNet, self).__init__()
+        hidden_size = 512
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 32, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 32, hidden_size)
+
+        self.fc_actor = nn.Linear(hidden_size * num_peers, action_dim)
+        self.fc_critic = nn.Linear(hidden_size * num_peers, 1)
+
+        self.fc_attention = nn.Linear(hidden_size, num_peers - 1)
+        self.fc_q = nn.Linear(hidden_size, action_dim)
+
+        self.fc_actor_main = nn.Linear(hidden_size, action_dim)
+        self.fc_critic_main = nn.Linear(hidden_size, 1)
+        self.compute_attention = self.softmax_attention
+        BasicNet.__init__(self, gpu=gpu)
+
+    def forward(self, x, update_lstm=True):
+        x = self.variable(x)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = x.view(x.size(0), -1)
+        phi = F.relu(self.fc4(x))
+        return phi
+
+class GammaAttentionConvNet(nn.Module, GammaAttentionNet):
+    def __init__(self, in_channels, action_dim, num_peers, gpu=-1):
+        super(GammaAttentionConvNet, self).__init__()
+        hidden_size = 512
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 32, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 32, hidden_size)
+
+        self.fc_actor = nn.Linear(hidden_size, action_dim)
+        self.fc_critic = nn.Linear(hidden_size, 1)
+
+        self.fc_attention = nn.Linear(hidden_size, num_peers - 1)
+        self.fc_q = nn.Linear(hidden_size, action_dim)
+
+        BasicNet.__init__(self, gpu=gpu)
+        self.fc_attention.weight.data.zero_()
+
+    def forward(self, x, update_lstm=True):
+        x = self.variable(x)
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        x = x.view(x.size(0), -1)
+        phi = F.relu(self.fc4(x))
+        return phi

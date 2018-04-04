@@ -11,6 +11,8 @@ import multiprocessing as mp
 import sys
 from .bench import Monitor
 from utils import *
+import datetime
+import uuid
 
 class BasicTask:
     def __init__(self, max_steps=sys.maxsize):
@@ -34,9 +36,6 @@ class BasicTask:
     def random_action(self):
         return self.env.action_space.sample()
 
-    def set_monitor(self, filename):
-        self.env = Monitor(self.env, filename)
-
 class ClassicalControl(BasicTask):
     def __init__(self, name='CartPole-v0', max_steps=200):
         BasicTask.__init__(self, max_steps)
@@ -57,23 +56,22 @@ class LunarLander(BasicTask):
         self.state_dim = self.env.observation_space.shape[0]
 
 class PixelAtari(BasicTask):
-    def __init__(self, name, no_op, frame_skip, normalized_state=True,
-                 frame_size=84, max_steps=10000, history_length=1):
+    def __init__(self, name, seed=0, log_file=None, max_steps=sys.maxsize,
+                 frame_skip=4, history_length=4):
         BasicTask.__init__(self, max_steps)
-        self.normalized_state = normalized_state
-        self.name = name
-        env = gym.make(name)
-        assert 'NoFrameskip' in env.spec.id
-        env = EpisodicLifeEnv(env)
-        env = NoopResetEnv(env, noop_max=no_op)
-        env = MaxAndSkipEnv(env, skip=frame_skip)
-        if 'FIRE' in env.unwrapped.get_action_meanings():
-            env = FireResetEnv(env)
-        env = ProcessFrame(env, frame_size)
-        if normalized_state:
-            env = NormalizeFrame(env)
-        self.env = StackFrame(env, history_length)
+        env = make_atari(name, frame_skip)
+        env.seed(seed)
+        if log_file is None:
+            log_dir = '%s-%s' % (
+                name,
+                datetime.datetime.now().strftime("%y%m%d-%-H%M%S"))
+            mkdir('./log/%s' % log_dir)
+            log_file = './log/%s/%s' % (log_dir, uuid.uuid1())
+        env = Monitor(env, log_file)
+        env = wrap_deepmind(env, history_length=history_length)
+        self.env = env
         self.action_dim = self.env.action_space.n
+        self.name = name
 
     def normalize_state(self, state):
         return np.asarray(state) / 255.0
@@ -143,12 +141,12 @@ class Roboschool(BasicTask):
     def step(self, action):
         return BasicTask.step(self, np.clip(action, -1, 1))
 
-def sub_task(parent_pipe, pipe, task_fn, filename=None):
+def sub_task(parent_pipe, pipe, task_fn, rank, log_dir):
+    np.random.seed()
+    seed = np.random.randint(0, sys.maxsize)
     parent_pipe.close()
-    task = task_fn()
-    if filename is not None:
-        task.set_monitor(filename)
-    task.env.seed(np.random.randint(0, sys.maxsize))
+    task = task_fn(log_file=os.path.join(log_dir, str(rank)))
+    task.env.seed(seed)
     while True:
         op, data = pipe.recv()
         if op == 'step':
@@ -166,13 +164,11 @@ class ParallelizedTask:
         self.task_fn = task_fn
         self.task = task_fn()
         self.name = self.task.name
-        # date = datetime.datetime.now().strftime("%I:%M%p-on-%B-%d-%Y")
-        mkdir('./log/%s-%s' % (self.name, tag))
-        filenames = ['./log/%s-%s/worker-%d' % (self.name, tag, i)
-                     for i in range(num_workers)]
+        log_dir = './log/%s-%s' % (self.name, tag)
+        mkdir(log_dir)
         self.pipes, worker_pipes = zip(*[mp.Pipe() for _ in range(num_workers)])
-        args = [(p, wp, task_fn, filename)
-                for p, wp, filename in zip(self.pipes, worker_pipes, filenames)]
+        args = [(p, wp, task_fn, rank, log_dir)
+                for rank, (p, wp) in enumerate(zip(self.pipes, worker_pipes))]
         self.workers = [mp.Process(target=sub_task, args=arg) for arg in args]
         for p in self.workers: p.start()
         for p in worker_pipes: p.close()
@@ -200,3 +196,6 @@ class ParallelizedTask:
         for pipe in self.pipes:
             pipe.send(('exit', None))
         for p in self.workers: p.join()
+
+    def normalize_state(self, state):
+        return self.task.normalize_state(state)

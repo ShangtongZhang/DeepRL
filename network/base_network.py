@@ -106,3 +106,78 @@ class QuantileNet(BasicNet):
     def predict(self, x, to_numpy=False):
         quantiles = self.forward(x)
         return quantiles.view((-1, self.n_actions, self.n_quantiles))
+
+class GammaNet(BasicNet):
+    def predict(self, features, aux_features):
+        attention = self.compute_attention(features)
+
+        aux_features = torch.stack(aux_features)
+        aux_features = aux_features * attention.t().unsqueeze(-1)
+        aux_features = aux_features.transpose(0, 1).contiguous().sum(1)
+
+        phi = features + aux_features
+        pre_prob = self.fc_actor(phi)
+        prob = F.softmax(pre_prob, dim=1)
+        log_prob = F.log_softmax(pre_prob, dim=1)
+        value = self.fc_critic(phi)
+        return prob, log_prob, value
+
+    def compute_attention(self, phi):
+        attention = self.fc_attention(phi)
+        attention = F.sigmoid(attention)
+        return attention
+
+    def q(self, x):
+        return self.fc_q(x)
+
+    def predict(self, features, aux_features):
+        aux_features.append(features)
+        phi = torch.cat(aux_features, dim=1)
+
+        pre_prob = self.fc_actor(phi)
+        prob = F.softmax(pre_prob, dim=1)
+        log_prob = F.log_softmax(pre_prob, dim=1)
+        value = self.fc_critic(phi)
+        return prob, log_prob, value
+
+    def feature(self, x):
+        return self.forward(x)
+
+
+class GammaAttentionNet(BasicNet):
+    def predict(self, features, aux_features):
+        attention = self.compute_attention(features)
+
+        aux_features = torch.stack(aux_features)
+        aux_features = aux_features * attention.t().unsqueeze(-1)
+        aux_features = aux_features.transpose(0, 1).contiguous().sum(1)
+
+        phi = features + aux_features
+        pre_prob = self.fc_actor(phi)
+        prob = F.softmax(pre_prob, dim=1)
+        log_prob = F.log_softmax(pre_prob, dim=1)
+        value = self.fc_critic(phi)
+        return prob, log_prob, value
+
+    def compute_attention(self, phi):
+        attention = self.fc_attention(phi)
+        # attention = F.relu(attention)
+        # attention = F.tanh(attention)
+        # attention = (attention + 1) / 0.5
+        # attention = F.tanh(attention)
+        # attention = F.tanh(attention)
+        # attention = F.sigmoid(attention)
+        attention = F.softmax(attention, dim=1)
+        # max_attention = 10
+        # cond = (attention < max_attention).float().detach()
+        # attention = attention * cond + max_attention * (1 - cond)
+        # cond = (attention > -max_attention).float().detach()
+        # attention = attention * cond + -max_attention * (1 - cond)
+        # self.attention = attention.data.cpu().numpy()
+        return attention
+
+    def q(self, x):
+        return self.fc_q(x)
+
+    def feature(self, x):
+        return self.forward(x)

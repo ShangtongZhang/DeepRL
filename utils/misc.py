@@ -77,7 +77,17 @@ def run_iterations(agent):
                 pickle.dump({'rewards': rewards,
                              'steps': steps}, f)
             agent.save('data/%s-%s-model-%s.bin' % (agent_name, config.tag, agent.task.name))
+        if config.test_interval and iteration % config.test_interval == 0:
+            test_rewards, test_steps  = agent.evaluate()
+            config.logger.info('total steps %d, test reward %f, test steps %d' % (
+                agent.total_steps, test_rewards, test_steps
+            ))
         iteration += 1
+        if config.max_steps and agent.total_steps >= config.max_steps:
+            agent.close()
+            break
+
+    return steps, rewards
 
 def sync_grad(target_network, src_network):
     for param, src_param in zip(target_network.parameters(), src_network.parameters()):

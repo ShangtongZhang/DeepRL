@@ -225,12 +225,17 @@ class GeneralReplay:
 
     def feed(self, experiences):
         for experience in zip(*experiences):
-            self.buffer.append(experience)
-            if len(self.buffer) > self.memory_size:
-                del self.buffer[0]
+            self.feed_single(experience)
 
-    def sample(self):
-        sampled = zip(*random.sample(self.buffer, self.batch_size))
+    def feed_single(self, experience):
+        self.buffer.append(experience)
+        if len(self.buffer) > self.memory_size:
+            del self.buffer[0]
+
+    def sample(self, batch_size=None):
+        if batch_size is None:
+            batch_size = self.batch_size
+        sampled = zip(*random.sample(self.buffer, batch_size))
         return sampled
 
     def clear(self):
@@ -238,3 +243,42 @@ class GeneralReplay:
 
     def full(self):
         return len(self.buffer) == self.memory_size
+
+    def size(self):
+        return len(self.buffer)
+
+    def empty(self):
+        return not len(self.buffer)
+
+class SkewedReplay:
+    def __init__(self, memory_size, batch_size):
+        memory_size = memory_size / 2
+        self.non_zero_reward = GeneralReplay(memory_size, batch_size / 2)
+        self.zero_reward = GeneralReplay(memory_size, batch_size / 2)
+        self.batch_size = batch_size
+
+    def feed(self, experiences):
+        experiences = zip(*experiences)
+        for exp in experiences:
+            if np.abs(exp[2]) < 1e-5:
+                self.zero_reward.feed_single(exp)
+            else:
+                self.non_zero_reward.feed_single(exp)
+
+    def sample(self):
+        if self.zero_reward.empty():
+            batch = self.non_zero_reward.sample(self.batch_size)
+        elif self.non_zero_reward.empty():
+            batch = self.zero_reward.sample(self.batch_size)
+        else:
+            non_zero_batch_size = min(self.non_zero_reward.size(), self.batch_size / 2)
+            zero_batch_size = min(self.zero_reward.size(), self.batch_size / 2)
+            batch1 = self.zero_reward.sample(zero_batch_size)
+            batch2 = self.non_zero_reward.sample(non_zero_batch_size)
+            batch = list(map(lambda seq: np.concatenate([np.asarray(x) for x in seq], axis=0), zip(batch1, batch2)))
+        batch = list(map(lambda x: np.asarray(x), batch))
+        return batch
+
+
+
+

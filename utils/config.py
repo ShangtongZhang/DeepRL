@@ -24,7 +24,7 @@ class Config:
         self.exploration_steps = 0
         self.logger = None
         self.history_length = 1
-        self.test_interval = 100
+        self.test_interval = 0
         self.test_repetitions = 50
         self.double_q = False
         self.tag = 'vanilla'

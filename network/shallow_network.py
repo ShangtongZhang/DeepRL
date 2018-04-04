@@ -40,7 +40,7 @@ class DuelingFCNet(nn.Module, DuelingNet):
 
 # Network for CartPole with actor critic
 class ActorCriticFCNet(nn.Module, ActorCriticNet):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, gpu=-1):
         super(ActorCriticFCNet, self).__init__()
         hidden_size1 = 64
         hidden_size2 = 64
@@ -48,7 +48,7 @@ class ActorCriticFCNet(nn.Module, ActorCriticNet):
         self.fc2 = nn.Linear(hidden_size1, hidden_size2)
         self.fc_actor = nn.Linear(hidden_size2, action_dim)
         self.fc_critic = nn.Linear(hidden_size2, 1)
-        BasicNet.__init__(self, False)
+        BasicNet.__init__(self, gpu=gpu)
 
     def forward(self, x, update_LSTM=True):
         x = self.variable(x)
@@ -92,3 +92,46 @@ class QuantileFCNet(nn.Module, QuantileNet):
         phi = F.relu(self.fc2(phi))
         quantiles = self.fc3(phi)
         return quantiles
+
+class GammaFCNet(nn.Module, GammaNet):
+    def __init__(self, state_dim, action_dim, num_peers, gpu=-1):
+        super(GammaFCNet, self).__init__()
+        hidden_size = 64
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc_actor = nn.Linear(hidden_size * num_peers, action_dim)
+        self.fc_critic = nn.Linear(hidden_size * num_peers, 1)
+
+        self.fc_attention = nn.Linear(hidden_size, num_peers - 1)
+        self.fc_q = nn.Linear(hidden_size, action_dim)
+
+        # self.fc_actor_main = nn.Linear(hidden_size, action_dim)
+        # self.fc_critic_main = nn.Linear(hidden_size, 1)
+        self.compute_attention = self.softmax_attention
+        BasicNet.__init__(self, gpu=gpu)
+
+    def forward(self, x, update_lstm=True):
+        x = self.variable(x)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        return x
+
+class GammaAttentionFCNet(nn.Module, GammaAttentionNet):
+    def __init__(self, state_dim, action_dim, num_peers, gpu=-1):
+        super(GammaAttentionFCNet, self).__init__()
+        hidden_size = 64
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.fc_actor = nn.Linear(hidden_size, action_dim)
+        self.fc_critic = nn.Linear(hidden_size, 1)
+
+        self.fc_attention = nn.Linear(hidden_size, num_peers - 1)
+        self.fc_q = nn.Linear(hidden_size, action_dim)
+        BasicNet.__init__(self, gpu=gpu)
+        self.fc_attention.weight.data.zero_()
+
+    def forward(self, x, update_lstm=True):
+        x = self.variable(x)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        return x

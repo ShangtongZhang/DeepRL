@@ -40,7 +40,7 @@ class NStepDQNAgent:
         rollout = []
         states = self.states
         for i in range(config.rollout_length):
-            q = self.learning_network.predict(states)
+            q = self.learning_network.predict(self.task.normalize_state(states))
             actions = [self.policy.sample(v) for v in q.data.cpu().numpy()]
             actions = config.action_shift_fn(actions)
             next_states, rewards, terminals, _ = self.task.step(actions)
@@ -63,7 +63,7 @@ class NStepDQNAgent:
         self.states = states
 
         processed_rollout = [None] * (len(rollout))
-        returns = self.target_network.predict(states).data
+        returns = self.target_network.predict(self.task.normalize_state(states)).data
         returns, _ = torch.max(returns, dim=1, keepdim=True)
         for i in reversed(range(len(rollout))):
             q, actions, rewards, terminals = rollout[i]
