@@ -10,14 +10,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-# Base class for all kinds of network
 class BasicNet:
-    def __init__(self, gpu, LSTM=False):
+    def __init__(self, gpu):
         if not torch.cuda.is_available():
             gpu = -1
         self.gpu = gpu
-        self.LSTM = LSTM
-        self.init_weights()
         if self.gpu >= 0:
             self.cuda(self.gpu)
 
@@ -41,51 +38,26 @@ class BasicNet:
             x = x.cuda(self.gpu)
         return x
 
-    def reset(self, terminal):
-        if not self.LSTM:
-            return
-        if terminal:
-            self.h.data.zero_()
-            self.c.data.zero_()
-        self.h = Variable(self.h.data)
-        self.c = Variable(self.c.data)
-
-    def init_weights(self):
-        for layer in self.children():
-            relu_gain = nn.init.calculate_gain('relu')
-            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
-                nn.init.orthogonal(layer.weight.data, relu_gain)
-            nn.init.constant(layer.bias.data, 0)
-
-# Base class for value based methods
 class VanillaNet(BasicNet):
+    def __init__(self, feature_dim, output_dim, gpu):
+        self.fc_head = nn.Linear(feature_dim, output_dim)
+        BasicNet.__init__(self, gpu)
+
     def predict(self, x, to_numpy=False):
-        y = self.forward(x)
+        phi = self.feature(x)
+        y = self.fc_head(phi)
         if to_numpy:
-            if type(y) is list:
-                y = [y_.cpu().data.numpy() for y_ in y]
-            else:
-                y = y.cpu().data.numpy()
+            y = y.cpu().data.numpy()
         return y
 
-# Base class for actor critic method
-class ActorCriticNet(BasicNet):
-    def predict(self, x):
-        phi = self.forward(x, True)
-        pre_prob = self.fc_actor(phi)
-        prob = F.softmax(pre_prob, dim=1)
-        log_prob = F.log_softmax(pre_prob, dim=1)
-        value = self.fc_critic(phi)
-        return prob, log_prob, value
-
-    def critic(self, x):
-        phi = self.forward(x, False)
-        return self.fc_critic(phi)
-
-# Base class for dueling architecture
 class DuelingNet(BasicNet):
+    def __init__(self, feature_dim, action_dim, gpu):
+        self.fc_value = nn.Linear(feature_dim, 1)
+        self.fc_advantage = nn.Linear(feature_dim, action_dim)
+        BasicNet.__init__(self, gpu)
+
     def predict(self, x, to_numpy=False):
-        phi = self.forward(x)
+        phi = self.feature(x)
         value = self.fc_value(phi)
         advantange = self.fc_advantage(phi)
         q = value.expand_as(advantange) + (advantange - advantange.mean(1, keepdim=True).expand_as(advantange))
@@ -93,91 +65,83 @@ class DuelingNet(BasicNet):
             return q.cpu().data.numpy()
         return q
 
-class CategoricalNet(BasicNet):
+class ActorCriticNet(BasicNet):
+    def __init__(self, feature_dim, action_dim, gpu):
+        self.fc_actor = nn.Linear(feature_dim, action_dim)
+        self.fc_critic = nn.Linear(feature_dim, 1)
+        BasicNet.__init__(self, gpu)
+
     def predict(self, x, to_numpy=False):
-        phi = self.forward(x)
-        pre_prob = self.fc_categorical(phi).view((-1, self.n_actions, self.n_atoms))
+        phi = self.feature(x)
+        pre_prob = self.fc_actor(phi)
+        prob = F.softmax(pre_prob, dim=1)
+        log_prob = F.log_softmax(pre_prob, dim=1)
+        value = self.fc_critic(phi)
+        if to_numpy:
+            return prob.cpu().data.numpy()
+        return prob, log_prob, value
+
+class CategoricalNet(BasicNet):
+    def __init__(self, feature_dim, action_dim, num_atoms, gpu):
+        self.fc_categorical = nn.Linear(feature_dim, action_dim * num_atoms)
+        self.action_dim = action_dim
+        self.num_atoms = num_atoms
+        BasicNet.__init__(self, gpu)
+
+    def predict(self, x, to_numpy=False):
+        phi = self.feature(x)
+        pre_prob = self.fc_categorical(phi).view((-1, self.action_dim, self.num_atoms))
         prob = F.softmax(pre_prob, dim=-1)
         if to_numpy:
             return prob.cpu().data.numpy()
         return prob
 
 class QuantileNet(BasicNet):
+    def __init__(self, feature_dim, action_dim, num_quantiles, gpu):
+        self.fc_quantiles = nn.Linear(feature_dim, action_dim * num_quantiles)
+        self.action_dim = action_dim
+        self.num_quantiles = num_quantiles
+        BasicNet.__init__(self, gpu)
+
     def predict(self, x, to_numpy=False):
-        quantiles = self.forward(x)
-        return quantiles.view((-1, self.n_actions, self.n_quantiles))
+        phi = self.feature(x)
+        quantiles = self.fc_quantiles(phi)
+        quantiles = quantiles.view((-1, self.action_dim, self.num_quantiles))
+        if to_numpy:
+            quantiles = quantiles.data.cpu().numpy()
+        return quantiles
 
-class GammaNet(BasicNet):
-    def predict(self, features, aux_features):
-        attention = self.compute_attention(features)
+class NatureConvNet(nn.Module):
+    def __init__(self, in_channels):
+        super(NatureConvNet, self).__init__()
+        self.feature_dim = 512
+        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        self.fc4 = nn.Linear(7 * 7 * 64, self.feature_dim)
 
-        aux_features = torch.stack(aux_features)
-        aux_features = aux_features * attention.t().unsqueeze(-1)
-        aux_features = aux_features.transpose(0, 1).contiguous().sum(1)
+        for layer in self.children():
+            relu_gain = nn.init.calculate_gain('relu')
+            if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.Linear):
+                nn.init.orthogonal(layer.weight.data, relu_gain)
+            nn.init.constant(layer.bias.data, 0)
 
-        phi = features + aux_features
-        pre_prob = self.fc_actor(phi)
-        prob = F.softmax(pre_prob, dim=1)
-        log_prob = F.log_softmax(pre_prob, dim=1)
-        value = self.fc_critic(phi)
-        return prob, log_prob, value
+    def forward(self, x):
+        y = F.relu(self.conv1(x))
+        y = F.relu(self.conv2(y))
+        y = F.relu(self.conv3(y))
+        y = y.view(y.size(0), -1)
+        y = F.relu(self.fc4(y))
+        return y
 
-    def compute_attention(self, phi):
-        attention = self.fc_attention(phi)
-        attention = F.sigmoid(attention)
-        return attention
+class TwoLayerFCNet(nn.Module):
+    def __init__(self, state_dim, hidden_size=64, gate=F.relu):
+        super(TwoLayerFCNet, self).__init__()
+        self.fc1 = nn.Linear(state_dim, hidden_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size)
+        self.gate = gate
 
-    def q(self, x):
-        return self.fc_q(x)
-
-    def predict(self, features, aux_features):
-        aux_features.append(features)
-        phi = torch.cat(aux_features, dim=1)
-
-        pre_prob = self.fc_actor(phi)
-        prob = F.softmax(pre_prob, dim=1)
-        log_prob = F.log_softmax(pre_prob, dim=1)
-        value = self.fc_critic(phi)
-        return prob, log_prob, value
-
-    def feature(self, x):
-        return self.forward(x)
-
-
-class GammaAttentionNet(BasicNet):
-    def predict(self, features, aux_features):
-        attention = self.compute_attention(features)
-
-        aux_features = torch.stack(aux_features)
-        aux_features = aux_features * attention.t().unsqueeze(-1)
-        aux_features = aux_features.transpose(0, 1).contiguous().sum(1)
-
-        phi = features + aux_features
-        pre_prob = self.fc_actor(phi)
-        prob = F.softmax(pre_prob, dim=1)
-        log_prob = F.log_softmax(pre_prob, dim=1)
-        value = self.fc_critic(phi)
-        return prob, log_prob, value
-
-    def compute_attention(self, phi):
-        attention = self.fc_attention(phi)
-        # attention = F.relu(attention)
-        # attention = F.tanh(attention)
-        # attention = (attention + 1) / 0.5
-        # attention = F.tanh(attention)
-        # attention = F.tanh(attention)
-        # attention = F.sigmoid(attention)
-        attention = F.softmax(attention, dim=1)
-        # max_attention = 10
-        # cond = (attention < max_attention).float().detach()
-        # attention = attention * cond + max_attention * (1 - cond)
-        # cond = (attention > -max_attention).float().detach()
-        # attention = attention * cond + -max_attention * (1 - cond)
-        # self.attention = attention.data.cpu().numpy()
-        return attention
-
-    def q(self, x):
-        return self.fc_q(x)
-
-    def feature(self, x):
-        return self.forward(x)
+    def forward(self, x):
+        y = self.gate(self.fc1(x))
+        y = self.gate(self.fc2(y))
+        return y

@@ -6,237 +6,52 @@
 
 from .base_network import *
 
-# Network for pixel Atari game with value based methods
-class NatureConvNet(nn.Module, VanillaNet):
-    def __init__(self, in_channels, n_actions, gpu=0):
-        super(NatureConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 64, 512)
-        self.fc5 = nn.Linear(512, n_actions)
-        BasicNet.__init__(self, gpu)
+class ConvNet(nn.Module, VanillaNet):
+    def __init__(self, in_channels, action_dim, gpu=-1):
+        super(ConvNet, self).__init__()
+        self.body = NatureConvNet(in_channels)
+        VanillaNet.__init__(self, self.body.feature_dim, action_dim, gpu)
 
-    def forward(self, x):
+    def feature(self, x):
         x = self.variable(x)
-        y = F.relu(self.conv1(x))
-        y = F.relu(self.conv2(y))
-        y = F.relu(self.conv3(y))
-        y = y.view(y.size(0), -1)
-        y = F.relu(self.fc4(y))
-        return self.fc5(y)
+        return self.body(x)
 
-# Network for pixel Atari game with dueling architecture
-class DuelingNatureConvNet(nn.Module, DuelingNet):
-    def __init__(self, in_channels, n_actions, gpu=0):
-        super(DuelingNatureConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 64, 512)
-        self.fc_advantage = nn.Linear(512, n_actions)
-        self.fc_value = nn.Linear(512, 1)
-        BasicNet.__init__(self, gpu)
+class DuelingConvNet(nn.Module, DuelingNet):
+    def __init__(self, in_channels, action_dim, gpu=-1):
+        super(DuelingConvNet, self).__init__()
+        self.body = NatureConvNet(in_channels)
+        DuelingNet.__init__(self, self.body.feature_dim, action_dim, gpu)
 
-    def forward(self, x):
+    def feature(self, x):
         x = self.variable(x)
-        y = F.relu(self.conv1(x))
-        y = F.relu(self.conv2(y))
-        y = F.relu(self.conv3(y))
-        y = y.view(y.size(0), -1)
-        phi = F.relu(self.fc4(y))
-        return phi
+        return self.body(x)
 
-class OpenAIActorCriticConvNet(nn.Module, ActorCriticNet):
-    def __init__(self,
-                 in_channels,
-                 n_actions,
-                 LSTM=False,
-                 gpu=-1):
-        super(OpenAIActorCriticConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, 3, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
-        self.conv4 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
+class ActorCriticConvNet(nn.Module, ActorCriticNet):
+    def __init__(self, in_channels, action_dim, gpu=-1):
+        super(ActorCriticConvNet, self).__init__()
+        self.body = NatureConvNet(in_channels)
+        ActorCriticNet.__init__(self, self.body.feature_dim, action_dim, gpu)
 
-        self.LSTM = LSTM
-        hidden_units = 256
-
-        if LSTM:
-            self.layer5 = nn.LSTMCell(32 * 3 * 3, hidden_units)
-        else:
-            self.layer5 = nn.Linear(32 * 3 * 3, hidden_units)
-
-        self.fc_actor = nn.Linear(hidden_units, n_actions)
-        self.fc_critic = nn.Linear(hidden_units, 1)
-        BasicNet.__init__(self, gpu=gpu, LSTM=LSTM)
-        if LSTM:
-            self.h = self.variable(np.zeros((1, hidden_units)))
-            self.c = self.variable(np.zeros((1, hidden_units)))
-
-    def forward(self, x, update_LSTM=True):
+    def feature(self, x):
         x = self.variable(x)
-        y = F.elu(self.conv1(x))
-        y = F.elu(self.conv2(y))
-        y = F.elu(self.conv3(y))
-        y = F.elu(self.conv4(y))
-        y = y.view(y.size(0), -1)
-        if self.LSTM:
-            h, c = self.layer5(y, (self.h, self.c))
-            if update_LSTM:
-                self.h = h
-                self.c = c
-            phi = h
-        else:
-            phi = F.elu(self.layer5(y))
-        return phi
-
-class OpenAIConvNet(nn.Module, VanillaNet):
-    def __init__(self,
-                 in_channels,
-                 n_actions,
-                 gpu=0):
-        super(OpenAIConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, 3, stride=2, padding=1)
-        self.conv2 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
-        self.conv4 = nn.Conv2d(32, 32, 3, stride=2, padding=1)
-
-        hidden_units = 256
-        self.layer5 = nn.Linear(32 * 3 * 3, hidden_units)
-        self.fc6 = nn.Linear(hidden_units, n_actions)
-
-        BasicNet.__init__(self, gpu=gpu, LSTM=False)
-
-    def forward(self, x, update_LSTM=True):
-        x = self.variable(x)
-        y = F.elu(self.conv1(x))
-        y = F.elu(self.conv2(y))
-        y = F.elu(self.conv3(y))
-        y = F.elu(self.conv4(y))
-        y = y.view(y.size(0), -1)
-        phi = F.elu(self.layer5(y))
-        return self.fc6(phi)
-
-class NatureActorCriticConvNet(nn.Module, ActorCriticNet):
-    def __init__(self,
-                 in_channels,
-                 n_actions,
-                 gpu=-1):
-        super(NatureActorCriticConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 32, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 32, 512)
-
-        self.fc_actor = nn.Linear(512, n_actions)
-        self.fc_critic = nn.Linear(512, 1)
-        BasicNet.__init__(self, gpu=gpu)
-
-    def forward(self, x, _):
-        x = self.variable(x)
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.view(x.size(0), -1)
-        phi = F.relu(self.fc4(x))
-        return phi
+        return self.body(x)
 
 class CategoricalConvNet(nn.Module, CategoricalNet):
-    def __init__(self, in_channels, n_actions, n_atoms, gpu=0):
+    def __init__(self, in_channels, n_actions, n_atoms, gpu=-1):
         super(CategoricalConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 64, 512)
-        self.fc_categorical = nn.Linear(512, n_actions * n_atoms)
-        self.n_actions = n_actions
-        self.n_atoms = n_atoms
-        BasicNet.__init__(self, gpu)
+        self.body = NatureConvNet(in_channels)
+        CategoricalNet.__init__(self, self.body.feature_dim, n_actions, n_atoms, gpu)
 
-    def forward(self, x):
+    def feature(self, x):
         x = self.variable(x)
-        y = F.relu(self.conv1(x))
-        y = F.relu(self.conv2(y))
-        y = F.relu(self.conv3(y))
-        y = y.view(y.size(0), -1)
-        y = F.relu(self.fc4(y))
-        return y
+        return self.body(x)
 
 class QuantileConvNet(nn.Module, QuantileNet):
-    def __init__(self, in_channels, n_actions, n_quantiles, gpu=0):
+    def __init__(self, in_channels, n_actions, n_quantiles, gpu=-1):
         super(QuantileConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 64, 512)
-        self.fc5 = nn.Linear(512, n_actions * n_quantiles)
-        self.n_actions = n_actions
-        self.n_quantiles = n_quantiles
-        BasicNet.__init__(self, gpu)
+        self.body = NatureConvNet(in_channels)
+        QuantileNet.__init__(self, self.body.feature_dim, n_actions, n_quantiles, gpu)
 
-    def forward(self, x):
+    def feature(self, x):
         x = self.variable(x)
-        y = F.relu(self.conv1(x))
-        y = F.relu(self.conv2(y))
-        y = F.relu(self.conv3(y))
-        y = y.view(y.size(0), -1)
-        y = F.relu(self.fc4(y))
-        y = self.fc5(y)
-        return y
-
-class GammaConvNet(nn.Module, GammaNet):
-    def __init__(self, in_channels, action_dim, num_peers, gpu=-1):
-        super(GammaConvNet, self).__init__()
-        hidden_size = 512
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 32, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 32, hidden_size)
-
-        self.fc_actor = nn.Linear(hidden_size * num_peers, action_dim)
-        self.fc_critic = nn.Linear(hidden_size * num_peers, 1)
-
-        self.fc_attention = nn.Linear(hidden_size, num_peers - 1)
-        self.fc_q = nn.Linear(hidden_size, action_dim)
-
-        self.fc_actor_main = nn.Linear(hidden_size, action_dim)
-        self.fc_critic_main = nn.Linear(hidden_size, 1)
-        self.compute_attention = self.softmax_attention
-        BasicNet.__init__(self, gpu=gpu)
-
-    def forward(self, x, update_lstm=True):
-        x = self.variable(x)
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.view(x.size(0), -1)
-        phi = F.relu(self.fc4(x))
-        return phi
-
-class GammaAttentionConvNet(nn.Module, GammaAttentionNet):
-    def __init__(self, in_channels, action_dim, num_peers, gpu=-1):
-        super(GammaAttentionConvNet, self).__init__()
-        hidden_size = 512
-        self.conv1 = nn.Conv2d(in_channels, 32, kernel_size=8, stride=4)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
-        self.conv3 = nn.Conv2d(64, 32, kernel_size=3, stride=1)
-        self.fc4 = nn.Linear(7 * 7 * 32, hidden_size)
-
-        self.fc_actor = nn.Linear(hidden_size, action_dim)
-        self.fc_critic = nn.Linear(hidden_size, 1)
-
-        self.fc_attention = nn.Linear(hidden_size, num_peers - 1)
-        self.fc_q = nn.Linear(hidden_size, action_dim)
-
-        BasicNet.__init__(self, gpu=gpu)
-        self.fc_attention.weight.data.zero_()
-
-    def forward(self, x, update_lstm=True):
-        x = self.variable(x)
-        x = F.relu(self.conv1(x))
-        x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.view(x.size(0), -1)
-        phi = F.relu(self.fc4(x))
-        return phi
+        return self.body(x)
