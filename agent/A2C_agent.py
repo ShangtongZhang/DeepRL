@@ -17,8 +17,7 @@ class A2CAgent:
     def __init__(self, config):
         self.config = config
         self.task = config.task_fn()
-        self.evaluator = self.task.task_fn()
-        self.network = config.network_fn()
+        self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.optimizer = config.optimizer_fn(self.network.parameters())
         self.policy = config.policy_fn()
         self.total_steps = 0
@@ -32,20 +31,6 @@ class A2CAgent:
     def save(self, file_name):
         with open(file_name, 'wb') as f:
             torch.save(self.network.state_dict(), f)
-
-    def evaluate(self):
-        state = self.evaluator.reset()
-        total_rewards = 0
-        steps = 0
-        while True:
-            prob, _, _ = self.network.predict(np.stack([state]))
-            action = self.policy.sample(prob.data.cpu().numpy().flatten(), True)
-            state, reward, done, _ = self.evaluator.step(action)
-            total_rewards += reward
-            steps += 1
-            if done:
-                break
-        return total_rewards, steps
 
     def iteration(self):
         config = self.config

@@ -7,6 +7,8 @@
 import numpy as np
 import pickle
 import os
+import datetime
+import uuid
 
 def run_episodes(agent):
     config = agent.config
@@ -88,6 +90,12 @@ def run_iterations(agent):
             break
 
     return steps, rewards
+
+def get_time_str():
+    return datetime.datetime.now().strftime("%y%m%d-%-H%M%S")
+
+def get_default_log_dir(name):
+    return './log/%s-%s' % (name, get_time_str())
 
 def sync_grad(target_network, src_network):
     for param, src_param in zip(target_network.parameters(), src_network.parameters()):

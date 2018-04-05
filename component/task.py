@@ -37,51 +37,57 @@ class BasicTask:
         return self.env.action_space.sample()
 
 class ClassicalControl(BasicTask):
-    def __init__(self, name='CartPole-v0', max_steps=200):
+    def __init__(self, name='CartPole-v0', max_steps=200, log_dir=None):
         BasicTask.__init__(self, max_steps)
         self.name = name
         self.env = gym.make(self.name)
         self.env._max_episode_steps = sys.maxsize
         self.action_dim = self.env.action_space.n
         self.state_dim = self.env.observation_space.shape[0]
+        if log_dir is not None:
+            mkdir(log_dir)
+            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
 
 class LunarLander(BasicTask):
     name = 'LunarLander-v2'
     success_threshold = 200
 
-    def __init__(self, max_steps=sys.maxsize):
+    def __init__(self, max_steps=sys.maxsize, log_dir=None):
         BasicTask.__init__(self, max_steps)
         self.env = gym.make(self.name)
         self.action_dim = self.env.action_space.n
         self.state_dim = self.env.observation_space.shape[0]
+        if log_dir is not None:
+            mkdir(log_dir)
+            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
 
 class PixelAtari(BasicTask):
-    def __init__(self, name, seed=0, log_file=None, max_steps=sys.maxsize,
+    def __init__(self, name, seed=0, log_dir=None, max_steps=sys.maxsize,
                  frame_skip=4, history_length=4):
         BasicTask.__init__(self, max_steps)
         env = make_atari(name, frame_skip)
         env.seed(seed)
-        if log_file is None:
-            log_dir = '%s-%s' % (
-                name,
-                datetime.datetime.now().strftime("%y%m%d-%-H%M%S"))
-            mkdir('./log/%s' % log_dir)
-            log_file = './log/%s/%s' % (log_dir, uuid.uuid1())
-        env = Monitor(env, log_file)
+        if log_dir is not None:
+            mkdir(log_dir)
+            env = Monitor(env, '%s/%s' % (log_dir, uuid.uuid1()))
         env = wrap_deepmind(env, history_length=history_length)
         self.env = env
         self.action_dim = self.env.action_space.n
+        self.state_dim = self.env.observation_space.shape
         self.name = name
 
     def normalize_state(self, state):
         return np.asarray(state) / 255.0
 
 class RamAtari(BasicTask):
-    def __init__(self, name, no_op, frame_skip, max_steps=10000):
+    def __init__(self, name, no_op, frame_skip, max_steps=sys.maxsize, log_dir=None):
         BasicTask.__init__(self, max_steps)
         self.name = name
         env = gym.make(name)
         assert 'NoFrameskip' in env.spec.id
+        if log_dir is not None:
+            mkdir(log_dir)
+            env = Monitor(env, '%s/%s' % (log_dir, uuid.uuid1()))
         env = EpisodicLifeEnv(env)
         env = NoopResetEnv(env, noop_max=no_op)
         env = SkipEnv(env, skip=frame_skip)
@@ -89,6 +95,7 @@ class RamAtari(BasicTask):
             env = FireResetEnv(env)
         self.env = env
         self.action_dim = self.env.action_space.n
+        self.state_dim = 128
 
     def normalize_state(self, state):
         return np.asarray(state) / 255.0
@@ -145,7 +152,7 @@ def sub_task(parent_pipe, pipe, task_fn, rank, log_dir):
     np.random.seed()
     seed = np.random.randint(0, sys.maxsize)
     parent_pipe.close()
-    task = task_fn(log_file=os.path.join(log_dir, str(rank)))
+    task = task_fn(log_dir=log_dir)
     task.env.seed(seed)
     while True:
         op, data = pipe.recv()
@@ -160,20 +167,20 @@ def sub_task(parent_pipe, pipe, task_fn, rank, log_dir):
             assert False, 'Unknown Operation'
 
 class ParallelizedTask:
-    def __init__(self, task_fn, num_workers, tag='vanilla'):
+    def __init__(self, task_fn, num_workers, log_dir=None):
         self.task_fn = task_fn
-        self.task = task_fn()
+        self.task = task_fn(log_dir=None)
         self.name = self.task.name
-        log_dir = './log/%s-%s' % (self.name, tag)
-        mkdir(log_dir)
+        if log_dir is not None:
+            mkdir(log_dir)
         self.pipes, worker_pipes = zip(*[mp.Pipe() for _ in range(num_workers)])
         args = [(p, wp, task_fn, rank, log_dir)
                 for rank, (p, wp) in enumerate(zip(self.pipes, worker_pipes))]
         self.workers = [mp.Process(target=sub_task, args=arg) for arg in args]
         for p in self.workers: p.start()
         for p in worker_pipes: p.close()
-        self.observation_space = self.task.env.observation_space
-        self.action_space = self.task.env.action_space
+        self.state_dim = self.task.state_dim
+        self.action_dim = self.task.action_dim
 
     def step(self, actions):
         for pipe, action in zip(self.pipes, actions):

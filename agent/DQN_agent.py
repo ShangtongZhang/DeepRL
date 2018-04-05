@@ -16,12 +16,12 @@ import torch
 class DQNAgent:
     def __init__(self, config):
         self.config = config
-        self.learning_network = config.network_fn()
-        self.target_network = config.network_fn()
+        self.task = config.task_fn()
+        self.learning_network = config.network_fn(self.task.state_dim, self.task.action_dim)
+        self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.optimizer = config.optimizer_fn(self.learning_network.parameters())
         self.criterion = nn.MSELoss()
         self.target_network.load_state_dict(self.learning_network.state_dict())
-        self.task = config.task_fn()
         self.replay = config.replay_fn()
         self.policy = config.policy_fn()
         self.total_steps = 0
