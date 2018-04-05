@@ -307,26 +307,20 @@ def ddpg_continuous():
     # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1')
-    task = config.task_fn()
-    config.actor_network_fn = lambda: DeterministicActorNet(
-        task.state_dim, task.action_dim, F.tanh, 1, non_linear=F.relu, batch_norm=False, gpu=-1)
-    config.critic_network_fn = lambda: DeterministicCriticNet(
-        task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False, gpu=-1)
-    config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
+    actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(state_dim, action_dim)
+    critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(state_dim, action_dim)
+    config.network_fn = lambda state_dim, action_dim: \
+        DisjointActorCriticNet(state_dim, action_dim, actor_network_fn, critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
         lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
     config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.random_process_fn = \
-        lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2,
+        lambda action_dim: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.2,
                                          n_steps_annealing=100000)
-    config.worker = DeterministicPolicyGradient
     config.min_memory_size = 50
     config.target_network_mix = 0.001
-    config.test_interval = 0
-    config.test_repetitions = 1
-    config.gradient_clip = 40
     config.render_episode_freq = 0
     config.logger = Logger('./log', logger)
     run_episodes(DDPGAgent(config))
@@ -352,7 +346,8 @@ if __name__ == '__main__':
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    # ddpg_continuous()
+    ddpg_continuous()
+
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Pong-ramNoFrameskip-v4')
     # acvp.train('PongNoFrameskip-v4')

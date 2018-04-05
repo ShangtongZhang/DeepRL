@@ -7,29 +7,25 @@ import torch
 import numpy as np
 
 class Normalizer:
-    def __init__(self, o_size):
-        self.stats = SharedStats(o_size)
+    def __init__(self, x_size):
+        self.m = np.zeros(x_size)
+        self.v = np.zeros(x_size)
+        self.n = 1.0
 
-    def __call__(self, o_):
-        if np.isscalar(o_):
-            o = torch.FloatTensor([o_])
-        else:
-            o = torch.FloatTensor(o_)
-        self.stats.feed(o)
-        std = (self.stats.v + 1e-6) ** .5
-        o = (o - self.stats.m) / std
-        o = o.numpy()
-        if np.isscalar(o_):
-            o = np.asscalar(o)
-        else:
-            o = o.reshape(o_.shape)
-        return o
-   
-    def state_dict(self):
-        return self.stats.state_dict()
+    def __call__(self, x):
+        is_scalar = np.isscalar(x)
+        if is_scalar:
+            x = np.asarray([x])
+        new_m = self.m * (self.n / (self.n + 1)) + x / (self.n + 1)
+        self.v = self.v * (self.n / (self.n + 1)) + (x - self.m) * (x - new_m) / (self.n + 1)
+        self.m = new_m
+        self.n += 1
 
-    def load_state_dict(self, saved):
-        self.stats.load_state_dict(saved)
+        std = (self.v + 1e-6) ** .5
+        x = (x - self.m) / std
+        if is_scalar:
+            x = np.asscalar(x)
+        return x
 
 class StaticNormalizer:
     def __init__(self, o_size):

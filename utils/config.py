@@ -5,8 +5,6 @@
 #######################################################################
 
 class Config:
-    q_target = 0
-    expected_sarsa_target = 1
     def __init__(self):
         self.task_fn = None
         self.optimizer_fn = None
@@ -41,7 +39,6 @@ class Config:
         self.reward_shift_fn = lambda r: r
         self.reward_weight = 1
         self.hybrid_reward = False
-        self.target_type = self.q_target
         self.episode_limit = 0
         self.min_memory_size = 200
         self.master_fn = None
@@ -59,3 +56,4 @@ class Config:
         self.categorical_v_max = 10
         self.categorical_n_atoms = 51
         self.num_quantiles = 10
+        self.gaussian_noise_scale = 0.3

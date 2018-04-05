@@ -10,27 +10,20 @@ class DeterministicActorNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
                  action_dim,
-                 action_gate,
-                 action_scale,
+                 action_gate=F.tanh,
+                 action_scale=1,
                  gpu=-1,
-                 batch_norm=False,
-                 non_linear=F.relu,
+                 non_linear=F.tanh,
                  hidden_size=64):
         super(DeterministicActorNet, self).__init__()
         self.layer1 = nn.Linear(state_dim, hidden_size)
+        self.layer2 = nn.Linear(hidden_size, hidden_size)
         self.layer3 = nn.Linear(hidden_size, action_dim)
         self.action_gate = action_gate
         self.action_scale = action_scale
         self.non_linear = non_linear
-
-        if batch_norm:
-            self.bn1 = nn.BatchNorm1d(hidden_size)
-            self.bn2 = nn.BatchNorm1d(hidden_size)
-        self.layer2 = nn.Linear(hidden_size, hidden_size)
-
-        self.batch_norm = batch_norm
         self.init_weights()
-        BasicNet.__init__(self, gpu, False)
+        BasicNet.__init__(self, gpu)
 
     def init_weights(self):
         bound = 3e-3
@@ -45,16 +38,12 @@ class DeterministicActorNet(nn.Module, BasicNet):
     def forward(self, x):
         x = self.variable(x)
         x = self.non_linear(self.layer1(x))
-        if self.batch_norm:
-            x = self.bn1(x)
         x = self.non_linear(self.layer2(x))
-        if self.batch_norm:
-            x = self.bn2(x)
         x = self.layer3(x)
         x = self.action_scale * self.action_gate(x)
         return x
 
-    def predict(self, x, to_numpy=True):
+    def predict(self, x, to_numpy=False):
         y = self.forward(x)
         if to_numpy:
             y = y.cpu().data.numpy()
@@ -65,22 +54,15 @@ class DeterministicCriticNet(nn.Module, BasicNet):
                  state_dim,
                  action_dim,
                  gpu=-1,
-                 batch_norm=False,
-                 non_linear=F.relu,
+                 non_linear=F.tanh,
                  hidden_size=64):
         super(DeterministicCriticNet, self).__init__()
         self.layer1 = nn.Linear(state_dim, hidden_size)
         self.layer2 = nn.Linear(hidden_size + action_dim, hidden_size)
         self.layer3 = nn.Linear(hidden_size, 1)
         self.non_linear = non_linear
-
-        if batch_norm:
-            self.bn1 = nn.BatchNorm1d(hidden_size)
-            self.bn2 = nn.BatchNorm1d(hidden_size)
-        self.batch_norm = batch_norm
-
         self.init_weights()
-        BasicNet.__init__(self, gpu, False)
+        BasicNet.__init__(self, gpu)
 
     def init_weights(self):
         bound = 3e-3
@@ -96,11 +78,7 @@ class DeterministicCriticNet(nn.Module, BasicNet):
         x = self.variable(x)
         action = self.variable(action)
         x = self.non_linear(self.layer1(x))
-        if self.batch_norm:
-            x = self.bn1(x)
         x = self.non_linear(self.layer2(torch.cat([x, action], dim=1)))
-        if self.batch_norm:
-            x = self.bn2(x)
         x = self.layer3(x)
         return x
 
@@ -111,11 +89,12 @@ class GaussianActorNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
                  action_dim,
-                 action_scale=1.0,
-                 action_gate=None,
+                 action_scale=1,
+                 action_gate=F.tanh,
                  gpu=-1,
                  unit_std=True,
-                 hidden_size=64):
+                 hidden_size=64,
+                 non_linear=F.tanh):
         super(GaussianActorNet, self).__init__()
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
@@ -129,13 +108,14 @@ class GaussianActorNet(nn.Module, BasicNet):
         self.unit_std = unit_std
         self.action_scale = action_scale
         self.action_gate = action_gate
+        self.non_linear = non_linear
 
-        BasicNet.__init__(self, gpu, False)
+        BasicNet.__init__(self, gpu)
 
     def forward(self, x):
         x = self.variable(x)
-        phi = F.tanh(self.fc1(x))
-        phi = F.tanh(self.fc2(phi))
+        phi = self.non_linear(self.fc1(x))
+        phi = self.non_linear(self.fc2(phi))
         mean = self.action_mean(phi)
         if self.action_gate is not None:
             mean = self.action_scale * self.action_gate(mean)
@@ -162,17 +142,19 @@ class GaussianCriticNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
                  gpu=-1,
-                 hidden_size=64):
+                 hidden_size=64,
+                 non_linear=F.tanh):
         super(GaussianCriticNet, self).__init__()
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc_value = nn.Linear(hidden_size, 1)
-        BasicNet.__init__(self, gpu, False)
+        self.non_linear = non_linear
+        BasicNet.__init__(self, gpu)
 
     def forward(self, x):
         x = self.variable(x)
-        phi = F.tanh(self.fc1(x))
-        phi = F.tanh(self.fc2(phi))
+        phi = self.non_linear(self.fc1(x))
+        phi = self.non_linear(self.fc2(phi))
         value = self.fc_value(phi)
         return value
 
@@ -180,9 +162,9 @@ class GaussianCriticNet(nn.Module, BasicNet):
         return self.forward(x)
 
 class DisjointActorCriticNet:
-    def __init__(self, actor_network_fn, critic_network_fn):
-        self.actor = actor_network_fn()
-        self.critic = critic_network_fn()
+    def __init__(self, state_dim, action_dim, actor_network_fn, critic_network_fn):
+        self.actor = actor_network_fn(state_dim, action_dim)
+        self.critic = critic_network_fn(state_dim, action_dim)
 
     def state_dict(self):
         return [self.actor.state_dict(), self.critic.state_dict()]
@@ -190,10 +172,6 @@ class DisjointActorCriticNet:
     def load_state_dict(self, state_dicts):
         self.actor.load_state_dict(state_dicts[0])
         self.critic.load_state_dict(state_dicts[1])
-
-    def share_memory(self):
-        self.actor.share_memory()
-        self.critic.share_memory()
 
     def parameters(self):
         return list(self.actor.parameters()) + list(self.critic.parameters())
@@ -205,7 +183,3 @@ class DisjointActorCriticNet:
     def train(self):
         self.actor.train()
         self.critic.train()
-
-    def eval(self):
-        self.actor.eval()
-        self.critic.eval()

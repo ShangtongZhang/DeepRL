@@ -17,13 +17,13 @@ class DDPGAgent:
     def __init__(self, config):
         self.config = config
         self.task = config.task_fn()
-        self.worker_network = config.network_fn()
-        self.target_network = config.network_fn()
+        self.worker_network = config.network_fn(self.task.state_dim, self.task.action_dim)
+        self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.target_network.load_state_dict(self.worker_network.state_dict())
         self.actor_opt = config.actor_optimizer_fn(self.worker_network.actor.parameters())
         self.critic_opt = config.critic_optimizer_fn(self.worker_network.critic.parameters())
         self.replay = config.replay_fn()
-        self.random_process = config.random_process_fn()
+        self.random_process = config.random_process_fn(self.task.action_dim)
         self.criterion = nn.MSELoss()
         self.total_steps = 0
 
@@ -57,8 +57,9 @@ class DDPGAgent:
         total_reward = 0.0
         while True:
             actor.eval()
-            action = actor.predict(np.stack([state])).flatten()
+            action = actor.predict(np.stack([state]), True).flatten()
             if not deterministic:
+                # action += config.gaussian_noise_scale * np.random.randn(*action.shape)
                 action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
             if video_recorder is not None:

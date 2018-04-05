@@ -33,9 +33,6 @@ class BasicTask:
         done = (done or self.steps >= self.max_steps)
         return next_state, reward, done, info
 
-    def random_action(self):
-        return self.env.action_space.sample()
-
 class ClassicalControl(BasicTask):
     def __init__(self, name='CartPole-v0', max_steps=200, log_dir=None):
         BasicTask.__init__(self, max_steps)
@@ -100,50 +97,47 @@ class RamAtari(BasicTask):
     def normalize_state(self, state):
         return np.asarray(state) / 255.0
 
-class ContinuousMountainCar(BasicTask):
-    name = 'MountainCarContinuous-v0'
-    success_threshold = 90
-
-    def __init__(self, max_steps=sys.maxsize):
-        BasicTask.__init__(self, max_steps)
-        self.env = gym.make(self.name)
-        self.max_episode_steps = self.env._max_episode_steps
-        self.env._max_episode_steps = sys.maxsize
-        self.action_dim = self.env.action_space.shape[0]
-        self.state_dim = self.env.observation_space.shape[0]
-
 class Pendulum(BasicTask):
     name = 'Pendulum-v0'
     success_threshold = -10
 
-    def __init__(self, max_steps=sys.maxsize):
+    def __init__(self, max_steps=sys.maxsize, log_dir=None):
         BasicTask.__init__(self, max_steps)
         self.env = gym.make(self.name)
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
+        if log_dir is not None:
+            mkdir(log_dir)
+            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
 
     def step(self, action):
-        return BasicTask.step(self, np.clip(action, -2, 2))
+        return BasicTask.step(self, np.clip(2 * action, -2, 2))
 
 class Box2DContinuous(BasicTask):
-    def __init__(self, name, max_steps=sys.maxsize):
+    def __init__(self, name, max_steps=sys.maxsize, log_dir=None):
         BasicTask.__init__(self, max_steps)
         self.name = name
         self.env = gym.make(self.name)
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
+        if log_dir is not None:
+            mkdir(log_dir)
+            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
 
     def step(self, action):
         return BasicTask.step(self, np.clip(action, -1, 1))
 
 class Roboschool(BasicTask):
-    def __init__(self, name, success_threshold=sys.maxsize, max_steps=sys.maxsize):
+    def __init__(self, name, max_steps=sys.maxsize, log_dir=None):
         import roboschool
         BasicTask.__init__(self, max_steps)
         self.name = name
         self.env = gym.make(self.name)
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
+        if log_dir is not None:
+            mkdir(log_dir)
+            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
 
     def step(self, action):
         return BasicTask.step(self, np.clip(action, -1, 1))
