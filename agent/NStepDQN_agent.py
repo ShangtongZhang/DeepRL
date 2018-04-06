@@ -12,9 +12,11 @@ import time
 import os
 import pickle
 import torch
+from .BaseAgent import *
 
-class NStepDQNAgent:
+class NStepDQNAgent(BaseAgent):
     def __init__(self, config):
+        BaseAgent.__init__(self)
         self.config = config
         self.task = config.task_fn()
         self.learning_network = config.network_fn(self.task.state_dim, self.task.action_dim)
@@ -27,13 +29,6 @@ class NStepDQNAgent:
         self.states = self.task.reset()
         self.episode_rewards = np.zeros(config.num_workers)
         self.last_episode_rewards = np.zeros(config.num_workers)
-
-    def close(self):
-        self.task.close()
-
-    def save(self, file_name):
-        with open(file_name, 'wb') as f:
-            torch.save(self.learning_network.state_dict(), f)
 
     def iteration(self):
         config = self.config

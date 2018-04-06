@@ -273,8 +273,8 @@ if __name__ == '__main__':
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    # ddpg_continuous()
-    ppo_continuous()
+    ddpg_continuous()
+    # ppo_continuous()
 
     # acvp.train('PongNoFrameskip-v4')
 

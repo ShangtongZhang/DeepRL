@@ -12,9 +12,11 @@ from component import *
 import pickle
 import os
 import time
+from .BaseAgent import *
 
-class PPOAgent:
+class PPOAgent(BaseAgent):
     def __init__(self, config):
+        BaseAgent.__init__(self)
         self.config = config
         self.task = config.task_fn()
         self.actor = config.actor_network_fn(self.task.state_dim, self.task.action_dim)
@@ -27,14 +29,6 @@ class PPOAgent:
         self.state_normalizer = Normalizer(self.task.state_dim)
         self.states = self.task.reset()
         self.states = self.state_normalizer(self.states)
-
-    def close(self):
-        self.task.close()
-
-    def save(self, file_name):
-        pass
-        # with open(file_name, 'wb') as f:
-        #     torch.save(self.network.state_dict(), f)
 
     def iteration(self):
         config = self.config

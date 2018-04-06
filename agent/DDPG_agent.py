@@ -12,9 +12,11 @@ from component import *
 import pickle
 import os
 import time
+from .BaseAgent import *
 
-class DDPGAgent:
+class DDPGAgent(BaseAgent):
     def __init__(self, config):
+        BaseAgent.__init__(self)
         self.config = config
         self.task = config.task_fn()
         self.worker_network = config.network_fn(self.task.state_dim, self.task.action_dim)
@@ -34,13 +36,6 @@ class DDPGAgent:
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.data.copy_(target_param.data * (1.0 - self.config.target_network_mix) +
                                     param.data * self.config.target_network_mix)
-
-    def save(self, file_name):
-        with open(file_name, 'wb') as f:
-            torch.save(self.worker_network.state_dict(), f)
-
-    def close(self):
-        pass
 
     def episode(self, deterministic=False, video_recorder=None):
         self.random_process.reset_states()

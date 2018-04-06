@@ -12,9 +12,11 @@ import time
 import os
 import pickle
 import torch
+from .BaseAgent import *
 
-class CategoricalDQNAgent:
+class CategoricalDQNAgent(BaseAgent):
     def __init__(self, config):
+        BaseAgent.__init__(self)
         self.config = config
         self.task = config.task_fn()
         self.learning_network = config.network_fn(self.task.state_dim, self.task.action_dim)
@@ -102,10 +104,3 @@ class CategoricalDQNAgent:
         self.config.logger.debug('episode steps %d, episode time %f, time per step %f' %
                           (steps, episode_time, episode_time / float(steps)))
         return total_reward, steps
-
-    def save(self, file_name):
-        with open(file_name, 'wb') as f:
-            torch.save(self.learning_network.state_dict(), f)
-
-    def close(self):
-        pass
