@@ -13,12 +13,11 @@ class DeterministicActorNet(nn.Module, BasicNet):
                  action_gate=F.tanh,
                  action_scale=1,
                  gpu=-1,
-                 non_linear=F.tanh,
-                 hidden_size=64):
+                 non_linear=F.tanh):
         super(DeterministicActorNet, self).__init__()
-        self.layer1 = nn.Linear(state_dim, hidden_size)
-        self.layer2 = nn.Linear(hidden_size, hidden_size)
-        self.layer3 = nn.Linear(hidden_size, action_dim)
+        self.layer1 = nn.Linear(state_dim, 300)
+        self.layer2 = nn.Linear(300, 200)
+        self.layer3 = nn.Linear(200, action_dim)
         self.action_gate = action_gate
         self.action_scale = action_scale
         self.non_linear = non_linear
@@ -54,12 +53,11 @@ class DeterministicCriticNet(nn.Module, BasicNet):
                  state_dim,
                  action_dim,
                  gpu=-1,
-                 non_linear=F.tanh,
-                 hidden_size=64):
+                 non_linear=F.tanh):
         super(DeterministicCriticNet, self).__init__()
-        self.layer1 = nn.Linear(state_dim, hidden_size)
-        self.layer2 = nn.Linear(hidden_size + action_dim, hidden_size)
-        self.layer3 = nn.Linear(hidden_size, 1)
+        self.layer1 = nn.Linear(state_dim, 400)
+        self.layer2 = nn.Linear(400 + action_dim, 300)
+        self.layer3 = nn.Linear(300, 1)
         self.non_linear = non_linear
         self.init_weights()
         BasicNet.__init__(self, gpu)
@@ -121,14 +119,6 @@ class GaussianActorNet(nn.Module, BasicNet):
 
     def predict(self, x):
         return self.forward(x)
-
-    # def log_density(self, x, mean, log_std, std):
-    #     var = std.pow(2)
-    #     log_density = -(x - mean).pow(2) / (2 * var + 1e-5) - 0.5 * torch.log(2 * Variable(torch.FloatTensor([np.pi])).expand_as(x)) - log_std
-    #     return log_density.sum(1)
-    #
-    # def entropy(self, std):
-    #     return 0.5 * (1 + (2 * std.pow(2) * np.pi + 1e-5).log()).sum(1).mean()
 
 class GaussianCriticNet(nn.Module, BasicNet):
     def __init__(self,

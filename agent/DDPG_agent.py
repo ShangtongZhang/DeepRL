@@ -29,8 +29,8 @@ class DDPGAgent(BaseAgent):
         self.criterion = nn.MSELoss()
         self.total_steps = 0
 
-        self.state_normalizer = Normalizer(self.task.state_dim)
-        self.reward_normalizer = Normalizer(1)
+        # self.state_normalizer = Normalizer(self.task.state_dim)
+        # self.reward_normalizer = Normalizer(1)
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -40,7 +40,7 @@ class DDPGAgent(BaseAgent):
     def episode(self, deterministic=False, video_recorder=None):
         self.random_process.reset_states()
         state = self.task.reset()
-        state = self.state_normalizer(state)
+        # state = self.state_normalizer(state)
 
         config = self.config
         actor = self.worker_network.actor
@@ -59,9 +59,9 @@ class DDPGAgent(BaseAgent):
             next_state, reward, done, info = self.task.step(action)
             if video_recorder is not None:
                 video_recorder.capture_frame()
-            next_state = self.state_normalizer(next_state)
+            # next_state = self.state_normalizer(next_state)
             total_reward += reward
-            reward = self.reward_normalizer(reward)
+            # reward = self.reward_normalizer(reward)
 
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
@@ -99,6 +99,8 @@ class DDPGAgent(BaseAgent):
                 actor.zero_grad()
                 self.actor_opt.zero_grad()
                 actions.backward(-var_actions.grad.data)
+                for param in actor.parameters():
+                    param.grad.data.clamp(-config.gradient_clip, config.gradient_clip)
                 self.actor_opt.step()
 
                 self.soft_update(self.target_network, self.worker_network)

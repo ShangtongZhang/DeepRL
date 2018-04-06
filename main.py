@@ -240,15 +240,15 @@ def ddpg_continuous():
         DisjointActorCriticNet(state_dim, action_dim, actor_network_fn, critic_network_fn)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn =\
-        lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
+        lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.random_process_fn = \
-        lambda action_dim: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.2,
+        lambda action_dim: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.3,
                                          n_steps_annealing=100000)
-    config.min_memory_size = 50
-    config.target_network_mix = 0.001
-    config.render_episode_freq = 0
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.gradient_clip = 1.0
     config.logger = Logger('./log', logger)
     run_episodes(DDPGAgent(config))
 
