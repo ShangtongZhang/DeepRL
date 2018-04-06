@@ -17,20 +17,20 @@ PREFIX = '/local/data'
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
-    config.task_fn = lambda: PixelAtari(name, no_op=30, frame_skip=4, normalized_state=False,
-                                        history_length=config.history_length)
-    action_dim = config.task_fn().action_dim
+    config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
+                                        log_dir=get_default_log_dir(dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda: NatureConvNet(config.history_length, action_dim)
+    config.network_fn = lambda state_dim, action_dim: ConvNet(config.history_length, action_dim, gpu=0)
+    # config.network_fn = lambda state_dim, action_dim: DuelingConvNet(config.history_length, action_dim)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
-    config.max_episode_length = 0
-    config.exploration_steps = 50000
+    config.exploration_steps= 50000
     config.logger = Logger('./log', logger)
-    config.test_interval = 10
-    config.test_repetitions = 1
+    # config.double_q = True
     config.double_q = False
     return DQNAgent(config)
 
@@ -47,7 +47,7 @@ def episode(env, agent):
     total_reward = 0.0
     steps = 0
     while True:
-        value = agent.learning_network.predict(np.stack([state]), False)
+        value = agent.network.predict(np.stack([state]), False)
         value = value.cpu().data.numpy().flatten()
         action = policy.sample(value)
         next_state, reward, done, info = env.step(action)
@@ -64,16 +64,12 @@ def episode(env, agent):
 def generate_dateset(game):
     agent = dqn_pixel_atari(game)
     model_file = 'data/%s-%s-model-%s.bin' % (agent.__class__.__name__, agent.config.tag, agent.task.name)
-    with open(model_file, 'rb') as f:
-        saved_state = torch.load(model_file, map_location=lambda storage, loc: storage)
-        agent.learning_network.load_state_dict(saved_state)
+    agent.load(model_file)
 
-    env = gym.make(game)
+    env = make_atari(game, frame_skip=4)
     env = EpisodicLifeEnv(env)
-    env = MaxAndSkipEnv(env, skip=4)
     dataset_env = DatasetEnv(env)
-    env = ProcessFrame(dataset_env, 84)
-    env = NormalizeFrame(env)
+    env = wrap_deepmind(env, history_length=4)
 
     ep = 0
     max_ep = 200

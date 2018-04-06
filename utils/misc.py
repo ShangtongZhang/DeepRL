@@ -30,6 +30,7 @@ def run_episodes(agent):
             with open('data/%s-%s-online-stats-%s.bin' % (
                     agent_type, config.tag, agent.task.name), 'wb') as f:
                 pickle.dump([steps, rewards], f)
+            agent.save('data/%s-%s-model-%s.bin' % (agent_type, config.tag, agent.task.name))
 
         if config.episode_limit and ep > config.episode_limit:
             break

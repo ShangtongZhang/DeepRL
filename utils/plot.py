@@ -1,64 +1,57 @@
-# from https://raw.githubusercontent.com/openai/baselines/master/baselines/results_plotter.py
-__all__ = ['plot_results']
-
 import numpy as np
-import matplotlib.pyplot as plt
 from component import load_results
-plt.rcParams['svg.fonttype'] = 'none'
 
-X_TIMESTEPS = 'timesteps'
-X_EPISODES = 'episodes'
-X_WALLTIME = 'walltime_hrs'
-POSSIBLE_X_AXES = [X_TIMESTEPS, X_EPISODES, X_WALLTIME]
-EPISODES_WINDOW = 100
-COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
-        'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
-        'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
+class Plotter:
+    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
+              'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
+              'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
 
-def rolling_window(a, window):
-    shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
-    strides = a.strides + (a.strides[-1],)
-    return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
+    X_TIMESTEPS = 'timesteps'
+    X_EPISODES = 'episodes'
+    X_WALLTIME = 'walltime_hrs'
 
-def window_func(x, y, window, func):
-    yw = rolling_window(y, window)
-    yw_func = func(yw, axis=-1)
-    return x[window-1:], yw_func
+    def __init__(self):
+        pass
 
-def ts2xy(ts, xaxis):
-    if xaxis == X_TIMESTEPS:
-        x = np.cumsum(ts.l.values)
-        y = ts.r.values
-    elif xaxis == X_EPISODES:
-        x = np.arange(len(ts))
-        y = ts.r.values
-    elif xaxis == X_WALLTIME:
-        x = ts.t.values / 3600.
-        y = ts.r.values
-    else:
-        raise NotImplementedError
-    return x, y
+    def rolling_window(self, a, window):
+        shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
+        strides = a.strides + (a.strides[-1],)
+        return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
-def plot_curves(xy_list, xaxis, title):
-    for (i, (x, y)) in enumerate(xy_list):
-        color = COLORS[i]
-        # plt.scatter(x, y, s=2)
-        x, y_mean = window_func(x, y, EPISODES_WINDOW, np.mean) #So returns average of last EPISODE_WINDOW episodes
-        plt.plot(x, y_mean, color=color)
-    plt.title(title)
-    plt.xlabel(xaxis)
-    plt.ylabel("Episode Rewards")
-    plt.tight_layout()
+    def window_func(self, x, y, window, func):
+        yw = self.rolling_window(y, window)
+        yw_func = func(yw, axis=-1)
+        return x[window - 1:], yw_func
 
-def plot_results(dirs, num_timesteps=1e8, xaxis=X_TIMESTEPS, task_name=''):
-    tslist = []
-    for dir in dirs:
-        ts = load_results(dir)
-        ts = ts[ts.l.cumsum() <= num_timesteps]
-        tslist.append(ts)
-    xy_list = [ts2xy(ts, xaxis) for ts in tslist]
-    plot_curves(xy_list, xaxis, task_name)
+    def ts2xy(self, ts, xaxis):
+        if xaxis == Plotter.X_TIMESTEPS:
+            x = np.cumsum(ts.l.values)
+            y = ts.r.values
+        elif xaxis == Plotter.X_EPISODES:
+            x = np.arange(len(ts))
+            y = ts.r.values
+        elif xaxis == Plotter.X_WALLTIME:
+            x = ts.t.values / 3600.
+            y = ts.r.values
+        else:
+            raise NotImplementedError
+        return x, y
 
-if __name__ == '__main__':
-    plot_results(['../log/CartPole-v0-vanilla'], 10e6, X_TIMESTEPS, "CartPole")
-    plt.show()
+    def load_results(self, dirs, max_timesteps=1e8, x_axis=X_TIMESTEPS, episode_window=100):
+        tslist = []
+        for dir in dirs:
+            ts = load_results(dir)
+            ts = ts[ts.l.cumsum() <= max_timesteps]
+            tslist.append(ts)
+        xy_list = [self.ts2xy(ts, x_axis) for ts in tslist]
+        xy_list = [[x, y, self.window_func(x, y, episode_window, np.mean)] for x, y in xy_list]
+        return xy_list
+
+    def plot_results(self, dirs, max_timesteps=1e8, x_axis=X_TIMESTEPS, episode_window=100):
+        import matplotlib.pyplot as plt
+        xy_list = self.load_results(dirs, max_timesteps, x_axis, episode_window)
+        for (i, (x, y, y_mean)) in enumerate(xy_list):
+            color = Plotter.COLORS[i]
+            plt.plot(x, y_mean, color=color)
+        plt.xlabel(x_axis)
+        plt.ylabel("Episode Rewards")
