@@ -19,10 +19,10 @@ class NStepDQNAgent(BaseAgent):
         BaseAgent.__init__(self)
         self.config = config
         self.task = config.task_fn()
-        self.learning_network = config.network_fn(self.task.state_dim, self.task.action_dim)
+        self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
-        self.optimizer = config.optimizer_fn(self.learning_network.parameters())
-        self.target_network.load_state_dict(self.learning_network.state_dict())
+        self.optimizer = config.optimizer_fn(self.network.parameters())
+        self.target_network.load_state_dict(self.network.state_dict())
         self.policy = config.policy_fn()
 
         self.total_steps = 0
@@ -35,12 +35,11 @@ class NStepDQNAgent(BaseAgent):
         rollout = []
         states = self.states
         for i in range(config.rollout_length):
-            q = self.learning_network.predict(self.task.normalize_state(states))
+            q = self.network.predict(self.config.state_normalizer(states))
             actions = [self.policy.sample(v) for v in q.data.cpu().numpy()]
-            actions = config.action_shift_fn(actions)
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
-            rewards = config.reward_shift_fn(rewards)
+            rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
                     self.last_episode_rewards[i] = self.episode_rewards[i]
@@ -52,19 +51,19 @@ class NStepDQNAgent(BaseAgent):
             self.policy.update_epsilon()
             self.total_steps += config.num_workers
             if self.total_steps / config.num_workers % config.target_network_update_freq == 0:
-                self.target_network.load_state_dict(self.learning_network.state_dict())
+                self.target_network.load_state_dict(self.network.state_dict())
 
         self.states = states
 
         processed_rollout = [None] * (len(rollout))
-        returns = self.target_network.predict(self.task.normalize_state(states)).data
+        returns = self.target_network.predict(config.state_normalizer(states)).data
         returns, _ = torch.max(returns, dim=1, keepdim=True)
         for i in reversed(range(len(rollout))):
             q, actions, rewards, terminals = rollout[i]
-            actions = self.learning_network.tensor(actions, torch.LongTensor).unsqueeze(1)
+            actions = self.network.tensor(actions, torch.LongTensor).unsqueeze(1)
             q = q.gather(1, Variable(actions))
-            terminals = self.learning_network.tensor(terminals).unsqueeze(1)
-            rewards = self.learning_network.tensor(rewards).unsqueeze(1)
+            terminals = self.network.tensor(terminals).unsqueeze(1)
+            rewards = self.network.tensor(rewards).unsqueeze(1)
             returns = rewards + config.discount * terminals * returns
             processed_rollout[i] = [q, returns]
 

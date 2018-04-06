@@ -106,6 +106,8 @@ def dqn_pixel_atari(name):
     # config.network_fn = lambda state_dim, action_dim: DuelingConvNet(config.history_length, action_dim)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.exploration_steps= 50000
@@ -124,6 +126,8 @@ def a2c_pixel_atari(name):
     config.network_fn = lambda state_dim, action_dim: ActorCriticConvNet(
         config.history_length, action_dim, gpu=3)
     config.policy_fn = SamplePolicy
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.use_gae = False
     config.gae_tau = 0.97
@@ -143,6 +147,8 @@ def categorical_dqn_pixel_atari(name):
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
     config.discount = 0.99
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
     config.target_network_update_freq = 10000
     config.exploration_steps= 50000
     config.logger = Logger('./log', logger)
@@ -161,6 +167,8 @@ def quantile_regression_dqn_pixel_atari(name):
     config.network_fn = lambda state_dim, action_dim: QuantileConvNet(config.history_length, action_dim, config.num_quantiles, gpu=0)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.exploration_steps= 50000
@@ -179,6 +187,8 @@ def n_step_dqn_pixel_atari(name):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
     config.network_fn = lambda state_dim, action_dim: ConvNet(config.history_length, action_dim, gpu=0)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
@@ -193,7 +203,8 @@ def dqn_ram_atari(name):
     config.network_fn = lambda state_dim, action_dim: FCNet(state_dim, 64, action_dim, gpu=2)
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
-    config.reward_shift_fn = lambda r: np.sign(r)
+    config.state_normalizer = RescaleNormalizer(1.0 / 128)
+    config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.max_episode_length = 0
@@ -216,6 +227,7 @@ def ppo_continuous():
     config.critic_network_fn = lambda state_dim, action_dim: GaussianCriticNet(state_dim)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.state_normalizer = RunningStatsNormalizer()
     config.discount = 0.99
     config.use_gae = True
     config.gae_tau = 0.97
@@ -228,19 +240,17 @@ def ppo_continuous():
 
 def ddpg_continuous():
     config = Config()
-    config.task_fn = lambda: Pendulum()
+    log_dir = get_default_log_dir(ddpg_continuous.__name__)
+    config.task_fn = lambda: Pendulum(log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1')
-    actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(state_dim, action_dim)
-    critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(state_dim, action_dim)
-    config.network_fn = lambda state_dim, action_dim: \
-        DisjointActorCriticNet(state_dim, action_dim, actor_network_fn, critic_network_fn)
+    config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(state_dim, action_dim)
+    config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(state_dim, action_dim)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn =\
-        lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.random_process_fn = \
@@ -273,7 +283,7 @@ if __name__ == '__main__':
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    ddpg_continuous()
+    # ddpg_continuous()
     # ppo_continuous()
 
     # acvp.train('PongNoFrameskip-v4')

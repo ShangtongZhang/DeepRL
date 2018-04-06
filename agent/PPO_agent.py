@@ -19,16 +19,17 @@ class PPOAgent(BaseAgent):
         BaseAgent.__init__(self)
         self.config = config
         self.task = config.task_fn()
-        self.actor = config.actor_network_fn(self.task.state_dim, self.task.action_dim)
-        self.critic = config.critic_network_fn(self.task.state_dim, self.task.action_dim)
+        self.network = DisjointActorCriticNet(self.task.state_dim, self.task.action_dim,
+                                              config.actor_network_fn, config.critic_network_fn)
+        self.actor = self.network.actor
+        self.critic = self.network.critic
         self.actor_opt = config.actor_optimizer_fn(self.actor.parameters())
         self.critic_opt = config.critic_optimizer_fn(self.critic.parameters())
         self.total_steps = 0
         self.episode_rewards = np.zeros(config.num_workers)
         self.last_episode_rewards = np.zeros(config.num_workers)
-        self.state_normalizer = Normalizer(self.task.state_dim)
         self.states = self.task.reset()
-        self.states = self.state_normalizer(self.states)
+        self.states = config.state_normalizer(self.states)
 
     def iteration(self):
         config = self.config
@@ -43,12 +44,12 @@ class PPOAgent(BaseAgent):
             log_probs = torch.sum(log_probs, dim=1, keepdim=True)
             next_states, rewards, terminals, _ = self.task.step(actions.data.cpu().numpy())
             self.episode_rewards += rewards
-            rewards = config.reward_shift_fn(rewards)
+            rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
                     self.last_episode_rewards[i] = self.episode_rewards[i]
                     self.episode_rewards[i] = 0
-            next_states = self.state_normalizer(next_states)
+            next_states = config.state_normalizer(next_states)
             rollout.append([states, values, actions, log_probs, rewards, 1 - terminals])
             states = next_states
 

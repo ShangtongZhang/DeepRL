@@ -142,14 +142,6 @@ class SkipEnv(gym.Wrapper):
         obs = self.env.reset()
         return obs
 
-class ClipRewardEnv(gym.RewardWrapper):
-    def __init__(self, env):
-        gym.RewardWrapper.__init__(self, env)
-
-    def reward(self, reward):
-        """Bin reward to {+1, 0, -1} by its sign."""
-        return np.sign(reward)
-
 class WarpFrame(gym.ObservationWrapper):
     def __init__(self, env):
         """Warp frames to 84x84 as done in the Nature paper and later work."""
@@ -259,7 +251,7 @@ def make_atari(env_id, frame_skip=4):
     env = MaxAndSkipEnv(env, skip=4)
     return env
 
-def wrap_deepmind(env, episode_life=True, clip_rewards=True, history_length=0):
+def wrap_deepmind(env, episode_life=True, history_length=0):
     """Configure environment for DeepMind-style Atari.
     """
     if episode_life:
@@ -267,8 +259,6 @@ def wrap_deepmind(env, episode_life=True, clip_rewards=True, history_length=0):
     if 'FIRE' in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     env = WarpFrame(env)
-    if clip_rewards:
-        env = ClipRewardEnv(env)
     env = WrapPyTorch(env)
     if history_length:
         env = StackFrame(env, history_length)

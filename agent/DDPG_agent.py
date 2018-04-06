@@ -19,18 +19,19 @@ class DDPGAgent(BaseAgent):
         BaseAgent.__init__(self)
         self.config = config
         self.task = config.task_fn()
-        self.worker_network = config.network_fn(self.task.state_dim, self.task.action_dim)
-        self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
-        self.target_network.load_state_dict(self.worker_network.state_dict())
-        self.actor_opt = config.actor_optimizer_fn(self.worker_network.actor.parameters())
-        self.critic_opt = config.critic_optimizer_fn(self.worker_network.critic.parameters())
+        self.network = DisjointActorCriticNet(self.task.state_dim, self.task.action_dim,
+                                              config.actor_network_fn, config.critic_network_fn)
+        self.actor = self.network.actor
+        self.critic = self.network.critic
+        self.target_network = DisjointActorCriticNet(self.task.state_dim, self.task.action_dim,
+                                              config.actor_network_fn, config.critic_network_fn)
+        self.target_network.load_state_dict(self.network.state_dict())
+        self.actor_opt = config.actor_optimizer_fn(self.actor.parameters())
+        self.critic_opt = config.critic_optimizer_fn(self.critic.parameters())
         self.replay = config.replay_fn()
         self.random_process = config.random_process_fn(self.task.action_dim)
         self.criterion = nn.MSELoss()
         self.total_steps = 0
-
-        # self.state_normalizer = Normalizer(self.task.state_dim)
-        # self.reward_normalizer = Normalizer(1)
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -40,28 +41,26 @@ class DDPGAgent(BaseAgent):
     def episode(self, deterministic=False, video_recorder=None):
         self.random_process.reset_states()
         state = self.task.reset()
-        # state = self.state_normalizer(state)
+        state = self.config.state_normalizer(state)
 
         config = self.config
-        actor = self.worker_network.actor
-        critic = self.worker_network.critic
+        actor = self.network.actor
+        critic = self.network.critic
         target_actor = self.target_network.actor
         target_critic = self.target_network.critic
 
         steps = 0
         total_reward = 0.0
         while True:
-            actor.eval()
             action = actor.predict(np.stack([state]), True).flatten()
             if not deterministic:
-                # action += config.gaussian_noise_scale * np.random.randn(*action.shape)
                 action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
             if video_recorder is not None:
                 video_recorder.capture_frame()
-            # next_state = self.state_normalizer(next_state)
+            next_state = self.config.state_normalizer(next_state)
             total_reward += reward
-            # reward = self.reward_normalizer(reward)
+            reward = self.config.reward_normalizer(reward)
 
             if not deterministic:
                 self.replay.feed([state, action, reward, next_state, int(done)])
@@ -74,7 +73,6 @@ class DDPGAgent(BaseAgent):
                 break
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
-                self.worker_network.train()
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 q_next = target_critic.predict(next_states, target_actor.predict(next_states))
@@ -103,6 +101,6 @@ class DDPGAgent(BaseAgent):
                     param.grad.data.clamp(-config.gradient_clip, config.gradient_clip)
                 self.actor_opt.step()
 
-                self.soft_update(self.target_network, self.worker_network)
+                self.soft_update(self.target_network, self.network)
 
         return total_reward, steps

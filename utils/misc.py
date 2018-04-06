@@ -16,7 +16,6 @@ def run_episodes(agent):
     ep = 0
     rewards = []
     steps = []
-    avg_test_rewards = []
     agent_type = agent.__class__.__name__
     while True:
         ep += 1
@@ -38,25 +37,8 @@ def run_episodes(agent):
         if config.max_steps and agent.total_steps > config.max_steps:
             break
 
-        if config.test_interval and ep % config.test_interval == 0:
-            config.logger.info('Testing...')
-            agent.save('data/%s-%s-model-%s.bin' % (agent_type, config.tag, agent.task.name))
-            test_rewards = []
-            for _ in range(config.test_repetitions):
-                test_rewards.append(agent.episode(True)[0])
-            avg_reward = np.mean(test_rewards)
-            avg_test_rewards.append(avg_reward)
-            config.logger.info('Avg reward %f(%f)' % (
-                avg_reward, np.std(test_rewards) / np.sqrt(config.test_repetitions)))
-            with open('data/%s-%s-all-stats-%s.bin' % (agent_type, config.tag, agent.task.name), 'wb') as f:
-                pickle.dump({'rewards': rewards,
-                             'steps': steps,
-                             'test_rewards': avg_test_rewards}, f)
-            if avg_reward > config.success_threshold:
-                break
-
     agent.close()
-    return steps, rewards, avg_test_rewards
+    return steps, rewards
 
 def run_iterations(agent):
     config = agent.config
@@ -79,11 +61,6 @@ def run_iterations(agent):
                 pickle.dump({'rewards': rewards,
                              'steps': steps}, f)
             agent.save('data/%s-%s-model-%s.bin' % (agent_name, config.tag, agent.task.name))
-        if config.test_interval and iteration % config.test_interval == 0:
-            test_rewards, test_steps  = agent.evaluate()
-            config.logger.info('total steps %d, test reward %f, test steps %d' % (
-                agent.total_steps, test_rewards, test_steps
-            ))
         iteration += 1
         if config.max_steps and agent.total_steps >= config.max_steps:
             agent.close()

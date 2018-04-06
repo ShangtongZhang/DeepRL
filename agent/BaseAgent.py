@@ -15,4 +15,8 @@ class BaseAgent:
             self.task.close()
 
     def save(self, filename):
-        pass
+        torch.save(self.network.state_dict(), filename)
+
+    def load(self, filename):
+        state_dict = torch.load(filename, map_location=lambda storage, loc: storage)
+        self.network.load_state_dict(state_dict)

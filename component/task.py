@@ -24,9 +24,6 @@ class BasicTask:
         state = self.env.reset()
         return state
 
-    def normalize_state(self, state):
-        return state
-
     def step(self, action):
         next_state, reward, done, info = self.env.step(action)
         self.steps += 1

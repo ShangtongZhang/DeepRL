@@ -90,7 +90,6 @@ class GaussianActorNet(nn.Module, BasicNet):
                  action_scale=1,
                  action_gate=F.tanh,
                  gpu=-1,
-                 # unit_std=True,
                  hidden_size=64,
                  non_linear=F.tanh):
         super(GaussianActorNet, self).__init__()
@@ -161,7 +160,3 @@ class DisjointActorCriticNet:
     def zero_grad(self):
         self.actor.zero_grad()
         self.critic.zero_grad()
-
-    def train(self):
-        self.actor.train()
-        self.critic.train()

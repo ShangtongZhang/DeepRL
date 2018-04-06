@@ -31,13 +31,12 @@ class A2CAgent(BaseAgent):
         rollout = []
         states = self.states
         for i in range(config.rollout_length):
-            states = self.task.normalize_state(states)
+            states = config.state_normalizer(states)
             prob, log_prob, value = self.network.predict(states)
             actions = [self.policy.sample(p) for p in prob.data.cpu().numpy()]
-            actions = config.action_shift_fn(actions)
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
-            rewards = config.reward_shift_fn(rewards)
+            rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
                     self.last_episode_rewards[i] = self.episode_rewards[i]
@@ -47,7 +46,7 @@ class A2CAgent(BaseAgent):
             states = next_states
 
         self.states = states
-        _, _, pending_value = self.network.predict(self.task.normalize_state(states))
+        _, _, pending_value = self.network.predict(config.state_normalizer(states))
         rollout.append([None, None, pending_value, None, None, None])
 
         processed_rollout = [None] * (len(rollout) - 1)
