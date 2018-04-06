@@ -13,6 +13,17 @@ class Normalizer:
         self.n = 1.0
 
     def __call__(self, x):
+        if np.isscalar(x) or len(x.shape) == 1:
+            return self.nomalize_single(x)
+        elif len(x.shape) == 2:
+            new_x = np.zeros(x.shape)
+            for i in range(x.shape[0]):
+                new_x[i] = self.nomalize_single(x[i])
+            return new_x
+        else:
+            assert 'Unsupported Shape'
+
+    def nomalize_single(self, x):
         is_scalar = np.isscalar(x)
         if is_scalar:
             x = np.asarray([x])

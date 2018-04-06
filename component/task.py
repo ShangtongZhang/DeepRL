@@ -151,7 +151,10 @@ def sub_task(parent_pipe, pipe, task_fn, rank, log_dir):
     while True:
         op, data = pipe.recv()
         if op == 'step':
-            pipe.send(task.step(data))
+            ob, reward, done, info = task.step(data)
+            if done:
+                ob = task.reset()
+            pipe.send([ob, reward, done, info])
         elif op == 'reset':
             pipe.send(task.reset())
         elif op == 'exit':

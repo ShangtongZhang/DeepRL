@@ -57,3 +57,4 @@ class Config:
         self.categorical_n_atoms = 51
         self.num_quantiles = 10
         self.gaussian_noise_scale = 0.3
+        self.optimization_epochs = 4

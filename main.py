@@ -203,105 +203,32 @@ def dqn_ram_atari(name):
     # config.double_q = False
     run_episodes(DQNAgent(config))
 
-# def a3c_continuous():
-#     config = Config()
-#     config.task_fn = lambda: Pendulum()
-#     # config.task_fn = lambda: Box2DContinuous('BipedalWalker-v2')
-#     # config.task_fn = lambda: Box2DContinuous('BipedalWalkerHardcore-v2')
-#     # config.task_fn = lambda: Box2DContinuous('LunarLanderContinuous-v2')
-#     task = config.task_fn()
-#     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.0001)
-#     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-#     config.network_fn = lambda: DisjointActorCriticNet(
-#         # lambda: GaussianActorNet(task.state_dim, task.action_dim, unit_std=False, action_gate=F.tanh, action_scale=2.0),
-#         lambda: GaussianActorNet(task.state_dim, task.action_dim, unit_std=True),
-#         lambda: GaussianCriticNet(task.state_dim))
-#     config.policy_fn = lambda: GaussianPolicy()
-#     config.worker = ContinuousAdvantageActorCritic
-#     config.discount = 0.99
-#     config.num_workers = 8
-#     config.update_interval = 20
-#     config.test_interval = 1
-#     config.test_repetitions = 1
-#     config.entropy_weight = 0
-#     config.gradient_clip = 40
-#     config.logger = Logger('./log', logger)
-#     agent = AsyncAgent(config)
-#     agent.run()
-#
-# def p3o_continuous():
-#     config = Config()
-#     config.task_fn = lambda: Pendulum()
-#     # config.task_fn = lambda: Box2DContinuous('BipedalWalker-v2')
-#     # config.task_fn = lambda: Box2DContinuous('BipedalWalkerHardcore-v2')
-#     # config.task_fn = lambda: Box2DContinuous('LunarLanderContinuous-v2')
-#     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
-#     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1')
-#     task = config.task_fn()
-#     config.actor_network_fn = lambda: GaussianActorNet(task.state_dim, task.action_dim,
-#                                                        gpu=-1, unit_std=True)
-#     config.critic_network_fn = lambda: GaussianCriticNet(task.state_dim, gpu=-1)
-#     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
-#     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-#     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-#
-#     config.policy_fn = lambda: GaussianPolicy()
-#     config.replay_fn = lambda: GeneralReplay(memory_size=2048, batch_size=2048)
-#     config.worker = ProximalPolicyOptimization
-#     config.discount = 0.99
-#     config.gae_tau = 0.97
-#     config.num_workers = 6
-#     config.test_interval = 1
-#     config.test_repetitions = 1
-#     config.entropy_weight = 0
-#     config.gradient_clip = 20
-#     config.rollout_length = 10000
-#     config.optimize_epochs = 1
-#     config.ppo_ratio_clip = 0.2
-#     config.logger = Logger('./log', logger)
-#     agent = AsyncAgent(config)
-#     agent.run()
-#
-# def d3pg_continuous():
-#     config = Config()
-#     config.task_fn = lambda: Pendulum()
-#     # config.task_fn = lambda: Box2DContinuous('BipedalWalker-v2')
-#     # config.task_fn = lambda: Box2DContinuous('BipedalWalkerHardcore-v2')
-#     # config.task_fn = lambda: Box2DContinuous('LunarLanderContinuous-v2')
-#     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
-#     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
-#     task = config.task_fn()
-#     config.actor_network_fn = lambda: DeterministicActorNet(
-#         task.state_dim, task.action_dim, F.tanh, 2, non_linear=F.relu, batch_norm=False)
-#     config.critic_network_fn = lambda: DeterministicCriticNet(
-#         task.state_dim, task.action_dim, non_linear=F.relu, batch_norm=False)
-#     config.network_fn = lambda: DisjointActorCriticNet(config.actor_network_fn, config.critic_network_fn)
-#     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-#     config.critic_optimizer_fn =\
-#         lambda params: torch.optim.Adam(params, lr=1e-4)
-#     config.replay_fn = lambda: SharedReplay(memory_size=1000000, batch_size=64,
-#                                             state_shape=(task.state_dim, ), action_shape=(task.action_dim, ))
-#     config.discount = 0.99
-#     config.random_process_fn = \
-#         lambda: OrnsteinUhlenbeckProcess(size=task.action_dim, theta=0.15, sigma=0.2,
-#                                          n_steps_annealing=100000)
-#     config.worker = DeterministicPolicyGradient
-#     config.num_workers = 6
-#     config.min_memory_size = 50
-#     config.target_network_mix = 0.001
-#     config.test_interval = 500
-#     config.test_repetitions = 1
-#     config.gradient_clip = 20
-#     config.logger = Logger('./log', logger)
-#     agent = AsyncAgent(config)
-#     agent.run()
+## continuous control
+
+def ppo_continuous():
+    config = Config()
+    config.num_workers = 5
+    task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
+    # task_fn = lambda log_dir: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
+    # task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
+    config.actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(state_dim, action_dim)
+    config.critic_network_fn = lambda state_dim, action_dim: GaussianCriticNet(state_dim)
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.discount = 0.99
+    config.use_gae = True
+    config.gae_tau = 0.97
+    config.gradient_clip = 0.5
+    config.rollout_length = 20
+    config.optimize_epochs = 4
+    config.ppo_ratio_clip = 0.2
+    config.logger = Logger('./log', logger)
+    run_iterations(PPOAgent(config))
 
 def ddpg_continuous():
     config = Config()
     config.task_fn = lambda: Pendulum()
-    # config.task_fn = lambda: Box2DContinuous('BipedalWalker-v2')
-    # config.task_fn = lambda: Box2DContinuous('BipedalWalkerHardcore-v2')
-    # config.task_fn = lambda: Box2DContinuous('LunarLanderContinuous-v2')
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
@@ -346,9 +273,8 @@ if __name__ == '__main__':
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    ddpg_continuous()
+    # ddpg_continuous()
+    ppo_continuous()
 
-    # dqn_pixel_atari('BreakoutNoFrameskip-v4')
-    # dqn_ram_atari('Pong-ramNoFrameskip-v4')
     # acvp.train('PongNoFrameskip-v4')
 

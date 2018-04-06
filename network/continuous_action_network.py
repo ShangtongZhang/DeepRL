@@ -92,7 +92,7 @@ class GaussianActorNet(nn.Module, BasicNet):
                  action_scale=1,
                  action_gate=F.tanh,
                  gpu=-1,
-                 unit_std=True,
+                 # unit_std=True,
                  hidden_size=64,
                  non_linear=F.tanh):
         super(GaussianActorNet, self).__init__()
@@ -100,12 +100,8 @@ class GaussianActorNet(nn.Module, BasicNet):
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.action_mean = nn.Linear(hidden_size, action_dim)
 
-        if unit_std:
-            self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
-        else:
-            self.action_std = nn.Linear(hidden_size, action_dim)
+        self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
 
-        self.unit_std = unit_std
         self.action_scale = action_scale
         self.action_gate = action_gate
         self.non_linear = non_linear
@@ -119,24 +115,20 @@ class GaussianActorNet(nn.Module, BasicNet):
         mean = self.action_mean(phi)
         if self.action_gate is not None:
             mean = self.action_scale * self.action_gate(mean)
-        if self.unit_std:
-            log_std = self.action_log_std.expand_as(mean)
-            std = log_std.exp()
-        else:
-            std = F.softplus(self.action_std(phi)) + 1e-5
-            log_std = std.log()
+        log_std = self.action_log_std.expand_as(mean)
+        std = log_std.exp()
         return mean, std, log_std
 
     def predict(self, x):
         return self.forward(x)
 
-    def log_density(self, x, mean, log_std, std):
-        var = std.pow(2)
-        log_density = -(x - mean).pow(2) / (2 * var + 1e-5) - 0.5 * torch.log(2 * Variable(torch.FloatTensor([np.pi])).expand_as(x)) - log_std
-        return log_density.sum(1)
-
-    def entropy(self, std):
-        return 0.5 * (1 + (2 * std.pow(2) * np.pi + 1e-5).log()).sum(1).mean()
+    # def log_density(self, x, mean, log_std, std):
+    #     var = std.pow(2)
+    #     log_density = -(x - mean).pow(2) / (2 * var + 1e-5) - 0.5 * torch.log(2 * Variable(torch.FloatTensor([np.pi])).expand_as(x)) - log_std
+    #     return log_density.sum(1)
+    #
+    # def entropy(self, std):
+    #     return 0.5 * (1 + (2 * std.pow(2) * np.pi + 1e-5).log()).sum(1).mean()
 
 class GaussianCriticNet(nn.Module, BasicNet):
     def __init__(self,

@@ -48,7 +48,6 @@ class NStepDQNAgent:
             rewards = config.reward_shift_fn(rewards)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
-                    next_states[i] = self.task.reset(i)
                     self.last_episode_rewards[i] = self.episode_rewards[i]
                     self.episode_rewards[i] = 0
 
