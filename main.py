@@ -105,7 +105,7 @@ def dqn_pixel_atari(name):
     config.network_fn = lambda state_dim, action_dim: ConvNet(config.history_length, action_dim, gpu=0)
     # config.network_fn = lambda state_dim, action_dim: DuelingConvNet(config.history_length, action_dim)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -119,7 +119,7 @@ def dqn_pixel_atari(name):
 def a2c_pixel_atari(name):
     config = Config()
     config.history_length = 4
-    config.num_workers = 5
+    config.num_workers = 16
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
@@ -143,9 +143,10 @@ def categorical_dqn_pixel_atari(name):
     config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
                                         log_dir=get_default_log_dir(categorical_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00025, eps=0.01 / 32)
-    config.network_fn = lambda state_dim, action_dim: CategoricalConvNet(config.history_length, action_dim, config.categorical_n_atoms, gpu=0)
+    config.network_fn = lambda state_dim, action_dim: \
+        CategoricalConvNet(config.history_length, action_dim, config.categorical_n_atoms, gpu=1)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
     config.discount = 0.99
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -164,9 +165,10 @@ def quantile_regression_dqn_pixel_atari(name):
     config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
                                         log_dir=get_default_log_dir(quantile_regression_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
-    config.network_fn = lambda state_dim, action_dim: QuantileConvNet(config.history_length, action_dim, config.num_quantiles, gpu=0)
+    config.network_fn = lambda state_dim, action_dim: \
+        QuantileConvNet(config.history_length, action_dim, config.num_quantiles, gpu=2)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=32, dtype=np.uint8)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -262,6 +264,16 @@ def ddpg_continuous():
     config.logger = Logger('./log', logger)
     run_episodes(DDPGAgent(config))
 
+def plot():
+    import matplotlib.pyplot as plt
+    plotter = Plotter()
+    name = 'to_plot/a2c_pixel_atari-180407-92711'
+    # name = 'to_plot/dqn_pixel_atari-180407-01414'
+    # name = 'to_plot/quantile_regression_dqn_pixel_atari-180407-01604'
+    # name = 'to_plot/categorical_dqn_pixel_atari-180407-01537'
+    plotter.plot_results([name])
+    plt.show()
+
 if __name__ == '__main__':
     mkdir('data')
     mkdir('data/video')
@@ -287,4 +299,6 @@ if __name__ == '__main__':
     # ppo_continuous()
 
     # acvp.train('PongNoFrameskip-v4')
+
+    plot()
 

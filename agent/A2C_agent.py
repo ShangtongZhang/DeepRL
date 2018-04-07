@@ -31,8 +31,7 @@ class A2CAgent(BaseAgent):
         rollout = []
         states = self.states
         for i in range(config.rollout_length):
-            states = config.state_normalizer(states)
-            prob, log_prob, value = self.network.predict(states)
+            prob, log_prob, value = self.network.predict(config.state_normalizer(states))
             actions = [self.policy.sample(p) for p in prob.data.cpu().numpy()]
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards

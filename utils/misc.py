@@ -70,7 +70,7 @@ def run_iterations(agent):
     return steps, rewards
 
 def get_time_str():
-    return datetime.datetime.now().strftime("%y%m%d-%-H%M%S")
+    return datetime.datetime.now().strftime("%y%m%d-%H%M%S")
 
 def get_default_log_dir(name):
     return './log/%s-%s' % (name, get_time_str())

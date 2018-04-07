@@ -1,7 +1,5 @@
 # from https://raw.githubusercontent.com/openai/baselines/master/baselines/bench/monitor.py
 
-__all__ = ['Monitor', 'get_monitor_files', 'load_results']
-
 import gym
 from gym.core import Wrapper
 import time
@@ -100,7 +98,7 @@ class LoadMonitorResultsError(Exception):
 def get_monitor_files(dir):
     return glob(osp.join(dir, "*" + Monitor.EXT))
 
-def load_results(dir):
+def load_monitor_log(dir):
     import pandas
     monitor_files = (
         glob(osp.join(dir, "*monitor.json")) +
