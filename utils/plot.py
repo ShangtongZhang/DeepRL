@@ -1,3 +1,5 @@
+# Adapted from  https://github.com/openai/baselines/blob/master/baselines/results_plotter.py
+
 import numpy as np
 import component
 
