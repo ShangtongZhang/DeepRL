@@ -78,28 +78,41 @@ class PPOAgent(BaseAgent):
         states, actions, log_probs_old, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
         advantages = (advantages - advantages.mean()) / advantages.std()
         advantages = Variable(advantages)
+        returns = Variable(returns)
 
-        for k in range(config.optimization_epochs):
-            mean, std, log_std = self.actor.predict(states)
-            dist = torch.distributions.Normal(mean, std)
-            log_probs = dist.log_prob(actions)
-            log_probs = torch.sum(log_probs, dim=1, keepdim=True)
-            ratio = (log_probs - log_probs_old).exp()
-            obj = ratio * advantages
-            obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip, 1.0 + self.config.ppo_ratio_clip) * advantages
-            policy_loss = -torch.min(obj, obj_clipped).mean(0)
+        batcher = Batcher(states.size(0) // config.num_mini_batches, [np.arange(states.size(0))])
+        for _ in range(config.optimization_epochs):
+            batcher.shuffle()
+            while not batcher.end():
+                batch_indices = batcher.next_batch()[0]
+                batch_indices = self.actor.variable(batch_indices, torch.LongTensor)
+                sampled_states = states[batch_indices]
+                sampled_actions = actions[batch_indices]
+                sampled_log_probs_old = log_probs_old[batch_indices]
+                sampled_returns = returns[batch_indices]
+                sampled_advantages = advantages[batch_indices]
 
-            v = self.critic.predict(states)
-            value_loss = 0.5 * (Variable(returns) - v).pow(2).mean()
+                mean, std, log_std = self.actor.predict(sampled_states)
+                dist = torch.distributions.Normal(mean, std)
+                log_probs = dist.log_prob(sampled_actions)
+                log_probs = torch.sum(log_probs, dim=1, keepdim=True)
+                ratio = (log_probs - sampled_log_probs_old).exp()
+                obj = ratio * sampled_advantages
+                obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
+                                          1.0 + self.config.ppo_ratio_clip) * sampled_advantages
+                policy_loss = -torch.min(obj, obj_clipped).mean(0)
 
-            self.actor_opt.zero_grad()
-            self.critic_opt.zero_grad()
-            policy_loss.backward()
-            value_loss.backward()
-            nn.utils.clip_grad_norm(self.actor.parameters(), config.gradient_clip)
-            nn.utils.clip_grad_norm(self.critic.parameters(), config.gradient_clip)
-            self.actor_opt.step()
-            self.critic_opt.step()
+                v = self.critic.predict(sampled_states)
+                value_loss = 0.5 * (sampled_returns - v).pow(2).mean()
+
+                self.actor_opt.zero_grad()
+                self.critic_opt.zero_grad()
+                policy_loss.backward()
+                value_loss.backward()
+                nn.utils.clip_grad_norm(self.actor.parameters(), config.gradient_clip)
+                nn.utils.clip_grad_norm(self.critic.parameters(), config.gradient_clip)
+                self.actor_opt.step()
+                self.critic_opt.step()
 
         steps = config.rollout_length * config.num_workers
         self.total_steps += steps

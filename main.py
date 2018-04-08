@@ -186,14 +186,15 @@ def n_step_dqn_pixel_atari(name):
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(n_step_dqn_pixel_atari.__name__))
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: ConvNet(config.history_length, action_dim, gpu=3)
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
+    config.gradient_clip = 5
     config.logger = Logger('./log', logger)
     run_iterations(NStepDQNAgent(config))
 
@@ -220,25 +221,29 @@ def dqn_ram_atari(name):
 
 def ppo_continuous():
     config = Config()
-    config.num_workers = 16
+    config.num_workers = 1
     # task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
     # task_fn = lambda log_dir: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
     # task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     # task_fn = lambda log_dir: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
     task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    # task_fn = lambda log_dir: DMControl('cartpole', 'balance', log_dir=log_dir)
+    # task_fn = lambda log_dir: DMControl('hopper', 'hop', log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
     config.actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(state_dim, action_dim)
     config.critic_network_fn = lambda state_dim, action_dim: GaussianCriticNet(state_dim)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 1e-4)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 1e-4)
-    config.state_normalizer = RunningStatsNormalizer()
+    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    # config.state_normalizer = RunningStatsNormalizer()
     config.discount = 0.99
     config.use_gae = True
-    config.gae_tau = 0.97
+    config.gae_tau = 0.95
     config.gradient_clip = 0.5
-    config.rollout_length = 20
-    config.optimize_epochs = 5
+    config.rollout_length = 2048
+    config.optimization_epochs = 10
+    config.num_mini_batches = 32
     config.ppo_ratio_clip = 0.2
+    config.iteration_log_interval = 1
     config.logger = Logger('./log', logger)
     run_iterations(PPOAgent(config))
 
@@ -247,17 +252,19 @@ def ddpg_continuous():
     log_dir = get_default_log_dir(ddpg_continuous.__name__)
     # config.task_fn = lambda: Pendulum(log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
-    config.task_fn = lambda: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
-    # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
+    config.task_fn = lambda: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1', log_dir=log_dir)
-    config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
+    # config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
+    # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(state_dim, action_dim)
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(state_dim, action_dim)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
+    config.state_normalizer = RunningStatsNormalizer()
     config.random_process_fn = \
         lambda action_dim: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.3,
                                          n_steps_annealing=1000000)
@@ -270,12 +277,17 @@ def ddpg_continuous():
 def plot():
     import matplotlib.pyplot as plt
     plotter = Plotter()
+    # name = 'log/ppo_continuous-180408-002056'
+    # plotter.plot_results([name])
+    # plt.show()
     names = ['a2c_pixel_atari-180407-92711',
             'categorical_dqn_pixel_atari-180407-094006',
             'dqn_pixel_atari-180407-01414',
             'quantile_regression_dqn_pixel_atari-180407-01604',
-            'n_step_dqn_pixel_atari-180407-163421',
-            'ppo_continuous-180407-111715']
+             'n_step_dqn_pixel_atari-180408-001104',
+             'ppo_continuous-180408-002056',
+             'ddpg_continuous-180407-234141'
+             ]
     for name in names:
         plotter.plot_results(['to_plot/%s' % (name)])
         plt.savefig('images/%s.png' % (name))

@@ -55,3 +55,4 @@ class Config:
         self.num_quantiles = 10
         self.gaussian_noise_scale = 0.3
         self.optimization_epochs = 4
+        self.num_mini_batches = 32

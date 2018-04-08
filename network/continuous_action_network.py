@@ -87,31 +87,36 @@ class GaussianActorNet(nn.Module, BasicNet):
     def __init__(self,
                  state_dim,
                  action_dim,
-                 action_scale=1,
-                 action_gate=F.tanh,
                  gpu=-1,
                  hidden_size=64,
                  non_linear=F.tanh):
         super(GaussianActorNet, self).__init__()
         self.fc1 = nn.Linear(state_dim, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.action_mean = nn.Linear(hidden_size, action_dim)
+        self.fc_action = nn.Linear(hidden_size, action_dim)
 
         self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
 
-        self.action_scale = action_scale
-        self.action_gate = action_gate
         self.non_linear = non_linear
 
+        self.init_weights()
         BasicNet.__init__(self, gpu)
+
+    def init_weights(self):
+        bound = 3e-3
+        nn.init.uniform(self.fc_action.weight.data, -bound, bound)
+        nn.init.constant(self.fc_action.bias.data, 0)
+
+        nn.init.orthogonal(self.fc1.weight.data)
+        nn.init.constant(self.fc1.bias.data, 0)
+        nn.init.orthogonal(self.fc2.weight.data)
+        nn.init.constant(self.fc2.bias.data, 0)
 
     def forward(self, x):
         x = self.variable(x)
         phi = self.non_linear(self.fc1(x))
         phi = self.non_linear(self.fc2(phi))
-        mean = self.action_mean(phi)
-        if self.action_gate is not None:
-            mean = self.action_scale * self.action_gate(mean)
+        mean = F.tanh(self.fc_action(phi))
         log_std = self.action_log_std.expand_as(mean)
         std = log_std.exp()
         return mean, std, log_std
@@ -130,7 +135,18 @@ class GaussianCriticNet(nn.Module, BasicNet):
         self.fc2 = nn.Linear(hidden_size, hidden_size)
         self.fc_value = nn.Linear(hidden_size, 1)
         self.non_linear = non_linear
+        self.init_weights()
         BasicNet.__init__(self, gpu)
+
+    def init_weights(self):
+        bound = 3e-3
+        nn.init.uniform(self.fc_value.weight.data, -bound, bound)
+        nn.init.constant(self.fc_value.bias.data, 0)
+
+        nn.init.orthogonal(self.fc1.weight.data)
+        nn.init.constant(self.fc1.bias.data, 0)
+        nn.init.orthogonal(self.fc2.weight.data)
+        nn.init.constant(self.fc2.bias.data, 0)
 
     def forward(self, x):
         x = self.variable(x)
