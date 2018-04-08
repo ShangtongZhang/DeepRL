@@ -47,7 +47,7 @@ class Plotter:
         xy_list = [[x, y, self.window_func(x, y, episode_window, np.mean)] for x, y in xy_list]
         return xy_list
 
-    def plot_results(self, dirs, max_timesteps=1e8, x_axis=X_TIMESTEPS, episode_window=100):
+    def plot_results(self, dirs, max_timesteps=1e8, x_axis=X_TIMESTEPS, episode_window=100, title=None):
         import matplotlib.pyplot as plt
         plt.ticklabel_format(axis='x', style='sci', scilimits=(1, 1))
         xy_list = self.load_results(dirs, max_timesteps, x_axis, episode_window)
@@ -56,3 +56,5 @@ class Plotter:
             plt.plot(smoothed[0], smoothed[1], color=color)
         plt.xlabel(x_axis)
         plt.ylabel("Episode Rewards")
+        if title is not None:
+            plt.title(title)

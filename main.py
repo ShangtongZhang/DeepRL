@@ -280,11 +280,12 @@ def plot():
     # name = 'log/ppo_continuous-180408-002056'
     # plotter.plot_results([name])
     # plt.show()
-    names = ['a2c_pixel_atari-180407-92711',
-            'categorical_dqn_pixel_atari-180407-094006',
-            'dqn_pixel_atari-180407-01414',
-            'quantile_regression_dqn_pixel_atari-180407-01604',
-             'n_step_dqn_pixel_atari-180408-001104',
+    names = [
+            # 'a2c_pixel_atari-180407-92711',
+            # 'categorical_dqn_pixel_atari-180407-094006',
+            # 'dqn_pixel_atari-180407-01414',
+            # 'quantile_regression_dqn_pixel_atari-180407-01604',
+            #  'n_step_dqn_pixel_atari-180408-001104',
              'ppo_continuous-180408-002056',
              'ddpg_continuous-180407-234141'
              ]

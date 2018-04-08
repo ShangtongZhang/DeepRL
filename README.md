@@ -23,31 +23,24 @@ Following asynchronous algorithms are removed now in this repo but can be found 
 # Curves
 > Curves for CartPole are trivial so I didn't place it here. And there isn't any fixed random seed. The curves are generated in the same manner as OpenAI baselines (one run and smoothed by recent 100 episodes)
 ## DQN
-> BreakoutNoFrameSkip-v4
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png)
 
 ## Categorical DQN
-> BreakoutNoFrameskip-v4
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/categorical_dqn_pixel_atari-180407-094006.png)
 
 ## Quantile Regression DQN
-> BreakoutNoFrameskip-v4
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/quantile_regression_dqn_pixel_atari-180407-01604.png)
 
 ## A2C 
-> BreakoutNoFrameskip-v4
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/a2c_pixel_atari-180407-92711.png)
 
 ## N-Step Q-Learning
-> BreakoutNoFrameskip-v4
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png)
 
 ## DDPG 
-> RoboschoolHopper-v1
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ddpg_continuous-180407-234141.png)
 
 ## PPO 
-> RoboschoolHopper-v1
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ppo_continuous-180408-002056.png)
 
 ## Action Conditional Video Prediction
@@ -89,5 +82,5 @@ Prediction is sampled after 110K iterations, and I only implemented one-step tra
 * [Action-Conditional Video Prediction using Deep Networks in Atari Games](https://arxiv.org/abs/1507.08750)
 * [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)
 * [Distributional Reinforcement Learning with Quantile Regression](https://arxiv.org/abs/1710.10044)
-* [DeepMind Control Suite](https://arxiv.org/abs/1801.00690)
-* [OpenAI Baselines](https://github.com/openai/baselines), [Ilya Kostrikov](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)
+
+* Some hyper-parameters are from [DeepMind Control Suite](https://arxiv.org/abs/1801.00690), [OpenAI Baselines](https://github.com/openai/baselines) and [Ilya Kostrikov](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)
