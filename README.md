@@ -35,7 +35,7 @@ Following asynchronous algorithms are removed now in this repo but can be found 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/a2c_pixel_atari-180407-92711.png)
 
 ## N-Step Q-Learning
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/n_step_dqn_pixel_atari-180408-001104.png)
 
 ## DDPG 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ddpg_continuous-180407-234141.png)
