@@ -82,5 +82,4 @@ Prediction is sampled after 110K iterations, and I only implemented one-step tra
 * [Action-Conditional Video Prediction using Deep Networks in Atari Games](https://arxiv.org/abs/1507.08750)
 * [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)
 * [Distributional Reinforcement Learning with Quantile Regression](https://arxiv.org/abs/1710.10044)
-
 * Some hyper-parameters are from [DeepMind Control Suite](https://arxiv.org/abs/1801.00690), [OpenAI Baselines](https://github.com/openai/baselines) and [Ilya Kostrikov](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)
