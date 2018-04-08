@@ -24,31 +24,31 @@ Following asynchronous algorithms are removed now in this repo but can be found 
 > Curves for CartPole are trivial so I didn't place it here. And there isn't any fixed random seed. The curves are generated in the same manner as OpenAI baselines (one run and smoothed by recent 100 episodes)
 ## DQN
 > BreakoutNoFrameSkip-v4
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png)
 
 ## Categorical DQN
 > BreakoutNoFrameskip-v4
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/categorical_dqn_pixel_atari-180407-094006.png.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/categorical_dqn_pixel_atari-180407-094006.png)
 
 ## Quantile Regression DQN
 > BreakoutNoFrameskip-v4
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/quantile_regression_dqn_pixel_atari-180407-01604.png.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/quantile_regression_dqn_pixel_atari-180407-01604.png)
 
 ## A2C 
 > BreakoutNoFrameskip-v4
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/a2c_pixel_atari-180407-92711.png.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/a2c_pixel_atari-180407-92711.png)
 
 ## N-Step Q-Learning
 > BreakoutNoFrameskip-v4
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png)
 
 ## DDPG 
 > RoboschoolHopper-v1
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ddpg_continuous-180407-234141.png.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ddpg_continuous-180407-234141.png)
 
 ## PPO 
 > RoboschoolHopper-v1
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ppo_continuous-180408-002056.png.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ppo_continuous-180408-002056.png)
 
 ## Action Conditional Video Prediction
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ACVP.png)
