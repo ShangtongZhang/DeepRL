@@ -11,7 +11,7 @@ Implemented algorithms:
 * Synchronous Proximal Policy Optimization (PPO)
 * Action Conditional Video Prediction
 
-Following asynchronous algorithms are removed now in this repo but can be found in [previous release ](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1)
+Asynchronous algorithms below are removed in this repo but can be found in [the previous release](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1)
 * Async Advantage Actor Critic (A3C)
 * Async One-Step Q-Learning
 * Async One-Step Sarsa 
@@ -53,11 +53,11 @@ Prediction is sampled after 110K iterations, and I only implemented one-step tra
 # Dependency
 > Tested in macOS 10.12 and CentO/S 6.8
 * OpenAI gym
-* [Roboschool](https://github.com/openai/roboschool) (Optional)
-* [DeepMind Control Suite](https://github.com/deepmind/dm_control) & [DMControl2Gym](dm_control2gym) (Optional) 
 * PyTorch v0.3.0
 * Python 2.7 / 3.6
-* [TensorboardX](https://github.com/lanpa/tensorboard-pytorch)
+* [Roboschool](https://github.com/openai/roboschool) (Optional)
+* [DeepMind Control Suite](https://github.com/deepmind/dm_control) & [DMControl2Gym](dm_control2gym) (Optional) 
+* [TensorboardX](https://github.com/lanpa/tensorboard-pytorch) (Optional)
 
 
 # Usage
