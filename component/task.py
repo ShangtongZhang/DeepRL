@@ -139,6 +139,21 @@ class Roboschool(BasicTask):
     def step(self, action):
         return BasicTask.step(self, np.clip(action, -1, 1))
 
+class DMControl(BasicTask):
+    def __init__(self, domain_name, task_name, max_steps=sys.maxsize, log_dir=None):
+        from dm_control import suite
+        import dm_control2gym
+        BasicTask.__init__(self, max_steps)
+
+        self.name = domain_name + '_' + task_name
+        self.env = dm_control2gym.make(domain_name, task_name)
+
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape[0]
+        if log_dir is not None:
+            mkdir(log_dir)
+            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
+
 def sub_task(parent_pipe, pipe, task_fn, rank, log_dir):
     np.random.seed()
     seed = np.random.randint(0, sys.maxsize)

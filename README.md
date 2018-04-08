@@ -56,6 +56,7 @@ Prediction is sampled after 110K iterations and I only implemented one-step trai
 > Tested in macOS 10.12 and CentO/S 6.8
 * OpenAI gym
 * [Roboschool](https://github.com/openai/roboschool) (Optional)
+* [DeepMind Control Suite](https://github.com/deepmind/dm_control) & [DMControl2Gym](dm_control2gym) (Optional) 
 * PyTorch v0.3.0
 * Python 2.7 / 3.6
 * [TensorboardX](https://github.com/lanpa/tensorboard-pytorch)
