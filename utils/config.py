@@ -56,3 +56,5 @@ class Config:
         self.gaussian_noise_scale = 0.3
         self.optimization_epochs = 4
         self.num_mini_batches = 32
+        self.test_interval = 0
+        self.test_repetitions = 10
