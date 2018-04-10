@@ -302,8 +302,8 @@ def action_conditional_video_prediction():
     # a2c_pixel_atari(game)
 
     # Generate a dataset with the trained model
-    a2c_model_file = './data/A2CAgent-vanilla-model-%s.bin' % (game)
-    generate_dataset(game, a2c_model_file, prefix)
+    # a2c_model_file = './data/A2CAgent-vanilla-model-%s.bin' % (game)
+    # generate_dataset(game, a2c_model_file, prefix)
 
     # Train the action conditional video prediction model
     acvp_train(game, prefix)
@@ -334,7 +334,7 @@ if __name__ == '__main__':
     # ddpg_continuous()
     # ppo_continuous()
 
-    action_conditional_video_prediction()
+    # action_conditional_video_prediction()
 
     # plot()
 

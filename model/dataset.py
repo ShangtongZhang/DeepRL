@@ -50,6 +50,7 @@ def generate_dataset(game, a2c_model, prefix):
     config.gradient_clip = 0.5
     config.logger = Logger('./log', logger, skip=True)
     agent = A2CAgent(config)
+    agent.close()
 
     agent.load(a2c_model)
     task = PixelAtari(game, frame_skip=4, history_length=4, log_dir=None, dataset=True)

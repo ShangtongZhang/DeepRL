@@ -4,6 +4,8 @@
 # declaration at the top                                              #
 #######################################################################
 
+__all__ = ['acvp_train']
+
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
