@@ -8,7 +8,7 @@ import logging
 from agent import *
 from component import *
 from utils import *
-import model.action_conditional_video_prediction as acvp
+from model import *
 
 ## cart pole
 
@@ -124,7 +124,7 @@ def a2c_pixel_atari(name):
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
     config.network_fn = lambda state_dim, action_dim: ActorCriticConvNet(
-        config.history_length, action_dim, gpu=3)
+        config.history_length, action_dim, gpu=1)
     config.policy_fn = SamplePolicy
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -294,9 +294,25 @@ def plot():
         plt.savefig('images/%s.png' % (name))
         plt.close()
 
+def action_conditional_video_prediction():
+    game = 'PongNoFrameskip-v4'
+    prefix = '.'
+
+    # Train an agent to generate the dataset
+    # a2c_pixel_atari(game)
+
+    # Generate a dataset with the trained model
+    a2c_model_file = './data/A2CAgent-vanilla-model-%s.bin' % (game)
+    generate_dataset(game, a2c_model_file, prefix)
+
+    # Train the action conditional video prediction model
+    acvp_train(game, prefix)
+
+
 if __name__ == '__main__':
     mkdir('data')
     mkdir('data/video')
+    mkdir('dataset')
     mkdir('log')
     os.system('export OMP_NUM_THREADS=1')
     # logger.setLevel(logging.DEBUG)
@@ -318,7 +334,7 @@ if __name__ == '__main__':
     # ddpg_continuous()
     # ppo_continuous()
 
-    # acvp.train('PongNoFrameskip-v4')
+    action_conditional_video_prediction()
 
-    plot()
+    # plot()
 

@@ -57,10 +57,13 @@ class LunarLander(BasicTask):
 
 class PixelAtari(BasicTask):
     def __init__(self, name, seed=0, log_dir=None, max_steps=sys.maxsize,
-                 frame_skip=4, history_length=4):
+                 frame_skip=4, history_length=4, dataset=False):
         BasicTask.__init__(self, max_steps)
         env = make_atari(name, frame_skip)
         env.seed(seed)
+        if dataset:
+            env = DatasetEnv(env)
+            self.dataset_env = env
         if log_dir is not None:
             mkdir(log_dir)
             env = Monitor(env, '%s/%s' % (log_dir, uuid.uuid1()))

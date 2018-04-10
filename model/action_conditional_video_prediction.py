@@ -19,9 +19,6 @@ from utils import *
 from tqdm import tqdm
 from network import *
 
-PREFIX = '.'
-# PREFIX = '/local/data'
-
 class Network(nn.Module, BasicNet):
     def __init__(self, num_actions, gpu=0):
         super(Network, self).__init__()
@@ -104,8 +101,8 @@ class Network(nn.Module, BasicNet):
         a = self.variable(a)
         return self.forward(x, a).cpu().data.numpy()
 
-def load_episode(game, ep, num_actions):
-    path = '%s/dataset/%s/%05d' % (PREFIX, game, ep)
+def load_episode(game, ep, num_actions, prefix):
+    path = '%s/dataset/%s/%05d' % (prefix, game, ep)
     with open('%s/action.bin' % (path), 'rb') as f:
         actions = pickle.load(f)
     num_frames = len(actions) + 1
@@ -136,13 +133,13 @@ def extend_frames(frames, actions):
 
     return np.stack(extended_frames), actions, np.stack(targets)
 
-def train(game):
+def acvp_train(game, prefix):
     env = gym.make(game)
     num_actions = env.action_space.n
 
     net = Network(num_actions)
 
-    with open('%s/dataset/%s/meta.bin' % (PREFIX, game), 'rb') as f:
+    with open('%s/dataset/%s/meta.bin' % (prefix, game), 'rb') as f:
         meta = pickle.load(f)
     episodes = meta['episodes']
     mean_obs = meta['mean_obs']
@@ -164,7 +161,7 @@ def train(game):
     while True:
         np.random.shuffle(indices_train)
         for ep in indices_train:
-            frames, actions = load_episode(game, ep, num_actions)
+            frames, actions = load_episode(game, ep, num_actions, prefix)
             frames, actions, targets = extend_frames(frames, actions)
             batcher = Batcher(32, [frames, actions, targets])
             batcher.shuffle()
@@ -175,7 +172,7 @@ def train(game):
                     test_indices = range(train_episodes, episodes)
                     ep_to_print = np.random.choice(test_indices)
                     for test_ep in tqdm(test_indices):
-                        frames, actions = load_episode(game, test_ep, num_actions)
+                        frames, actions = load_episode(game, test_ep, num_actions, prefix)
                         frames, actions, targets = extend_frames(frames, actions)
                         test_batcher = Batcher(32, [frames, actions, targets])
                         while not test_batcher.end():
