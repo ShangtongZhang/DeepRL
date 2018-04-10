@@ -61,9 +61,8 @@ Prediction is sampled after 110K iterations, and I only implemented one-step tra
 
 
 # Usage
-```dataset.py```: generate dataset for action conditional video prediction
 
-```main.py```: all other algorithms
+```main.py``` contains examples for all the implemented algorithms
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)
