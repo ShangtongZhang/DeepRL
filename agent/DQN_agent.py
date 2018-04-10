@@ -72,6 +72,7 @@ class DQNAgent(BaseAgent):
                 loss = self.criterion(q, q_next)
                 self.optimizer.zero_grad()
                 loss.backward()
+                nn.utils.clip_grad_norm(self.network.parameters(), self.config.gradient_clip)
                 self.optimizer.step()
             if not deterministic and self.total_steps % self.config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())

@@ -71,4 +71,5 @@ class NStepDQNAgent(BaseAgent):
         loss = 0.5 * (q - Variable(returns)).pow(2).mean()
         self.optimizer.zero_grad()
         loss.backward()
+        nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
