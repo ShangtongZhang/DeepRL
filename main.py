@@ -220,6 +220,32 @@ def n_step_dqn_pixel_atari(name):
     config.logger = Logger('./log', logger)
     run_iterations(NStepDQNAgent(config))
 
+def ppo_pixel_atari(name):
+    config = Config()
+    config.history_length = 4
+    task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
+    config.num_workers = 16
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
+                                              log_dir=get_default_log_dir(ppo_pixel_atari))
+    optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025)
+    network_fn = lambda state_dim, action_dim: ActorCriticConvNet(config.history_length, action_dim, gpu=3)
+    config.network_fn = lambda state_dim, action_dim: \
+        DiscreteActorCriticWrapper(state_dim, action_dim, network_fn, optimizer_fn)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.logger = Logger('./log', logger)
+    config.use_gae = True
+    config.gae_tau = 0.95
+    config.entropy_weight = 0.01
+    config.gradient_clip = 0.5
+    config.rollout_length = 128
+    config.optimization_epochs = 4
+    config.num_mini_batches = 4
+    config.ppo_ratio_clip = 0.1
+    config.iteration_log_interval = 1
+    run_iterations(PPOAgent(config))
+
 def dqn_ram_atari(name):
     config = Config()
     config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4,
@@ -349,13 +375,14 @@ if __name__ == '__main__':
     # categorical_dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
     # n_step_dqn_cart_pole()
-    ppo_cart_pole()
+    # ppo_cart_pole()
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # a2c_pixel_atari('BreakoutNoFrameskip-v4')
     # categorical_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # quantile_regression_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')
+    ppo_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
     # ddpg_continuous()
