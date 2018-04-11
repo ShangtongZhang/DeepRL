@@ -186,3 +186,38 @@ class ContinuousActorCriticWrapper:
     def load_state_dict(self, state_dicts):
         self.actor.load_state_dict(state_dicts[0])
         self.critic.load_state_dict(state_dicts[1])
+
+class DiscreteActorCriticWrapper:
+    def __init__(self, state_dim, action_dim, network_fn, opt_fn):
+        self.network = network_fn(state_dim, action_dim)
+        self.opt = opt_fn(self.network.parameters())
+
+    def predict(self, state, action=None):
+        prob, log_prob, value = self.network.predict(state)
+        entropy_loss = torch.sum(prob * log_prob, dim=1, keepdim=True)
+        dist = torch.distributions.Categorical(prob)
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action).unsqueeze(1)
+        return action, log_prob, entropy_loss, value
+
+    def variable(self, x, dtype=torch.FloatTensor):
+        return self.network.variable(x, dtype)
+
+    def tensor(self, x, dtype=torch.FloatTensor):
+        return self.network.tensor(x, dtype)
+
+    def zero_grad(self):
+        self.opt.zero_grad()
+
+    def parameters(self):
+        return self.network.parameters()
+
+    def step(self):
+        self.opt.step()
+
+    def state_dict(self):
+        return self.network.state_dict()
+
+    def load_state_dict(self, state_dicts):
+        self.network.load_state_dict(state_dicts)

@@ -94,6 +94,28 @@ def n_step_dqn_cart_pole():
     config.logger = Logger('./log', logger)
     run_iterations(NStepDQNAgent(config))
 
+def ppo_cart_pole():
+    config = Config()
+    task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
+    config.num_workers = 5
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
+    optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    network_fn = lambda state_dim, action_dim: ActorCriticFCNet(state_dim, 64, action_dim)
+    config.network_fn = lambda state_dim, action_dim: \
+        DiscreteActorCriticWrapper(state_dim, action_dim, network_fn, optimizer_fn)
+    config.discount = 0.99
+    config.logger = Logger('./log', logger)
+    config.use_gae = True
+    config.gae_tau = 0.95
+    config.entropy_weight = 0.01
+    config.gradient_clip = 0.5
+    config.rollout_length = 128
+    config.optimization_epochs = 10
+    config.num_mini_batches = 4
+    config.ppo_ratio_clip = 0.2
+    config.iteration_log_interval = 1
+    run_iterations(PPOAgent(config))
+
 ## Atari games
 
 def dqn_pixel_atari(name):
@@ -327,6 +349,7 @@ if __name__ == '__main__':
     # categorical_dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
     # n_step_dqn_cart_pole()
+    ppo_cart_pole()
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # a2c_pixel_atari('BreakoutNoFrameskip-v4')
@@ -336,7 +359,7 @@ if __name__ == '__main__':
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
     # ddpg_continuous()
-    ppo_continuous()
+    # ppo_continuous()
 
     # action_conditional_video_prediction()
 

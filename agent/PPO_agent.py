@@ -82,18 +82,17 @@ class PPOAgent(BaseAgent):
                 sampled_returns = returns[batch_indices]
                 sampled_advantages = advantages[batch_indices]
 
-                _, log_probs, _, values = self.network.predict(sampled_states, sampled_actions)
+                _, log_probs, entropy_loss, values = self.network.predict(sampled_states, sampled_actions)
                 ratio = (log_probs - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean(0)
+                policy_loss = -torch.min(obj, obj_clipped).mean(0) + config.entropy_weight * entropy_loss.mean(0)
 
                 value_loss = 0.5 * (sampled_returns - values).pow(2).mean()
 
                 self.network.zero_grad()
-                policy_loss.backward()
-                value_loss.backward()
+                (policy_loss + value_loss).backward()
                 nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
                 self.network.step()
 
