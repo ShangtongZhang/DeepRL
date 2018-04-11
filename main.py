@@ -226,9 +226,9 @@ def ppo_pixel_atari(name):
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(ppo_pixel_atari))
+                                              log_dir=get_default_log_dir(ppo_pixel_atari.__name__))
     optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025)
-    network_fn = lambda state_dim, action_dim: ActorCriticConvNet(config.history_length, action_dim, gpu=3)
+    network_fn = lambda state_dim, action_dim: ActorCriticConvNet(config.history_length, action_dim, gpu=2)
     config.network_fn = lambda state_dim, action_dim: \
         DiscreteActorCriticWrapper(state_dim, action_dim, network_fn, optimizer_fn)
     config.state_normalizer = ImageNormalizer()
@@ -382,7 +382,7 @@ if __name__ == '__main__':
     # categorical_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # quantile_regression_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')
-    ppo_pixel_atari('BreakoutNoFrameskip-v4')
+    # ppo_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
     # ddpg_continuous()
