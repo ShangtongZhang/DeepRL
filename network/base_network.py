@@ -145,3 +145,44 @@ class TwoLayerFCNet(nn.Module):
         y = self.gate(self.fc1(x))
         y = self.gate(self.fc2(y))
         return y
+
+class ContinuousActorCriticWrapper:
+    def __init__(self, state_dim, action_dim, actor_fn, critic_fn, actor_opt_fn, critic_opt_fn):
+        self.actor = actor_fn(state_dim, action_dim)
+        self.critic = critic_fn(state_dim)
+        self.actor_opt = actor_opt_fn(self.actor.parameters())
+        self.critic_opt = critic_opt_fn(self.critic.parameters())
+
+    def predict(self, state, actions=None):
+        mean, std, log_std = self.actor.predict(state)
+        values = self.critic.predict(state)
+        dist = torch.distributions.Normal(mean, std)
+        if actions is None:
+            actions = dist.sample()
+        log_probs = dist.log_prob(actions)
+        log_probs = torch.sum(log_probs, dim=1, keepdim=True)
+        return actions, log_probs, 0, values
+
+    def variable(self, x, dtype=torch.FloatTensor):
+        return self.actor.variable(x, dtype)
+
+    def tensor(self, x, dtype=torch.FloatTensor):
+        return self.actor.tensor(x, dtype)
+
+    def zero_grad(self):
+        self.actor_opt.zero_grad()
+        self.critic_opt.zero_grad()
+
+    def parameters(self):
+        return list(self.actor.parameters()) + list(self.critic.parameters())
+
+    def step(self):
+        self.actor_opt.step()
+        self.critic_opt.step()
+
+    def state_dict(self):
+        return [self.actor.state_dict(), self.critic.state_dict()]
+
+    def load_state_dict(self, state_dicts):
+        self.actor.load_state_dict(state_dicts[0])
+        self.critic.load_state_dict(state_dicts[1])

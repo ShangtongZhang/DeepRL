@@ -224,16 +224,20 @@ def ppo_continuous():
     config.num_workers = 1
     # task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
     # task_fn = lambda log_dir: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
-    # task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
+    task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     # task_fn = lambda log_dir: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
-    task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    # task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     # task_fn = lambda log_dir: DMControl('cartpole', 'balance', log_dir=log_dir)
     # task_fn = lambda log_dir: DMControl('hopper', 'hop', log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
-    config.actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(state_dim, action_dim)
-    config.critic_network_fn = lambda state_dim, action_dim: GaussianCriticNet(state_dim)
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(state_dim, action_dim)
+    critic_network_fn = lambda state_dim: GaussianCriticNet(state_dim)
+    actor_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    critic_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    config.network_fn = lambda state_dim, action_dim: \
+        ContinuousActorCriticWrapper(state_dim, action_dim, actor_network_fn,
+                                     critic_network_fn, actor_optimizer_fn,
+                                     critic_optimizer_fn)
     # config.state_normalizer = RunningStatsNormalizer()
     config.discount = 0.99
     config.use_gae = True
@@ -332,7 +336,7 @@ if __name__ == '__main__':
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
     # ddpg_continuous()
-    # ppo_continuous()
+    ppo_continuous()
 
     # action_conditional_video_prediction()
 

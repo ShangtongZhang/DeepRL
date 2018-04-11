@@ -19,12 +19,7 @@ class PPOAgent(BaseAgent):
         BaseAgent.__init__(self)
         self.config = config
         self.task = config.task_fn()
-        self.network = DisjointActorCriticNet(self.task.state_dim, self.task.action_dim,
-                                              config.actor_network_fn, config.critic_network_fn)
-        self.actor = self.network.actor
-        self.critic = self.network.critic
-        self.actor_opt = config.actor_optimizer_fn(self.actor.parameters())
-        self.critic_opt = config.critic_optimizer_fn(self.critic.parameters())
+        self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.total_steps = 0
         self.episode_rewards = np.zeros(config.num_workers)
         self.last_episode_rewards = np.zeros(config.num_workers)
@@ -36,12 +31,7 @@ class PPOAgent(BaseAgent):
         rollout = []
         states = self.states
         for i in range(config.rollout_length):
-            mean, std, log_std = self.actor.predict(states)
-            values = self.critic.predict(states)
-            dist = torch.distributions.Normal(mean, std)
-            actions = dist.sample()
-            log_probs = dist.log_prob(actions).detach()
-            log_probs = torch.sum(log_probs, dim=1, keepdim=True)
+            actions, log_probs, _, values = self.network.predict(states)
             next_states, rewards, terminals, _ = self.task.step(actions.data.cpu().numpy())
             self.episode_rewards += rewards
             rewards = config.reward_normalizer(rewards)
@@ -50,22 +40,22 @@ class PPOAgent(BaseAgent):
                     self.last_episode_rewards[i] = self.episode_rewards[i]
                     self.episode_rewards[i] = 0
             next_states = config.state_normalizer(next_states)
-            rollout.append([states, values, actions, log_probs, rewards, 1 - terminals])
+            rollout.append([states, values.detach(), actions.detach(), log_probs.detach(), rewards, 1 - terminals])
             states = next_states
 
         self.states = states
-        pending_value = self.critic.predict(states)
+        pending_value = self.network.predict(states)[-1]
         rollout.append([states, pending_value, None, None, None, None])
 
         processed_rollout = [None] * (len(rollout) - 1)
-        advantages = self.actor.tensor(np.zeros((config.num_workers, 1)))
+        advantages = self.network.tensor(np.zeros((config.num_workers, 1)))
         returns = pending_value.data
         for i in reversed(range(len(rollout) - 1)):
             states, value, actions, log_probs, rewards, terminals = rollout[i]
-            terminals = self.actor.tensor(terminals).unsqueeze(1)
-            rewards = self.actor.tensor(rewards).unsqueeze(1)
-            actions = self.actor.variable(actions)
-            states = self.actor.variable(states)
+            terminals = self.network.tensor(terminals).unsqueeze(1)
+            rewards = self.network.tensor(rewards).unsqueeze(1)
+            actions = self.network.variable(actions)
+            states = self.network.variable(states)
             next_value = rollout[i + 1][1]
             returns = rewards + config.discount * terminals * returns
             if not config.use_gae:
@@ -85,34 +75,27 @@ class PPOAgent(BaseAgent):
             batcher.shuffle()
             while not batcher.end():
                 batch_indices = batcher.next_batch()[0]
-                batch_indices = self.actor.variable(batch_indices, torch.LongTensor)
+                batch_indices = self.network.variable(batch_indices, torch.LongTensor)
                 sampled_states = states[batch_indices]
                 sampled_actions = actions[batch_indices]
                 sampled_log_probs_old = log_probs_old[batch_indices]
                 sampled_returns = returns[batch_indices]
                 sampled_advantages = advantages[batch_indices]
 
-                mean, std, log_std = self.actor.predict(sampled_states)
-                dist = torch.distributions.Normal(mean, std)
-                log_probs = dist.log_prob(sampled_actions)
-                log_probs = torch.sum(log_probs, dim=1, keepdim=True)
+                _, log_probs, _, values = self.network.predict(sampled_states, sampled_actions)
                 ratio = (log_probs - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
                 policy_loss = -torch.min(obj, obj_clipped).mean(0)
 
-                v = self.critic.predict(sampled_states)
-                value_loss = 0.5 * (sampled_returns - v).pow(2).mean()
+                value_loss = 0.5 * (sampled_returns - values).pow(2).mean()
 
-                self.actor_opt.zero_grad()
-                self.critic_opt.zero_grad()
+                self.network.zero_grad()
                 policy_loss.backward()
                 value_loss.backward()
-                nn.utils.clip_grad_norm(self.actor.parameters(), config.gradient_clip)
-                nn.utils.clip_grad_norm(self.critic.parameters(), config.gradient_clip)
-                self.actor_opt.step()
-                self.critic_opt.step()
+                nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
+                self.network.step()
 
         steps = config.rollout_length * config.num_workers
         self.total_steps += steps
