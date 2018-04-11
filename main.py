@@ -338,11 +338,12 @@ def plot():
             # 'dqn_pixel_atari-180407-01414',
             # 'quantile_regression_dqn_pixel_atari-180407-01604',
             #  'n_step_dqn_pixel_atari-180408-001104',
-             'ppo_continuous-180408-002056',
-             'ddpg_continuous-180407-234141'
+            #  'ppo_continuous-180408-002056',
+            #  'ddpg_continuous-180407-234141'
+            'ppo_pixel_atari-180410-235529',
              ]
     for name in names:
-        plotter.plot_results(['to_plot/%s' % (name)])
+        plotter.plot_results(['to_plot/%s' % (name)], title='BreakoutNoFrameskip-v4')
         plt.savefig('images/%s.png' % (name))
         plt.close()
 

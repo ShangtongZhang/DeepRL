@@ -8,7 +8,7 @@ Implemented algorithms:
 * Synchronous Advantage Actor Critic (A2C)
 * Synchronous N-Step Q-Learning
 * Deep Deterministic Policy Gradient (DDPG)
-* Synchronous Proximal Policy Optimization (PPO)
+* (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO)
 * Action Conditional Video Prediction
 
 Asynchronous algorithms below are removed in this repo but can be found in [the previous release](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1)
@@ -42,6 +42,7 @@ Asynchronous algorithms below are removed in this repo but can be found in [the 
 
 ## PPO 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ppo_continuous-180408-002056.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ppo_pixel_atari-180410-235529.png)
 
 ## Action Conditional Video Prediction
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ACVP.png)
