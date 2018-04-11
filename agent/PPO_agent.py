@@ -87,7 +87,7 @@ class PPOAgent(BaseAgent):
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean(0) + config.entropy_weight * entropy_loss.mean(0)
+                policy_loss = -torch.min(obj, obj_clipped).mean(0) + config.entropy_weight * entropy_loss
 
                 value_loss = 0.5 * (sampled_returns - values).pow(2).mean()
 

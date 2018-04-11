@@ -199,7 +199,7 @@ class DiscreteActorCriticWrapper:
         if action is None:
             action = dist.sample()
         log_prob = dist.log_prob(action).unsqueeze(1)
-        return action, log_prob, entropy_loss, value
+        return action, log_prob, entropy_loss.mean(0), value
 
     def variable(self, x, dtype=torch.FloatTensor):
         return self.network.variable(x, dtype)
