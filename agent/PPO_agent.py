@@ -30,7 +30,7 @@ class PPOAgent(BaseAgent):
         config = self.config
         rollout = []
         states = self.states
-        for i in range(config.rollout_length):
+        for _ in range(config.rollout_length):
             actions, log_probs, _, values = self.network.predict(states)
             next_states, rewards, terminals, _ = self.task.step(actions.data.cpu().numpy())
             self.episode_rewards += rewards

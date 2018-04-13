@@ -34,7 +34,7 @@ class NStepDQNAgent(BaseAgent):
         config = self.config
         rollout = []
         states = self.states
-        for i in range(config.rollout_length):
+        for _ in range(config.rollout_length):
             q = self.network.predict(self.config.state_normalizer(states))
             actions = [self.policy.sample(v) for v in q.data.cpu().numpy()]
             next_states, rewards, terminals, _ = self.task.step(actions)
