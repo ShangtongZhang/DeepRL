@@ -57,8 +57,7 @@ class QuantileRegressionDQNAgent(BaseAgent):
                 self.total_steps += 1
             steps += 1
             state = next_state
-            if done:
-                break
+
             if not deterministic and self.total_steps > self.config.exploration_steps:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
@@ -87,10 +86,16 @@ class QuantileRegressionDQNAgent(BaseAgent):
                 self.optimizer.zero_grad()
                 loss.mean(1).sum().backward()
                 self.optimizer.step()
+
+            self.deterministic_test()
             if not deterministic and self.total_steps % self.config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())
             if not deterministic and self.total_steps > self.config.exploration_steps:
                 self.policy.update_epsilon()
+
+            if done:
+                break
+
         episode_time = time.time() - episode_start_time
         self.config.logger.debug('episode steps %d, episode time %f, time per step %f' %
                           (steps, episode_time, episode_time / float(steps)))

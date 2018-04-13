@@ -69,8 +69,7 @@ class DDPGAgent(BaseAgent):
             steps += 1
             state = next_state
 
-            if done:
-                break
+            self.deterministic_test()
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
@@ -102,5 +101,8 @@ class DDPGAgent(BaseAgent):
                 self.actor_opt.step()
 
                 self.soft_update(self.target_network, self.network)
+
+            if done:
+                break
 
         return total_reward, steps
