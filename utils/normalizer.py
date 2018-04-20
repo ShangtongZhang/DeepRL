@@ -6,9 +6,28 @@
 import torch
 import numpy as np
 
-class RunningStatsNormalizer:
-    def __init__(self):
+class BaseNormalizer:
+    def __init__(self, read_only=False):
+        self.read_only = read_only
+
+    def set_read_only(self):
+        self.read_only = True
+
+    def unset_read_only(self):
+        self.read_only = False
+
+    def state_dict(self):
+        return None
+
+    def load_state_dict(self, _):
+        return
+
+
+class RunningStatsNormalizer(BaseNormalizer):
+    def __init__(self, read_only=False):
+        super(RunningStatsNormalizer, self).__init__(read_only)
         self.needs_reset = True
+        self.read_only = read_only
 
     def reset(self, x_size):
         self.m = np.zeros(x_size)
@@ -16,8 +35,19 @@ class RunningStatsNormalizer:
         self.n = 0.0
         self.needs_reset = False
 
+    def state_dict(self):
+        return {'m': self.m, 'v': self.v, 'n': self.n}
+
+    def load_state_dict(self, stored):
+        self.m = stored['m']
+        self.v = stored['v']
+        self.n = stored['n']
+        self.needs_reset = False
+
     def __call__(self, x):
         if np.isscalar(x) or len(x.shape) == 1:
+            # if dim of x is 1, it can be interpreted as 1 vector entry or batches of scalar entry,
+            # fortunately resetting the size to 1 applies to both cases
             if self.needs_reset: self.reset(1)
             return self.nomalize_single(x)
         elif len(x.shape) == 2:
@@ -33,10 +63,12 @@ class RunningStatsNormalizer:
         is_scalar = np.isscalar(x)
         if is_scalar:
             x = np.asarray([x])
-        new_m = self.m * (self.n / (self.n + 1)) + x / (self.n + 1)
-        self.v = self.v * (self.n / (self.n + 1)) + (x - self.m) * (x - new_m) / (self.n + 1)
-        self.m = new_m
-        self.n += 1
+
+        if not self.read_only:
+            new_m = self.m * (self.n / (self.n + 1)) + x / (self.n + 1)
+            self.v = self.v * (self.n / (self.n + 1)) + (x - self.m) * (x - new_m) / (self.n + 1)
+            self.m = new_m
+            self.n += 1
 
         std = (self.v + 1e-6) ** .5
         x = (x - self.m) / std
@@ -44,8 +76,9 @@ class RunningStatsNormalizer:
             x = np.asscalar(x)
         return x
 
-class RescaleNormalizer:
+class RescaleNormalizer(BaseNormalizer):
     def __init__(self, coef=1.0):
+        super(RescaleNormalizer, self).__init__()
         self.coef = coef
 
     def __call__(self, x):
@@ -55,6 +88,6 @@ class ImageNormalizer(RescaleNormalizer):
     def __init__(self):
         RescaleNormalizer.__init__(self, 1.0 / 255)
 
-class SignNormalizer:
+class SignNormalizer(BaseNormalizer):
     def __call__(self, x):
         return np.sign(x)

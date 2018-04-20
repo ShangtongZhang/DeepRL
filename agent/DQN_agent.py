@@ -16,7 +16,7 @@ from .BaseAgent import *
 
 class DQNAgent(BaseAgent):
     def __init__(self, config):
-        BaseAgent.__init__(self)
+        BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
         self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
@@ -74,7 +74,7 @@ class DQNAgent(BaseAgent):
                 nn.utils.clip_grad_norm(self.network.parameters(), self.config.gradient_clip)
                 self.optimizer.step()
 
-            self.deterministic_test()
+            self.evaluate()
             if not deterministic and self.total_steps % self.config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())
             if not deterministic and self.total_steps > self.config.exploration_steps:

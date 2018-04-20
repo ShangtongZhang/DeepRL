@@ -146,7 +146,7 @@ class TwoLayerFCNet(nn.Module):
         y = self.gate(self.fc2(y))
         return y
 
-class ContinuousActorCriticWrapper:
+class GaussianActorCriticWrapper:
     def __init__(self, state_dim, action_dim, actor_fn, critic_fn, actor_opt_fn, critic_opt_fn):
         self.actor = actor_fn(state_dim, action_dim)
         self.critic = critic_fn(state_dim)

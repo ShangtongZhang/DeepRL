@@ -15,7 +15,7 @@ import time
 
 class A2CAgent(BaseAgent):
     def __init__(self, config):
-        BaseAgent.__init__(self)
+        BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
         self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
@@ -79,6 +79,8 @@ class A2CAgent(BaseAgent):
          config.value_loss_weight * value_loss).mean().backward()
         nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
+
+        self.evaluate(config.rollout_length)
 
         steps = config.rollout_length * config.num_workers
         self.total_steps += steps

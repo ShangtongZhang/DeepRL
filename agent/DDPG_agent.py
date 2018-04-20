@@ -16,7 +16,7 @@ from .BaseAgent import *
 
 class DDPGAgent(BaseAgent):
     def __init__(self, config):
-        BaseAgent.__init__(self)
+        BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
         self.network = DisjointActorCriticNet(self.task.state_dim, self.task.action_dim,
@@ -37,6 +37,13 @@ class DDPGAgent(BaseAgent):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.data.copy_(target_param.data * (1.0 - self.config.target_network_mix) +
                                     param.data * self.config.target_network_mix)
+
+    def evaluation_action(self, state):
+        self.config.state_normalizer.set_read_only()
+        state = np.stack([self.config.state_normalizer(state)])
+        action = self.actor.predict(state, to_numpy=True).flatten()
+        self.config.state_normalizer.unset_read_only()
+        return action
 
     def episode(self, deterministic=False, video_recorder=None):
         self.random_process.reset_states()
@@ -69,7 +76,7 @@ class DDPGAgent(BaseAgent):
             steps += 1
             state = next_state
 
-            self.deterministic_test()
+            self.evaluate()
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()

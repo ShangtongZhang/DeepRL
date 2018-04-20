@@ -16,7 +16,7 @@ from .BaseAgent import *
 
 class QuantileRegressionDQNAgent(BaseAgent):
     def __init__(self, config):
-        BaseAgent.__init__(self)
+        BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
         self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
@@ -34,6 +34,11 @@ class QuantileRegressionDQNAgent(BaseAgent):
     def huber(self, x):
         cond = (x < 1.0).float().detach()
         return 0.5 * x.pow(2) * cond + (x.abs() - 0.5) * (1 - cond)
+
+    def evaluation_action(self, state):
+        value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).data
+        value = (value * self.quantile_weight).sum(-1).cpu().numpy().flatten()
+        return np.argmax(value)
 
     def episode(self, deterministic=False):
         episode_start_time = time.time()
@@ -87,7 +92,7 @@ class QuantileRegressionDQNAgent(BaseAgent):
                 loss.mean(1).sum().backward()
                 self.optimizer.step()
 
-            self.deterministic_test()
+            self.evaluate()
             if not deterministic and self.total_steps % self.config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())
             if not deterministic and self.total_steps > self.config.exploration_steps:

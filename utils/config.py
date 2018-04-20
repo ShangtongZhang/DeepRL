@@ -58,3 +58,4 @@ class Config:
         self.num_mini_batches = 32
         self.test_interval = 0
         self.test_repetitions = 10
+        self.evaluation_env = None

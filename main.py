@@ -16,6 +16,7 @@ def dqn_cart_pole():
     game = 'CartPole-v0'
     config = Config()
     config.task_fn = lambda: ClassicalControl(game, max_steps=200)
+    config.evaluation_env = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: FCNet(state_dim, 64, action_dim)
     # config.network_fn = lambda state_dim, action_dim: DuelingFCNet(state_dim, 64, action_dim)
@@ -34,6 +35,7 @@ def a2c_cart_pole():
     name = 'CartPole-v0'
     # name = 'MountainCar-v0'
     task_fn = lambda log_dir: ClassicalControl(name, max_steps=200, log_dir=log_dir)
+    config.evaluation_env = task_fn(None)
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(a2c_cart_pole.__name__))
@@ -51,6 +53,7 @@ def categorical_dqn_cart_pole():
     game = 'CartPole-v0'
     config = Config()
     config.task_fn = lambda: ClassicalControl(game, max_steps=200)
+    config.evaluation_env = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: \
         CategoricalFCNet(state_dim, action_dim, config.categorical_n_atoms)
@@ -68,6 +71,7 @@ def categorical_dqn_cart_pole():
 def quantile_regression_dqn_cart_pole():
     config = Config()
     config.task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
+    config.evaluation_env = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: \
         QuantileFCNet(state_dim, action_dim, config.num_quantiles)
@@ -83,6 +87,7 @@ def quantile_regression_dqn_cart_pole():
 def n_step_dqn_cart_pole():
     config = Config()
     task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
+    config.evaluation_env = task_fn(None)
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
@@ -283,7 +288,7 @@ def ppo_continuous():
     actor_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     critic_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        ContinuousActorCriticWrapper(state_dim, action_dim, actor_network_fn,
+        GaussianActorCriticWrapper(state_dim, action_dim, actor_network_fn,
                                      critic_network_fn, actor_optimizer_fn,
                                      critic_optimizer_fn)
     # config.state_normalizer = RunningStatsNormalizer()
@@ -310,6 +315,7 @@ def ddpg_continuous():
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
+    config.evaluation_env = config.task_fn()
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(state_dim, action_dim)
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(state_dim, action_dim)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
