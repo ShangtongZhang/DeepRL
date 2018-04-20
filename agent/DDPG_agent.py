@@ -19,11 +19,11 @@ class DDPGAgent(BaseAgent):
         BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
-        self.network = DisjointActorCriticNet(self.task.state_dim, self.task.action_dim,
+        self.network = DisjointActorCriticWrapper(self.task.state_dim, self.task.action_dim,
                                               config.actor_network_fn, config.critic_network_fn)
         self.actor = self.network.actor
         self.critic = self.network.critic
-        self.target_network = DisjointActorCriticNet(self.task.state_dim, self.task.action_dim,
+        self.target_network = DisjointActorCriticWrapper(self.task.state_dim, self.task.action_dim,
                                               config.actor_network_fn, config.critic_network_fn)
         self.target_network.load_state_dict(self.network.state_dict())
         self.actor_opt = config.actor_optimizer_fn(self.actor.parameters())
