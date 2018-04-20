@@ -385,7 +385,7 @@ if __name__ == '__main__':
     # ppo_cart_pole()
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
-    a2c_pixel_atari('BreakoutNoFrameskip-v4')
+    # a2c_pixel_atari('BreakoutNoFrameskip-v4')
     # categorical_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # quantile_regression_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')

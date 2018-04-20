@@ -78,7 +78,7 @@ class RunningStatsNormalizer(BaseNormalizer):
 
 class RescaleNormalizer(BaseNormalizer):
     def __init__(self, coef=1.0):
-        super(RescaleNormalizer, self).__init__()
+        BaseNormalizer.__init__(self)
         self.coef = coef
 
     def __call__(self, x):
