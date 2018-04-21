@@ -46,16 +46,17 @@ class Plotter:
             ts = ts[ts.l.cumsum() <= max_timesteps]
             tslist.append(ts)
         xy_list = [self.ts2xy(ts, x_axis) for ts in tslist]
-        xy_list = [[x, y, self.window_func(x, y, episode_window, np.mean)] for x, y in xy_list]
+        if episode_window:
+            xy_list = [self.window_func(x, y, episode_window, np.mean) for x, y in xy_list]
         return xy_list
 
     def plot_results(self, dirs, max_timesteps=1e8, x_axis=X_TIMESTEPS, episode_window=100, title=None):
         import matplotlib.pyplot as plt
         plt.ticklabel_format(axis='x', style='sci', scilimits=(1, 1))
         xy_list = self.load_results(dirs, max_timesteps, x_axis, episode_window)
-        for (i, (x, y, smoothed)) in enumerate(xy_list):
+        for (i, (x, y)) in enumerate(xy_list):
             color = Plotter.COLORS[i]
-            plt.plot(smoothed[0], smoothed[1], color=color)
+            plt.plot(x, y, color=color)
         plt.xlabel(x_axis)
         plt.ylabel("Episode Rewards")
         if title is not None:
