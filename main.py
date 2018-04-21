@@ -132,7 +132,7 @@ def dqn_pixel_atari(name):
     config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=0)
     # config.network_fn = lambda state_dim, action_dim: DuelingNet(action_dim, NatureConvBody(), gpu=0)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
-    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -173,7 +173,7 @@ def categorical_dqn_pixel_atari(name):
     config.network_fn = lambda state_dim, action_dim: \
         CategoricalNet(action_dim, config.categorical_n_atoms, NatureConvBody(), gpu=1)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.1)
-    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
     config.discount = 0.99
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -195,7 +195,7 @@ def quantile_regression_dqn_pixel_atari(name):
     config.network_fn = lambda state_dim, action_dim: \
         QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=2)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
-    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -258,7 +258,7 @@ def dqn_ram_atari(name):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
     config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, TwoLayerFCBody(state_dim), gpu=2)
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=1000000, min_epsilon=0.1)
-    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32, dtype=np.uint8)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
     config.state_normalizer = RescaleNormalizer(1.0 / 128)
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -310,17 +310,17 @@ def ddpg_continuous():
     # config.task_fn = lambda: Pendulum(log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
-    config.task_fn = lambda: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
-    config.evaluation_env = config.task_fn()
+    config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(state_dim, action_dim)
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(state_dim, action_dim)
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.replay_fn = lambda: HighDimActionReplay(memory_size=1000000, batch_size=64)
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
     config.random_process_fn = \
