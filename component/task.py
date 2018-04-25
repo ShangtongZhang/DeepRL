@@ -157,6 +157,33 @@ class DMControl(BasicTask):
             mkdir(log_dir)
             self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
 
+class GymRobotics(BasicTask):
+    def __init__(self, name, log_dir=None):
+        BasicTask.__init__(self)
+
+        self.name = name
+        self.env = gym.make(name)
+
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = len(self.flatten_state(self.env.reset()))
+        if log_dir is not None:
+            mkdir(log_dir)
+            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
+
+    def flatten_state(self, state):
+        flat = []
+        for key, value in state.items():
+            flat.append(state[key])
+        flat = np.concatenate(flat, axis=0)
+        return flat
+
+    def reset(self):
+        return self.flatten_state(self.env.reset())
+
+    def step(self, action):
+        next_state, reward, done, _ = self.env.step(action)
+        return self.flatten_state(next_state), reward, done, _
+
 def sub_task(parent_pipe, pipe, task_fn, rank, log_dir):
     np.random.seed()
     seed = np.random.randint(0, sys.maxsize)
