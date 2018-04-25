@@ -11,7 +11,7 @@ Implemented algorithms:
 * (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO)
 * Action Conditional Video Prediction
 
-Asynchronous algorithms below are removed in this repo but can be found in [the previous release](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1)
+Asynchronous algorithms below are removed in this repo but can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1)
 * Async Advantage Actor Critic (A3C)
 * Async One-Step Q-Learning
 * Async One-Step Sarsa 
@@ -19,6 +19,8 @@ Asynchronous algorithms below are removed in this repo but can be found in [the 
 * Continuous A3C
 * Distributed Deep Deterministic Policy Gradient (Distributed DDPG, aka D3PG)
 * Parallelized Proximal Policy Optimization (P3O, similar to DPPO)
+
+Support for Pytorch v0.3.x can be found in [v0.2](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.2)
 
 # Curves
 > Curves for CartPole are trivial so I didn't place it here. And there isn't any fixed random seed. The curves are generated in the same manner as OpenAI baselines (one run and smoothed by recent 100 episodes)
@@ -52,14 +54,11 @@ Asynchronous algorithms below are removed in this repo but can be found in [the 
 Prediction is sampled after 110K iterations, and I only implemented one-step training
 
 # Dependency
-> Tested in macOS 10.12 and CentO/S 6.8
-* OpenAI gym
-* PyTorch v0.3.0
-* Python 2.7 / 3.6
-* [Roboschool](https://github.com/openai/roboschool) (Optional)
-* [DeepMind Control Suite](https://github.com/deepmind/dm_control) & [DMControl2Gym](dm_control2gym) (Optional) 
-* [TensorboardX](https://github.com/lanpa/tensorboard-pytorch) (Optional)
-
+* MacOS 10.12,  CentO/S 6.8 and Ubuntu 16.04
+* PyTorch v0.4.0
+* Python 3.6 (recommended), 3.5 and 2.7 
+* Core dependencies: `pip install -r requirements.txt`
+* Optional: [Roboschool](https://github.com/openai/roboschool), [DeepMind Control Suite](https://github.com/deepmind/dm_control)+[DMControl2Gym](dm_control2gym)
 
 # Usage
 
