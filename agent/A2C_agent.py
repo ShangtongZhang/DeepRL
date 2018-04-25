@@ -32,7 +32,7 @@ class A2CAgent(BaseAgent):
         states = self.states
         for _ in range(config.rollout_length):
             prob, log_prob, value = self.network.predict(config.state_normalizer(states))
-            actions = [self.policy.sample(p) for p in prob.data.cpu().numpy()]
+            actions = [self.policy.sample(p) for p in prob.cpu().detach().numpy()]
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
             rewards = config.reward_normalizer(rewards)
@@ -50,34 +50,34 @@ class A2CAgent(BaseAgent):
 
         processed_rollout = [None] * (len(rollout) - 1)
         advantages = self.network.tensor(np.zeros((config.num_workers, 1)))
-        returns = pending_value.data
+        returns = pending_value.detach()
         for i in reversed(range(len(rollout) - 1)):
             prob, log_prob, value, actions, rewards, terminals = rollout[i]
             terminals = self.network.tensor(terminals).unsqueeze(1)
             rewards = self.network.tensor(rewards).unsqueeze(1)
-            actions = self.network.tensor(actions, torch.LongTensor).unsqueeze(1)
+            actions = self.network.tensor(actions).unsqueeze(1).long()
             next_value = rollout[i + 1][2]
             returns = rewards + config.discount * terminals * returns
             if not config.use_gae:
-                advantages = returns - value.data
+                advantages = returns - value.detach()
             else:
-                td_error = rewards + config.discount * terminals * next_value.data - value.data
+                td_error = rewards + config.discount * terminals * next_value.detach() - value.detach()
                 advantages = advantages * config.gae_tau * config.discount * terminals + td_error
             processed_rollout[i] = [prob, log_prob, value, actions, returns, advantages]
 
         prob, log_prob, value, actions, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
-        policy_loss = -log_prob.gather(1, Variable(actions)) * Variable(advantages)
+        policy_loss = -log_prob.gather(1, actions) * advantages
         entropy_loss = torch.sum(prob * log_prob, dim=1, keepdim=True)
-        value_loss = 0.5 * (Variable(returns) - value).pow(2)
+        value_loss = 0.5 * (returns - value).pow(2)
 
-        self.policy_loss = np.mean(policy_loss.data.cpu().numpy())
-        self.entropy_loss = np.mean(entropy_loss.data.cpu().numpy())
-        self.value_loss = np.mean(value_loss.data.cpu().numpy())
+        self.policy_loss = np.mean(policy_loss.cpu().detach().numpy())
+        self.entropy_loss = np.mean(entropy_loss.cpu().detach().numpy())
+        self.value_loss = np.mean(value_loss.cpu().detach().numpy())
 
         self.optimizer.zero_grad()
         (policy_loss + config.entropy_weight * entropy_loss +
          config.value_loss_weight * value_loss).mean().backward()
-        nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
+        nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
 
         self.evaluate(config.rollout_length)

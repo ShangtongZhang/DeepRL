@@ -32,7 +32,7 @@ class PPOAgent(BaseAgent):
         states = self.states
         for _ in range(config.rollout_length):
             actions, log_probs, _, values = self.network.predict(states)
-            next_states, rewards, terminals, _ = self.task.step(actions.data.cpu().numpy())
+            next_states, rewards, terminals, _ = self.task.step(actions.cpu().detach().numpy())
             self.episode_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
@@ -49,33 +49,31 @@ class PPOAgent(BaseAgent):
 
         processed_rollout = [None] * (len(rollout) - 1)
         advantages = self.network.tensor(np.zeros((config.num_workers, 1)))
-        returns = pending_value.data
+        returns = pending_value.detach()
         for i in reversed(range(len(rollout) - 1)):
             states, value, actions, log_probs, rewards, terminals = rollout[i]
             terminals = self.network.tensor(terminals).unsqueeze(1)
             rewards = self.network.tensor(rewards).unsqueeze(1)
-            actions = self.network.variable(actions)
-            states = self.network.variable(states)
+            actions = self.network.tensor(actions)
+            states = self.network.tensor(states)
             next_value = rollout[i + 1][1]
             returns = rewards + config.discount * terminals * returns
             if not config.use_gae:
-                advantages = returns - value.data
+                advantages = returns - value.detach()
             else:
-                td_error = rewards + config.discount * terminals * next_value.data - value.data
+                td_error = rewards + config.discount * terminals * next_value.detach() - value.detach()
                 advantages = advantages * config.gae_tau * config.discount * terminals + td_error
             processed_rollout[i] = [states, actions, log_probs, returns, advantages]
 
         states, actions, log_probs_old, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
         advantages = (advantages - advantages.mean()) / advantages.std()
-        advantages = Variable(advantages)
-        returns = Variable(returns)
 
         batcher = Batcher(states.size(0) // config.num_mini_batches, [np.arange(states.size(0))])
         for _ in range(config.optimization_epochs):
             batcher.shuffle()
             while not batcher.end():
                 batch_indices = batcher.next_batch()[0]
-                batch_indices = self.network.variable(batch_indices, torch.LongTensor)
+                batch_indices = self.network.tensor(batch_indices).long()
                 sampled_states = states[batch_indices]
                 sampled_actions = actions[batch_indices]
                 sampled_log_probs_old = log_probs_old[batch_indices]
@@ -93,7 +91,7 @@ class PPOAgent(BaseAgent):
 
                 self.network.zero_grad()
                 (policy_loss + value_loss).backward()
-                nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
+                nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
                 self.network.step()
 
         steps = config.rollout_length * config.num_workers

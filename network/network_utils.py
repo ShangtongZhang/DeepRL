@@ -5,37 +5,20 @@
 #######################################################################
 
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
-class BasicNet:
-    def __init__(self, gpu):
-        if not torch.cuda.is_available():
-            gpu = -1
-        self.gpu = gpu
-        if self.gpu >= 0:
-            self.cuda(self.gpu)
+class BaseNet:
+    def set_gpu(self, gpu):
+        if gpu >= 0 and torch.cuda.is_available():
+            self.device = torch.device('gpu:%d' % (gpu))
+        else:
+            self.device = torch.device('cpu')
+        self.to(self.device)
 
-    def supported_dtype(self, x, torch_type):
-        if torch_type == torch.FloatTensor:
-            return np.asarray(x, dtype=np.float32)
-        if torch_type == torch.LongTensor:
-            return np.asarray(x, dtype=np.int64)
-
-    def variable(self, x, dtype=torch.FloatTensor):
-        if isinstance(x, Variable):
-            return x
-        x = dtype(torch.from_numpy(self.supported_dtype(x, dtype)))
-        if self.gpu >= 0:
-            x = x.cuda(self.gpu)
-        return Variable(x)
-
-    def tensor(self, x, dtype=torch.FloatTensor):
-        x = dtype(torch.from_numpy(self.supported_dtype(x, dtype)))
-        if self.gpu >= 0:
-            x = x.cuda(self.gpu)
+    def tensor(self, x):
+        x = torch.tensor(x, device=self.device, dtype=torch.float32)
         return x
 
 class DisjointActorCriticWrapper:
@@ -74,11 +57,8 @@ class GaussianActorCriticWrapper:
         log_probs = torch.sum(log_probs, dim=1, keepdim=True)
         return actions, log_probs, 0, values
 
-    def variable(self, x, dtype=torch.FloatTensor):
-        return self.actor.variable(x, dtype)
-
-    def tensor(self, x, dtype=torch.FloatTensor):
-        return self.actor.tensor(x, dtype)
+    def tensor(self, x):
+        return self.actor.tensor(x)
 
     def zero_grad(self):
         self.actor_opt.zero_grad()
@@ -112,11 +92,8 @@ class CategoricalActorCriticWrapper:
         log_prob = dist.log_prob(action).unsqueeze(1)
         return action, log_prob, entropy_loss.mean(0), value
 
-    def variable(self, x, dtype=torch.FloatTensor):
-        return self.network.variable(x, dtype)
-
-    def tensor(self, x, dtype=torch.FloatTensor):
-        return self.network.tensor(x, dtype)
+    def tensor(self, x):
+        return self.network.tensor(x)
 
     def zero_grad(self):
         self.opt.zero_grad()
@@ -134,6 +111,6 @@ class CategoricalActorCriticWrapper:
         self.network.load_state_dict(state_dicts)
 
 def layer_init(layer):
-    nn.init.orthogonal(layer.weight.data)
-    nn.init.constant(layer.bias.data, 0)
+    nn.init.orthogonal_(layer.weight.data)
+    nn.init.constant_(layer.bias.data, 0)
     return layer

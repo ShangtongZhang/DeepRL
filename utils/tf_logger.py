@@ -30,7 +30,7 @@ class Logger(object):
         if isinstance(v, torch.autograd.Variable):
             v = v.data
         if isinstance(v, torch.FloatTensor):
-            v = v.cpu().numpy()
+            v = v.cpu().detach().numpy()
         return v
 
     def get_step(self, tag):

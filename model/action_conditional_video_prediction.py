@@ -21,7 +21,7 @@ from utils import *
 from tqdm import tqdm
 from network import *
 
-class Network(nn.Module, BasicNet):
+class Network(nn.Module, BaseNet):
     def __init__(self, num_actions, gpu=0):
         super(Network, self).__init__()
 
@@ -46,17 +46,18 @@ class Network(nn.Module, BasicNet):
         self.init_weights()
         self.criterion = nn.MSELoss()
         self.opt = torch.optim.Adam(self.parameters(), 1e-4)
+        
+        self.set_gpu(gpu)
 
-        BasicNet.__init__(self, gpu)
 
     def init_weights(self):
         for layer in self.children():
             if isinstance(layer, nn.Conv2d) or isinstance(layer, nn.ConvTranspose2d):
-                nn.init.xavier_uniform(layer.weight.data)
-            nn.init.constant(layer.bias.data, 0)
-        nn.init.uniform(self.fc_encode.weight.data, -1, 1)
-        nn.init.uniform(self.fc_decode.weight.data, -1, 1)
-        nn.init.uniform(self.fc_action.weight.data, -0.1, 0.1)
+                nn.init.xavier_uniform_(layer.weight.data)
+            nn.init.constant_(layer.bias.data, 0)
+        nn.init.uniform_(self.fc_encode.weight.data, -1, 1)
+        nn.init.uniform_(self.fc_decode.weight.data, -1, 1)
+        nn.init.uniform_(self.fc_action.weight.data, -0.1, 0.1)
 
     def forward(self, obs, action):
         x = F.relu(self.conv1(obs))
@@ -78,9 +79,9 @@ class Network(nn.Module, BasicNet):
         return x
 
     def fit(self, x, a, y):
-        x = self.variable(x)
-        a = self.variable(a)
-        y = self.variable(y)
+        x = self.tensor(x)
+        a = self.tensor(a)
+        y = self.tensor(y)
         y_ = self.forward(x, a)
         loss = self.criterion(y_, y)
         self.opt.zero_grad()
@@ -91,16 +92,16 @@ class Network(nn.Module, BasicNet):
         return np.asscalar(loss.cpu().data.numpy())
 
     def evaluate(self, x, a, y):
-        x = self.variable(x)
-        a = self.variable(a)
-        y = self.variable(y)
+        x = self.tensor(x)
+        a = self.tensor(a)
+        y = self.tensor(y)
         y_ = self.forward(x, a)
         loss = self.criterion(y_, y)
         return np.asscalar(loss.cpu().data.numpy())
 
     def predict(self, x, a):
-        x = self.variable(x)
-        a = self.variable(a)
+        x = self.tensor(x)
+        a = self.tensor(a)
         return self.forward(x, a).cpu().data.numpy()
 
 def load_episode(game, ep, num_actions, prefix):

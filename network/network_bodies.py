@@ -36,7 +36,7 @@ class TwoLayerFCBody(nn.Module):
         y = self.gate(self.fc2(y))
         return y
 
-class DeterministicActorNet(nn.Module, BasicNet):
+class DeterministicActorNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
                  action_dim,
@@ -52,15 +52,15 @@ class DeterministicActorNet(nn.Module, BasicNet):
         self.action_scale = action_scale
         self.non_linear = non_linear
         self.init_weights()
-        BasicNet.__init__(self, gpu)
+        self.set_gpu(gpu)
 
     def init_weights(self):
         bound = 3e-3
-        nn.init.uniform(self.layer3.weight.data, -bound, bound)
-        nn.init.constant(self.layer3.bias.data, 0)
+        nn.init.uniform_(self.layer3.weight.data, -bound, bound)
+        nn.init.constant_(self.layer3.bias.data, 0)
 
     def forward(self, x):
-        x = self.variable(x)
+        x = self.tensor(x)
         x = self.non_linear(self.layer1(x))
         x = self.non_linear(self.layer2(x))
         x = self.layer3(x)
@@ -70,10 +70,10 @@ class DeterministicActorNet(nn.Module, BasicNet):
     def predict(self, x, to_numpy=False):
         y = self.forward(x)
         if to_numpy:
-            y = y.cpu().data.numpy()
+            y = y.cpu().detach().numpy()
         return y
 
-class DeterministicCriticNet(nn.Module, BasicNet):
+class DeterministicCriticNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
                  action_dim,
@@ -85,16 +85,16 @@ class DeterministicCriticNet(nn.Module, BasicNet):
         self.layer3 = nn.Linear(300, 1)
         self.non_linear = non_linear
         self.init_weights()
-        BasicNet.__init__(self, gpu)
+        self.set_gpu(gpu)
 
     def init_weights(self):
         bound = 3e-3
-        nn.init.uniform(self.layer3.weight.data, -bound, bound)
-        nn.init.constant(self.layer3.bias.data, 0)
+        nn.init.uniform_(self.layer3.weight.data, -bound, bound)
+        nn.init.constant_(self.layer3.bias.data, 0)
 
     def forward(self, x, action):
-        x = self.variable(x)
-        action = self.variable(action)
+        x = self.tensor(x)
+        action = self.tensor(action)
         x = self.non_linear(self.layer1(x))
         x = self.non_linear(self.layer2(torch.cat([x, action], dim=1)))
         x = self.layer3(x)
@@ -103,7 +103,7 @@ class DeterministicCriticNet(nn.Module, BasicNet):
     def predict(self, x, action):
         return self.forward(x, action)
 
-class GaussianActorNet(nn.Module, BasicNet):
+class GaussianActorNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
                  action_dim,
@@ -120,15 +120,15 @@ class GaussianActorNet(nn.Module, BasicNet):
         self.non_linear = non_linear
 
         self.init_weights()
-        BasicNet.__init__(self, gpu)
+        self.set_gpu(gpu)
 
     def init_weights(self):
         bound = 3e-3
-        nn.init.uniform(self.fc_action.weight.data, -bound, bound)
-        nn.init.constant(self.fc_action.bias.data, 0)
+        nn.init.uniform_(self.fc_action.weight.data, -bound, bound)
+        nn.init.constant_(self.fc_action.bias.data, 0)
 
     def forward(self, x):
-        x = self.variable(x)
+        x = self.tensor(x)
         phi = self.non_linear(self.fc1(x))
         phi = self.non_linear(self.fc2(phi))
         mean = F.tanh(self.fc_action(phi))
@@ -139,7 +139,7 @@ class GaussianActorNet(nn.Module, BasicNet):
     def predict(self, x):
         return self.forward(x)
 
-class GaussianCriticNet(nn.Module, BasicNet):
+class GaussianCriticNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
                  gpu=-1,
@@ -151,15 +151,15 @@ class GaussianCriticNet(nn.Module, BasicNet):
         self.fc_value = nn.Linear(hidden_size, 1)
         self.non_linear = non_linear
         self.init_weights()
-        BasicNet.__init__(self, gpu)
+        self.set_gpu(gpu)
 
     def init_weights(self):
         bound = 3e-3
-        nn.init.uniform(self.fc_value.weight.data, -bound, bound)
-        nn.init.constant(self.fc_value.bias.data, 0)
+        nn.init.uniform_(self.fc_value.weight.data, -bound, bound)
+        nn.init.constant_(self.fc_value.bias.data, 0)
 
     def forward(self, x):
-        x = self.variable(x)
+        x = self.tensor(x)
         phi = self.non_linear(self.fc1(x))
         phi = self.non_linear(self.fc2(phi))
         value = self.fc_value(phi)

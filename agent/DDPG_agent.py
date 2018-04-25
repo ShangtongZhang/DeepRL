@@ -35,8 +35,9 @@ class DDPGAgent(BaseAgent):
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
-            target_param.data.copy_(target_param.data * (1.0 - self.config.target_network_mix) +
-                                    param.data * self.config.target_network_mix)
+            target_param.detach_()
+            target_param.copy_(target_param * (1.0 - self.config.target_network_mix) +
+                                    param * self.config.target_network_mix)
 
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
@@ -82,8 +83,8 @@ class DDPGAgent(BaseAgent):
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 q_next = target_critic.predict(next_states, target_actor.predict(next_states))
-                terminals = critic.variable(terminals).unsqueeze(1)
-                rewards = critic.variable(rewards).unsqueeze(1)
+                terminals = critic.tensor(terminals).unsqueeze(1)
+                rewards = critic.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
                 q_next = q_next.detach()
@@ -96,15 +97,14 @@ class DDPGAgent(BaseAgent):
                 self.critic_opt.step()
 
                 actions = actor.predict(states, False)
-                var_actions = Variable(actions.data, requires_grad=True)
+                var_actions = actions.detach().requires_grad_()
                 q = critic.predict(states, var_actions)
                 q.backward(critic.tensor(np.ones(q.size())))
 
                 actor.zero_grad()
                 self.actor_opt.zero_grad()
-                actions.backward(-var_actions.grad.data)
-                for param in actor.parameters():
-                    param.grad.data.clamp(-config.gradient_clip, config.gradient_clip)
+                actions.backward(-var_actions.grad)
+                torch.nn.utils.clip_grad_value_(actor.parameters(), config.gradient_clip)
                 self.actor_opt.step()
 
                 self.soft_update(self.target_network, self.network)

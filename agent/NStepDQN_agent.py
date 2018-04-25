@@ -36,7 +36,7 @@ class NStepDQNAgent(BaseAgent):
         states = self.states
         for _ in range(config.rollout_length):
             q = self.network.predict(self.config.state_normalizer(states))
-            actions = [self.policy.sample(v) for v in q.data.cpu().numpy()]
+            actions = [self.policy.sample(v) for v in q.cpu().detach().numpy()]
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
             rewards = config.reward_normalizer(rewards)
@@ -56,22 +56,22 @@ class NStepDQNAgent(BaseAgent):
         self.states = states
 
         processed_rollout = [None] * (len(rollout))
-        returns = self.target_network.predict(config.state_normalizer(states)).data
+        returns = self.target_network.predict(config.state_normalizer(states)).detach()
         returns, _ = torch.max(returns, dim=1, keepdim=True)
         for i in reversed(range(len(rollout))):
             q, actions, rewards, terminals = rollout[i]
-            actions = self.network.tensor(actions, torch.LongTensor).unsqueeze(1)
-            q = q.gather(1, Variable(actions))
+            actions = self.network.tensor(actions).unsqueeze(1).long()
+            q = q.gather(1, actions)
             terminals = self.network.tensor(terminals).unsqueeze(1)
             rewards = self.network.tensor(rewards).unsqueeze(1)
             returns = rewards + config.discount * terminals * returns
             processed_rollout[i] = [q, returns]
 
         q, returns= map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
-        loss = 0.5 * (q - Variable(returns)).pow(2).mean()
+        loss = 0.5 * (q - returns).pow(2).mean()
         self.optimizer.zero_grad()
         loss.backward()
-        nn.utils.clip_grad_norm(self.network.parameters(), config.gradient_clip)
+        nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
 
         self.evaluate(config.rollout_length)

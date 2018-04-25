@@ -36,8 +36,8 @@ class QuantileRegressionDQNAgent(BaseAgent):
         return 0.5 * x.pow(2) * cond + (x.abs() - 0.5) * (1 - cond)
 
     def evaluation_action(self, state):
-        value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).data
-        value = (value * self.quantile_weight).sum(-1).cpu().numpy().flatten()
+        value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).detach()
+        value = (value * self.quantile_weight).sum(-1).cpu().detach().numpy().flatten()
         return np.argmax(value)
 
     def episode(self, deterministic=False):
@@ -46,8 +46,8 @@ class QuantileRegressionDQNAgent(BaseAgent):
         total_reward = 0.0
         steps = 0
         while True:
-            value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).data
-            value = (value * self.quantile_weight).sum(-1).cpu().numpy().flatten()
+            value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).detach()
+            value = (value * self.quantile_weight).sum(-1).cpu().detach().numpy().flatten()
             if deterministic:
                 action = np.argmax(value)
             elif self.total_steps < self.config.exploration_steps:
@@ -69,7 +69,7 @@ class QuantileRegressionDQNAgent(BaseAgent):
                 states = self.config.state_normalizer(states)
                 next_states = self.config.state_normalizer(next_states)
 
-                quantiles_next = self.target_network.predict(next_states).data
+                quantiles_next = self.target_network.predict(next_states).detach()
                 q_next = (quantiles_next * self.quantile_weight).sum(-1)
                 _, a_next = torch.max(q_next, dim=1)
                 a_next = a_next.view(-1, 1, 1).expand(-1, -1, quantiles_next.size(2))
@@ -80,13 +80,13 @@ class QuantileRegressionDQNAgent(BaseAgent):
                 quantiles_next = rewards.view(-1, 1) + self.config.discount * (1 - terminals.view(-1, 1)) * quantiles_next
 
                 quantiles = self.network.predict(states)
-                actions = self.network.tensor(actions, torch.LongTensor)
+                actions = self.network.tensor(actions).long()
                 actions = actions.view(-1, 1, 1).expand(-1, -1, quantiles.size(2))
-                quantiles = quantiles.gather(1, Variable(actions)).squeeze(1)
+                quantiles = quantiles.gather(1, actions).squeeze(1)
 
                 quantiles_next = quantiles_next.t().unsqueeze(-1)
-                diff = Variable(quantiles_next) - quantiles
-                loss = self.huber(diff) * Variable(self.cumulative_density.view(1, -1) - (diff.data < 0).float()).abs()
+                diff = quantiles_next - quantiles
+                loss = self.huber(diff) * (self.cumulative_density.view(1, -1) - (diff.detach() < 0).float()).abs()
 
                 self.optimizer.zero_grad()
                 loss.mean(1).sum().backward()
