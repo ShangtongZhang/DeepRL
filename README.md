@@ -23,7 +23,7 @@ Asynchronous algorithms below are removed in current version but can be found in
 Support for PyTorch v0.3.x can be found in [v0.2](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.2). Note all the figures are generated via this version. After the upgrade to PyTorch v0.4.0, I have only tested the classical control tasks. 
 
 # Curves
-> Curves for CartPole are trivial so I didn't place it here. And there isn't any fixed random seed. The curves are generated in the same manner as OpenAI baselines (one run and smoothed by recent 100 episodes)
+> Curves for CartPole are trivial so I didn't place it here, and there isn't any fixed random seed. The curves are generated in the same manner as OpenAI baselines (one run and smoothed by recent 100 episodes)
 ## DQN
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png)
 
