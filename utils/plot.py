@@ -2,6 +2,8 @@
 
 import numpy as np
 import component
+import os
+import re
 
 class Plotter:
     COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
@@ -61,3 +63,20 @@ class Plotter:
         plt.ylabel("Episode Rewards")
         if title is not None:
             plt.title(title)
+
+    def load_log_dirs(self, pattern, negative_pattern=' ', root='./log'):
+        dirs = [item[0] for item in os.walk(root)]
+        leaf_dirs = []
+        for i in range(len(dirs)):
+            if i + 1 < len(dirs) and dirs[i + 1].startswith(dirs[i]):
+                continue
+            leaf_dirs.append(dirs[i])
+        names = []
+        p = re.compile(pattern)
+        np = re.compile(negative_pattern)
+        for dir in leaf_dirs:
+            if p.match(dir) and not np.match(dir):
+                names.append(dir)
+                print(dir)
+
+        return sorted(names)

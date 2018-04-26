@@ -338,23 +338,16 @@ def ddpg_continuous():
 def plot():
     import matplotlib.pyplot as plt
     plotter = Plotter()
-    # name = 'log/ppo_continuous-180408-002056'
-    # plotter.plot_results([name])
-    # plt.show()
-    names = [
-            # 'a2c_pixel_atari-180407-92711',
-            # 'categorical_dqn_pixel_atari-180407-094006',
-            # 'dqn_pixel_atari-180407-01414',
-            # 'quantile_regression_dqn_pixel_atari-180407-01604',
-            #  'n_step_dqn_pixel_atari-180408-001104',
-            #  'ppo_continuous-180408-002056',
-            #  'ddpg_continuous-180407-234141'
-            'ppo_pixel_atari-180410-235529',
-             ]
-    for name in names:
-        plotter.plot_results(['to_plot/%s' % (name)], title='BreakoutNoFrameskip-v4')
-        plt.savefig('images/%s.png' % (name))
-        plt.close()
+    names = plotter.load_log_dirs('')
+    data = plotter.load_results(names)
+
+    for i, name in enumerate(names):
+        x, y = data[i]
+        plt.plot(x, y, color=Plotter.COLORS[i], label=name)
+    plt.legend()
+    plt.xlabel('timesteps')
+    plt.ylabel('episode return')
+    plt.show()
 
 def action_conditional_video_prediction():
     game = 'PongNoFrameskip-v4'
