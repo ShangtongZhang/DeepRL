@@ -326,9 +326,7 @@ def ddpg_continuous():
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
-    config.random_process_fn = \
-        lambda action_dim: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.3,
-                                         n_steps_annealing=1000000)
+    config.random_process_fn = lambda action_dim: GaussianProcess(action_dim, LinearSchedule(0.3, 0, 1e6))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = Logger('./log', logger)
