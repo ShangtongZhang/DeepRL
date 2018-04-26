@@ -275,16 +275,17 @@ def dqn_ram_atari(name):
 def ppo_continuous():
     config = Config()
     config.num_workers = 1
-    task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
+    # task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
     # task_fn = lambda log_dir: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
-    # task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
+    task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     # task_fn = lambda log_dir: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
     # task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     # task_fn = lambda log_dir: DMControl('cartpole', 'balance', log_dir=log_dir)
     # task_fn = lambda log_dir: DMControl('hopper', 'hop', log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
-    actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(state_dim, action_dim)
-    critic_network_fn = lambda state_dim: GaussianCriticNet(state_dim)
+    actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(
+        action_dim, TwoLayerFCBody(state_dim))
+    critic_network_fn = lambda state_dim: GaussianCriticNet(TwoLayerFCBody(state_dim))
     actor_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     critic_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
@@ -316,8 +317,10 @@ def ddpg_continuous():
     # config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
     # config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
-    config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(state_dim, action_dim)
-    config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(state_dim, action_dim)
+    config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
+        action_dim, TwoLayerFCBody(state_dim, [300, 200]))
+    config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
+        TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300]))
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)

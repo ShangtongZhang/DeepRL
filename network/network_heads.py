@@ -88,3 +88,61 @@ class QuantileNet(nn.Module, BaseNet):
         if to_numpy:
             quantiles = quantiles.cpu().detach().numpy()
         return quantiles
+
+class GaussianActorNet(nn.Module, BaseNet):
+    def __init__(self, action_dim, body, gpu=-1):
+        super(GaussianActorNet, self).__init__()
+        self.fc_action = layer_init(nn.Linear(body.feature_dim, action_dim), 3e-3)
+        self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
+        self.body = body
+        self.set_gpu(gpu)
+
+    def predict(self, x):
+        x = self.tensor(x)
+        phi = self.body(x)
+        mean = F.tanh(self.fc_action(phi))
+        log_std = self.action_log_std.expand_as(mean)
+        std = log_std.exp()
+        return mean, std, log_std
+
+class GaussianCriticNet(nn.Module, BaseNet):
+    def __init__(self, body, gpu=-1):
+        super(GaussianCriticNet, self).__init__()
+        self.fc_value = layer_init(nn.Linear(body.feature_dim, 1), 3e-3)
+        self.body = body
+        self.set_gpu(gpu)
+
+    def predict(self, x):
+        x = self.tensor(x)
+        phi = self.body(x)
+        value = self.fc_value(phi)
+        return value
+
+class DeterministicActorNet(nn.Module, BaseNet):
+    def __init__(self, action_dim, body, gpu=-1):
+        super(DeterministicActorNet, self).__init__()
+        self.fc_action = layer_init(nn.Linear(body.feature_dim, action_dim), 3e-3)
+        self.body = body
+        self.set_gpu(gpu)
+
+    def predict(self, x, to_numpy=False):
+        x = self.tensor(x)
+        phi = self.body(x)
+        a = F.tanh(self.fc_action(phi))
+        if to_numpy:
+            a = a.cpu().detach().numpy()
+        return a
+
+class DeterministicCriticNet(nn.Module, BaseNet):
+    def __init__(self, body, gpu=-1):
+        super(DeterministicCriticNet, self).__init__()
+        self.fc_value = layer_init(nn.Linear(body.feature_dim, 1), 3e-3)
+        self.body = body
+        self.set_gpu(gpu)
+
+    def predict(self, x, action):
+        x = self.tensor(x)
+        action = self.tensor(action)
+        phi = self.body(x, action)
+        value = self.fc_value(phi)
+        return value

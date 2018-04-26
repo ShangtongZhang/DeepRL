@@ -24,146 +24,34 @@ class NatureConvBody(nn.Module):
         return y
 
 class TwoLayerFCBody(nn.Module):
-    def __init__(self, state_dim, hidden_size=64, gate=F.relu):
+    def __init__(self, state_dim, hidden_units=(64, 64), gate=F.relu):
         super(TwoLayerFCBody, self).__init__()
-        self.fc1 = layer_init(nn.Linear(state_dim, hidden_size))
-        self.fc2 = layer_init(nn.Linear(hidden_size, hidden_size))
+        hidden_size1, hidden_size2 = hidden_units
+        self.fc1 = layer_init(nn.Linear(state_dim, hidden_size1))
+        self.fc2 = layer_init(nn.Linear(hidden_size1, hidden_size2))
         self.gate = gate
-        self.feature_dim = hidden_size
+        self.feature_dim = hidden_size2
 
     def forward(self, x):
         y = self.gate(self.fc1(x))
         y = self.gate(self.fc2(y))
         return y
 
-class DeterministicActorNet(nn.Module, BaseNet):
-    def __init__(self,
-                 state_dim,
-                 action_dim,
-                 action_gate=F.tanh,
-                 action_scale=1,
-                 gpu=-1,
-                 non_linear=F.tanh):
-        super(DeterministicActorNet, self).__init__()
-        self.layer1 = layer_init(nn.Linear(state_dim, 300))
-        self.layer2 = layer_init(nn.Linear(300, 200))
-        self.layer3 = nn.Linear(200, action_dim)
-        self.action_gate = action_gate
-        self.action_scale = action_scale
-        self.non_linear = non_linear
-        self.init_weights()
-        self.set_gpu(gpu)
-
-    def init_weights(self):
-        bound = 3e-3
-        nn.init.uniform_(self.layer3.weight.data, -bound, bound)
-        nn.init.constant_(self.layer3.bias.data, 0)
-
-    def forward(self, x):
-        x = self.tensor(x)
-        x = self.non_linear(self.layer1(x))
-        x = self.non_linear(self.layer2(x))
-        x = self.layer3(x)
-        x = self.action_scale * self.action_gate(x)
-        return x
-
-    def predict(self, x, to_numpy=False):
-        y = self.forward(x)
-        if to_numpy:
-            y = y.cpu().detach().numpy()
-        return y
-
-class DeterministicCriticNet(nn.Module, BaseNet):
-    def __init__(self,
-                 state_dim,
-                 action_dim,
-                 gpu=-1,
-                 non_linear=F.tanh):
-        super(DeterministicCriticNet, self).__init__()
-        self.layer1 = layer_init(nn.Linear(state_dim, 400))
-        self.layer2 = layer_init(nn.Linear(400 + action_dim, 300))
-        self.layer3 = nn.Linear(300, 1)
-        self.non_linear = non_linear
-        self.init_weights()
-        self.set_gpu(gpu)
-
-    def init_weights(self):
-        bound = 3e-3
-        nn.init.uniform_(self.layer3.weight.data, -bound, bound)
-        nn.init.constant_(self.layer3.bias.data, 0)
+class TwoLayerFCBodyWithAction(nn.Module):
+    def __init__(self, state_dim, action_dim, hidden_units=(64, 64), gate=F.relu):
+        super(TwoLayerFCBodyWithAction, self).__init__()
+        hidden_size1, hidden_size2 = hidden_units
+        self.fc1 = layer_init(nn.Linear(state_dim, hidden_size1))
+        self.fc2 = layer_init(nn.Linear(hidden_size1 + action_dim, hidden_size2))
+        self.gate = gate
+        self.feature_dim = hidden_size2
 
     def forward(self, x, action):
-        x = self.tensor(x)
-        action = self.tensor(action)
-        x = self.non_linear(self.layer1(x))
-        x = self.non_linear(self.layer2(torch.cat([x, action], dim=1)))
-        x = self.layer3(x)
-        return x
+        x = self.gate(self.fc1(x))
+        phi = self.gate(self.fc2(torch.cat([x, action], dim=1)))
+        return phi
 
-    def predict(self, x, action):
-        return self.forward(x, action)
 
-class GaussianActorNet(nn.Module, BaseNet):
-    def __init__(self,
-                 state_dim,
-                 action_dim,
-                 gpu=-1,
-                 hidden_size=64,
-                 non_linear=F.tanh):
-        super(GaussianActorNet, self).__init__()
-        self.fc1 = layer_init(nn.Linear(state_dim, hidden_size))
-        self.fc2 = layer_init(nn.Linear(hidden_size, hidden_size))
-        self.fc_action = nn.Linear(hidden_size, action_dim)
 
-        self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
 
-        self.non_linear = non_linear
 
-        self.init_weights()
-        self.set_gpu(gpu)
-
-    def init_weights(self):
-        bound = 3e-3
-        nn.init.uniform_(self.fc_action.weight.data, -bound, bound)
-        nn.init.constant_(self.fc_action.bias.data, 0)
-
-    def forward(self, x):
-        x = self.tensor(x)
-        phi = self.non_linear(self.fc1(x))
-        phi = self.non_linear(self.fc2(phi))
-        mean = F.tanh(self.fc_action(phi))
-        log_std = self.action_log_std.expand_as(mean)
-        std = log_std.exp()
-        return mean, std, log_std
-
-    def predict(self, x):
-        return self.forward(x)
-
-class GaussianCriticNet(nn.Module, BaseNet):
-    def __init__(self,
-                 state_dim,
-                 gpu=-1,
-                 hidden_size=64,
-                 non_linear=F.tanh):
-        super(GaussianCriticNet, self).__init__()
-        self.fc1 = layer_init(nn.Linear(state_dim, hidden_size))
-        self.fc2 = layer_init(nn.Linear(hidden_size, hidden_size))
-        self.fc_value = nn.Linear(hidden_size, 1)
-        self.non_linear = non_linear
-        self.init_weights()
-        self.set_gpu(gpu)
-
-    def init_weights(self):
-        bound = 3e-3
-        nn.init.uniform_(self.fc_value.weight.data, -bound, bound)
-        nn.init.constant_(self.fc_value.bias.data, 0)
-
-    def forward(self, x):
-        x = self.tensor(x)
-        phi = self.non_linear(self.fc1(x))
-        phi = self.non_linear(self.fc2(phi))
-        value = self.fc_value(phi)
-        return value
-
-    def predict(self, x):
-        return self.forward(x)
