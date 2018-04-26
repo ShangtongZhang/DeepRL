@@ -30,7 +30,6 @@ class DDPGAgent(BaseAgent):
         self.critic_opt = config.critic_optimizer_fn(self.critic.parameters())
         self.replay = config.replay_fn()
         self.random_process = config.random_process_fn(self.task.action_dim)
-        self.criterion = nn.MSELoss()
         self.total_steps = 0
 
     def soft_update(self, target, src):
@@ -89,7 +88,7 @@ class DDPGAgent(BaseAgent):
                 q_next.add_(rewards)
                 q_next = q_next.detach()
                 q = critic.predict(states, actions)
-                critic_loss = self.criterion(q, q_next)
+                critic_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean()
 
                 self.critic_opt.zero_grad()
                 critic_loss.backward()
@@ -99,7 +98,6 @@ class DDPGAgent(BaseAgent):
 
                 self.actor_opt.zero_grad()
                 policy_loss.backward()
-                torch.nn.utils.clip_grad_value_(actor.parameters(), config.gradient_clip)
                 self.actor_opt.step()
 
                 self.soft_update(self.target_network, self.network)

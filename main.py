@@ -322,7 +322,7 @@ def ddpg_continuous():
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
         TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300]))
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
@@ -331,7 +331,6 @@ def ddpg_continuous():
                                          n_steps_annealing=1000000)
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
-    config.gradient_clip = 1.0
     config.logger = Logger('./log', logger)
     run_episodes(DDPGAgent(config))
 
@@ -390,7 +389,7 @@ if __name__ == '__main__':
     # ppo_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    # ddpg_continuous()
+    ddpg_continuous()
     # ppo_continuous()
 
     # action_conditional_video_prediction()
