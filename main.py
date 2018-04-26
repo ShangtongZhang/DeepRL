@@ -308,15 +308,15 @@ def ppo_continuous():
 def ddpg_continuous():
     config = Config()
     log_dir = get_default_log_dir(ddpg_continuous.__name__)
-    config.task_fn = lambda: Pendulum(log_dir=log_dir)
+    # config.task_fn = lambda: Pendulum(log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
-    # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
+    config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
-    # config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
         action_dim, TwoLayerFCBody(state_dim, [300, 200]))
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
@@ -389,7 +389,7 @@ if __name__ == '__main__':
     # ppo_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    ddpg_continuous()
+    # ddpg_continuous()
     # ppo_continuous()
 
     # action_conditional_video_prediction()
