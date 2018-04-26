@@ -91,19 +91,14 @@ class DDPGAgent(BaseAgent):
                 q = critic.predict(states, actions)
                 critic_loss = self.criterion(q, q_next)
 
-                critic.zero_grad()
                 self.critic_opt.zero_grad()
                 critic_loss.backward()
                 self.critic_opt.step()
 
-                actions = actor.predict(states, False)
-                var_actions = actions.detach().requires_grad_()
-                q = critic.predict(states, var_actions)
-                q.backward(critic.tensor(np.ones(q.size())))
+                policy_loss = -critic.predict(states, actor.predict(states)).mean()
 
-                actor.zero_grad()
                 self.actor_opt.zero_grad()
-                actions.backward(-var_actions.grad)
+                policy_loss.backward()
                 torch.nn.utils.clip_grad_value_(actor.parameters(), config.gradient_clip)
                 self.actor_opt.step()
 
