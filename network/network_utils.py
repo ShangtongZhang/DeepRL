@@ -18,6 +18,8 @@ class BaseNet:
         self.to(self.device)
 
     def tensor(self, x):
+        if isinstance(x, torch.Tensor):
+            return x
         x = torch.tensor(x, device=self.device, dtype=torch.float32)
         return x
 
