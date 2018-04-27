@@ -148,21 +148,19 @@ class DeterministicCriticNet(nn.Module, BaseNet):
         return value
 
 class DeterministicPlanNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, actor_body, state_body, action_body, discount, gpu=-1):
+    def __init__(self, action_dim, state_body, action_body, discount, gpu=-1):
         super(DeterministicPlanNet, self).__init__()
-
-        self.actor_body = action_body
-        self.fc_action = nn.Linear(actor_body.feature_dim, action_dim)
 
         self.state_body = state_body
         self.action_body = action_body
+        self.fc_action = nn.Linear(state_body.feature_dim, action_dim)
 
         self.fc_q = nn.Linear(state_body.feature_dim + action_body.feature_dim, 1)
         self.fc_reward = nn.Linear(state_body.feature_dim + action_body.feature_dim, 1)
-        self.fc_transition = nn.Linear(state_body.feature_dim + action_body.feature_dim, state_body.feature_dim)
+        self.fc_transition = nn.Linear(state_body.feature_dim + action_body.feature_dim,
+                                       state_body.feature_dim)
 
         self.discount = discount
-
         self.set_gpu(gpu)
 
     def phi_s_prime(self, phi_s, phi_a):
@@ -175,25 +173,29 @@ class DeterministicPlanNet(nn.Module, BaseNet):
         r = self.fc_reward(phi)
         return r
 
+    def actor(self, state):
+        state = self.tensor(state)
+        phi = self.state_body(state)
+        return F.tanh(self.fc_action(phi))
+
     def critic(self, state, action):
         state = self.tensor(state)
         action = self.tensor(action)
 
         phi_s = self.state_body(state)
-        phi_a = self.actor_body(action)
+        phi_a = self.action_body(action)
         phi = torch.cat([phi_s, phi_a], dim=1)
         r = self.fc_reward(phi)
 
         phi_s_prime = self.phi_s_prime(phi_s, phi_a)
         a_prime = F.tanh(self.fc_action(phi_s_prime))
-        phi_prime = torch.cat([phi_s_prime, a_prime], dim=1)
+        phi_a_prime = self.action_body(a_prime)
+        phi_prime = torch.cat([phi_s_prime, phi_a_prime], dim=1)
         q_prime = self.fc_q(phi_prime)
         return r + self.discount * q_prime, r
 
     def predict(self, x, to_numpy=False):
-        x = self.tensor(x)
-        phi = self.actor_body(x)
-        action = F.tanh(self.fc_action(phi))
+        action = self.actor(x)
         if to_numpy:
             action = action.cpu().detach().numpy()
         return action
