@@ -23,19 +23,18 @@ class NatureConvBody(nn.Module):
         y = F.relu(self.fc4(y))
         return y
 
-class TwoLayerFCBody(nn.Module):
-    def __init__(self, state_dim, hidden_units=(64, 64), gate=F.relu):
-        super(TwoLayerFCBody, self).__init__()
-        hidden_size1, hidden_size2 = hidden_units
-        self.fc1 = layer_init(nn.Linear(state_dim, hidden_size1))
-        self.fc2 = layer_init(nn.Linear(hidden_size1, hidden_size2))
+class FCBody(nn.Module):
+    def __init__(self, state_dim, hidden_units=(64, 64), gate=F.tanh):
+        super(FCBody, self).__init__()
+        dims = (state_dim, ) + hidden_units
+        self.layers = nn.ModuleList([nn.Linear(dim_in, dim_out) for dim_in, dim_out in zip(dims[:-1], dims[1:])])
         self.gate = gate
-        self.feature_dim = hidden_size2
+        self.feature_dim = dims[-1]
 
     def forward(self, x):
-        y = self.gate(self.fc1(x))
-        y = self.gate(self.fc2(y))
-        return y
+        for layer in self.layers:
+            x = self.gate(layer(x))
+        return x
 
 class TwoLayerFCBodyWithAction(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_units=(64, 64), gate=F.relu):

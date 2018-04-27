@@ -18,8 +18,8 @@ def dqn_cart_pole():
     config.task_fn = lambda: ClassicalControl(game, max_steps=200)
     config.evaluation_env = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, TwoLayerFCBody(state_dim))
-    # config.network_fn = lambda state_dim, action_dim: DuelingNet(action_dim, TwoLayerFCBody(state_dim))
+    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, FCBody(state_dim))
+    # config.network_fn = lambda state_dim, action_dim: DuelingNet(action_dim, FCBody(state_dim))
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
     config.discount = 0.99
@@ -40,7 +40,7 @@ def a2c_cart_pole():
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(a2c_cart_pole.__name__))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda state_dim, action_dim: ActorCriticNet(action_dim, TwoLayerFCBody(state_dim))
+    config.network_fn = lambda state_dim, action_dim: ActorCriticNet(action_dim, FCBody(state_dim))
     config.policy_fn = SamplePolicy
     config.discount = 0.99
     config.logger = Logger('./log', logger)
@@ -56,7 +56,7 @@ def categorical_dqn_cart_pole():
     config.evaluation_env = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: \
-        CategoricalNet(action_dim, config.categorical_n_atoms, TwoLayerFCBody(state_dim))
+        CategoricalNet(action_dim, config.categorical_n_atoms, FCBody(state_dim))
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=10000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
     config.discount = 0.99
@@ -74,7 +74,7 @@ def quantile_regression_dqn_cart_pole():
     config.evaluation_env = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, TwoLayerFCBody(state_dim))
+        QuantileNet(action_dim, config.num_quantiles, FCBody(state_dim))
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=10000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
     config.discount = 0.99
@@ -91,7 +91,7 @@ def n_step_dqn_cart_pole():
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, TwoLayerFCBody(state_dim))
+    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, FCBody(state_dim))
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config.discount = 0.99
     config.target_network_update_freq = 200
@@ -105,7 +105,7 @@ def ppo_cart_pole():
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    network_fn = lambda state_dim, action_dim: ActorCriticNet(action_dim, TwoLayerFCBody(state_dim))
+    network_fn = lambda state_dim, action_dim: ActorCriticNet(action_dim, FCBody(state_dim))
     config.network_fn = lambda state_dim, action_dim: \
         CategoricalActorCriticWrapper(state_dim, action_dim, network_fn, optimizer_fn)
     config.discount = 0.99
@@ -256,7 +256,7 @@ def dqn_ram_atari(name):
     config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4,
                                       log_dir=get_default_log_dir(dqn_ram_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, TwoLayerFCBody(state_dim), gpu=2)
+    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, FCBody(state_dim), gpu=2)
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=1000000, min_epsilon=0.1)
     config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
     config.state_normalizer = RescaleNormalizer(1.0 / 128)
@@ -284,8 +284,8 @@ def ppo_continuous():
     # task_fn = lambda log_dir: DMControl('hopper', 'hop', log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
     actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(
-        action_dim, TwoLayerFCBody(state_dim))
-    critic_network_fn = lambda state_dim: GaussianCriticNet(TwoLayerFCBody(state_dim))
+        action_dim, FCBody(state_dim))
+    critic_network_fn = lambda state_dim: GaussianCriticNet(FCBody(state_dim))
     actor_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     critic_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
@@ -318,7 +318,7 @@ def ddpg_continuous():
     # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
     config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
-        action_dim, TwoLayerFCBody(state_dim, [300, 200]))
+        action_dim, FCBody(state_dim, (300, 200)))
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
         TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300]))
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
