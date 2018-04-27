@@ -79,8 +79,8 @@ class PlanDDPGAgent(BaseAgent):
                 q_next.add_(rewards)
                 q_next = q_next.detach()
                 q, r = self.network.critic(states, actions)
-                q_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean()
-                r_loss = (r - rewards).pow(2).mul(0.5).mean()
+                q_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean() * config.value_loss_weight
+                r_loss = (r - rewards).pow(2).mul(0.5).mean() * config.value_loss_weight
                 # config.logger.scalar_summary('q_loss', q_loss, self.total_steps)
                 # config.logger.scalar_summary('reward_loss', r_loss, self.total_steps)
 
