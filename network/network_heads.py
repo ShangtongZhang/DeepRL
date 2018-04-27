@@ -186,6 +186,8 @@ class DeterministicPlanNet(nn.Module, BaseNet):
         phi_a = self.action_body(action)
         phi = torch.cat([phi_s, phi_a], dim=1)
         r = self.fc_reward(phi)
+        q = self.fc_q(phi)
+        return q, r
 
         phi_s_prime = self.phi_s_prime(phi_s, phi_a)
         a_prime = F.tanh(self.fc_action(phi_s_prime))
