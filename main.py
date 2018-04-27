@@ -308,53 +308,43 @@ def ppo_continuous():
 def ddpg_continuous():
     config = Config()
     log_dir = get_default_log_dir(ddpg_continuous.__name__)
-    config.task_fn = lambda: Pendulum(log_dir=log_dir)
+    # config.task_fn = lambda: Pendulum(log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
-    # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
+    config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
-    # config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
         action_dim, TwoLayerFCBody(state_dim, [300, 200]))
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
         TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300]))
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=0.01)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
-    config.random_process_fn = \
-        lambda action_dim: OrnsteinUhlenbeckProcess(size=action_dim, theta=0.15, sigma=0.3,
-                                         n_steps_annealing=1000000)
+    config.random_process_fn = lambda action_dim: GaussianProcess(action_dim, LinearSchedule(0.3, 0, 1e6))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
-    config.gradient_clip = 1.0
     config.logger = Logger('./log', logger)
     run_episodes(DDPGAgent(config))
 
 def plot():
     import matplotlib.pyplot as plt
     plotter = Plotter()
-    # name = 'log/ppo_continuous-180408-002056'
-    # plotter.plot_results([name])
-    # plt.show()
-    names = [
-            # 'a2c_pixel_atari-180407-92711',
-            # 'categorical_dqn_pixel_atari-180407-094006',
-            # 'dqn_pixel_atari-180407-01414',
-            # 'quantile_regression_dqn_pixel_atari-180407-01604',
-            #  'n_step_dqn_pixel_atari-180408-001104',
-            #  'ppo_continuous-180408-002056',
-            #  'ddpg_continuous-180407-234141'
-            'ppo_pixel_atari-180410-235529',
-             ]
-    for name in names:
-        plotter.plot_results(['to_plot/%s' % (name)], title='BreakoutNoFrameskip-v4')
-        plt.savefig('images/%s.png' % (name))
-        plt.close()
+    names = plotter.load_log_dirs('')
+    data = plotter.load_results(names)
+
+    for i, name in enumerate(names):
+        x, y = data[i]
+        plt.plot(x, y, color=Plotter.COLORS[i], label=name)
+    plt.legend()
+    plt.xlabel('timesteps')
+    plt.ylabel('episode return')
+    plt.show()
 
 def action_conditional_video_prediction():
     game = 'PongNoFrameskip-v4'
