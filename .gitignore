@@ -11,7 +11,7 @@ data
 dataset
 draw_*
 log
-evaluation_log
+old_logs
 figure
 to_plot
 

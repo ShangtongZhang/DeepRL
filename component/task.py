@@ -14,77 +14,55 @@ from utils import *
 import datetime
 import uuid
 
-class BasicTask:
-    def __init__(self, max_steps=sys.maxsize):
-        self.steps = 0
-        self.max_steps = max_steps
+class BaseTask:
+    def set_monitor(self, env, log_dir):
+        if log_dir is None:
+            return env
+        mkdir(log_dir)
+        return Monitor(env, '%s/%s' % (log_dir, uuid.uuid1()))
 
     def reset(self):
-        self.steps = 0
-        state = self.env.reset()
-        return state
+        return self.env.reset()
 
     def step(self, action):
-        next_state, reward, done, info = self.env.step(action)
-        self.steps += 1
-        done = (done or self.steps >= self.max_steps)
-        return next_state, reward, done, info
+        return self.env.step(action)
 
-class ClassicalControl(BasicTask):
+    def seed(self, random_seed):
+        return self.env.seed(random_seed)
+
+class ClassicalControl(BaseTask):
     def __init__(self, name='CartPole-v0', max_steps=200, log_dir=None):
-        BasicTask.__init__(self, max_steps)
+        BaseTask.__init__(self)
         self.name = name
         self.env = gym.make(self.name)
-        self.env._max_episode_steps = sys.maxsize
+        self.env._max_episode_steps = max_steps
         self.action_dim = self.env.action_space.n
         self.state_dim = self.env.observation_space.shape[0]
-        if log_dir is not None:
-            mkdir(log_dir)
-            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
+        self.env = self.set_monitor(self.env, log_dir)
 
-class LunarLander(BasicTask):
-    name = 'LunarLander-v2'
-    success_threshold = 200
-
-    def __init__(self, max_steps=sys.maxsize, log_dir=None):
-        BasicTask.__init__(self, max_steps)
-        self.env = gym.make(self.name)
-        self.action_dim = self.env.action_space.n
-        self.state_dim = self.env.observation_space.shape[0]
-        if log_dir is not None:
-            mkdir(log_dir)
-            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
-
-class PixelAtari(BasicTask):
-    def __init__(self, name, seed=0, log_dir=None, max_steps=sys.maxsize,
+class PixelAtari(BaseTask):
+    def __init__(self, name, seed=0, log_dir=None,
                  frame_skip=4, history_length=4, dataset=False):
-        BasicTask.__init__(self, max_steps)
+        BaseTask.__init__(self)
         env = make_atari(name, frame_skip)
         env.seed(seed)
         if dataset:
             env = DatasetEnv(env)
             self.dataset_env = env
-        if log_dir is not None:
-            mkdir(log_dir)
-            env = Monitor(env, '%s/%s' % (log_dir, uuid.uuid1()))
+        env = self.set_monitor(env, log_dir)
         env = wrap_deepmind(env, history_length=history_length)
         self.env = env
         self.action_dim = self.env.action_space.n
         self.state_dim = self.env.observation_space.shape
         self.name = name
 
-    def normalize_state(self, state):
-        return np.asarray(state) / 255.0
-
-class RamAtari(BasicTask):
-    def __init__(self, name, no_op, frame_skip, max_steps=sys.maxsize, log_dir=None):
-        BasicTask.__init__(self, max_steps)
+class RamAtari(BaseTask):
+    def __init__(self, name, no_op, frame_skip, log_dir=None):
+        BaseTask.__init__(self)
         self.name = name
         env = gym.make(name)
         assert 'NoFrameskip' in env.spec.id
-        if log_dir is not None:
-            mkdir(log_dir)
-            env = Monitor(env, '%s/%s' % (log_dir, uuid.uuid1()))
+        env = self.set_monitor(env, log_dir)
         env = EpisodicLifeEnv(env)
         env = NoopResetEnv(env, noop_max=no_op)
         env = SkipEnv(env, skip=frame_skip)
@@ -94,81 +72,66 @@ class RamAtari(BasicTask):
         self.action_dim = self.env.action_space.n
         self.state_dim = 128
 
-    def normalize_state(self, state):
-        return np.asarray(state) / 255.0
-
-class Pendulum(BasicTask):
-    name = 'Pendulum-v0'
-    success_threshold = -10
-
-    def __init__(self, max_steps=sys.maxsize, log_dir=None):
-        BasicTask.__init__(self, max_steps)
+class Pendulum(BaseTask):
+    def __init__(self, log_dir=None):
+        BaseTask.__init__(self)
+        self.name = 'Pendulum-v0'
         self.env = gym.make(self.name)
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
-        if log_dir is not None:
-            mkdir(log_dir)
-            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
+        self.env = self.set_monitor(self.env, log_dir)
 
     def step(self, action):
-        return BasicTask.step(self, np.clip(2 * action, -2, 2))
+        return BaseTask.step(self, np.clip(2 * action, -2, 2))
 
-class Box2DContinuous(BasicTask):
-    def __init__(self, name, max_steps=sys.maxsize, log_dir=None):
-        BasicTask.__init__(self, max_steps)
+class Box2DContinuous(BaseTask):
+    def __init__(self, name, log_dir=None):
+        BaseTask.__init__(self)
         self.name = name
         self.env = gym.make(self.name)
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
-        if log_dir is not None:
-            mkdir(log_dir)
-            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
+        self.env = self.set_monitor(self.env, log_dir)
 
     def step(self, action):
-        return BasicTask.step(self, np.clip(action, -1, 1))
+        return BaseTask.step(self, np.clip(action, -1, 1))
 
-class Roboschool(BasicTask):
-    def __init__(self, name, max_steps=sys.maxsize, log_dir=None):
+class Roboschool(BaseTask):
+    def __init__(self, name, log_dir=None):
         import roboschool
-        BasicTask.__init__(self, max_steps)
+        BaseTask.__init__(self)
         self.name = name
         self.env = gym.make(self.name)
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
-        if log_dir is not None:
-            mkdir(log_dir)
-            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
+        self.env = self.set_monitor(self.env, log_dir)
 
     def step(self, action):
-        return BasicTask.step(self, np.clip(action, -1, 1))
+        return BaseTask.step(self, np.clip(action, -1, 1))
 
-class DMControl(BasicTask):
-    def __init__(self, domain_name, task_name, max_steps=sys.maxsize, log_dir=None):
+class DMControl(BaseTask):
+    def __init__(self, domain_name, task_name, log_dir=None):
         from dm_control import suite
         import dm_control2gym
-        BasicTask.__init__(self, max_steps)
+        BaseTask.__init__(self)
 
         self.name = domain_name + '_' + task_name
         self.env = dm_control2gym.make(domain_name, task_name)
 
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
-        if log_dir is not None:
-            mkdir(log_dir)
-            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
+        self.env = self.set_monitor(self.env, log_dir)
 
-class GymRobotics(BasicTask):
+class GymRobotics(BaseTask):
     def __init__(self, name, log_dir=None):
-        BasicTask.__init__(self)
+        BaseTask.__init__(self)
 
         self.name = name
         self.env = gym.make(name)
 
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = len(self.flatten_state(self.env.reset()))
-        if log_dir is not None:
-            mkdir(log_dir)
-            self.env = Monitor(self.env, '%s/%s' % (log_dir, uuid.uuid1()))
+        self.env = self.set_monitor(self.env, log_dir)
 
     def flatten_state(self, state):
         flat = []
@@ -189,7 +152,7 @@ def sub_task(parent_pipe, pipe, task_fn, rank, log_dir):
     seed = np.random.randint(0, sys.maxsize)
     parent_pipe.close()
     task = task_fn(log_dir=log_dir)
-    task.env.seed(seed)
+    task.seed(seed)
     while True:
         op, data = pipe.recv()
         if op == 'step':
