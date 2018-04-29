@@ -36,7 +36,8 @@ class PlanDDPGAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
-        action = self.network.predict(state, to_numpy=True).flatten()
+        action = self.network.actor(state)
+        action = action.detach().numpy().flatten()
         self.config.state_normalizer.unset_read_only()
         return action
 

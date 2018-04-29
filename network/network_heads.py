@@ -204,11 +204,11 @@ class DeterministicPlanNet(nn.Module, BaseNet):
 
 from .network_bodies import *
 class SharedDeterministicNet(nn.Module, BaseNet):
-    def __init__(self, state_dim, action_dim, discount, gpu=-1):
+    def __init__(self, state_dim, action_dim, discount, gate=F.tanh, gpu=-1):
         super(SharedDeterministicNet, self).__init__()
 
-        self.actor_body = FCBody(state_dim, (300, 200))
-        self.critic_body = TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300])
+        self.actor_body = FCBody(state_dim, (300, 200), gate=gate)
+        self.critic_body = TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300], gate=gate)
 
         self.fc_action = layer_init(nn.Linear(self.actor_body.feature_dim, action_dim), 3e-3)
         self.fc_critic = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
