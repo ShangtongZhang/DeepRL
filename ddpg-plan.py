@@ -52,7 +52,7 @@ def ddpg_plan_continuous():
     #     action_dim=action_dim, state_body=FCBody(state_dim=state_dim, hidden_units=(300, 200), gate=F.tanh),
     #     action_body=FCBody(state_dim=action_dim, hidden_units=(200, ), gate=F.tanh), discount=config.discount)
     config.network_fn = lambda state_dim, action_dim: SharedDeterministicNet(
-        state_dim, action_dim
+        state_dim, action_dim, config.discount
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)

@@ -204,7 +204,7 @@ class DeterministicPlanNet(nn.Module, BaseNet):
 
 from .network_bodies import *
 class SharedDeterministicNet(nn.Module, BaseNet):
-    def __init__(self, state_dim, action_dim, gpu=-1):
+    def __init__(self, state_dim, action_dim, discount, gpu=-1):
         super(SharedDeterministicNet, self).__init__()
 
         self.actor_body = FCBody(state_dim, (300, 200))
@@ -214,7 +214,8 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         self.fc_critic = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
 
         self.fc_reward = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
-        self.fc_transition = layer_init(nn.Linear(state_dim, state_dim))
+        self.fc_transition = layer_init(nn.Linear(self.critic_body.feature_dim, state_dim))
+        self.discount = discount
 
         self.set_gpu(gpu)
 
@@ -228,6 +229,11 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         x = self.tensor(x)
         a = self.tensor(a)
         phi = self.critic_body(x, a)
-        q = self.fc_critic(phi)
+        # q = self.fc_critic(phi)
         r = self.fc_reward(phi)
-        return q, r
+
+        s_prime = x + F.tanh(self.fc_transition(phi))
+        a_prime = self.actor(s_prime)
+        phi_prime = self.critic_body(s_prime, a_prime)
+        q_prime = self.fc_critic(phi_prime)
+        return r + self.discount * q_prime, r
