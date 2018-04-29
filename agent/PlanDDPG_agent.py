@@ -50,7 +50,8 @@ class PlanDDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
-            action = self.network.predict(np.stack([state]), True).flatten()
+            action = self.network.actor(np.stack([state]))
+            action = action.detach().numpy().flatten()
             if not deterministic:
                 action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)

@@ -39,18 +39,21 @@ def ddpg_continuous():
 def ddpg_plan_continuous():
     config = Config()
     log_dir = get_default_log_dir(ddpg_plan_continuous.__name__)
-    # config.task_fn = lambda: Pendulum(log_dir=log_dir)
+    config.task_fn = lambda: Pendulum(log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
-    config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
+    # config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
     # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
     # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
-    config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
-    config.network_fn = lambda state_dim, action_dim: DeterministicPlanNet(
-        action_dim=action_dim, state_body=FCBody(state_dim=state_dim, hidden_units=(300, 200), gate=F.tanh),
-        action_body=FCBody(state_dim=action_dim, hidden_units=(200, ), gate=F.tanh), discount=config.discount)
+    # config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    # config.network_fn = lambda state_dim, action_dim: DeterministicPlanNet(
+    #     action_dim=action_dim, state_body=FCBody(state_dim=state_dim, hidden_units=(300, 200), gate=F.tanh),
+    #     action_body=FCBody(state_dim=action_dim, hidden_units=(200, ), gate=F.tanh), discount=config.discount)
+    config.network_fn = lambda state_dim, action_dim: SharedDeterministicNet(
+        state_dim, action_dim
+    )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99

@@ -201,3 +201,29 @@ class DeterministicPlanNet(nn.Module, BaseNet):
         if to_numpy:
             action = action.cpu().detach().numpy()
         return action
+
+from .network_bodies import *
+class SharedDeterministicNet(nn.Module, BaseNet):
+    def __init__(self, state_dim, action_dim, gpu=-1):
+        super(SharedDeterministicNet, self).__init__()
+
+        self.actor_body = FCBody(state_dim, (300, 200))
+        self.critic_body = TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300])
+
+        self.fc_action = layer_init(nn.Linear(self.actor_body.feature_dim, action_dim), 3e-3)
+        self.fc_critic = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
+
+        self.set_gpu(gpu)
+
+    def actor(self, x):
+        x = self.tensor(x)
+        x = self.actor_body(x)
+        a = F.tanh(self.fc_action(x))
+        return a
+
+    def critic(self, x, a):
+        x = self.tensor(x)
+        a = self.tensor(a)
+        phi = self.critic_body(x, a)
+        q = self.fc_critic(phi)
+        return q, 0
