@@ -86,8 +86,8 @@ class PlanDDPGAgent(BaseAgent):
                 # config.logger.scalar_summary('reward_loss', r_loss, self.total_steps)
 
                 self.opt.zero_grad()
-                q_loss.backward()
-                # (q_loss + r_loss).backward()
+                # q_loss.backward()
+                (q_loss + r_loss).backward()
                 self.opt.step()
 
                 dead_actions = self.network.actor(states)

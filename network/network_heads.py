@@ -213,6 +213,9 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         self.fc_action = layer_init(nn.Linear(self.actor_body.feature_dim, action_dim), 3e-3)
         self.fc_critic = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
 
+        self.fc_reward = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
+        self.fc_transition = layer_init(nn.Linear(state_dim, state_dim))
+
         self.set_gpu(gpu)
 
     def actor(self, x):
@@ -226,4 +229,5 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         a = self.tensor(a)
         phi = self.critic_body(x, a)
         q = self.fc_critic(phi)
-        return q, 0
+        r = self.fc_reward(phi)
+        return q, r
