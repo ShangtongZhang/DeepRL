@@ -51,6 +51,7 @@ class PlanDDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
+            lam = config.lam()
             action = self.network.actor(np.stack([state]))
             action = action.detach().numpy().flatten()
             if not deterministic:
@@ -74,13 +75,13 @@ class PlanDDPGAgent(BaseAgent):
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
-                q_next, _ = self.target_network.critic(next_states, self.target_network.actor(next_states))
+                q_next, _ = self.target_network.critic(next_states, self.target_network.actor(next_states), lam)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
                 q_next = q_next.detach()
-                q, r = self.network.critic(states, actions)
+                q, r = self.network.critic(states, actions, lam)
                 q_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean() * config.value_loss_weight
                 r_loss = (r - rewards).pow(2).mul(0.5).mean() * config.value_loss_weight
                 # config.logger.scalar_summary('q_loss', q_loss, self.total_steps)
@@ -93,7 +94,7 @@ class PlanDDPGAgent(BaseAgent):
 
                 dead_actions = self.network.actor(states)
                 dead_actions.detach_().requires_grad_()
-                q = self.network.critic(states, dead_actions)[0].mean()
+                q = self.network.critic(states, dead_actions, lam)[0].mean()
 
                 self.opt.zero_grad()
                 q.backward()

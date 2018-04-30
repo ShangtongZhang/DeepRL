@@ -3,6 +3,7 @@ from agent import *
 from component import *
 from utils import *
 from model import *
+import matplotlib.pyplot as plt
 
 def ddpg_continuous(game, log_dir=None):
     config = Config()
@@ -29,17 +30,14 @@ def ddpg_continuous(game, log_dir=None):
     run_episodes(DDPGAgent(config))
 
 
-def ddpg_plan_continuous(game, log_dir=None):
+def ddpg_plan_continuous(game, log_dir=None, **kwargs):
     config = Config()
     if log_dir is None:
         log_dir = get_default_log_dir(ddpg_plan_continuous.__name__)
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
-    # config.network_fn = lambda state_dim, action_dim: DeterministicPlanNet(
-    #     action_dim=action_dim, state_body=FCBody(state_dim=state_dim, hidden_units=(300, 200), gate=F.tanh),
-    #     action_body=FCBody(state_dim=action_dim, hidden_units=(200, ), gate=F.tanh), discount=config.discount)
     config.network_fn = lambda state_dim, action_dim: SharedDeterministicNet(
-        state_dim, action_dim, config.discount, gate=F.tanh
+        state_dim, action_dim, config.discount, gate=F.tanh, detach_action=kwargs['detach_action']
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
@@ -52,6 +50,7 @@ def ddpg_plan_continuous(game, log_dir=None):
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.value_loss_weight = 10.0
+    config.lam = kwargs['lam']
     config.logger = Logger('./log', logger)
     run_episodes(PlanDDPGAgent(config))
 
@@ -62,6 +61,24 @@ def multi_runs(game, fn, tag, **kwargs):
     for run in runs:
         log_dir = './log/%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
         fn(game, log_dir, **kwargs)
+
+def plot(**kwargs):
+    import matplotlib.pyplot as plt
+    figure = kwargs['figure']
+    del kwargs['figure']
+    plotter = Plotter()
+    names = plotter.load_log_dirs(**kwargs)
+    data = plotter.load_results(names, episode_window=100)
+
+    plt.figure(figure)
+    for i, name in enumerate(names):
+        x, y = data[i]
+        plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
+    plt.legend()
+    plt.ylim([-100, 1400])
+    plt.xlabel('timesteps')
+    plt.ylabel('episode return')
+    # plt.show()
 
 if __name__ == '__main__':
     mkdir('data')
@@ -75,7 +92,23 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
 
     # game = 'RoboschoolHopper-v1'
-    # game = 'RoboschoolAnt-v1'
+    game = 'RoboschoolAnt-v1'
     # multi_runs(game, ddpg_continuous, tag='ddpg')
     # multi_runs(game, ddpg_plan_continuous, tag='ddpg_plan')
+
+    # multi_runs(game, ddpg_plan_continuous, tag='ddpg_plan_lam_1.0',
+    #            lam=LinearSchedule(1.0, 1.0, 1e6), detach_action=False)
+    # multi_runs(game, ddpg_plan_continuous, tag='ddpg_plan_lam_1.0_to_0',
+    #            lam=LinearSchedule(1.0, 0, 1e6), detach_action=False)
+    # multi_runs(game, ddpg_plan_continuous, tag='ddpg_plan_lam_1.0_to_0_fast',
+    #            lam=LinearSchedule(1.0, 0, 5e5), detach_action=False)
+    # multi_runs(game, ddpg_plan_continuous, tag='ddpg_plan_lam_0_no_action',
+    #            lam=LinearSchedule(0, 0, 5e5), detach_action=True)
+
+    # plot(pattern='.*Hopper.*ddpg_continuous.*', figure=0)
+    # plot(pattern='.*Hopper.*ddpg_plan_continuous.*', figure=1)
+
+    # plot(pattern='.*Ant.*ddpg_continuous.*')
+    # plot(pattern='.*Ant.*ddpg_plan_continuous.*')
+    # plt.show()
 
