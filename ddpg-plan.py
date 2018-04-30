@@ -75,7 +75,8 @@ def plot(**kwargs):
         x, y = data[i]
         plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
     plt.legend()
-    plt.ylim([-100, 1400])
+    # plt.ylim([-100, 1400])
+    plt.ylim([-100, 1200])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
@@ -108,7 +109,11 @@ if __name__ == '__main__':
     # plot(pattern='.*Hopper.*ddpg_continuous.*', figure=0)
     # plot(pattern='.*Hopper.*ddpg_plan_continuous.*', figure=1)
 
-    # plot(pattern='.*Ant.*ddpg_continuous.*')
-    # plot(pattern='.*Ant.*ddpg_plan_continuous.*')
-    # plt.show()
+    plot(pattern='.*Ant.*ddpg_plan_lam_0_no_action.*', figure=0)
+    plot(pattern='.*Ant.*ddpg_plan_lam_1\.0-.*', figure=1)
+    plot(pattern='.*Ant.*ddpg_plan_lam_1\.0_to_0-.*', figure=2)
+    plot(pattern='.*Ant.*ddpg_plan_lam_1\.0_to_0_fast.*', figure=3)
+    plot(pattern='.*Ant.*ddpg_continuous.*', figure=4)
+    plot(pattern='.*Ant.*ddpg_plan-.*', figure=5)
+    plt.show()
 
