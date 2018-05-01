@@ -19,7 +19,7 @@ class BaseTask:
         if log_dir is None:
             return env
         mkdir(log_dir)
-        return Monitor(env, '%s/%s' % (log_dir, uuid.uuid1()))
+        return Monitor(env, '%s/%s' % (log_dir, uuid.uuid4()))
 
     def reset(self):
         return self.env.reset()
