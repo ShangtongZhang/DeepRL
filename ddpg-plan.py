@@ -113,7 +113,7 @@ if __name__ == '__main__':
     plot(pattern='.*Ant.*ddpg_plan_lam_1\.0-.*', figure=1)
     plot(pattern='.*Ant.*ddpg_plan_lam_1\.0_to_0-.*', figure=2)
     plot(pattern='.*Ant.*ddpg_plan_lam_1\.0_to_0_fast.*', figure=3)
-    plot(pattern='.*Ant.*ddpg_continuous.*', figure=4)
+    plot(pattern='.*Ant.*ddpg_continuous.*', negative_pattern='.*expert.*', figure=4)
     plot(pattern='.*Ant.*ddpg_plan-.*', figure=5)
     plt.show()
 
