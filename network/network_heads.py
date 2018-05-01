@@ -147,68 +147,13 @@ class DeterministicCriticNet(nn.Module, BaseNet):
         value = self.fc_value(phi)
         return value
 
-class DeterministicPlanNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, state_body, action_body, discount, gpu=-1):
-        super(DeterministicPlanNet, self).__init__()
-
-        self.state_body = state_body
-        self.action_body = action_body
-        self.fc_action = nn.Linear(state_body.feature_dim, action_dim)
-
-        self.fc_q = nn.Linear(state_body.feature_dim + action_body.feature_dim, 1)
-        self.fc_reward = nn.Linear(state_body.feature_dim + action_body.feature_dim, 1)
-        self.fc_transition = nn.Linear(state_body.feature_dim + action_body.feature_dim,
-                                       state_body.feature_dim)
-
-        self.discount = discount
-        self.set_gpu(gpu)
-
-    def phi_s_prime(self, phi_s, phi_a):
-        phi = torch.cat([phi_s, phi_a], dim=1)
-        phi = F.tanh(self.fc_transition(phi)) + phi_s
-        return phi
-
-    def reward(self, phi_s, phi_a):
-        phi = torch.cat([phi_s, phi_a], dim=1)
-        r = self.fc_reward(phi)
-        return r
-
-    def actor(self, state):
-        state = self.tensor(state)
-        phi = self.state_body(state)
-        return F.tanh(self.fc_action(phi))
-
-    def critic(self, state, action):
-        state = self.tensor(state)
-        action = self.tensor(action)
-
-        phi_s = self.state_body(state)
-        phi_a = self.action_body(action)
-        phi = torch.cat([phi_s, phi_a], dim=1)
-        r = self.fc_reward(phi)
-        q = self.fc_q(phi)
-        return q, r
-
-        phi_s_prime = self.phi_s_prime(phi_s, phi_a)
-        a_prime = F.tanh(self.fc_action(phi_s_prime))
-        phi_a_prime = self.action_body(a_prime)
-        phi_prime = torch.cat([phi_s_prime, phi_a_prime], dim=1)
-        q_prime = self.fc_q(phi_prime)
-        return r + self.discount * q_prime, r
-
-    def predict(self, x, to_numpy=False):
-        action = self.actor(x)
-        if to_numpy:
-            action = action.cpu().detach().numpy()
-        return action
-
 from .network_bodies import *
 class SharedDeterministicNet(nn.Module, BaseNet):
     def __init__(self, state_dim, action_dim, discount, detach_action=False, gate=F.tanh, gpu=-1):
         super(SharedDeterministicNet, self).__init__()
 
         self.actor_body = FCBody(state_dim, (300, 200), gate=gate)
-        self.critic_body = TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300], gate=gate)
+        self.critic_body = TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=gate)
 
         self.fc_action = layer_init(nn.Linear(self.actor_body.feature_dim, action_dim), 3e-3)
         self.fc_critic = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
@@ -242,3 +187,64 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         q1 = r + self.discount * q_prime
         q = lam * q0 + (1 - lam) * q1
         return q, r
+
+class SharedDeterministicNetv2(nn.Module, BaseNet):
+    def __init__(self, state_dim, action_dim, discount, detach_action=False, gate=F.tanh, gpu=-1):
+        super(SharedDeterministicNetv2, self).__init__()
+        self.abstract_state_dim = 400
+        self.hidden_q_dim = 300
+        self.hidden_a_dim = 300
+
+        self.fc_abstract_state = layer_init(nn.Linear(state_dim, self.abstract_state_dim))
+        self.fc_q1 = layer_init(nn.Linear(
+            self.abstract_state_dim + action_dim, self.hidden_q_dim))
+        self.fc_q2 = layer_init(nn.Linear(self.hidden_q_dim, 1), 3e-3)
+
+        self.fc_a1 = layer_init(nn.Linear(self.abstract_state_dim, self.hidden_a_dim))
+        self.fc_a2 = layer_init(nn.Linear(self.hidden_a_dim, action_dim), 3e-3)
+
+        # self.actor_body = FCBody(state_dim, (300, 200), gate=gate)
+        # self.critic_body = TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=gate)
+        #
+        # self.fc_action = layer_init(nn.Linear(self.actor_body.feature_dim, action_dim), 3e-3)
+        # self.fc_critic = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
+        #
+        # self.fc_reward = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
+        # self.fc_transition = layer_init(nn.Linear(self.critic_body.feature_dim, state_dim))
+
+        self.gate = gate
+        # self.discount = discount
+        # self.detach_action = detach_action
+
+        self.set_gpu(gpu)
+
+    def actor(self, obs):
+        obs = self.tensor(obs)
+        s = F.tanh(self.fc_abstract_state(obs))
+        a = F.tanh(self.fc_a1(s))
+        a = F.tanh(self.fc_a2(a))
+        return a
+
+    def critic(self, obs, a, lam=0):
+        obs = self.tensor(obs)
+        a = self.tensor(a)
+        s = F.tanh(self.fc_abstract_state(obs))
+        phi = torch.cat([s, a], dim=1)
+        q = F.tanh(self.fc_q1(phi))
+        q = self.fc_q2(q)
+        return q, 0
+        # x = self.tensor(x)
+        # a = self.tensor(a)
+        # phi = self.critic_body(x, a)
+        # q0 = self.fc_critic(phi)
+        # r = self.fc_reward(phi)
+        #
+        # s_prime = x + F.tanh(self.fc_transition(phi))
+        # a_prime = self.actor(s_prime)
+        # if self.detach_action:
+        #     a_prime = a_prime.detach()
+        # phi_prime = self.critic_body(s_prime, a_prime)
+        # q_prime = self.fc_critic(phi_prime)
+        # q1 = r + self.discount * q_prime
+        # q = lam * q0 + (1 - lam) * q1
+        # return q, r

@@ -29,14 +29,16 @@ def ddpg_continuous(game, log_dir=None):
     config.logger = Logger('./log', logger)
     run_episodes(DDPGAgent(config))
 
-
 def ddpg_plan_continuous(game, log_dir=None, **kwargs):
     config = Config()
+    kwargs.setdefault('detach_action', False)
+    kwargs.setdefault('lam', LinearSchedule(1, 1, 1e6))
+    kwargs.setdefault('tag', ddpg_plan_continuous.__name__)
     if log_dir is None:
-        log_dir = get_default_log_dir(ddpg_plan_continuous.__name__)
+        log_dir = get_default_log_dir(kwargs['tag'])
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
-    config.network_fn = lambda state_dim, action_dim: SharedDeterministicNet(
+    config.network_fn = lambda state_dim, action_dim: SharedDeterministicNetv2(
         state_dim, action_dim, config.discount, gate=F.tanh, detach_action=kwargs['detach_action']
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
@@ -109,11 +111,12 @@ if __name__ == '__main__':
     # plot(pattern='.*Hopper.*ddpg_continuous.*', figure=0)
     # plot(pattern='.*Hopper.*ddpg_plan_continuous.*', figure=1)
 
-    plot(pattern='.*Ant.*ddpg_plan_lam_0_no_action.*', figure=0)
-    plot(pattern='.*Ant.*ddpg_plan_lam_1\.0-.*', figure=1)
-    plot(pattern='.*Ant.*ddpg_plan_lam_1\.0_to_0-.*', figure=2)
-    plot(pattern='.*Ant.*ddpg_plan_lam_1\.0_to_0_fast.*', figure=3)
-    plot(pattern='.*Ant.*ddpg_continuous.*', negative_pattern='.*expert.*', figure=4)
-    plot(pattern='.*Ant.*ddpg_plan-.*', figure=5)
-    plt.show()
+    ddpg_plan_continuous(game, tag='shared_repr_run-2')
 
+    # plot(pattern='.*Ant.*ddpg_plan_lam_0_no_action.*', figure=0)
+    # plot(pattern='.*Ant.*ddpg_plan_lam_1\.0-.*', figure=1)
+    # plot(pattern='.*Ant.*ddpg_plan_lam_1\.0_to_0-.*', figure=2)
+    # plot(pattern='.*Ant.*ddpg_plan_lam_1\.0_to_0_fast.*', figure=3)
+    # plot(pattern='.*Ant.*ddpg_continuous.*', negative_pattern='.*expert.*', figure=4)
+    # plot(pattern='.*Ant.*ddpg_plan-.*', figure=5)
+    # plt.show()
