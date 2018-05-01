@@ -59,3 +59,7 @@ class Config:
         self.test_interval = 0
         self.test_repetitions = 10
         self.evaluation_env = None
+
+    def merge(self, config_dict):
+        for key in config_dict.keys():
+            setattr(self, key, config_dict[key])
