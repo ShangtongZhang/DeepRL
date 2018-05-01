@@ -151,100 +151,70 @@ from .network_bodies import *
 class SharedDeterministicNet(nn.Module, BaseNet):
     def __init__(self, state_dim, action_dim, discount, detach_action=False, gate=F.tanh, gpu=-1):
         super(SharedDeterministicNet, self).__init__()
+        self.phi_dim = 400
+        self.hidden_dim = 300
 
-        self.actor_body = FCBody(state_dim, (300, 200), gate=gate)
-        self.critic_body = TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=gate)
+        self.fc_phi = layer_init(nn.Linear(state_dim, self.phi_dim))
 
-        self.fc_action = layer_init(nn.Linear(self.actor_body.feature_dim, action_dim), 3e-3)
-        self.fc_critic = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
+        self.fc_q1 = layer_init(nn.Linear(self.phi_dim + action_dim, self.hidden_dim))
+        self.fc_q2 = layer_init(nn.Linear(self.hidden_dim, 1), 3e-3)
 
-        self.fc_reward = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
-        self.fc_transition = layer_init(nn.Linear(self.critic_body.feature_dim, state_dim))
+        self.fc_a1 = layer_init(nn.Linear(self.phi_dim, self.hidden_dim))
+        self.fc_a2 = layer_init(nn.Linear(self.hidden_dim, action_dim), 3e-3)
+
+        self.fc_r1 = layer_init(nn.Linear(self.phi_dim + action_dim, self.hidden_dim))
+        self.fc_r2 = layer_init(nn.Linear(self.hidden_dim, 1))
+
+        self.fc_t1 = layer_init(nn.Linear(self.phi_dim, self.phi_dim))
+        self.fc_t2 = layer_init(nn.Linear(self.phi_dim + action_dim, self.phi_dim))
+
+        self.gate = gate
         self.discount = discount
         self.detach_action = detach_action
 
         self.set_gpu(gpu)
 
-    def actor(self, x):
-        x = self.tensor(x)
-        x = self.actor_body(x)
-        a = F.tanh(self.fc_action(x))
-        return a
+    def compute_r(self, phi_s, action):
+        phi = torch.cat([phi_s, action], dim=1)
+        r = self.fc_r2(F.tanh(self.fc_r1(phi)))
+        return r
 
-    def critic(self, x, a, lam=0):
-        x = self.tensor(x)
-        a = self.tensor(a)
-        phi = self.critic_body(x, a)
-        q0 = self.fc_critic(phi)
-        r = self.fc_reward(phi)
+    def comupte_q(self, phi_s, action):
+        phi = torch.cat([phi_s, action], dim=1)
+        q = self.fc_q2(F.tanh(self.fc_q1(phi)))
+        return q
 
-        s_prime = x + F.tanh(self.fc_transition(phi))
-        a_prime = self.actor(s_prime)
-        if self.detach_action:
-            a_prime = a_prime.detach()
-        phi_prime = self.critic_body(s_prime, a_prime)
-        q_prime = self.fc_critic(phi_prime)
-        q1 = r + self.discount * q_prime
-        q = lam * q0 + (1 - lam) * q1
-        return q, r
+    def compute_a(self, phi_s):
+        return F.tanh(self.fc_a2(F.tanh(self.fc_a1(phi_s))))
 
-class SharedDeterministicNetv2(nn.Module, BaseNet):
-    def __init__(self, state_dim, action_dim, discount, detach_action=False, gate=F.tanh, gpu=-1):
-        super(SharedDeterministicNetv2, self).__init__()
-        self.abstract_state_dim = 400
-        self.hidden_q_dim = 300
-        self.hidden_a_dim = 300
+    def compute_phi(self, obs):
+        return F.tanh(self.fc_phi(obs))
 
-        self.fc_abstract_state = layer_init(nn.Linear(state_dim, self.abstract_state_dim))
-        self.fc_q1 = layer_init(nn.Linear(
-            self.abstract_state_dim + action_dim, self.hidden_q_dim))
-        self.fc_q2 = layer_init(nn.Linear(self.hidden_q_dim, 1), 3e-3)
-
-        self.fc_a1 = layer_init(nn.Linear(self.abstract_state_dim, self.hidden_a_dim))
-        self.fc_a2 = layer_init(nn.Linear(self.hidden_a_dim, action_dim), 3e-3)
-
-        # self.actor_body = FCBody(state_dim, (300, 200), gate=gate)
-        # self.critic_body = TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=gate)
-        #
-        # self.fc_action = layer_init(nn.Linear(self.actor_body.feature_dim, action_dim), 3e-3)
-        # self.fc_critic = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
-        #
-        # self.fc_reward = layer_init(nn.Linear(self.critic_body.feature_dim, 1), 3e-3)
-        # self.fc_transition = layer_init(nn.Linear(self.critic_body.feature_dim, state_dim))
-
-        self.gate = gate
-        # self.discount = discount
-        # self.detach_action = detach_action
-
-        self.set_gpu(gpu)
+    def compute_phi_prime(self, phi_s, action):
+        phi_s_prime = phi_s + F.tanh(self.fc_t1(phi_s))
+        phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
+        phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
+        return phi_s_prime
 
     def actor(self, obs):
         obs = self.tensor(obs)
-        s = F.tanh(self.fc_abstract_state(obs))
-        a = F.tanh(self.fc_a1(s))
-        a = F.tanh(self.fc_a2(a))
-        return a
+        phi_s = self.compute_phi(obs)
+        return self.compute_a(phi_s)
 
     def critic(self, obs, a, lam=0):
         obs = self.tensor(obs)
         a = self.tensor(a)
-        s = F.tanh(self.fc_abstract_state(obs))
-        phi = torch.cat([s, a], dim=1)
-        q = F.tanh(self.fc_q1(phi))
-        q = self.fc_q2(q)
-        return q, 0
-        # x = self.tensor(x)
-        # a = self.tensor(a)
-        # phi = self.critic_body(x, a)
-        # q0 = self.fc_critic(phi)
-        # r = self.fc_reward(phi)
-        #
-        # s_prime = x + F.tanh(self.fc_transition(phi))
-        # a_prime = self.actor(s_prime)
-        # if self.detach_action:
-        #     a_prime = a_prime.detach()
-        # phi_prime = self.critic_body(s_prime, a_prime)
-        # q_prime = self.fc_critic(phi_prime)
-        # q1 = r + self.discount * q_prime
-        # q = lam * q0 + (1 - lam) * q1
-        # return q, r
+        phi_s = self.compute_phi(obs)
+        q0 = self.comupte_q(phi_s, a)
+        r = self.compute_r(phi_s, a)
+
+        phi_s_prime = self.compute_phi_prime(phi_s, a)
+        a_prime = self.compute_a(phi_s_prime)
+        if self.detach_action:
+            a_prime = a_prime.detach()
+        q_prime = self.comupte_q(phi_s_prime, a_prime)
+        q1 = r + self.discount * q_prime
+
+        q = lam * q0 + (1 - lam) * q1
+
+        return q, r

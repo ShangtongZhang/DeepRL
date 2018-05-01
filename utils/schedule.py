@@ -12,7 +12,10 @@ class ConstantSchedule:
         return self.val
 
 class LinearSchedule:
-    def __init__(self, start, end, steps):
+    def __init__(self, start, end=None, steps=None):
+        if end is None:
+            end = start
+            steps = 1
         self.inc = (end - start) / float(steps)
         self.current = start
         self.end = end
