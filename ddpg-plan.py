@@ -72,7 +72,7 @@ def plot(**kwargs):
     del kwargs['figure']
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=10)
+    data = plotter.load_results(names, episode_window=5)
 
     plt.figure(figure)
     for i, name in enumerate(names):
