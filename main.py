@@ -362,13 +362,10 @@ def action_conditional_video_prediction():
 
 
 if __name__ == '__main__':
-    mkdir('data')
     mkdir('data/video')
     mkdir('dataset')
     mkdir('log')
-    os.system('export OMP_NUM_THREADS=1')
-    os.system('export MKL_NUM_THREADS=1')
-    torch.set_num_threads(1)
+    set_one_thread()
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
