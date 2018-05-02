@@ -132,3 +132,10 @@ if __name__ == '__main__':
     # plot(pattern='.*Ant.*ddpg_plan-.*', figure=5)
     # plot(pattern='.*shared_repr_run.*', figure=0)
     # plt.show()
+
+    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*original_ddpg.*', figure=0)
+    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_reward.*', figure=1)
+    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_plan.*', figure=2)
+    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_mix_plan.*', figure=3)
+    plt.show()
+
