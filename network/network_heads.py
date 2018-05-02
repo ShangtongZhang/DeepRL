@@ -165,7 +165,7 @@ class EnvModel(nn.Module):
         phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
         phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
 
-        return r, phi_s_prime
+        return phi_s_prime, r
 
 from .network_bodies import *
 class SharedDeterministicNet(nn.Module, BaseNet):
@@ -196,11 +196,6 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         rs = torch.stack(rs, 0)
         return phi_s_primes, rs
 
-    # def compute_r(self, phi_s, action):
-    #     phi = torch.cat([phi_s, action], dim=1)
-    #     r = self.fc_r2(F.tanh(self.fc_r1(phi)))
-    #     return r
-
     def comupte_q(self, phi_s, action):
         phi = torch.cat([phi_s, action], dim=-1)
         q = self.fc_q2(F.tanh(self.fc_q1(phi)))
@@ -211,12 +206,6 @@ class SharedDeterministicNet(nn.Module, BaseNet):
 
     def compute_phi(self, obs):
         return F.tanh(self.fc_phi(obs))
-
-    # def compute_phi_prime(self, phi_s, action):
-    #     phi_s_prime = phi_s + F.tanh(self.fc_t1(phi_s))
-    #     phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
-    #     phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
-    #     return phi_s_prime
 
     def actor(self, obs):
         obs = self.tensor(obs)
@@ -231,18 +220,12 @@ class SharedDeterministicNet(nn.Module, BaseNet):
 
         phi_s_primes, rs = self.env_model(phi_s, a)
         a_primes = self.compute_a(phi_s_primes)
-        q_primes = self.comupte_q(phi_s_primes, a_primes)
-        q1 = rs + self.discount * q_primes
-        q1 = q1
-        # a_primes = [self.compute_a(phi_s_prime) for phi_s_prime in phi_s_primes]
-
-        r = self.compute_r(phi_s, a)
-
-        phi_s_prime = self.compute_phi_prime(phi_s, a)
-        a_prime = self.compute_a(phi_s_prime)
         if self.detach_action:
-            a_prime = a_prime.detach()
-        q_prime = self.comupte_q(phi_s_prime, a_prime)
+            a_primes = a_primes.detach()
+        q_primes = self.comupte_q(phi_s_primes, a_primes)
+
+        q_prime = q_primes.mean(0)
+        r = rs.mean(0)
         q1 = r + self.discount * q_prime
 
         q = lam * q0 + (1 - lam) * q1

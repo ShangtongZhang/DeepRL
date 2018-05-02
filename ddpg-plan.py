@@ -36,12 +36,14 @@ def ddpg_plan_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('tag', ddpg_plan_continuous.__name__)
     kwargs.setdefault('value_loss_weight', 10.0)
     kwargs.setdefault('reward_loss_weight', 10.0)
+    kwargs.setdefault('num_models', 1)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: SharedDeterministicNet(
-        state_dim, action_dim, config.discount, gate=F.tanh, detach_action=kwargs['detach_action']
+        state_dim, action_dim, config.discount, gate=F.tanh, detach_action=kwargs['detach_action'],
+        num_models=kwargs['num_models']
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
@@ -99,7 +101,7 @@ if __name__ == '__main__':
     # multi_runs(game, ddpg_continuous, tag='ddpg')
     # multi_runs(game, ddpg_plan_continuous, tag='ddpg_plan')
 
-    # ddpg_plan_continuous(game, lam=LinearSchedule(0.5))
+    # ddpg_plan_continuous(game, lam=LinearSchedule(0.5), num_models=2)
 
     # multi_runs(game, ddpg_plan_continuous, tag='original_ddpg',
     #            lam=LinearSchedule(1), reward_loss_weight=0)
