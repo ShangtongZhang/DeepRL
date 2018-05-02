@@ -70,7 +70,7 @@ def plot(**kwargs):
     del kwargs['figure']
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=100)
+    data = plotter.load_results(names, episode_window=10)
 
     plt.figure(figure)
     for i, name in enumerate(names):
@@ -133,9 +133,9 @@ if __name__ == '__main__':
     # plot(pattern='.*shared_repr_run.*', figure=0)
     # plt.show()
 
-    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*original_ddpg.*', figure=0)
-    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_reward.*', figure=1)
-    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_plan.*', figure=2)
-    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_mix_plan.*', figure=3)
-    plt.show()
+    # plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*original_ddpg.*', figure=0)
+    # plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_reward.*', figure=1)
+    # plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_plan.*', figure=2)
+    # plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_mix_plan.*', figure=3)
+    # plt.show()
 
