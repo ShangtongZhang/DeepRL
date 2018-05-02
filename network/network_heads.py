@@ -147,9 +147,29 @@ class DeterministicCriticNet(nn.Module, BaseNet):
         value = self.fc_value(phi)
         return value
 
+class EnvModel(nn.Module):
+    def __init__(self, phi_dim, action_dim):
+        super(EnvModel, self).__init__()
+        self.hidden_dim = 300
+        self.fc_r1 = layer_init(nn.Linear(phi_dim + action_dim, self.hidden_dim))
+        self.fc_r2 = layer_init(nn.Linear(self.hidden_dim, 1))
+
+        self.fc_t1 = layer_init(nn.Linear(phi_dim, phi_dim))
+        self.fc_t2 = layer_init(nn.Linear(phi_dim + action_dim, phi_dim))
+
+    def forward(self, phi_s, action):
+        phi = torch.cat([phi_s, action], dim=1)
+        r = self.fc_r2(F.tanh(self.fc_r1(phi)))
+
+        phi_s_prime = phi_s + F.tanh(self.fc_t1(phi_s))
+        phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
+        phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
+
+        return r, phi_s_prime
+
 from .network_bodies import *
 class SharedDeterministicNet(nn.Module, BaseNet):
-    def __init__(self, state_dim, action_dim, discount, detach_action=False, gate=F.tanh, gpu=-1):
+    def __init__(self, state_dim, action_dim, discount, detach_action=False, gate=F.tanh, num_models=1, gpu=-1):
         super(SharedDeterministicNet, self).__init__()
         self.phi_dim = 400
         self.hidden_dim = 300
@@ -162,11 +182,7 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         self.fc_a1 = layer_init(nn.Linear(self.phi_dim, self.hidden_dim))
         self.fc_a2 = layer_init(nn.Linear(self.hidden_dim, action_dim), 3e-3)
 
-        self.fc_r1 = layer_init(nn.Linear(self.phi_dim + action_dim, self.hidden_dim))
-        self.fc_r2 = layer_init(nn.Linear(self.hidden_dim, 1))
-
-        self.fc_t1 = layer_init(nn.Linear(self.phi_dim, self.phi_dim))
-        self.fc_t2 = layer_init(nn.Linear(self.phi_dim + action_dim, self.phi_dim))
+        self.models = nn.ModuleList([EnvModel(self.phi_dim, action_dim) for _ in range(num_models)])
 
         self.gate = gate
         self.discount = discount
@@ -174,13 +190,19 @@ class SharedDeterministicNet(nn.Module, BaseNet):
 
         self.set_gpu(gpu)
 
-    def compute_r(self, phi_s, action):
-        phi = torch.cat([phi_s, action], dim=1)
-        r = self.fc_r2(F.tanh(self.fc_r1(phi)))
-        return r
+    def env_model(self, phi_s, action):
+        phi_s_primes, rs = zip(*[m(phi_s, action) for m in self.models])
+        phi_s_primes = torch.stack(phi_s_primes, 0)
+        rs = torch.stack(rs, 0)
+        return phi_s_primes, rs
+
+    # def compute_r(self, phi_s, action):
+    #     phi = torch.cat([phi_s, action], dim=1)
+    #     r = self.fc_r2(F.tanh(self.fc_r1(phi)))
+    #     return r
 
     def comupte_q(self, phi_s, action):
-        phi = torch.cat([phi_s, action], dim=1)
+        phi = torch.cat([phi_s, action], dim=-1)
         q = self.fc_q2(F.tanh(self.fc_q1(phi)))
         return q
 
@@ -190,11 +212,11 @@ class SharedDeterministicNet(nn.Module, BaseNet):
     def compute_phi(self, obs):
         return F.tanh(self.fc_phi(obs))
 
-    def compute_phi_prime(self, phi_s, action):
-        phi_s_prime = phi_s + F.tanh(self.fc_t1(phi_s))
-        phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
-        phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
-        return phi_s_prime
+    # def compute_phi_prime(self, phi_s, action):
+    #     phi_s_prime = phi_s + F.tanh(self.fc_t1(phi_s))
+    #     phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
+    #     phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
+    #     return phi_s_prime
 
     def actor(self, obs):
         obs = self.tensor(obs)
@@ -206,6 +228,14 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         a = self.tensor(a)
         phi_s = self.compute_phi(obs)
         q0 = self.comupte_q(phi_s, a)
+
+        phi_s_primes, rs = self.env_model(phi_s, a)
+        a_primes = self.compute_a(phi_s_primes)
+        q_primes = self.comupte_q(phi_s_primes, a_primes)
+        q1 = rs + self.discount * q_primes
+        q1 = q1
+        # a_primes = [self.compute_a(phi_s_prime) for phi_s_prime in phi_s_primes]
+
         r = self.compute_r(phi_s, a)
 
         phi_s_prime = self.compute_phi_prime(phi_s, a)

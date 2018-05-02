@@ -78,7 +78,7 @@ def plot(**kwargs):
         plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
     plt.legend()
     # plt.ylim([-100, 1400])
-    plt.ylim([-100, 1200])
+    plt.ylim([-200, 1200])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
@@ -133,9 +133,9 @@ if __name__ == '__main__':
     # plot(pattern='.*shared_repr_run.*', figure=0)
     # plt.show()
 
-    # plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*original_ddpg.*', figure=0)
+    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*original_ddpg.*', figure=0)
     # plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_reward.*', figure=1)
-    # plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_plan.*', figure=2)
-    # plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_mix_plan.*', figure=3)
-    # plt.show()
+    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_plan.*', figure=2)
+    plot(pattern='.*plan-RoboschoolAnt.*ddpg_plan_continuous.*ddpg_mix_plan.*', figure=3)
+    plt.show()
 
