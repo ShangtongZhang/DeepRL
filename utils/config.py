@@ -4,9 +4,11 @@
 # declaration at the top                                              #
 #######################################################################
 from .normalizer import *
+import argparse
 
 class Config:
     def __init__(self):
+        self.parser = argparse.ArgumentParser()
         self.task_fn = None
         self.optimizer_fn = None
         self.actor_optimizer_fn = None
@@ -44,7 +46,6 @@ class Config:
         self.min_epsilon = 0
         self.save_interval = 0
         self.max_steps = 0
-        self.success_threshold = float('inf')
         self.render_episode_freq = 0
         self.rollout_length = None
         self.value_loss_weight = 1.0
@@ -60,6 +61,12 @@ class Config:
         self.test_repetitions = 10
         self.evaluation_env = None
 
-    def merge(self, config_dict):
+    def add_argument(self, *args, **kwargs):
+        self.parser.add_argument(*args, **kwargs)
+
+    def merge(self, config_dict=None):
+        if config_dict is None:
+            args = self.parser.parse_args()
+            config_dict = args.__dict__
         for key in config_dict.keys():
             setattr(self, key, config_dict[key])

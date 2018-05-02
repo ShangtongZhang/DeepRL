@@ -9,6 +9,8 @@ import pickle
 import os
 import datetime
 import uuid
+import pathlib
+import torch
 
 def run_episodes(agent):
     config = agent.config
@@ -81,8 +83,12 @@ def sync_grad(target_network, src_network):
         param._grad = src_param.grad.clone()
 
 def mkdir(path):
-    if not os.path.exists(path):
-        os.mkdir(path)
+    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+
+def set_one_thread():
+    os.environ['OMP_NUM_THREADS'] = '1'
+    os.environ['MKL_NUM_THREADS'] = '1'
+    torch.set_num_threads(1)
 
 class Batcher:
     def __init__(self, batch_size, data):
