@@ -101,7 +101,7 @@ if __name__ == '__main__':
     # multi_runs(game, ddpg_continuous, tag='ddpg')
     # multi_runs(game, ddpg_plan_continuous, tag='ddpg_plan')
 
-    # ddpg_plan_continuous(game, lam=LinearSchedule(0.5), num_models=2)
+    ddpg_plan_continuous(game, lam=LinearSchedule(0), num_models=2)
 
     # multi_runs(game, ddpg_plan_continuous, tag='original_ddpg',
     #            lam=LinearSchedule(1), reward_loss_weight=0)
