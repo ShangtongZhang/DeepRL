@@ -231,3 +231,35 @@ class SharedDeterministicNet(nn.Module, BaseNet):
         q = lam * q0 + (1 - lam) * q1
 
         return q, r
+
+class EnsembleDeterministicNet(nn.Module, BaseNet):
+    def __init__(self, actor_body, critic_body, action_dim, num_actors, gpu=-1):
+        super(EnsembleDeterministicNet, self).__init__()
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.action_dim = action_dim
+
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 3e-3)
+        self.fc_actors = nn.ModuleList([layer_init(nn.Linear(actor_body.feature_dim, action_dim)) for _ in range(num_actors)])
+        self.set_gpu(gpu)
+
+    def actor(self, obs, to_numpy=False):
+        obs = self.tensor(obs)
+        phi_actor = self.actor_body(obs)
+        actions = [F.tanh(actor(phi_actor)) for actor in self.fc_actors]
+        q_values = [self.critic(obs, action) for action in actions]
+        q_values = torch.stack(q_values).squeeze(-1).t()
+        actions = torch.stack(actions)
+        best = q_values.max(1)[1]
+        if to_numpy:
+            return actions[best].detach().cpu().numpy()
+        return actions, q_values, best
+
+    def critic(self, obs, action):
+        obs = self.tensor(obs)
+        action = self.tensor(action)
+        return self.fc_critic(self.critic_body(obs, action))
+
+    def zero_critic_grad(self):
+        self.critic_body.zero_grad()
+        self.fc_critic.zero_grad()
