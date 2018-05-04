@@ -126,9 +126,11 @@ if __name__ == '__main__':
 
     # game = 'RoboschoolInvertedPendulum-v1'
     # game = 'RoboschoolHopper-v1'
+    # game = 'RoboschoolWalker2d-v0'
+    # game = 'RoboschoolHalfCheetah-v0'
     game = 'RoboschoolAnt-v1'
 
-    # d3pg_conginuous(game, num_actors=5)
+    # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
     # multi_runs(game, ensemble_ddpg, tag='5_actors', num_actors=5)
