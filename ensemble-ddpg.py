@@ -106,7 +106,7 @@ def plot(**kwargs):
         plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
     plt.legend()
     # plt.ylim([-100, 1400])
-    plt.ylim([-200, 1200])
+    plt.ylim([-200, 1400])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     # d3pg_conginuous(game, num_actors=5)
 
-    # ensemble_ddpg(game, num_actors=5, tag='ensemble_ddpg_run_1')
+    # ensemble_ddpg(game, num_actors=10, tag='ensemble_ddpg_run_1')
     plot(pattern='.*/ensemble_ddpg.*', figure=0)
     # plot(pattern='.*hopper_ensemble_ddpg.*', figure=1)
     # plot(pattern='.*expert-RoboschoolHopper.*', figure=0)
