@@ -35,10 +35,11 @@ def d3pg_conginuous(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     run_iterations(D3PGAgent(config))
 
-def ddpg_continuous(game, log_dir=None):
+def ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
+    kwargs.setdefault('tag', ddpg_continuous.__name__)
     if log_dir is None:
-        log_dir = get_default_log_dir(ddpg_continuous.__name__)
+        log_dir = get_default_log_dir(kwargs['tag'])
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
@@ -57,6 +58,7 @@ def ddpg_continuous(game, log_dir=None):
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = Logger('./log', logger)
+    config.merge(kwargs)
     run_episodes(DDPGAgent(config))
 
 def ensemble_ddpg(game, log_dir=None, **kwargs):
@@ -128,11 +130,15 @@ if __name__ == '__main__':
 
     # d3pg_conginuous(game, num_actors=5)
 
+    # multi_runs(game, ddpg_continuous, tag='original_ddpg')
+    # multi_runs(game, ensemble_ddpg, tag='5_actors', num_actors=5)
+    # multi_runs(game, ensemble_ddpg, tag='10_actors', num_actors=10)
+
     # ensemble_ddpg(game, num_actors=10, tag='ensemble_ddpg_run_1')
-    plot(pattern='.*/ensemble_ddpg.*', figure=0)
+    # plot(pattern='.*/ensemble_ddpg.*', figure=0)
     # plot(pattern='.*hopper_ensemble_ddpg.*', figure=1)
     # plot(pattern='.*expert-RoboschoolHopper.*', figure=0)
     # plot(pattern='.*expert-RoboschoolReacher.*', figure=0)
-    plt.show()
+    # plt.show()
 
 

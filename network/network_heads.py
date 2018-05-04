@@ -238,18 +238,19 @@ class EnsembleDeterministicNet(nn.Module, BaseNet):
         self.actor_body = actor_body
         self.critic_body = critic_body
         self.action_dim = action_dim
+        self.num_actors = num_actors
 
         self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 3e-3)
-        self.fc_actors = nn.ModuleList([layer_init(nn.Linear(actor_body.feature_dim, action_dim)) for _ in range(num_actors)])
+        self.fc_actors = layer_init(nn.Linear(actor_body.feature_dim, action_dim * num_actors))
+        # self.fc_actors = nn.ModuleList([layer_init(nn.Linear(actor_body.feature_dim, action_dim)) for _ in range(num_actors)])
         self.set_gpu(gpu)
 
     def actor(self, obs, to_numpy=False):
         obs = self.tensor(obs)
         phi_actor = self.actor_body(obs)
-        actions = [F.tanh(actor(phi_actor)) for actor in self.fc_actors]
-        q_values = [self.critic(obs, action) for action in actions]
-        q_values = torch.stack(q_values).squeeze(-1).t()
-        actions = torch.stack(actions).transpose(0, 1)
+        actions = F.tanh(self.fc_actors(phi_actor)).view(-1, self.num_actors, self.action_dim)
+        obs = obs.unsqueeze(1).expand(-1, actions.size(1), -1)
+        q_values = self.critic(obs, actions).squeeze(-1)
         best = q_values.max(1)[1]
         if to_numpy:
             actions = actions[self.tensor(np.arange(actions.size(0))).long(), best, :]

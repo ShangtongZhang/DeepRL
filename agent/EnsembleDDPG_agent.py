@@ -72,7 +72,7 @@ class EnsembleDDPGAgent(BaseAgent):
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
-                _, q_next, best = self.target_network.actor(next_states)
+                _, q_next, _ = self.target_network.actor(next_states)
                 q_next = q_next.max(1)[0].unsqueeze(1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)

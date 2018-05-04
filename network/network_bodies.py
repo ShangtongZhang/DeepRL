@@ -47,7 +47,7 @@ class TwoLayerFCBodyWithAction(nn.Module):
 
     def forward(self, x, action):
         x = self.gate(self.fc1(x))
-        phi = self.gate(self.fc2(torch.cat([x, action], dim=1)))
+        phi = self.gate(self.fc2(torch.cat([x, action], dim=-1)))
         return phi
 
 
