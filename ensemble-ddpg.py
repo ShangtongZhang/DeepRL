@@ -153,8 +153,8 @@ if __name__ == '__main__':
 
     # game = 'RoboschoolInvertedPendulum-v1'
     # game = 'RoboschoolHopper-v1'
-    # game = 'RoboschoolWalker2d-v0'
-    # game = 'RoboschoolHalfCheetah-v0'
+    # game = 'RoboschoolWalker2d-v1'
+    # game = 'RoboschoolHalfCheetah-v1'
     game = 'RoboschoolAnt-v1'
 
     # plan_ensemble_ddpg(game)
