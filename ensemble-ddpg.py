@@ -162,6 +162,7 @@ if __name__ == '__main__':
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
     # multi_runs(game, ensemble_ddpg, tag='5_actors', num_actors=5)
+    # multi_runs(game, plan_ensemble_ddpg, tag='5_actors')
 
     # ensemble_ddpg(game, num_actors=10, tag='ensemble_ddpg_run_1')
 
