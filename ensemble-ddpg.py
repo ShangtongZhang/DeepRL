@@ -5,6 +5,36 @@ from utils import *
 from model import *
 import matplotlib.pyplot as plt
 
+def d3pg_conginuous(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', d3pg_conginuous.__name__)
+    kwargs.setdefault('value_loss_weight', 10.0)
+    kwargs.setdefault('num_actors', 3)
+    config.num_workers = 5
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+    task_fn = lambda log_dir: Roboschool(game, log_dir=log_dir)
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=log_dir)
+
+    config.network_fn = lambda state_dim, action_dim: EnsembleDeterministicNet(
+        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300], gate=F.tanh),
+        action_dim=action_dim, num_actors=kwargs['num_actors']
+    )
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.discount = 0.99
+    config.state_normalizer = RunningStatsNormalizer()
+    # config.max_steps = 1e6
+    config.random_process_fn = lambda action_dim: GaussianProcess(
+        action_dim, LinearSchedule(0.3, 0, 1e6))
+
+    config.rollout_length = 5
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = Logger('./log', logger)
+    config.merge(kwargs)
+    run_iterations(D3PGAgent(config))
+
 def ddpg_continuous(game, log_dir=None):
     config = Config()
     if log_dir is None:
@@ -92,14 +122,17 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    game = 'RoboschoolHopper-v1'
-    # game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolInvertedPendulum-v1'
+    # game = 'RoboschoolHopper-v1'
+    game = 'RoboschoolAnt-v1'
 
-    # ensemble_ddpg(game, num_actors=5, tag='hopper_ensemble_ddpg_run_1')
-    # plot(pattern='.*/ensemble_ddpg.*', figure=0)
+    # d3pg_conginuous(game, num_actors=5)
+
+    # ensemble_ddpg(game, num_actors=5, tag='ensemble_ddpg_run_1')
+    plot(pattern='.*/ensemble_ddpg.*', figure=0)
     # plot(pattern='.*hopper_ensemble_ddpg.*', figure=1)
     # plot(pattern='.*expert-RoboschoolHopper.*', figure=0)
     # plot(pattern='.*expert-RoboschoolReacher.*', figure=0)
-    # plt.show()
+    plt.show()
 
 

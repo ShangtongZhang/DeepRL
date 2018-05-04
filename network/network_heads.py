@@ -249,10 +249,11 @@ class EnsembleDeterministicNet(nn.Module, BaseNet):
         actions = [F.tanh(actor(phi_actor)) for actor in self.fc_actors]
         q_values = [self.critic(obs, action) for action in actions]
         q_values = torch.stack(q_values).squeeze(-1).t()
-        actions = torch.stack(actions)
+        actions = torch.stack(actions).transpose(0, 1)
         best = q_values.max(1)[1]
         if to_numpy:
-            return actions[best].detach().cpu().numpy()
+            actions = actions[self.tensor(np.arange(actions.size(0))).long(), best, :]
+            return actions.detach().cpu().numpy()
         return actions, q_values, best
 
     def critic(self, obs, action):

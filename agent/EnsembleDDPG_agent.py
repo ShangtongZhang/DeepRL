@@ -73,7 +73,7 @@ class EnsembleDDPGAgent(BaseAgent):
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 _, q_next, best = self.target_network.actor(next_states)
-                q_next = q_next[torch.arange(q_next.size(0)).long(), best].unsqueeze(1)
+                q_next = q_next.max(1)[0].unsqueeze(1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
@@ -81,7 +81,7 @@ class EnsembleDDPGAgent(BaseAgent):
                 q_next = q_next.detach()
 
                 q = self.network.critic(states, actions)
-                q_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean() * config.value_loss_weight
+                q_loss = (q - q_next).pow(2).mul(0.5).mean() * config.value_loss_weight
                 # config.logger.scalar_summary('q_loss', q_loss, self.total_steps)
                 # config.logger.scalar_summary('reward_loss', r_loss, self.total_steps)
 
