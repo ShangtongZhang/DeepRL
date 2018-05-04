@@ -158,14 +158,43 @@ class EnvModel(nn.Module):
         self.fc_t2 = layer_init(nn.Linear(phi_dim + action_dim, phi_dim))
 
     def forward(self, phi_s, action):
-        phi = torch.cat([phi_s, action], dim=1)
+        phi = torch.cat([phi_s, action], dim=-1)
         r = self.fc_r2(F.tanh(self.fc_r1(phi)))
 
         phi_s_prime = phi_s + F.tanh(self.fc_t1(phi_s))
-        phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
+        phi_sa_prime = torch.cat([phi_s_prime, action], dim=-1)
         phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
 
         return phi_s_prime, r
+
+class ActorModel(nn.Module):
+    def __init__(self, phi_dim, action_dim):
+        super(ActorModel, self).__init__()
+        self.hidden_dim = 300
+        self.fc1 = layer_init(nn.Linear(phi_dim, self.hidden_dim))
+        self.fc2 = layer_init(nn.Linear(self.hidden_dim, action_dim))
+
+    def forward(self, phi_s):
+        return F.tanh(self.fc2(F.tanh(self.fc1(phi_s))))
+
+class CriticModel(nn.Module):
+    def __init__(self, phi_dim, action_dim):
+        super(CriticModel, self).__init__()
+        self.hidden_dim = 300
+        self.fc1 = layer_init(nn.Linear(phi_dim + action_dim, self.hidden_dim))
+        self.fc2 = layer_init(nn.Linear(self.hidden_dim, 1))
+
+    def forward(self, phi_s, action):
+        phi = torch.cat([phi_s, action], dim=-1)
+        return self.fc2(F.tanh(self.fc1(phi)))
+
+class FeatureModel(nn.Module):
+    def __init__(self, state_dim, phi_dim):
+        super(FeatureModel, self).__init__()
+        self.fc = layer_init(nn.Linear(state_dim, phi_dim))
+
+    def forward(self, x):
+        return F.tanh(self.fc(x))
 
 from .network_bodies import *
 class SharedDeterministicNet(nn.Module, BaseNet):
@@ -265,3 +294,49 @@ class EnsembleDeterministicNet(nn.Module, BaseNet):
     def zero_critic_grad(self):
         self.critic_body.zero_grad()
         self.fc_critic.zero_grad()
+
+class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
+    def __init__(self, state_dim, action_dim, num_actors, discount, gpu=-1):
+        super(PlanEnsembleDeterministicNet, self).__init__()
+        phi_dim = 400
+        self.discount = discount
+        self.feature_model = FeatureModel(state_dim, phi_dim)
+        self.q_model = CriticModel(phi_dim, action_dim)
+        self.action_models = nn.ModuleList([ActorModel(phi_dim, action_dim) for _ in range(num_actors)])
+        self.env_model = EnvModel(phi_dim, action_dim)
+        self.set_gpu(gpu)
+
+    def predict(self, obs, depth, to_numpy=False):
+        obs = self.tensor(obs)
+        phi = self.feature_model(obs)
+        q_values, actions = self.compute_action(phi, depth)
+        if to_numpy:
+            best = q_values.max(1)[1]
+            actions = actions[self.tensor(np.arange(actions.size(0))).long(), best, :]
+            return actions.detach().cpu().numpy()
+        return q_values.max(1)[0].unsqueeze(-1)
+
+    def compute_phi(self, obs):
+        obs = self.tensor(obs)
+        return self.feature_model(obs)
+
+    def compute_action(self, phi, depth=1):
+        actions = [action_model(phi) for action_model in self.action_models]
+        q_values = [self.compute_q(phi, action, depth)[0] for action in actions]
+        q_values = torch.stack(q_values).squeeze(-1).t()
+        actions = torch.stack(actions).transpose(0, 1)
+        return q_values, actions
+
+    def compute_q(self, phi, action, depth=1):
+        if depth == 1:
+            return self.q_model(phi, action), None, None
+        else:
+            phi_prime, r = self.env_model(phi, action)
+            q_prime, _ = self.compute_action(phi_prime, depth - 1)
+            v_prime = q_prime.max(1)[0].unsqueeze(1)
+            q = r + self.discount * v_prime
+            return q, r, v_prime
+
+    def zero_critic_grad(self):
+        self.q_model.zero_grad()
+        self.env_model.zero_grad()

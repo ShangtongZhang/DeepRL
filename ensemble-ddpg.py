@@ -88,6 +88,33 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     run_episodes(EnsembleDDPGAgent(config))
 
+def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', plan_ensemble_ddpg.__name__)
+    kwargs.setdefault('critic_loss_weight', 10.0)
+    kwargs.setdefault('num_actors', 5)
+    kwargs.setdefault('depth', 2)
+
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+    config.task_fn = lambda: Roboschool(game)
+    config.evaluation_env = Roboschool(game, log_dir=log_dir)
+    config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
+        state_dim=state_dim, action_dim=action_dim, num_actors=kwargs['num_actors'],
+        discount=config.discount)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.discount = 0.99
+    config.state_normalizer = RunningStatsNormalizer()
+    config.max_steps = 1e6
+    config.random_process_fn = lambda action_dim: GaussianProcess(
+        action_dim, LinearSchedule(0.3, 0, 1e6))
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = Logger('./log', logger)
+    config.merge(kwargs)
+    run_episodes(PlanEnsembleDDPGAgent(config))
+
 def multi_runs(game, fn, tag, **kwargs):
     runs = np.arange(0, 5)
     for run in runs:
@@ -130,6 +157,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolHalfCheetah-v0'
     game = 'RoboschoolAnt-v1'
 
+    plan_ensemble_ddpg(game)
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')

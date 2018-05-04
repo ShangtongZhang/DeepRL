@@ -5,6 +5,6 @@ from .CategoricalDQN_agent import *
 from .NStepDQN_agent import *
 from .QuantileRegressionDQN_agent import *
 from .PPO_agent import *
-from .PlanDDPG_agent import *
 from .EnsembleDDPG_agent import *
 from .D3PG_agent import *
+from .PlanEnsembleDDPG_agent import *

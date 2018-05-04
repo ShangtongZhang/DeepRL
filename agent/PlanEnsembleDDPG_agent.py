@@ -14,7 +14,7 @@ import os
 import time
 from .BaseAgent import *
 
-class PlanDDPGAgent(BaseAgent):
+class PlanEnsembleDDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -36,8 +36,7 @@ class PlanDDPGAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
-        action = self.network.actor(state)
-        action = action.detach().numpy().flatten()
+        action = self.network.predict(state, depth=self.config.depth, to_numpy=True).flatten()
         self.config.state_normalizer.unset_read_only()
         return action
 
@@ -51,9 +50,8 @@ class PlanDDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
-            lam = config.lam()
-            action = self.network.actor(np.stack([state]))
-            action = action.detach().numpy().flatten()
+            action = self.network.predict(np.stack([state]),
+                                          depth=config.depth, to_numpy=True).flatten()
             if not deterministic:
                 action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
@@ -75,32 +73,29 @@ class PlanDDPGAgent(BaseAgent):
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
-                q_next, _ = self.target_network.critic(next_states, self.target_network.actor(next_states), lam)
+                target_v = self.target_network.predict(next_states, depth=config.depth).detach()
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
-                q_next = config.discount * q_next * (1 - terminals)
-                q_next.add_(rewards)
-                q_next = q_next.detach()
-                q, r = self.network.critic(states, actions, lam)
-                q_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean() * config.value_loss_weight
-                r_loss = (r - rewards).pow(2).mul(0.5).mean() * config.reward_loss_weight
-                # config.logger.scalar_summary('q_loss', q_loss, self.total_steps)
-                # config.logger.scalar_summary('reward_loss', r_loss, self.total_steps)
+                ret = config.discount * target_v * (1 - terminals)
+                ret.add_(rewards)
+
+                phi = self.network.compute_phi(states)
+                actions = self.network.tensor(actions)
+                q, r, v_prime = self.network.compute_q(phi, actions, depth=config.depth)
+                q_loss = (q - ret).pow(2).mul(0.5).mean()
+                r_loss = (r - rewards).pow(2).mul(0.5).mean()
+                v_loss = (v_prime - target_v).pow(2).mul(0.5).mean()
 
                 self.opt.zero_grad()
-                (q_loss + r_loss).backward()
+                (q_loss + r_loss + v_loss).mul(config.critic_loss_weight).backward()
                 self.opt.step()
 
-                dead_actions = self.network.actor(states)
-                dead_actions.detach_().requires_grad_()
-                q = self.network.critic(states, dead_actions, lam)[0].mean()
-
+                phi = self.network.compute_phi(states)
+                q_values, _ = self.network.compute_action(phi, depth=1)
+                policy_loss = -q_values.sum(1).mean()
                 self.opt.zero_grad()
-                q.backward()
-
-                actions = self.network.actor(states)
-                self.opt.zero_grad()
-                actions.backward(-dead_actions.grad.detach())
+                policy_loss.backward()
+                self.network.zero_critic_grad()
                 self.opt.step()
 
                 self.soft_update(self.target_network, self.network)
