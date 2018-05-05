@@ -182,7 +182,7 @@ class CriticModel(nn.Module):
         super(CriticModel, self).__init__()
         self.hidden_dim = 300
         self.fc1 = layer_init(nn.Linear(phi_dim + action_dim, self.hidden_dim))
-        self.fc2 = layer_init(nn.Linear(self.hidden_dim, 1))
+        self.fc2 = layer_init(nn.Linear(self.hidden_dim, 1), 3e-3)
 
     def forward(self, phi_s, action):
         phi = torch.cat([phi_s, action], dim=-1)
