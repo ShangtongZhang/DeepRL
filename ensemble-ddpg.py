@@ -157,7 +157,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolHalfCheetah-v1'
     game = 'RoboschoolAnt-v1'
 
-    plan_ensemble_ddpg(game, depth=1, num_actors=1)
+    plan_ensemble_ddpg(game, depth=2, num_actors=1)
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')

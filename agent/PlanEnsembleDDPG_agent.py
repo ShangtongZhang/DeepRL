@@ -83,8 +83,8 @@ class PlanEnsembleDDPGAgent(BaseAgent):
                 actions = self.network.tensor(actions)
                 q, r, v_prime = self.network.compute_q(phi, actions, depth=config.depth)
                 q_loss = (q - ret).pow(2).mul(0.5).mean()
-                r_loss = v_loss = 0
-                # r_loss = (r - rewards).pow(2).mul(0.5).mean()
+                v_loss = 0
+                r_loss = (r - rewards).pow(2).mul(0.5).mean()
                 # v_loss = (v_prime - target_v).pow(2).mul(0.5).mean()
 
                 self.opt.zero_grad()
