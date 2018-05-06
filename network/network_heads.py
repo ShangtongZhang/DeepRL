@@ -309,42 +309,33 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
         self.discount = discount
         self.feature_model = FeatureModel(state_dim, phi_dim)
         self.q_model = CriticModel(phi_dim, action_dim)
-        self.action_model = ActorModel(phi_dim, action_dim)
-        # self.action_models = nn.ModuleList([ActorModel(phi_dim, action_dim) for _ in range(num_actors)])
+        # self.action_model = ActorModel(phi_dim, action_dim)
+        self.action_models = nn.ModuleList([ActorModel(phi_dim, action_dim) for _ in range(num_actors)])
         self.env_model = EnvModel(phi_dim, action_dim)
         self.set_gpu(gpu)
 
-    # def predict(self, obs, depth, to_numpy=False):
-    #     obs = self.tensor(obs)
-    #     phi = self.feature_model(obs)
-    #     q_values, actions = self.compute_action(phi, depth)
-    #     if to_numpy:
-    #         best = q_values.max(1)[1]
-    #         actions = actions[self.tensor(np.arange(actions.size(0))).long(), best, :]
-    #         return actions.detach().cpu().numpy()
-    #     return q_values.max(1)[0].unsqueeze(-1)
-
     def predict(self, obs, depth, to_numpy=False):
-        obs = self.tensor(obs)
-        phi = self.feature_model(obs)
-        action = self.compute_a(phi)
+        phi = self.compute_phi(obs)
+        actions, q_values = self.compute_a_and_q(phi, depth)
         if to_numpy:
-            return action.detach().numpy()
-        return action
+            best = q_values.max(1)[1]
+            actions = actions[self.tensor(np.arange(actions.size(0))).long(), best, :]
+            return actions.detach().cpu().numpy()
+        return q_values.max(1)[0].unsqueeze(-1)
 
     def compute_phi(self, obs):
         obs = self.tensor(obs)
         return self.feature_model(obs)
 
-    # def compute_action(self, phi, depth=1):
-    #     actions = [action_model(phi) for action_model in self.action_models]
-    #     q_values = [self.compute_q(phi, action, depth)[0] for action in actions]
-    #     q_values = torch.stack(q_values).squeeze(-1).t()
-    #     actions = torch.stack(actions).transpose(0, 1)
-    #     return q_values, actions
+    def compute_a_and_q(self, phi, depth):
+        actions = self.compute_a(phi)
+        q_values = [self.compute_q(phi, action, depth)[0] for action in actions]
+        q_values = torch.stack(q_values).squeeze(-1).t()
+        actions = torch.stack(actions).transpose(0, 1)
+        return actions, q_values
 
     def compute_a(self, phi):
-        actions = self.action_model(phi)
+        actions = [action_model(phi) for action_model in self.action_models]
         return actions
 
     def compute_q(self, phi, action, depth=1):
@@ -352,17 +343,12 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
             return self.q_model(phi, action), 0
         else:
             phi_prime, r = self.env_model(phi, action)
-            a_prime = self.compute_a(phi_prime)
-            q_prime, _ = self.compute_q(phi_prime, a_prime, depth - 1)
-            # q_prime, _ = self.compute_action(phi_prime, depth - 1)
-            # v_prime = q_prime.max(1)[0].unsqueeze(1)
-            # q = r + self.discount * v_prime
-            # return q, r, v_prime
-            q = r + self.discount * q_prime
+            _, q_prime = self.compute_a_and_q(phi, depth-1)
+            v_prime = q_prime.max(1)[0].unsqueeze(1)
+            q = r + self.discount * v_prime
             return q, r
 
     def critic(self, obs, action=None, depth=1):
-        obs = self.tensor(obs)
         phi = self.compute_phi(obs)
         if action is None:
             action = self.compute_a(phi)
@@ -371,11 +357,6 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
         return self.compute_q(phi, action, depth)
 
     def actor(self, obs):
-        obs = self.tensor(obs)
-        phi = self.feature_model(obs)
-        action = self.compute_a(phi)
-        return action
-
-    def zero_critic_grad(self):
-        self.q_model.zero_grad()
-        self.env_model.zero_grad()
+        phi = self.compute_phi(obs)
+        actions = self.compute_a(phi)
+        return actions

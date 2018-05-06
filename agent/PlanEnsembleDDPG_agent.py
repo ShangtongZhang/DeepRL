@@ -73,7 +73,7 @@ class PlanEnsembleDDPGAgent(BaseAgent):
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
-                target_v, _ = self.target_network.critic(next_states, depth=config.depth)
+                target_v = self.target_network.predict(next_states, depth=config.depth, to_numpy=False)
                 target_v = target_v.detach()
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
@@ -91,14 +91,22 @@ class PlanEnsembleDDPGAgent(BaseAgent):
                 self.opt.step()
 
                 dead_actions = self.network.actor(states)
-                dead_actions.detach_().requires_grad_()
-                q_values, _ = self.network.critic(states, dead_actions, depth=config.depth)
+                for dead_action in dead_actions:
+                    dead_action.detach_().requires_grad_()
+                phi = self.network.compute_phi(states)
+                q_values = [self.network.compute_q(phi, dead_action, depth=config.depth)[0]
+                            for dead_action in dead_actions]
+                q_values = torch.stack(q_values).squeeze(-1).t()
+                q_values = q_values.mean(0)
                 self.opt.zero_grad()
-                q_values.mean().backward()
+                q_values.backward(self.network.tensor(np.ones(q_values.size())))
 
                 actions = self.network.actor(states)
+                actions = torch.stack(actions)
+                action_grads = torch.stack([-dead_action.grad.detach()
+                                            for dead_action in dead_actions])
                 self.opt.zero_grad()
-                actions.backward(-dead_actions.grad.detach())
+                actions.backward(action_grads)
                 self.opt.step()
 
                 self.soft_update(self.target_network, self.network)
