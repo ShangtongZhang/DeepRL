@@ -73,15 +73,14 @@ class PlanEnsembleDDPGAgent(BaseAgent):
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
-                target_v = self.target_network.predict(next_states, depth=config.depth).detach()
+                target_v, _ = self.target_network.critic(next_states, depth=config.depth)
+                target_v = target_v.detach()
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 ret = config.discount * target_v * (1 - terminals)
                 ret.add_(rewards)
 
-                phi = self.network.compute_phi(states)
-                actions = self.network.tensor(actions)
-                q, r, v_prime = self.network.compute_q(phi, actions, depth=config.depth)
+                q, r = self.network.critic(states, actions, depth=config.depth)
                 q_loss = (q - ret).pow(2).mul(0.5).mean()
                 v_loss = 0
                 r_loss = (r - rewards).pow(2).mul(0.5).mean()
@@ -91,12 +90,15 @@ class PlanEnsembleDDPGAgent(BaseAgent):
                 (q_loss + r_loss + v_loss).mul(config.critic_loss_weight).backward()
                 self.opt.step()
 
-                phi = self.network.compute_phi(states)
-                q_values, _ = self.network.compute_action(phi, depth=1)
-                policy_loss = -q_values.sum(1).mean()
+                dead_actions = self.network.actor(states)
+                dead_actions.detach_().requires_grad_()
+                q_values, _ = self.network.critic(states, dead_actions, depth=config.depth)
                 self.opt.zero_grad()
-                policy_loss.backward()
-                self.network.zero_critic_grad()
+                q_values.mean().backward()
+
+                actions = self.network.actor(states)
+                self.opt.zero_grad()
+                actions.backward(-dead_actions.grad.detach())
                 self.opt.step()
 
                 self.soft_update(self.target_network, self.network)
