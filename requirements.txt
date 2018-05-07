@@ -8,3 +8,4 @@ scikit-image>=0.13.1
 tqdm>=4.23.0
 pandas>=0.22.0
 pathlib>=1.0.1
+seaborn>=0.8.1
