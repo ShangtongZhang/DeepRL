@@ -8,7 +8,6 @@ import numpy as np
 import pickle
 import os
 import datetime
-import uuid
 import torch
 try:
     # python >= 3.5

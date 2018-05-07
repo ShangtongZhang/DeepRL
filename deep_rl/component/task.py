@@ -3,15 +3,11 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
-import gym
-import sys
-import numpy as np
 from .atari_wrapper import *
 import multiprocessing as mp
 import sys
 from .bench import Monitor
-from utils import *
-import datetime
+from ..utils import *
 import uuid
 
 class BaseTask:

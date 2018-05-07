@@ -6,20 +6,14 @@
 
 __all__ = ['acvp_train']
 
-import torch
-from torch.autograd import Variable
-import torch.nn as nn
-import torch.nn.functional as F
-import numpy as np
-import pickle
 import torchvision
 from skimage import io
 from collections import deque
 import gym
 import torch.optim
-from utils import *
+from deep_rl.utils import *
 from tqdm import tqdm
-from network import *
+from deep_rl.network import *
 
 class Network(nn.Module, BaseNet):
     def __init__(self, num_actions, gpu=0):

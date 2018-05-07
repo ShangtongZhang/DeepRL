@@ -6,10 +6,9 @@
 
 __all__ = ['generate_dataset']
 
-import logging
-from agent import *
-from component import *
-from utils import *
+from ..agent import *
+from ..component import *
+from deep_rl.utils import *
 from skimage import io
 
 def episode(agent, task):

@@ -4,11 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 
-import logging
-from agent import *
-from component import *
-from utils import *
-from model import *
+from deep_rl import *
 
 ## cart pole
 

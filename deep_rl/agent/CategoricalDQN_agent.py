@@ -4,17 +4,13 @@
 # declaration at the top                                              #
 #######################################################################
 
-from network import *
-from component import *
-from utils import *
-import numpy as np
+from ..network import *
+from ..component import *
+from ..utils import *
 import time
-import os
-import pickle
-import torch
 from .BaseAgent import *
 
-class QuantileRegressionDQNAgent(BaseAgent):
+class CategoricalDQNAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -27,17 +23,15 @@ class QuantileRegressionDQNAgent(BaseAgent):
         self.replay = config.replay_fn()
         self.policy = config.policy_fn()
         self.total_steps = 0
-        self.quantile_weight = 1.0 / self.config.num_quantiles
-        self.cumulative_density = self.network.tensor(
-            (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles))
-
-    def huber(self, x):
-        cond = (x < 1.0).float().detach()
-        return 0.5 * x.pow(2) * cond + (x.abs() - 0.5) * (1 - cond)
+        self.atoms = self.network.tensor(
+            np.linspace(config.categorical_v_min,
+                        config.categorical_v_max,
+                        config.categorical_n_atoms))
+        self.delta_atom = (config.categorical_v_max - config.categorical_v_min) / float(config.categorical_n_atoms - 1)
 
     def evaluation_action(self, state):
         value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).detach()
-        value = (value * self.quantile_weight).sum(-1).cpu().detach().numpy().flatten()
+        value = (value * self.atoms).sum(-1).cpu().detach().numpy().flatten()
         return np.argmax(value)
 
     def episode(self, deterministic=False):
@@ -47,7 +41,9 @@ class QuantileRegressionDQNAgent(BaseAgent):
         steps = 0
         while True:
             value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).detach()
-            value = (value * self.quantile_weight).sum(-1).cpu().detach().numpy().flatten()
+            # self.config.logger.histo_summary('prob', value, self.total_steps)
+            value = (value * self.atoms).sum(-1).cpu().detach().numpy().flatten()
+            # self.config.logger.histo_summary('q', value, self.total_steps)
             if deterministic:
                 action = np.argmax(value)
             elif self.total_steps < self.config.exploration_steps:
@@ -68,28 +64,37 @@ class QuantileRegressionDQNAgent(BaseAgent):
                 states, actions, rewards, next_states, terminals = experiences
                 states = self.config.state_normalizer(states)
                 next_states = self.config.state_normalizer(next_states)
-
-                quantiles_next = self.target_network.predict(next_states).detach()
-                q_next = (quantiles_next * self.quantile_weight).sum(-1)
+                prob_next = self.target_network.predict(next_states).detach()
+                q_next = (prob_next * self.atoms).sum(-1)
+                # self.config.logger.histo_summary('q next', q_next.cpu().detach().numpy(), self.total_steps)
                 _, a_next = torch.max(q_next, dim=1)
-                a_next = a_next.view(-1, 1, 1).expand(-1, -1, quantiles_next.size(2))
-                quantiles_next = quantiles_next.gather(1, a_next).squeeze(1)
+                a_next = a_next.view(-1, 1, 1).expand(-1, -1, prob_next.size(2))
+                prob_next = prob_next.gather(1, a_next).squeeze(1)
+                # self.config.logger.histo_summary('prob next', prob_next.cpu().detach().numpy(), self.total_steps)
 
                 rewards = self.network.tensor(rewards)
                 terminals = self.network.tensor(terminals)
-                quantiles_next = rewards.view(-1, 1) + self.config.discount * (1 - terminals.view(-1, 1)) * quantiles_next
+                atoms_next = rewards.view(-1, 1) + self.config.discount * (1 - terminals.view(-1, 1)) * self.atoms.view(1, -1)
+                # epsilon = 1e-5
+                atoms_next.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
+                b = (atoms_next - self.config.categorical_v_min) / self.delta_atom
+                l = b.floor()
+                u = b.ceil()
+                d_m_l = (u + (l == u).float() - b) * prob_next
+                d_m_u = (b - l) * prob_next
+                target_prob = self.network.tensor(np.zeros(prob_next.size()))
+                for i in range(target_prob.size(0)):
+                    target_prob[i].index_add_(0, l[i].long(), d_m_l[i])
+                    target_prob[i].index_add_(0, u[i].long(), d_m_u[i])
 
-                quantiles = self.network.predict(states)
+                prob = self.network.predict(states)
                 actions = self.network.tensor(actions).long()
-                actions = actions.view(-1, 1, 1).expand(-1, -1, quantiles.size(2))
-                quantiles = quantiles.gather(1, actions).squeeze(1)
-
-                quantiles_next = quantiles_next.t().unsqueeze(-1)
-                diff = quantiles_next - quantiles
-                loss = self.huber(diff) * (self.cumulative_density.view(1, -1) - (diff.detach() < 0).float()).abs()
-
+                actions = actions.view(-1, 1, 1).expand(-1, -1, prob.size(2))
+                prob = prob.gather(1, actions).squeeze(1)
+                loss = -(target_prob * prob.log()).sum(-1).mean()
                 self.optimizer.zero_grad()
-                loss.mean(1).sum().backward()
+                loss.backward()
+                nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
                 self.optimizer.step()
 
             self.evaluate()

@@ -3,7 +3,6 @@
 # Permission given to modify the code as long as you keep this        #
 # declaration at the top                                              #
 #######################################################################
-import torch
 import numpy as np
 
 class BaseNormalizer:

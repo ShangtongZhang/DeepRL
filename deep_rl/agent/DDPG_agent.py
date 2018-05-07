@@ -4,14 +4,8 @@
 # declaration at the top                                              #
 #######################################################################
 
-import numpy as np
-import torch.multiprocessing as mp
-from network import *
-from utils import *
-from component import *
-import pickle
-import os
-import time
+from ..network import *
+from ..component import *
 from .BaseAgent import *
 
 class DDPGAgent(BaseAgent):

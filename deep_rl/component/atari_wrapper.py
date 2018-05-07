@@ -1,7 +1,6 @@
 # based on https://github.com/openai/baselines/blob/master/baselines/common/atari_wrappers.py
 
 import numpy as np
-from collections import deque
 import gym
 from gym import spaces
 from gym.spaces import Box

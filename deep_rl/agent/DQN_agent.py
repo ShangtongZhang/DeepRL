@@ -4,17 +4,13 @@
 # declaration at the top                                              #
 #######################################################################
 
-from network import *
-from component import *
-from utils import *
-import numpy as np
+from ..network import *
+from ..component import *
+from ..utils import *
 import time
-import os
-import pickle
-import torch
 from .BaseAgent import *
 
-class CategoricalDQNAgent(BaseAgent):
+class DQNAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -27,16 +23,6 @@ class CategoricalDQNAgent(BaseAgent):
         self.replay = config.replay_fn()
         self.policy = config.policy_fn()
         self.total_steps = 0
-        self.atoms = self.network.tensor(
-            np.linspace(config.categorical_v_min,
-                        config.categorical_v_max,
-                        config.categorical_n_atoms))
-        self.delta_atom = (config.categorical_v_max - config.categorical_v_min) / float(config.categorical_n_atoms - 1)
-
-    def evaluation_action(self, state):
-        value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).detach()
-        value = (value * self.atoms).sum(-1).cpu().detach().numpy().flatten()
-        return np.argmax(value)
 
     def episode(self, deterministic=False):
         episode_start_time = time.time()
@@ -44,10 +30,7 @@ class CategoricalDQNAgent(BaseAgent):
         total_reward = 0.0
         steps = 0
         while True:
-            value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).detach()
-            # self.config.logger.histo_summary('prob', value, self.total_steps)
-            value = (value * self.atoms).sum(-1).cpu().detach().numpy().flatten()
-            # self.config.logger.histo_summary('q', value, self.total_steps)
+            value = self.network.predict(np.stack([self.config.state_normalizer(state)]), True).flatten()
             if deterministic:
                 action = np.argmax(value)
             elif self.total_steps < self.config.exploration_steps:
@@ -68,34 +51,20 @@ class CategoricalDQNAgent(BaseAgent):
                 states, actions, rewards, next_states, terminals = experiences
                 states = self.config.state_normalizer(states)
                 next_states = self.config.state_normalizer(next_states)
-                prob_next = self.target_network.predict(next_states).detach()
-                q_next = (prob_next * self.atoms).sum(-1)
-                # self.config.logger.histo_summary('q next', q_next.cpu().detach().numpy(), self.total_steps)
-                _, a_next = torch.max(q_next, dim=1)
-                a_next = a_next.view(-1, 1, 1).expand(-1, -1, prob_next.size(2))
-                prob_next = prob_next.gather(1, a_next).squeeze(1)
-                # self.config.logger.histo_summary('prob next', prob_next.cpu().detach().numpy(), self.total_steps)
-
-                rewards = self.network.tensor(rewards)
+                q_next = self.target_network.predict(next_states, False).detach()
+                if self.config.double_q:
+                    _, best_actions = self.network.predict(next_states).detach().max(1)
+                    q_next = q_next.gather(1, best_actions.unsqueeze(1)).squeeze(1)
+                else:
+                    q_next, _ = q_next.max(1)
                 terminals = self.network.tensor(terminals)
-                atoms_next = rewards.view(-1, 1) + self.config.discount * (1 - terminals.view(-1, 1)) * self.atoms.view(1, -1)
-                # epsilon = 1e-5
-                atoms_next.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
-                b = (atoms_next - self.config.categorical_v_min) / self.delta_atom
-                l = b.floor()
-                u = b.ceil()
-                d_m_l = (u + (l == u).float() - b) * prob_next
-                d_m_u = (b - l) * prob_next
-                target_prob = self.network.tensor(np.zeros(prob_next.size()))
-                for i in range(target_prob.size(0)):
-                    target_prob[i].index_add_(0, l[i].long(), d_m_l[i])
-                    target_prob[i].index_add_(0, u[i].long(), d_m_u[i])
-
-                prob = self.network.predict(states)
-                actions = self.network.tensor(actions).long()
-                actions = actions.view(-1, 1, 1).expand(-1, -1, prob.size(2))
-                prob = prob.gather(1, actions).squeeze(1)
-                loss = -(target_prob * prob.log()).sum(-1).mean()
+                rewards = self.network.tensor(rewards)
+                q_next = self.config.discount * q_next * (1 - terminals)
+                q_next.add_(rewards)
+                actions = self.network.tensor(actions).unsqueeze(1).long()
+                q = self.network.predict(states, False)
+                q = q.gather(1, actions).squeeze(1)
+                loss = self.criterion(q, q_next)
                 self.optimizer.zero_grad()
                 loss.backward()
                 nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)

@@ -4,14 +4,9 @@
 # declaration at the top                                              #
 #######################################################################
 
-import numpy as np
-from network import *
-from utils import *
-from component import *
+from ..network import *
+from ..component import *
 from .BaseAgent import *
-import pickle
-import os
-import time
 
 class A2CAgent(BaseAgent):
     def __init__(self, config):
