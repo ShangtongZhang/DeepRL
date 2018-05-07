@@ -94,6 +94,8 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
     kwargs.setdefault('critic_loss_weight', 10.0)
     kwargs.setdefault('num_actors', 5)
     kwargs.setdefault('depth', 2)
+    kwargs.setdefault('align_next_v', False)
+    kwargs.setdefault('detach_action', False)
 
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -101,7 +103,7 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
         state_dim=state_dim, action_dim=action_dim, num_actors=kwargs['num_actors'],
-        discount=config.discount)
+        discount=config.discount, detach_action=kwargs['detach_action'])
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
@@ -158,7 +160,15 @@ if __name__ == '__main__':
     # game = 'RoboschoolHalfCheetah-v1'
     game = 'RoboschoolAnt-v1'
 
-    # plan_ensemble_ddpg(game, depth=2, num_actors=5)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_original',
+    #                    depth=2, num_actors=5, align_next_v=False, detach_action=False)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_align_next_v',
+    #                    depth=2, num_actors=5, align_next_v=True, detach_action=False)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_detach_action',
+    #                    depth=2, num_actors=5, align_next_v=False, detach_action=True)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_depth_1',
+    #                    depth=1, num_actors=5, align_next_v=False, detach_action=False)
+
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
@@ -167,12 +177,12 @@ if __name__ == '__main__':
 
     # ensemble_ddpg(game, num_actors=10, tag='ensemble_ddpg_run_1')
 
-    plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
+    # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
 
-    plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=1)
-    plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=2)
-    plt.show()
+    # plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=1)
+    # plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=2)
+    # plt.show()
 
     # plot(pattern='.*ensemble-%s.*original_ddpg.*' % (game), figure=0)
     # plot(pattern='.*ensemble-%s.*5_actors.*' % (game), figure=1)

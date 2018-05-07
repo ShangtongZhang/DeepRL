@@ -303,10 +303,11 @@ class EnsembleDeterministicNet(nn.Module, BaseNet):
         self.fc_critic.zero_grad()
 
 class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
-    def __init__(self, state_dim, action_dim, num_actors, discount, gpu=-1):
+    def __init__(self, state_dim, action_dim, num_actors, discount, detach_action, gpu=-1):
         super(PlanEnsembleDeterministicNet, self).__init__()
         phi_dim = 400
         self.discount = discount
+        self.detach_action = detach_action
         self.feature_model = FeatureModel(state_dim, phi_dim)
         self.q_model = CriticModel(phi_dim, action_dim)
         # self.action_model = ActorModel(phi_dim, action_dim)
@@ -329,6 +330,9 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
 
     def compute_a_and_q(self, phi, depth):
         actions = self.compute_a(phi)
+        if self.detach_action:
+            for action in actions:
+                action.detach_()
         q_values = [self.compute_q(phi, action, depth)[0] for action in actions]
         q_values = torch.stack(q_values).squeeze(-1).t()
         actions = torch.stack(actions).transpose(0, 1)
@@ -340,13 +344,13 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
 
     def compute_q(self, phi, action, depth=1):
         if depth == 1:
-            return self.q_model(phi, action), 0
+            return self.q_model(phi, action), 0, 0
         else:
             phi_prime, r = self.env_model(phi, action)
             _, q_prime = self.compute_a_and_q(phi, depth-1)
             v_prime = q_prime.max(1)[0].unsqueeze(1)
             q = r + self.discount * v_prime
-            return q, r
+            return q, r, v_prime
 
     def critic(self, obs, action=None, depth=1):
         phi = self.compute_phi(obs)
