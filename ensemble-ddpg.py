@@ -126,7 +126,7 @@ def multi_runs(game, fn, tag, **kwargs):
 
 def plot(**kwargs):
     import matplotlib.pyplot as plt
-    kwargs.setdefault('average', True)
+    kwargs.setdefault('average', False)
     kwargs.setdefault('color', 0)
     kwargs.setdefault('top_k', 0)
     plotter = Plotter()
@@ -188,10 +188,16 @@ if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
 
-    top_k = 0
-    plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=0, color=0, top_k=top_k)
-    plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=0, color=1, top_k=top_k)
+    plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
+    plot(pattern='.*plan_ensemble_depth.*', figure=1)
+    plot(pattern='.*plan_ensemble_detach.*', figure=2)
+    plot(pattern='.*plan_ensemble_original.*', figure=3)
     plt.show()
+
+    # top_k = 0
+    # plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=0, color=0, top_k=top_k)
+    # plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=0, color=1, top_k=top_k)
+    # plt.show()
 
     # plot(pattern='.*ensemble-%s.*original_ddpg.*' % (game), figure=0)
     # plot(pattern='.*ensemble-%s.*5_actors.*' % (game), figure=1)
