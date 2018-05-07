@@ -4,6 +4,7 @@ from component import *
 from utils import *
 from model import *
 import matplotlib.pyplot as plt
+import seaborn as sns; sns.set(color_codes=True)
 
 def d3pg_conginuous(game, log_dir=None, **kwargs):
     config = Config()
@@ -125,20 +126,27 @@ def multi_runs(game, fn, tag, **kwargs):
 
 def plot(**kwargs):
     import matplotlib.pyplot as plt
-    figure = kwargs['figure']
-    del kwargs['figure']
+    kwargs.setdefault('average', True)
+    kwargs.setdefault('color', 0)
+    kwargs.setdefault('top_k', 0)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=10, max_timesteps=1e6)
     print('')
 
+    figure = kwargs['figure']
+    color = kwargs['color']
     plt.figure(figure)
-    for i, name in enumerate(names):
-        x, y = data[i]
-        plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
+    if kwargs['average']:
+        x, y = plotter.average(data, 100, 1e6, top_k=kwargs['top_k'])
+        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+    else:
+        for i, name in enumerate(names):
+            x, y = data[i]
+            plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
     plt.legend()
     plt.ylim([-200, 1400])
-    # plt.ylim([-200, 2000])
+    # plt.ylim([-200, 2500])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
@@ -155,10 +163,10 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
 
     # game = 'RoboschoolInvertedPendulum-v1'
-    # game = 'RoboschoolHopper-v1'
+    game = 'RoboschoolHopper-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
-    game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolAnt-v1'
 
     # plan_ensemble_ddpg(game, tag='plan_ensemble_original',
     #                    depth=2, num_actors=5, align_next_v=False, detach_action=False)
@@ -180,8 +188,9 @@ if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
 
-    plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=1)
-    plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=2)
+    top_k = 0
+    plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=0, color=0, top_k=top_k)
+    plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=0, color=1, top_k=top_k)
     plt.show()
 
     # plot(pattern='.*ensemble-%s.*original_ddpg.*' % (game), figure=0)
