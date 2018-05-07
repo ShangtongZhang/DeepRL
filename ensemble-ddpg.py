@@ -157,7 +157,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolHalfCheetah-v1'
     game = 'RoboschoolAnt-v1'
 
-    plan_ensemble_ddpg(game, depth=2, num_actors=5)
+    # plan_ensemble_ddpg(game, depth=2, num_actors=5)
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
@@ -171,10 +171,10 @@ if __name__ == '__main__':
     # plot(pattern='.*ensemble-%s.*10_actors.*' % (game), figure=2)
     # plt.show()
 
-    # plot(pattern='.*/ensemble_ddpg.*', figure=0)
+    plot(pattern='.*ensemble_ddpg.*', figure=0)
     # plot(pattern='.*hopper_ensemble_ddpg.*', figure=1)
     # plot(pattern='.*expert-RoboschoolHopper.*', figure=0)
     # plot(pattern='.*expert-RoboschoolReacher.*', figure=0)
-    # plt.show()
+    plt.show()
 
 
