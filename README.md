@@ -56,7 +56,7 @@ Prediction is sampled after 110K iterations, and I only implemented one-step tra
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
 * PyTorch v0.4.0
-* Python 3.5 or 3.6 
+* Python 3.6, 3.5 or 2.7 (deprecated)
 * Core dependencies: `pip install -r requirements.txt`
 * Optional: [Roboschool](https://github.com/openai/roboschool), [DeepMind Control Suite](https://github.com/deepmind/dm_control)+[DMControl2Gym](dm_control2gym)
 

@@ -7,5 +7,6 @@ tensorboardX==1.1
 scikit-image>=0.13.1
 tqdm>=4.23.0
 pandas>=0.22.0
-pathlib>=1.0.1
+pathlib2>=1.0.1;python_version <= '2.7'
+pathlib>=1.0.1;python_version >= '3.5'
 seaborn>=0.8.1
