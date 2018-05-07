@@ -127,7 +127,8 @@ def plot(**kwargs):
     del kwargs['figure']
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=10)
+    data = plotter.load_results(names, episode_window=10, max_timesteps=1e6)
+    print('')
 
     plt.figure(figure)
     for i, name in enumerate(names):
@@ -166,15 +167,22 @@ if __name__ == '__main__':
 
     # ensemble_ddpg(game, num_actors=10, tag='ensemble_ddpg_run_1')
 
+    plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
+    # plt.show()
+
+    plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=1)
+    plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=2)
+    plt.show()
+
     # plot(pattern='.*ensemble-%s.*original_ddpg.*' % (game), figure=0)
     # plot(pattern='.*ensemble-%s.*5_actors.*' % (game), figure=1)
     # plot(pattern='.*ensemble-%s.*10_actors.*' % (game), figure=2)
     # plt.show()
 
-    plot(pattern='.*ensemble_ddpg.*', figure=0)
+    # plot(pattern='.*ensemble_ddpg.*', figure=0)
     # plot(pattern='.*hopper_ensemble_ddpg.*', figure=1)
     # plot(pattern='.*expert-RoboschoolHopper.*', figure=0)
     # plot(pattern='.*expert-RoboschoolReacher.*', figure=0)
-    plt.show()
+    # plt.show()
 
 
