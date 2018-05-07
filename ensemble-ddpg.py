@@ -137,8 +137,8 @@ def plot(**kwargs):
         x, y = data[i]
         plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
     plt.legend()
-    # plt.ylim([-100, 1400])
     plt.ylim([-200, 1400])
+    # plt.ylim([-200, 2000])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
@@ -180,9 +180,9 @@ if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
 
-    # plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=1)
-    # plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=2)
-    # plt.show()
+    plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=1)
+    plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=2)
+    plt.show()
 
     # plot(pattern='.*ensemble-%s.*original_ddpg.*' % (game), figure=0)
     # plot(pattern='.*ensemble-%s.*5_actors.*' % (game), figure=1)
