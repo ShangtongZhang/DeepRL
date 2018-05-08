@@ -89,6 +89,26 @@ class QuantileNet(nn.Module, BaseNet):
             quantiles = quantiles.cpu().detach().numpy()
         return quantiles
 
+class OptionCriticNet(nn.Module, BaseNet):
+    def __init__(self, body, action_dim, num_options, gpu=-1):
+        super(OptionCriticNet, self).__init__()
+        self.fc_q = layer_init(nn.Linear(body.feature_dim, num_options))
+        self.fc_pi = layer_init(nn.Linear(body.feature_dim, num_options * action_dim))
+        self.fc_beta = layer_init(nn.Linear(body.feature_dim, num_options))
+        self.num_options = num_options
+        self.action_dim = action_dim
+        self.body = body
+        self.set_gpu(gpu)
+
+    def predict(self, x):
+        phi = self.body(self.tensor(x))
+        q = self.fc_q(phi)
+        beta = F.sigmoid(self.fc_beta(phi))
+        pi = self.fc_pi(phi)
+        pi = pi.view(-1, self.num_options, self.action_dim)
+        log_pi = F.log_softmax(pi, dim=-1)
+        return q, beta, log_pi
+
 class GaussianActorNet(nn.Module, BaseNet):
     def __init__(self, action_dim, body, gpu=-1):
         super(GaussianActorNet, self).__init__()
