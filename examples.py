@@ -117,6 +117,24 @@ def ppo_cart_pole():
     config.iteration_log_interval = 1
     run_iterations(PPOAgent(config))
 
+def option_critic_cart_pole():
+    config = Config()
+    game = 'CartPole-v0'
+    task_fn = lambda log_dir: ClassicalControl(game, max_steps=200, log_dir=log_dir)
+    config.num_workers = 5
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    config.network_fn = lambda state_dim, action_dim: OptionCriticNet(
+        FCBody(state_dim), action_dim, num_options=2)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
+    config.discount = 0.99
+    config.target_network_update_freq = 200
+    config.rollout_length = 5
+    config.termination_regularizer = 0.01
+    config.entropy_weight = 0.01
+    config.logger = Logger('./log', logger)
+    run_iterations(OptionCriticAgent(config))
+
 ## Atari games
 
 def dqn_pixel_atari(name):
@@ -247,6 +265,28 @@ def ppo_pixel_atari(name):
     config.iteration_log_interval = 1
     run_iterations(PPOAgent(config))
 
+def option_ciritc_pixel_atari(name):
+    config = Config()
+    config.history_length = 4
+    task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
+    config.num_workers = 16
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
+                                              log_dir=get_default_log_dir(config.tag))
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
+    config.network_fn = lambda state_dim, action_dim: OptionCriticNet(NatureConvBody(), action_dim, num_options=4, gpu=0)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=1000000, min_epsilon=0.1)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.rollout_length = 5
+    config.gradient_clip = 5
+    config.max_steps = 1e8
+    config.entropy_weight = 0.01
+    config.termination_regularizer = 0.01
+    config.logger = Logger('./log', logger)
+    run_iterations(OptionCriticAgent(config))
+
 def dqn_ram_atari(name):
     config = Config()
     config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4,
@@ -331,7 +371,7 @@ def ddpg_continuous():
 def plot():
     import matplotlib.pyplot as plt
     plotter = Plotter()
-    names = plotter.load_log_dirs('')
+    names = plotter.load_log_dirs(pattern='.*')
     data = plotter.load_results(names)
 
     for i, name in enumerate(names):
@@ -371,6 +411,7 @@ if __name__ == '__main__':
     # quantile_regression_dqn_cart_pole()
     # n_step_dqn_cart_pole()
     # ppo_cart_pole()
+    # option_critic_cart_pole()
 
     # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # a2c_pixel_atari('BreakoutNoFrameskip-v4')
@@ -378,6 +419,7 @@ if __name__ == '__main__':
     # quantile_regression_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # ppo_pixel_atari('BreakoutNoFrameskip-v4')
+    # option_ciritc_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
     # ddpg_continuous()
