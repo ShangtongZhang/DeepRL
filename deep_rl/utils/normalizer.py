@@ -5,7 +5,7 @@
 #######################################################################
 import numpy as np
 
-class BaseNormalizer:
+class BaseNormalizer(object):
     def __init__(self, read_only=False):
         self.read_only = read_only
 
