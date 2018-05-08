@@ -427,5 +427,5 @@ if __name__ == '__main__':
 
     # action_conditional_video_prediction()
 
-    plot()
+    # plot()
 
