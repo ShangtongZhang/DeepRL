@@ -173,7 +173,7 @@ if __name__ == '__main__':
     # plan_ensemble_ddpg(game, tag='plan_ensemble_depth_1',
     #                    depth=1, num_actors=5, align_next_v=False, detach_action=False)
 
-    plan_ensemble_ddpg(game, depth=2, num_actors=5)
+    # plan_ensemble_ddpg(game, depth=2, num_actors=5)
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
@@ -185,11 +185,11 @@ if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
 
-    # plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
-    # plot(pattern='.*plan_ensemble_depth.*', figure=1)
-    # plot(pattern='.*plan_ensemble_detach.*', figure=2)
-    # plot(pattern='.*plan_ensemble_original.*', figure=3)
-    # plt.show()
+    plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
+    plot(pattern='.*plan_ensemble_depth.*', figure=1)
+    plot(pattern='.*plan_ensemble_detach.*', figure=2)
+    plot(pattern='.*plan_ensemble_original.*', figure=3)
+    plt.show()
 
     # top_k = 0
     # plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=0, color=0, top_k=top_k)
