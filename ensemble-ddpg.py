@@ -1,5 +1,6 @@
 from deep_rl import *
 import matplotlib.pyplot as plt
+import seaborn as sns; sns.set(color_codes=True)
 
 def d3pg_conginuous(game, log_dir=None, **kwargs):
     config = Config()
@@ -90,6 +91,8 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
     kwargs.setdefault('critic_loss_weight', 10.0)
     kwargs.setdefault('num_actors', 5)
     kwargs.setdefault('depth', 2)
+    kwargs.setdefault('align_next_v', False)
+    kwargs.setdefault('detach_action', False)
 
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -97,7 +100,7 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
         state_dim=state_dim, action_dim=action_dim, num_actors=kwargs['num_actors'],
-        discount=config.discount)
+        discount=config.discount, detach_action=kwargs['detach_action'])
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
@@ -119,19 +122,27 @@ def multi_runs(game, fn, tag, **kwargs):
 
 def plot(**kwargs):
     import matplotlib.pyplot as plt
-    figure = kwargs['figure']
-    del kwargs['figure']
+    kwargs.setdefault('average', False)
+    kwargs.setdefault('color', 0)
+    kwargs.setdefault('top_k', 0)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=10)
+    data = plotter.load_results(names, episode_window=10, max_timesteps=1e6)
+    print('')
 
+    figure = kwargs['figure']
+    color = kwargs['color']
     plt.figure(figure)
-    for i, name in enumerate(names):
-        x, y = data[i]
-        plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
+    if kwargs['average']:
+        x, y = plotter.average(data, 100, 1e6, top_k=kwargs['top_k'])
+        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+    else:
+        for i, name in enumerate(names):
+            x, y = data[i]
+            plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
     plt.legend()
-    # plt.ylim([-100, 1400])
     plt.ylim([-200, 1400])
+    # plt.ylim([-200, 2500])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
@@ -148,12 +159,21 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
 
     # game = 'RoboschoolInvertedPendulum-v1'
-    # game = 'RoboschoolHopper-v1'
+    game = 'RoboschoolHopper-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
-    game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolAnt-v1'
 
-    plan_ensemble_ddpg(game, depth=2, num_actors=5)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_original',
+    #                    depth=2, num_actors=5, align_next_v=False, detach_action=False)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_align_next_v',
+    #                    depth=2, num_actors=5, align_next_v=True, detach_action=False)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_detach_action',
+    #                    depth=2, num_actors=5, align_next_v=False, detach_action=True)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_depth_1',
+    #                    depth=1, num_actors=5, align_next_v=False, detach_action=False)
+
+    # plan_ensemble_ddpg(game, depth=2, num_actors=5)
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
@@ -162,15 +182,29 @@ if __name__ == '__main__':
 
     # ensemble_ddpg(game, num_actors=10, tag='ensemble_ddpg_run_1')
 
+    # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
+    # plt.show()
+
+    # plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
+    # plot(pattern='.*plan_ensemble_depth.*', figure=1)
+    # plot(pattern='.*plan_ensemble_detach.*', figure=2)
+    # plot(pattern='.*plan_ensemble_original.*', figure=3)
+    # plt.show()
+
+    # top_k = 0
+    # plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=0, color=0, top_k=top_k)
+    # plot(pattern='.*ensemble-%s.*ensemble_ddpg.*5_actors.*' % (game), figure=0, color=1, top_k=top_k)
+    # plt.show()
+
     # plot(pattern='.*ensemble-%s.*original_ddpg.*' % (game), figure=0)
     # plot(pattern='.*ensemble-%s.*5_actors.*' % (game), figure=1)
     # plot(pattern='.*ensemble-%s.*10_actors.*' % (game), figure=2)
     # plt.show()
 
-    plot(pattern='.*ensemble_ddpg.*', figure=0)
+    # plot(pattern='.*ensemble_ddpg.*', figure=0)
     # plot(pattern='.*hopper_ensemble_ddpg.*', figure=1)
     # plot(pattern='.*expert-RoboschoolHopper.*', figure=0)
     # plot(pattern='.*expert-RoboschoolReacher.*', figure=0)
-    plt.show()
+    # plt.show()
 
 

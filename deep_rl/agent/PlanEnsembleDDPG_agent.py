@@ -72,11 +72,13 @@ class PlanEnsembleDDPGAgent(BaseAgent):
                 ret = config.discount * target_v * (1 - terminals)
                 ret.add_(rewards)
 
-                q, r = self.network.critic(states, actions, depth=config.depth)
+                q, r, v_prime = self.network.critic(states, actions, depth=config.depth)
                 q_loss = (q - ret).pow(2).mul(0.5).mean()
-                v_loss = 0
                 r_loss = (r - rewards).pow(2).mul(0.5).mean()
-                # v_loss = (v_prime - target_v).pow(2).mul(0.5).mean()
+                if config.align_next_v:
+                    v_loss = (v_prime - target_v).pow(2).mul(0.5).mean()
+                else:
+                    v_loss = 0
 
                 self.opt.zero_grad()
                 (q_loss + r_loss + v_loss).mul(config.critic_loss_weight).backward()
