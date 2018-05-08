@@ -1,7 +1,7 @@
 # Adapted from  https://github.com/openai/baselines/blob/master/baselines/results_plotter.py
 
 import numpy as np
-import component
+from ..component import *
 import os
 import re
 
@@ -52,6 +52,21 @@ class Plotter:
             xy_list = [self.window_func(x, y, episode_window, np.mean) for x, y in xy_list]
         return xy_list
 
+    def average(self, xy_list, bin, max_timesteps, top_k=0):
+        if top_k:
+            perf = [np.max(y) for _, y in xy_list]
+            top_k_runs = np.argsort(perf)[-top_k:]
+            new_xy_list = []
+            for r, (x, y) in enumerate(xy_list):
+                if r in top_k_runs:
+                    new_xy_list.append((x, y))
+            xy_list = new_xy_list
+        new_x = np.arange(0, max_timesteps, bin)
+        new_y = []
+        for x, y in xy_list:
+            new_y.append(np.interp(new_x, x, y))
+        return new_x, np.asarray(new_y)
+
     def plot_results(self, dirs, max_timesteps=1e8, x_axis=X_TIMESTEPS, episode_window=100, title=None):
         import matplotlib.pyplot as plt
         plt.ticklabel_format(axis='x', style='sci', scilimits=(1, 1))
@@ -64,7 +79,7 @@ class Plotter:
         if title is not None:
             plt.title(title)
 
-    def load_log_dirs(self, pattern, negative_pattern=' ', root='./log'):
+    def load_log_dirs(self, pattern, negative_pattern=' ', root='./log', **kwargs):
         dirs = [item[0] for item in os.walk(root)]
         leaf_dirs = []
         for i in range(len(dirs)):

@@ -8,9 +8,13 @@ import numpy as np
 import pickle
 import os
 import datetime
-import uuid
-import pathlib
 import torch
+try:
+    # python >= 3.5
+    from pathlib import Path
+except:
+    # python == 2.7
+    from pathlib2 import Path
 
 def run_episodes(agent):
     config = agent.config
@@ -83,7 +87,7 @@ def sync_grad(target_network, src_network):
         param._grad = src_param.grad.clone()
 
 def mkdir(path):
-    pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 def set_one_thread():
     os.environ['OMP_NUM_THREADS'] = '1'

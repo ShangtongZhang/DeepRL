@@ -56,13 +56,13 @@ Prediction is sampled after 110K iterations, and I only implemented one-step tra
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
 * PyTorch v0.4.0
-* Python 3.5 or 3.6 
-* Core dependencies: `pip install -r requirements.txt`
+* Python 3.6, 3.5 or 2.7 (deprecated)
+* Core dependencies: `pip install -e .`
 * Optional: [Roboschool](https://github.com/openai/roboschool), [DeepMind Control Suite](https://github.com/deepmind/dm_control)+[DMControl2Gym](dm_control2gym)
 
 # Usage
 
-```main.py``` contains examples for all the implemented algorithms
+```examples.py``` contains examples for all the implemented algorithms
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)

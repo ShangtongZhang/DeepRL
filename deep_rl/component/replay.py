@@ -5,9 +5,6 @@
 #######################################################################
 
 import numpy as np
-import torch
-import random
-import torch.multiprocessing as mp
 
 class Replay:
     def __init__(self, memory_size, batch_size):
