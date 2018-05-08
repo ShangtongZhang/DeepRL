@@ -1,8 +1,4 @@
-import logging
-from agent import *
-from component import *
-from utils import *
-from model import *
+from deep_rl import *
 import matplotlib.pyplot as plt
 
 def d3pg_conginuous(game, log_dir=None, **kwargs):
@@ -157,7 +153,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolHalfCheetah-v1'
     game = 'RoboschoolAnt-v1'
 
-    # plan_ensemble_ddpg(game, depth=2, num_actors=5)
+    plan_ensemble_ddpg(game, depth=2, num_actors=5)
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
