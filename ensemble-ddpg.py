@@ -159,10 +159,10 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
 
     # game = 'RoboschoolInvertedPendulum-v1'
-    game = 'RoboschoolHopper-v1'
+    # game = 'RoboschoolHopper-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
-    # game = 'RoboschoolAnt-v1'
+    game = 'RoboschoolAnt-v1'
 
     # plan_ensemble_ddpg(game, tag='plan_ensemble_original',
     #                    depth=2, num_actors=5, align_next_v=False, detach_action=False)
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     # plan_ensemble_ddpg(game, tag='plan_ensemble_depth_1',
     #                    depth=1, num_actors=5, align_next_v=False, detach_action=False)
 
-    # plan_ensemble_ddpg(game, depth=2, num_actors=5)
+    plan_ensemble_ddpg(game, depth=2, num_actors=5)
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
