@@ -42,8 +42,8 @@ class PlanEnsembleDDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
-            action = self.network.predict(np.stack([state]),
-                                          depth=config.depth, to_numpy=True).flatten()
+            action = self.network.predict(
+                np.stack([state]), depth=config.depth, to_numpy=True).flatten()
             if not deterministic:
                 action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
@@ -72,23 +72,25 @@ class PlanEnsembleDDPGAgent(BaseAgent):
                 ret = config.discount * target_v * (1 - terminals)
                 ret.add_(rewards)
 
-                q, r, v_prime = self.network.critic(states, actions, depth=config.depth)
+                phi = self.network.compute_phi(states)
+                actions = self.network.tensor(actions)
+                q, r = self.network.compute_q(phi, actions, depth=config.depth, immediate_reward=True)
                 q_loss = (q - ret).pow(2).mul(0.5).mean()
                 r_loss = (r - rewards).pow(2).mul(0.5).mean()
-                if config.align_next_v:
-                    v_loss = (v_prime - target_v).pow(2).mul(0.5).mean()
-                else:
-                    v_loss = 0
+                # if config.align_next_v:
+                #     v_loss = (v_prime - target_v).pow(2).mul(0.5).mean()
+                # else:
+                #     v_loss = 0
 
                 self.opt.zero_grad()
-                (q_loss + r_loss + v_loss).mul(config.critic_loss_weight).backward()
+                (q_loss + r_loss).mul(config.critic_loss_weight).backward()
                 self.opt.step()
 
                 dead_actions = self.network.actor(states)
                 for dead_action in dead_actions:
                     dead_action.detach_().requires_grad_()
                 phi = self.network.compute_phi(states)
-                q_values = [self.network.compute_q(phi, dead_action, depth=config.depth)[0]
+                q_values = [self.network.compute_q(phi, dead_action, depth=config.depth)
                             for dead_action in dead_actions]
                 q_values = torch.stack(q_values).squeeze(-1).t()
                 q_values = q_values.mean(0)

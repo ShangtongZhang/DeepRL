@@ -323,21 +323,24 @@ class EnsembleDeterministicNet(nn.Module, BaseNet):
         self.fc_critic.zero_grad()
 
 class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
-    def __init__(self, state_dim, action_dim, num_actors, discount, detach_action, gpu=-1):
+    def __init__(self, body, action_dim, num_actors, discount, detach_action, gpu=-1):
         super(PlanEnsembleDeterministicNet, self).__init__()
-        phi_dim = 400
+        self.body = body
+        phi_dim = body.feature_dim
         self.discount = discount
         self.detach_action = detach_action
-        self.feature_model = FeatureModel(state_dim, phi_dim)
         self.q_model = CriticModel(phi_dim, action_dim)
-        # self.action_model = ActorModel(phi_dim, action_dim)
         self.action_models = nn.ModuleList([ActorModel(phi_dim, action_dim) for _ in range(num_actors)])
         self.env_model = EnvModel(phi_dim, action_dim)
+        self.num_actors = num_actors
         self.set_gpu(gpu)
 
     def predict(self, obs, depth, to_numpy=False):
         phi = self.compute_phi(obs)
-        actions, q_values = self.compute_a_and_q(phi, depth)
+        actions = self.compute_a(phi)
+        q_values = [self.compute_q(phi, action, depth) for action in actions]
+        q_values = torch.stack(q_values).squeeze(-1).t()
+        actions = torch.stack(actions).t()
         if to_numpy:
             best = q_values.max(1)[1]
             actions = actions[self.tensor(np.arange(actions.size(0))).long(), best, :]
@@ -346,41 +349,35 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
 
     def compute_phi(self, obs):
         obs = self.tensor(obs)
-        return self.feature_model(obs)
+        return self.body(obs)
 
-    def compute_a_and_q(self, phi, depth):
-        actions = self.compute_a(phi)
-        if self.detach_action:
-            for action in actions:
-                action.detach_()
-        q_values = [self.compute_q(phi, action, depth)[0] for action in actions]
-        q_values = torch.stack(q_values).squeeze(-1).t()
-        actions = torch.stack(actions).transpose(0, 1)
-        return actions, q_values
-
-    def compute_a(self, phi):
+    def compute_a(self, phi, detach=True):
         actions = [action_model(phi) for action_model in self.action_models]
+        if detach:
+            for action in actions: action.detach_()
         return actions
 
-    def compute_q(self, phi, action, depth=1):
+    def compute_q(self, phi, action, depth=1, immediate_reward=False):
         if depth == 1:
-            return self.q_model(phi, action), 0, 0
+            q = self.q_model(phi, action)
+            if immediate_reward:
+                return q, 0
+            return q
         else:
             phi_prime, r = self.env_model(phi, action)
-            _, q_prime = self.compute_a_and_q(phi, depth-1)
-            v_prime = q_prime.max(1)[0].unsqueeze(1)
-            q = r + self.discount * v_prime
-            return q, r, v_prime
-
-    def critic(self, obs, action=None, depth=1):
-        phi = self.compute_phi(obs)
-        if action is None:
-            action = self.compute_a(phi)
-        else:
-            action = self.tensor(action)
-        return self.compute_q(phi, action, depth)
+            a_prime = self.compute_a(phi_prime)
+            a_prime = torch.stack(a_prime)
+            phi_prime = phi_prime.unsqueeze(0).expand(
+                (self.num_actors, ) + (-1, ) * len(phi_prime.size())
+            )
+            q_prime = self.compute_q(phi_prime, a_prime, depth - 1)
+            q_prime = q_prime.max(0)[0]
+            q = r + self.discount * q_prime
+            if immediate_reward:
+                return q, r
+            return q
 
     def actor(self, obs):
         phi = self.compute_phi(obs)
-        actions = self.compute_a(phi)
+        actions = self.compute_a(phi, detach=False)
         return actions

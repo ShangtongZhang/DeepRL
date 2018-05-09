@@ -99,7 +99,7 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
-        state_dim=state_dim, action_dim=action_dim, num_actors=kwargs['num_actors'],
+        body=FCBody(state_dim, (400, ), gate=F.tanh), action_dim=action_dim, num_actors=kwargs['num_actors'],
         discount=config.discount, detach_action=kwargs['detach_action'])
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     # plan_ensemble_ddpg(game, tag='plan_ensemble_depth_1',
     #                    depth=1, num_actors=5, align_next_v=False, detach_action=False)
 
-    # plan_ensemble_ddpg(game, depth=2, num_actors=5)
+    # plan_ensemble_ddpg(game, depth=3, num_actors=5)
     # d3pg_conginuous(game, num_actors=1)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
@@ -185,11 +185,11 @@ if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
 
-    plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
-    plot(pattern='.*plan_ensemble_depth.*', figure=1)
-    plot(pattern='.*plan_ensemble_detach.*', figure=2)
-    plot(pattern='.*plan_ensemble_original.*', figure=3)
-    plt.show()
+    # plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
+    # plot(pattern='.*plan_ensemble_depth.*', figure=1)
+    # plot(pattern='.*plan_ensemble_detach.*', figure=2)
+    # plot(pattern='.*plan_ensemble_original.*', figure=3)
+    # plt.show()
 
     # top_k = 0
     # plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=0, color=0, top_k=top_k)
