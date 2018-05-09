@@ -164,8 +164,8 @@ if __name__ == '__main__':
     # game = 'RoboschoolHalfCheetah-v1'
     game = 'RoboschoolAnt-v1'
 
-    plan_ensemble_ddpg(game, tag='plan_ensemble_new_impl',
-                       depth=2, num_actors=5)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_new_impl',
+    #                    depth=2, num_actors=5)
     # plan_ensemble_ddpg(game, tag='plan_ensemble_original',
     #                    depth=2, num_actors=5, align_next_v=False, detach_action=False)
     # plan_ensemble_ddpg(game, tag='plan_ensemble_align_next_v',
@@ -187,11 +187,12 @@ if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
 
-    # plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
-    # plot(pattern='.*plan_ensemble_depth.*', figure=1)
-    # plot(pattern='.*plan_ensemble_detach.*', figure=2)
-    # plot(pattern='.*plan_ensemble_original.*', figure=3)
-    # plt.show()
+    plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
+    plot(pattern='.*plan_ensemble_depth.*', figure=1)
+    plot(pattern='.*plan_ensemble_detach.*', figure=2)
+    plot(pattern='.*plan_ensemble_original.*', figure=3)
+    plot(pattern='.*plan_ensemble_new_impl.*', figure=4)
+    plt.show()
 
     # top_k = 0
     # plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=0, color=0, top_k=top_k)
