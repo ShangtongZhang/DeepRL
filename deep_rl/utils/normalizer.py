@@ -5,7 +5,7 @@
 #######################################################################
 import numpy as np
 
-class BaseNormalizer(object):
+class BaseNormalizer:
     def __init__(self, read_only=False):
         self.read_only = read_only
 
@@ -24,7 +24,7 @@ class BaseNormalizer(object):
 
 class RunningStatsNormalizer(BaseNormalizer):
     def __init__(self, read_only=False):
-        super(RunningStatsNormalizer, self).__init__(read_only)
+        BaseNormalizer.__init__(self, read_only)
         self.needs_reset = True
         self.read_only = read_only
 
