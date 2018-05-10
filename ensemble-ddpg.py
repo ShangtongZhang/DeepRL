@@ -34,17 +34,20 @@ def d3pg_conginuous(game, log_dir=None, **kwargs):
 
 def ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
+    kwargs.setdefault('gate', F.tanh)
     kwargs.setdefault('tag', ddpg_continuous.__name__)
+    kwargs.setdefault('q_l2_weight', 0)
+    config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
-        action_dim, FCBody(state_dim, (300, 200), gate=F.tanh))
+        action_dim, FCBody(state_dim, (300, 200), gate=config.gate))
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
-        TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300], gate=F.tanh))
+        TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=config.gate))
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-3)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=config.q_l2_weight)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
@@ -55,7 +58,6 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = Logger('./log', logger)
-    config.merge(kwargs)
     run_episodes(DDPGAgent(config))
 
 def ensemble_ddpg(game, log_dir=None, **kwargs):
@@ -164,6 +166,15 @@ if __name__ == '__main__':
     # game = 'RoboschoolHalfCheetah-v1'
     game = 'RoboschoolAnt-v1'
 
+    # multi_runs(game, ddpg_continuous, tag='original_ddpg_tanh',
+    #                 gate=F.tanh, q_l2_weight=0)
+
+    # multi_runs(game, ddpg_continuous, tag='original_ddpg_relu',
+    #                 gate=F.relu, q_l2_weight=0)
+
+    # multi_runs(game, ddpg_continuous, tag='original_ddpg_l2_relu',
+    #                 gate=F.relu, q_l2_weight=0.01)
+
     # plan_ensemble_ddpg(game, tag='plan_ensemble_detach',
     #                    depth=2, num_actors=5, detach_action=True)
     # plan_ensemble_ddpg(game, tag='plan_ensemble_no_detach',
@@ -191,11 +202,11 @@ if __name__ == '__main__':
 
     # plot(pattern='.*plan_ensemble_align_next_v.*', figure=0)
     # plot(pattern='.*plan_ensemble_depth.*', figure=1)
-    plot(pattern='.*plan_ensemble_detach.*', figure=0)
-    plot(pattern='.*plan_ensemble_no_detach.*', figure=1)
+    # plot(pattern='.*plan_ensemble_detach.*', figure=0)
+    # plot(pattern='.*plan_ensemble_no_detach.*', figure=1)
     # plot(pattern='.*plan_ensemble_original.*', figure=3)
     # plot(pattern='.*plan_ensemble_new_impl.*', figure=4)
-    plt.show()
+    # plt.show()
 
     # top_k = 0
     # plot(pattern='.*ensemble-%s.*ddpg_continuous.*' % (game), figure=0, color=0, top_k=top_k)
