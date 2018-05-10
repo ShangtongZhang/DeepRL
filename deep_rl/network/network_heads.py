@@ -337,7 +337,7 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
 
     def predict(self, obs, depth, to_numpy=False):
         phi = self.compute_phi(obs)
-        actions = self.compute_a(phi)
+        actions = self.compute_a(phi, detach=True)
         q_values = [self.compute_q(phi, action, depth) for action in actions]
         q_values = torch.stack(q_values).squeeze(-1).t()
         actions = torch.stack(actions).t()
@@ -351,7 +351,7 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
         obs = self.tensor(obs)
         return self.body(obs)
 
-    def compute_a(self, phi, detach=True):
+    def compute_a(self, phi, detach):
         actions = [action_model(phi) for action_model in self.action_models]
         if detach:
             for action in actions: action.detach_()
@@ -365,7 +365,7 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
             return q
         else:
             phi_prime, r = self.env_model(phi, action)
-            a_prime = self.compute_a(phi_prime)
+            a_prime = self.compute_a(phi_prime, self.detach_action)
             a_prime = torch.stack(a_prime)
             phi_prime = phi_prime.unsqueeze(0).expand(
                 (self.num_actors, ) + (-1, ) * len(phi_prime.size())
