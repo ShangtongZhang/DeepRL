@@ -8,6 +8,20 @@ from tensorboardX import SummaryWriter
 import os
 import numpy as np
 import torch
+import logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s: %(message)s')
+from .misc import *
+
+def get_logger(name='MAIN', file_name=None, log_dir='./log', skip=False, level=logging.INFO):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    if file_name is not None:
+        file_name = '%s-%s' % (file_name, get_time_str())
+        fh = logging.FileHandler('%s/%s.txt' % (log_dir, file_name))
+        fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s'))
+        fh.setLevel(level)
+        logger.addHandler(fh)
+    return Logger(log_dir, logger, skip)
 
 class Logger(object):
     def __init__(self, log_dir, vanilla_logger, skip=False):

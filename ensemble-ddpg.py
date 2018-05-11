@@ -28,7 +28,7 @@ def d3pg_conginuous(game, log_dir=None, **kwargs):
     config.rollout_length = 5
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
-    config.logger = Logger('./log', logger)
+    config.logger = get_logger(file_name=kwargs['tag'])
     config.merge(kwargs)
     run_iterations(D3PGAgent(config))
 
@@ -40,15 +40,18 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    task_fn = lambda **kwargs: Bullet(game, **kwargs)
-    config.task_fn = lambda : ProcessTask(task_fn)
-    config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
+    # task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    # config.task_fn = lambda : ProcessTask(task_fn)
+    # config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
+    config.task_fn = lambda: Roboschool(game)
+    config.evaluation_env = Roboschool(game, log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
         action_dim, FCBody(state_dim, (300, 200), gate=config.gate))
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
         TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=config.gate))
     config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=config.q_l2_weight)
+    config.critic_optimizer_fn = lambda params: torch.optim.Adam(
+        params, lr=1e-3, weight_decay=config.q_l2_weight)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
@@ -58,7 +61,7 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
 
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
-    config.logger = Logger('./log', logger)
+    config.logger = get_logger(file_name=kwargs['tag'])
     run_episodes(DDPGAgent(config))
 
 # def ensemble_ddpg(game, log_dir=None, **kwargs):
@@ -99,9 +102,11 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
 
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    task_fn = lambda **kwargs: Bullet(game, **kwargs)
-    config.task_fn = lambda: ProcessTask(task_fn)
-    config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
+    # task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    # config.task_fn = lambda: ProcessTask(task_fn)
+    # config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
+    config.task_fn = lambda: Roboschool(game)
+    config.evaluation_env = Roboschool(game, log_dir)
     config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
         body=FCBody(state_dim, (400, ), gate=F.tanh), action_dim=action_dim, num_actors=kwargs['num_actors'],
         discount=config.discount, detach_action=kwargs['detach_action'])
@@ -114,7 +119,7 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
         action_dim, LinearSchedule(0.3, 0, 1e6))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
-    config.logger = Logger('./log', logger)
+    config.logger = get_logger(file_name=kwargs['tag'])
     config.merge(kwargs)
     run_episodes(PlanEnsembleDDPGAgent(config))
 
@@ -122,7 +127,7 @@ def multi_runs(game, fn, tag, **kwargs):
     runs = np.arange(0, 5)
     for run in runs:
         log_dir = './log/ensemble-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
-        fn(game, log_dir, **kwargs)
+        fn(game, log_dir, tag=tag, **kwargs)
 
 def plot(**kwargs):
     import matplotlib.pyplot as plt
@@ -159,14 +164,24 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    # logger.setLevel(logging.DEBUG)
-    logger.setLevel(logging.INFO)
 
-    # game = 'RoboschoolAnt-v1'
-    game = 'AntBulletEnv-v0'
+    game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolWalker2d-v1'
+    # game = 'RoboschoolHalfCheetah-v1'
+    # game = 'RoboschoolHopper-v1'
+    # game = 'AntBulletEnv-v0'
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg_tanh',
     #                 gate=F.tanh, q_l2_weight=0)
+    # multi_runs(game, plan_ensemble_ddpg, tag='plan_ensemble_detach',
+    #                    depth=2, num_actors=5, detach_action=True)
+    # multi_runs(game, plan_ensemble_ddpg, tag='plan_ensemble_no_detach',
+    #                    depth=2, num_actors=5, detach_action=False)
+
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_detach',
+    #                    depth=2, num_actors=5, detach_action=True)
+    # plan_ensemble_ddpg(game, tag='plan_ensemble_no_detach',
+    #                    depth=2, num_actors=5, detach_action=False)
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg_relu',
     #                 gate=F.relu, q_l2_weight=0)
@@ -228,10 +243,10 @@ if __name__ == '__main__':
     # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_tanh.*', figure=2)
     # plt.show()
 
-    plot(pattern='.*ddpg_continuous-180511-095212.*', figure=0)
-    plot(pattern='.*ddpg_continuous-180511-095404.*', figure=0)
-    plot(pattern='.*plan_ensemble_detach-180511-100739.*', figure=1)
-    plot(pattern='.*plan_ensemble_detach-180511-100747.*', figure=1)
-    plt.show()
+    # plot(pattern='.*ddpg_continuous-180511-095212.*', figure=0)
+    # plot(pattern='.*ddpg_continuous-180511-095404.*', figure=0)
+    # plot(pattern='.*plan_ensemble_detach-180511-100739.*', figure=1)
+    # plot(pattern='.*plan_ensemble_detach-180511-100747.*', figure=1)
+    # plt.show()
 
 
