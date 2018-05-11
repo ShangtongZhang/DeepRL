@@ -160,7 +160,8 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    game = 'AntBulletEnv-v0'
+    game = 'RoboschoolAnt-v1'
+    # game = 'AntBulletEnv-v0'
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg_tanh',
     #                 gate=F.tanh, q_l2_weight=0)
@@ -219,5 +220,10 @@ if __name__ == '__main__':
     # plot(pattern='.*expert-RoboschoolHopper.*', figure=0)
     # plot(pattern='.*expert-RoboschoolReacher.*', figure=0)
     # plt.show()
+
+    plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_l2_relu.*', figure=0)
+    plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_relu.*', figure=1)
+    plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_tanh.*', figure=2)
+    plt.show()
 
 
