@@ -40,8 +40,8 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    config.task_fn = lambda: Roboschool(game)
-    config.evaluation_env = Roboschool(game, log_dir=log_dir)
+    config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    config.evaluation_env = ProcessTask(config.task_fn, log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
         action_dim, FCBody(state_dim, (300, 200), gate=config.gate))
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
@@ -60,32 +60,32 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.logger = Logger('./log', logger)
     run_episodes(DDPGAgent(config))
 
-def ensemble_ddpg(game, log_dir=None, **kwargs):
-    config = Config()
-    kwargs.setdefault('tag', ensemble_ddpg.__name__)
-    kwargs.setdefault('value_loss_weight', 10.0)
-    kwargs.setdefault('num_actors', 5)
-    if log_dir is None:
-        log_dir = get_default_log_dir(kwargs['tag'])
-    config.task_fn = lambda: Roboschool(game)
-    config.evaluation_env = Roboschool(game, log_dir=log_dir)
-    config.network_fn = lambda state_dim, action_dim: EnsembleDeterministicNet(
-        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
-        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300], gate=F.tanh),
-        action_dim=action_dim, num_actors=kwargs['num_actors']
-    )
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
-    config.discount = 0.99
-    config.state_normalizer = RunningStatsNormalizer()
-    config.max_steps = 1e6
-    config.random_process_fn = lambda action_dim: GaussianProcess(
-        action_dim, LinearSchedule(0.3, 0, 1e6))
-    config.min_memory_size = 64
-    config.target_network_mix = 1e-3
-    config.logger = Logger('./log', logger)
-    config.merge(kwargs)
-    run_episodes(EnsembleDDPGAgent(config))
+# def ensemble_ddpg(game, log_dir=None, **kwargs):
+#     config = Config()
+#     kwargs.setdefault('tag', ensemble_ddpg.__name__)
+#     kwargs.setdefault('value_loss_weight', 10.0)
+#     kwargs.setdefault('num_actors', 5)
+#     if log_dir is None:
+#         log_dir = get_default_log_dir(kwargs['tag'])
+#     config.task_fn = lambda: Roboschool(game)
+#     config.evaluation_env = Roboschool(game, log_dir=log_dir)
+#     config.network_fn = lambda state_dim, action_dim: EnsembleDeterministicNet(
+#         actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+#         critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300], gate=F.tanh),
+#         action_dim=action_dim, num_actors=kwargs['num_actors']
+#     )
+#     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+#     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+#     config.discount = 0.99
+#     config.state_normalizer = RunningStatsNormalizer()
+#     config.max_steps = 1e6
+#     config.random_process_fn = lambda action_dim: GaussianProcess(
+#         action_dim, LinearSchedule(0.3, 0, 1e6))
+#     config.min_memory_size = 64
+#     config.target_network_mix = 1e-3
+#     config.logger = Logger('./log', logger)
+#     config.merge(kwargs)
+#     run_episodes(EnsembleDDPGAgent(config))
 
 def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
     config = Config()
@@ -98,8 +98,8 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
 
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    config.task_fn = lambda: Roboschool(game)
-    config.evaluation_env = Roboschool(game, log_dir=log_dir)
+    config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    config.evaluation_env = ProcessTask(config.task_fn, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
         body=FCBody(state_dim, (400, ), gate=F.tanh), action_dim=action_dim, num_actors=kwargs['num_actors'],
         discount=config.discount, detach_action=kwargs['detach_action'])
@@ -160,11 +160,7 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    # game = 'RoboschoolInvertedPendulum-v1'
-    # game = 'RoboschoolHopper-v1'
-    # game = 'RoboschoolWalker2d-v1'
-    # game = 'RoboschoolHalfCheetah-v1'
-    game = 'RoboschoolAnt-v1'
+    game = 'AntBulletEnv-v0'
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg_tanh',
     #                 gate=F.tanh, q_l2_weight=0)
