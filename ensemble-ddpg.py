@@ -40,7 +40,8 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    config.task_fn = lambda : ProcessTask(task_fn)
     config.evaluation_env = ProcessTask(config.task_fn, log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
         action_dim, FCBody(state_dim, (300, 200), gate=config.gate))
@@ -221,9 +222,9 @@ if __name__ == '__main__':
     # plot(pattern='.*expert-RoboschoolReacher.*', figure=0)
     # plt.show()
 
-    plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_l2_relu.*', figure=0)
-    plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_relu.*', figure=1)
-    plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_tanh.*', figure=2)
-    plt.show()
+    # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_l2_relu.*', figure=0)
+    # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_relu.*', figure=1)
+    # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_tanh.*', figure=2)
+    # plt.show()
 
 
