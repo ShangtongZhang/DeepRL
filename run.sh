@@ -12,4 +12,4 @@ function run_args_proxy() {
 }
 echo $(run_args_proxy)
 
-nvidia-docker run -it $(run_args_proxy) deep_rl sh
+nvidia-docker run -v ~/workspace/DeepRL:/workspace/DeeRL $(run_args_proxy) -d -P --name deep_rl deep_rl
