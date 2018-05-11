@@ -105,102 +105,86 @@ class Roboschool(BaseTask):
     def step(self, action):
         return BaseTask.step(self, np.clip(action, -1, 1))
 
-class DMControl(BaseTask):
-    def __init__(self, domain_name, task_name, log_dir=None):
-        from dm_control import suite
-        import dm_control2gym
+class Bullet(BaseTask):
+    def __init__(self, name, log_dir=None):
+        import pybullet_envs
         BaseTask.__init__(self)
-
-        self.name = domain_name + '_' + task_name
-        self.env = dm_control2gym.make(domain_name, task_name)
-
+        self.name = name
+        self.env = gym.make(name)
         self.action_dim = self.env.action_space.shape[0]
         self.state_dim = self.env.observation_space.shape[0]
         self.env = self.set_monitor(self.env, log_dir)
 
-class GymRobotics(BaseTask):
-    def __init__(self, name, log_dir=None):
-        BaseTask.__init__(self)
+    def step(self, action):
+        return BaseTask.step(self, np.clip(action, -1, 1))
 
-        self.name = name
-        self.env = gym.make(name)
-
-        self.action_dim = self.env.action_space.shape[0]
-        self.state_dim = len(self.flatten_state(self.env.reset()))
-        self.env = self.set_monitor(self.env, log_dir)
-
-    def flatten_state(self, state):
-        flat = []
-        for key, value in state.items():
-            flat.append(state[key])
-        flat = np.concatenate(flat, axis=0)
-        return flat
-
-    def reset(self):
-        return self.flatten_state(self.env.reset())
+class ProcessTask:
+    def __init__(self, task_fn, log_dir):
+        self.pipe, worker_pipe = mp.Pipe()
+        self.worker = ProcessWrapper(worker_pipe, task_fn, log_dir)
+        self.worker.start()
+        self.pipe.send([ProcessWrapper.SPECS, None])
+        self.state_dim, self.action_dim, self.name = self.pipe.recv()
 
     def step(self, action):
-        next_state, reward, done, _ = self.env.step(action)
-        return self.flatten_state(next_state), reward, done, _
+        self.pipe.send([ProcessWrapper.STEP, action])
+        return self.pipe.recv()
 
-def sub_task(parent_pipe, pipe, task_fn, rank, log_dir):
-    np.random.seed()
-    seed = np.random.randint(0, sys.maxsize)
-    parent_pipe.close()
-    task = task_fn(log_dir=log_dir)
-    task.seed(seed)
-    while True:
-        op, data = pipe.recv()
-        if op == 'step':
-            ob, reward, done, info = task.step(data)
-            if done:
-                ob = task.reset()
-            pipe.send([ob, reward, done, info])
-        elif op == 'reset':
-            pipe.send(task.reset())
-        elif op == 'exit':
-            pipe.close()
-            return
-        else:
-            assert False, 'Unknown Operation'
+    def reset(self):
+        self.pipe.send([ProcessWrapper.RESET, None])
+        return self.pipe.recv()
+
+    def close(self):
+        self.pipe.send([ProcessWrapper.EXIT, None])
+
+class ProcessWrapper(mp.Process):
+    STEP = 0
+    RESET = 1
+    EXIT = 2
+    SPECS = 3
+    def __init__(self, pipe, task_fn, log_dir):
+        mp.Process.__init__(self)
+        self.pipe = pipe
+        self.task_fn = task_fn
+        self.log_dir = log_dir
+
+    def run(self):
+        np.random.seed()
+        seed = np.random.randint(0, sys.maxsize)
+        task = self.task_fn(log_dir=self.log_dir)
+        task.seed(seed)
+        while True:
+            op, data = self.pipe.recv()
+            if op == self.STEP:
+                ob, reward, done, info = task.step(data)
+                if done:
+                    ob = task.reset()
+                self.pipe.send([ob, reward, done, info])
+            elif op == self.RESET:
+                self.pipe.send(task.reset())
+            elif op == self.EXIT:
+                self.pipe.close()
+                return
+            elif op == self.SPECS:
+                self.pipe.send([task.state_dim, task.action_dim, task.name])
+            else:
+                raise Exception('Unknown command')
 
 class ParallelizedTask:
     def __init__(self, task_fn, num_workers, log_dir=None):
-        self.task_fn = task_fn
-        self.task = task_fn(log_dir=None)
-        self.name = self.task.name
-        if log_dir is not None:
-            mkdir(log_dir)
-        self.pipes, worker_pipes = zip(*[mp.Pipe() for _ in range(num_workers)])
-        args = [(p, wp, task_fn, rank, log_dir)
-                for rank, (p, wp) in enumerate(zip(self.pipes, worker_pipes))]
-        self.workers = [mp.Process(target=sub_task, args=arg) for arg in args]
-        for p in self.workers: p.start()
-        for p in worker_pipes: p.close()
-        self.state_dim = self.task.state_dim
-        self.action_dim = self.task.action_dim
+        self.tasks = [ProcessTask(task_fn, log_dir) for _ in range(num_workers)]
+        self.state_dim = self.tasks[0].state_dim
+        self.action_dim = self.tasks[0].action_dim
+        self.name = self.tasks[0].name
 
     def step(self, actions):
-        for pipe, action in zip(self.pipes, actions):
-            pipe.send(('step', action))
-        results = [p.recv() for p in self.pipes]
+        results = [task.step(action) for task, action in zip(self.tasks, actions)]
         results = map(lambda x: np.stack(x), zip(*results))
         return results
 
-    def reset(self, i=None):
-        if i is None:
-            for pipe in self.pipes:
-                pipe.send(('reset', None))
-            results = [p.recv() for p in self.pipes]
-        else:
-            self.pipes[i].send(('reset', None))
-            results = self.pipes[i].recv()
+    def reset(self):
+        results = [task.reset() for task in self.tasks]
         return np.stack(results)
 
     def close(self):
-        for pipe in self.pipes:
-            pipe.send(('exit', None))
-        for p in self.workers: p.join()
-
-    def normalize_state(self, state):
-        return self.task.normalize_state(state)
+        for task in self.tasks: task.close()

@@ -18,6 +18,8 @@ class BaseAgent:
     def close(self):
         if hasattr(self.task, 'close'):
             self.task.close()
+        if hasattr(self.evaluation_env, 'close'):
+            self.evaluation_env.close()
 
     def save(self, filename):
         torch.save(self.network.state_dict(), filename)

@@ -312,12 +312,7 @@ def ppo_continuous():
     config = Config()
     config.num_workers = 1
     # task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
-    # task_fn = lambda log_dir: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
-    task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
-    # task_fn = lambda log_dir: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
-    # task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
-    # task_fn = lambda log_dir: DMControl('cartpole', 'balance', log_dir=log_dir)
-    # task_fn = lambda log_dir: DMControl('hopper', 'hop', log_dir=log_dir)
+    task_fn = lambda log_dir: Bullet('AntBulletEnv-v0', log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
     actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(
         action_dim, FCBody(state_dim))
@@ -345,14 +340,12 @@ def ddpg_continuous():
     config = Config()
     log_dir = get_default_log_dir(ddpg_continuous.__name__)
     # config.task_fn = lambda: Pendulum(log_dir=log_dir)
-    # config.task_fn = lambda: Roboschool('RoboschoolInvertedPendulum-v1', log_dir=log_dir)
-    # config.task_fn = lambda: Roboschool('RoboschoolReacher-v1', log_dir=log_dir)
-    config.task_fn = lambda: Roboschool('RoboschoolHopper-v1')
-    # config.task_fn = lambda: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
-    # config.task_fn = lambda: Roboschool('RoboschoolWalker2d-v1', log_dir=log_dir)
-    # config.task_fn = lambda: DMControl('cartpole', 'balance', log_dir=log_dir)
-    # config.task_fn = lambda: DMControl('finger', 'spin', log_dir=log_dir)
-    config.evaluation_env = Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    config.task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
+
+    # start the test environment in a new process, it is a workaround to the issue
+    # https://github.com/bulletphysics/bullet3/issues/1643
+    config.evaluation_env = ProcessTask(config.task_fn, log_dir=log_dir)
+
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
         action_dim, FCBody(state_dim, (300, 200)))
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
