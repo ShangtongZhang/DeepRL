@@ -42,7 +42,7 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
         log_dir = get_default_log_dir(kwargs['tag'])
     task_fn = lambda **kwargs: Bullet(game, **kwargs)
     config.task_fn = lambda : ProcessTask(task_fn)
-    config.evaluation_env = ProcessTask(config.task_fn, log_dir=log_dir)
+    config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
     config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
         action_dim, FCBody(state_dim, (300, 200), gate=config.gate))
     config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
@@ -99,8 +99,9 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
 
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
-    config.evaluation_env = ProcessTask(config.task_fn, log_dir=log_dir)
+    task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    config.task_fn = lambda: ProcessTask(task_fn)
+    config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
         body=FCBody(state_dim, (400, ), gate=F.tanh), action_dim=action_dim, num_actors=kwargs['num_actors'],
         discount=config.discount, detach_action=kwargs['detach_action'])
@@ -161,8 +162,8 @@ if __name__ == '__main__':
     # logger.setLevel(logging.DEBUG)
     logger.setLevel(logging.INFO)
 
-    game = 'RoboschoolAnt-v1'
-    # game = 'AntBulletEnv-v0'
+    # game = 'RoboschoolAnt-v1'
+    game = 'AntBulletEnv-v0'
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg_tanh',
     #                 gate=F.tanh, q_l2_weight=0)
@@ -226,5 +227,11 @@ if __name__ == '__main__':
     # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_relu.*', figure=1)
     # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ddpg_continuous.*.ddpg_tanh.*', figure=2)
     # plt.show()
+
+    plot(pattern='.*ddpg_continuous-180511-095212.*', figure=0)
+    plot(pattern='.*ddpg_continuous-180511-095404.*', figure=0)
+    plot(pattern='.*plan_ensemble_detach-180511-100739.*', figure=1)
+    plot(pattern='.*plan_ensemble_detach-180511-100747.*', figure=1)
+    plt.show()
 
 
