@@ -1,0 +1,12 @@
+torch>=0.4.0
+torchvision>=0.2.1
+gym>=0.10.5
+atari-py>=0.1.1
+opencv-python>=3.4.0.12
+tensorboardX==1.1
+scikit-image>=0.13.1
+tqdm>=4.23.0
+pandas>=0.22.0
+pathlib2>=1.0.1;python_version <= '2.7'
+pathlib>=1.0.1;python_version >= '3.5'
+seaborn>=0.8.1
