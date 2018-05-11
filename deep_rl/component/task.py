@@ -119,7 +119,7 @@ class Bullet(BaseTask):
         return BaseTask.step(self, np.clip(action, -1, 1))
 
 class ProcessTask:
-    def __init__(self, task_fn, log_dir):
+    def __init__(self, task_fn, log_dir=None):
         self.pipe, worker_pipe = mp.Pipe()
         self.worker = ProcessWrapper(worker_pipe, task_fn, log_dir)
         self.worker.start()
