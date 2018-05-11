@@ -105,12 +105,44 @@ class Roboschool(BaseTask):
     def step(self, action):
         return BaseTask.step(self, np.clip(action, -1, 1))
 
+class Bullet(BaseTask):
+    def __init__(self, name, log_dir=None):
+        import pybullet_envs
+        BaseTask.__init__(self)
+        self.name = name
+        self.env = gym.make(name)
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape[0]
+        self.env = self.set_monitor(self.env, log_dir)
+
+    def step(self, action):
+        return BaseTask.step(self, np.clip(action, -1, 1))
+
+class ProcessTask:
+    def __init__(self, task_fn, log_dir):
+        self.pipe, worker_pipe = mp.Pipe()
+        self.worker = ProcessWrapper(worker_pipe, task_fn, log_dir)
+        self.worker.start()
+        self.pipe.send([ProcessWrapper.SPECS, None])
+        self.state_dim, self.action_dim, self.name = self.pipe.recv()
+
+    def step(self, action):
+        self.pipe.send([ProcessWrapper.STEP, action])
+        return self.pipe.recv()
+
+    def reset(self):
+        self.pipe.send([ProcessWrapper.RESET, None])
+        return self.pipe.recv()
+
+    def close(self):
+        self.pipe.send([ProcessWrapper.EXIT, None])
+
 class ProcessWrapper(mp.Process):
     STEP = 0
     RESET = 1
     EXIT = 2
     SPECS = 3
-    def __init__(self, pipe, task_fn, rank, log_dir):
+    def __init__(self, pipe, task_fn, log_dir):
         mp.Process.__init__(self)
         self.pipe = pipe
         self.task_fn = task_fn
@@ -140,35 +172,19 @@ class ProcessWrapper(mp.Process):
 
 class ParallelizedTask:
     def __init__(self, task_fn, num_workers, log_dir=None):
-        self.task_fn = task_fn
-        if log_dir is not None:
-            mkdir(log_dir)
-        self.pipes, worker_pipes = zip(*[mp.Pipe() for _ in range(num_workers)])
-        args = [(wp, task_fn, rank, log_dir)
-                for rank, wp in enumerate(worker_pipes)]
-        self.workers = [ProcessWrapper(*arg) for arg in args]
-        for p in self.workers: p.start()
-        self.pipes[0].send([ProcessWrapper.SPECS, None])
-        self.state_dim, self.action_dim, self.name = self.pipes[0].recv()
+        self.tasks = [ProcessTask(task_fn, log_dir) for _ in range(num_workers)]
+        self.state_dim = self.tasks[0].state_dim
+        self.action_dim = self.tasks[0].action_dim
+        self.name = self.tasks[0].name
 
     def step(self, actions):
-        for pipe, action in zip(self.pipes, actions):
-            pipe.send((ProcessWrapper.STEP, action))
-        results = [p.recv() for p in self.pipes]
+        results = [task.step(action) for task, action in zip(self.tasks, actions)]
         results = map(lambda x: np.stack(x), zip(*results))
         return results
 
-    def reset(self, i=None):
-        if i is None:
-            for pipe in self.pipes:
-                pipe.send((ProcessWrapper.RESET, None))
-            results = [p.recv() for p in self.pipes]
-        else:
-            self.pipes[i].send((ProcessWrapper.RESET, None))
-            results = self.pipes[i].recv()
+    def reset(self):
+        results = [task.reset() for task in self.tasks]
         return np.stack(results)
 
     def close(self):
-        for pipe in self.pipes:
-            pipe.send((ProcessWrapper.EXIT, None))
-        for p in self.workers: p.join()
+        for task in self.tasks: task.close()

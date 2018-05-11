@@ -28,11 +28,13 @@ Support for PyTorch v0.3.x can be found in [v0.2](https://github.com/ShangtongZh
 * PyTorch v0.4.0
 * Python 3.6, 3.5 or 2.7 (deprecated)
 * Core dependencies: `pip install -e .`
-* Optional: [Roboschool](https://github.com/openai/roboschool), [DeepMind Control Suite](https://github.com/deepmind/dm_control)+[DMControl2Gym](dm_control2gym)
+* Optional: [Roboschool](https://github.com/openai/roboschool), [PyBullet](https://pypi.org/project/pybullet/)
 
 # Usage
 
 ```examples.py``` contains examples for all the implemented algorithms
+
+```Dockerfile``` contains an example environment (w/ pybullet, w/o roboschool, w/o GPU)
 
 Please use this bibtex if you want to cite this repo
 ```
