@@ -72,6 +72,27 @@ class QuantileNet(nn.Module, BaseNet):
             quantiles = quantiles.cpu().detach().numpy()
         return quantiles
 
+class OptionQuantileNet(nn.Module, BaseNet):
+    def __init__(self, action_dim, num_quantiles, num_options, body, gpu=-1):
+        super(OptionQuantileNet, self).__init__()
+        self.fc_quantiles = layer_init(nn.Linear(body.feature_dim, action_dim * num_quantiles))
+        self.fc_pi = layer_init(nn.Linear(body.feature_dim, num_options))
+        self.fc_v_pi = layer_init(nn.Linear(body.feature_dim, 1))
+        self.action_dim = action_dim
+        self.num_quantiles = num_quantiles
+        self.body = body
+        self.set_gpu(gpu)
+
+    def predict(self, x, to_numpy=False):
+        phi = self.body(self.tensor(x))
+        quantiles = self.fc_quantiles(phi)
+        quantiles = quantiles.view((-1, self.action_dim, self.num_quantiles))
+        pi = F.softmax(self.fc_pi(phi), dim=-1)
+        v_pi = self.fc_v_pi(phi)
+        if to_numpy:
+            quantiles = quantiles.cpu().detach().numpy()
+        return quantiles, pi, v_pi
+
 class OptionCriticNet(nn.Module, BaseNet):
     def __init__(self, body, action_dim, num_options, gpu=-1):
         super(OptionCriticNet, self).__init__()
