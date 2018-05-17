@@ -81,6 +81,8 @@ class RescaleNormalizer(BaseNormalizer):
         self.coef = coef
 
     def __call__(self, x):
+        if not np.isscalar(x):
+            x = np.asarray(x)
         return self.coef * x
 
 class ImageNormalizer(RescaleNormalizer):

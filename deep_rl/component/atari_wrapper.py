@@ -6,6 +6,7 @@ from gym import spaces
 from gym.spaces import Box
 import cv2
 cv2.ocl.setUseOpenCL(False)
+from collections import deque
 
 class NoopResetEnv(gym.Wrapper):
     def __init__(self, env, noop_max=30):
@@ -169,7 +170,7 @@ class LazyFrames(object):
 
     def _force(self):
         if self._out is None:
-            self._out = np.concatenate(self._frames, axis=2)
+            self._out = np.concatenate(self._frames, axis=0)
             self._frames = None
         return self._out
 
@@ -186,23 +187,33 @@ class LazyFrames(object):
         return self._force()[i]
 
 class StackFrame(gym.Wrapper):
-    def __init__(self, env=None, history_length=1):
-        super(StackFrame, self).__init__(env)
-        self.history_length = history_length
-        self.buffer = None
+    def __init__(self, env, k):
+        """Stack k last frames.
+        Returns lazy array, which is much more memory efficient.
+        See Also
+        --------
+        baselines.common.atari_wrappers.LazyFrames
+        """
+        gym.Wrapper.__init__(self, env)
+        self.k = k
+        self.frames = deque([], maxlen=k)
+        shp = env.observation_space.shape
+        self.observation_space = spaces.Box(low=0, high=255, shape=(shp[0] * k, shp[1], shp[2]), dtype=np.uint8)
 
     def reset(self):
-        state = self.env.reset()
-        self.buffer = [state] * self.history_length
-        # return LazyFrames(self.buffer)
-        return np.asarray(np.vstack(self.buffer))
+        ob = self.env.reset()
+        for _ in range(self.k):
+            self.frames.append(ob)
+        return self._get_ob()
 
     def step(self, action):
-        state, reward, done, info = self.env.step(action)
-        self.buffer.pop(0)
-        self.buffer.append(state)
-        # return LazyFrames(self.buffer), reward, done, info
-        return np.asarray(np.vstack(self.buffer)), reward, done, info
+        ob, reward, done, info = self.env.step(action)
+        self.frames.append(ob)
+        return self._get_ob(), reward, done, info
+
+    def _get_ob(self):
+        assert len(self.frames) == self.k
+        return LazyFrames(list(self.frames))
 
 class WrapPyTorch(gym.ObservationWrapper):
     # from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
@@ -250,7 +261,7 @@ def make_atari(env_id, frame_skip=4):
     env = MaxAndSkipEnv(env, skip=4)
     return env
 
-def wrap_deepmind(env, episode_life=True, history_length=0):
+def wrap_deepmind(env, episode_life=True, history_length=1):
     """Configure environment for DeepMind-style Atari.
     """
     if episode_life:

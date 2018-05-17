@@ -399,7 +399,7 @@ if __name__ == '__main__':
     set_one_thread()
 
     # dqn_cart_pole()
-    a2c_cart_pole()
+    # a2c_cart_pole()
     # categorical_dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
     # n_step_dqn_cart_pole()
