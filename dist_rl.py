@@ -41,7 +41,7 @@ def n_step_dqn_pixel_atari(name):
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(n_step_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=1)
+    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=0)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -61,7 +61,7 @@ def n_step_qr_dqn_pixel_atari(name):
                                               log_dir=get_default_log_dir(n_step_qr_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=2)
+        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=1)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
