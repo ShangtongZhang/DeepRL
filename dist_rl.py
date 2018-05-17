@@ -23,7 +23,7 @@ def quantile_regression_dqn_pixel_atari(name):
                                         log_dir=get_default_log_dir(quantile_regression_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=0)
+        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=1)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
     config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
     config.state_normalizer = ImageNormalizer()
@@ -31,7 +31,7 @@ def quantile_regression_dqn_pixel_atari(name):
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.exploration_steps= 50000
-    config.logger = get_logger()
+    config.logger = get_logger(file_name=quantile_regression_dqn_pixel_atari.__name__)
     config.double_q = False
     config.num_quantiles = 200
     run_episodes(QuantileRegressionDQNAgent(config))
@@ -89,7 +89,7 @@ def n_step_qr_dqn_pixel_atari(name):
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
-    config.logger = get_logger()
+    config.logger = get_logger(file_name=n_step_qr_dqn_pixel_atari.__name__)
     config.num_quantiles = 200
     run_iterations(NStepQRDQNAgent(config))
 
