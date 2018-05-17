@@ -16,6 +16,26 @@ def quantile_regression_dqn_cart_pole():
     config.num_quantiles = 20
     run_episodes(QuantileRegressionDQNAgent(config))
 
+def quantile_regression_dqn_pixel_atari(name):
+    config = Config()
+    config.history_length = 4
+    config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
+                                        log_dir=get_default_log_dir(quantile_regression_dqn_pixel_atari.__name__))
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
+    config.network_fn = lambda state_dim, action_dim: \
+        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=0)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.exploration_steps= 50000
+    config.logger = get_logger()
+    config.double_q = False
+    config.num_quantiles = 200
+    run_episodes(QuantileRegressionDQNAgent(config))
+
 def n_step_qr_dqn_cart_pole():
     config = Config()
     task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
@@ -79,5 +99,6 @@ if __name__ == '__main__':
 
     game = 'BreakoutNoFrameskip-v4'
 
-    n_step_dqn_pixel_atari(game)
+    # n_step_dqn_pixel_atari(game)
     # n_step_qr_dqn_pixel_atari(game)
+    quantile_regression_dqn_pixel_atari(game)
