@@ -254,6 +254,22 @@ class DatasetEnv(gym.Wrapper):
         self.saved_obs.append(obs)
         return obs
 
+class RenderEnv(gym.Wrapper):
+    def __init__(self, env):
+        gym.Wrapper.__init__(self, env)
+        self.observation_space = spaces.Box(low=0, high=255,
+            shape=(self.env.unwrapped._render_height, self.env.unwrapped._render_width, 3), dtype=np.uint8)
+
+    def step(self, action):
+        _, reward, done, info = self.env.step(action)
+        obs = self.env.render('rgb_array')
+        return obs, reward, done, info
+
+    def reset(self):
+        self.env.reset()
+        obs = self.env.render('rgb_array')
+        return obs
+
 def make_atari(env_id, frame_skip=4):
     env = gym.make(env_id)
     assert 'NoFrameskip' in env.spec.id

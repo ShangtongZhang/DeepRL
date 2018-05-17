@@ -50,6 +50,14 @@ class TwoLayerFCBodyWithAction(nn.Module):
         phi = self.gate(self.fc2(torch.cat([x, action], dim=1)))
         return phi
 
+class DummyBody(nn.Module):
+    def __init__(self, state_dim):
+        super(DummyBody, self).__init__()
+        self.feature_dim = state_dim
+
+    def forward(self, x):
+        return x
+
 
 
 

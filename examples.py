@@ -339,7 +339,7 @@ def ppo_continuous():
 def ddpg_continuous():
     config = Config()
     log_dir = get_default_log_dir(ddpg_continuous.__name__)
-    # config.task_fn = lambda: Pendulum(log_dir=log_dir)
+    # task_fn = lambda **kwargs: Pendulum(log_dir=log_dir)
     task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
 
     # each bullet environment should be started in a new process, it is a workaround
@@ -348,12 +348,13 @@ def ddpg_continuous():
     config.task_fn = lambda: ProcessTask(task_fn)
     config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
 
-    config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
-        action_dim, FCBody(state_dim, (300, 200), gate=F.tanh))
-    config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
-        TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh))
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-3)
+    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
+        action_dim=action_dim, phi_body=DummyBody(state_dim),
+        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
+
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
@@ -415,7 +416,7 @@ if __name__ == '__main__':
     # option_ciritc_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    # ddpg_continuous()
+    ddpg_continuous()
     # ppo_continuous()
 
     # action_conditional_video_prediction()
