@@ -336,9 +336,9 @@ def ppo_continuous():
     config.logger = get_logger()
     run_iterations(PPOAgent(config))
 
-def ddpg_continuous():
+def ddpg_internal_state():
     config = Config()
-    log_dir = get_default_log_dir(ddpg_continuous.__name__)
+    log_dir = get_default_log_dir(ddpg_internal_state.__name__)
     # task_fn = lambda **kwargs: Pendulum(log_dir=log_dir)
     task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
 
@@ -359,6 +359,36 @@ def ddpg_continuous():
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
     config.random_process_fn = lambda action_dim: GaussianProcess(action_dim, LinearSchedule(0.3, 0, 1e6))
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = get_logger()
+    run_episodes(DDPGAgent(config))
+
+def ddpg_pixel():
+    config = Config()
+    log_dir = get_default_log_dir(ddpg_pixel.__name__)
+    task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=1, **kwargs)
+
+    # each bullet environment should be started in a new process, it is a workaround
+    # to the issue of self-collision
+    # https://github.com/bulletphysics/bullet3/issues/1643
+    config.task_fn = lambda: ProcessTask(task_fn)
+    config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
+
+    phi_body=NatureConvBody()
+    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
+        action_dim=action_dim, phi_body=NatureConvBody(),
+        actor_body=FCBody(phi_body.feature_dim, (200, 200), gate=F.relu),
+        critic_body=TwoLayerFCBodyWithAction(phi_body.feature_dim, action_dim, (200, 200), gate=F.relu),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3), gpu=0)
+
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.discount = 0.99
+    config.state_normalizer = ImageNormalizer()
+    config.max_steps = 1e7
+    config.random_process_fn = lambda action_dim: GaussianProcess(
+        action_dim, LinearSchedule(0.3, 0, config.max_steps))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
@@ -416,7 +446,8 @@ if __name__ == '__main__':
     # option_ciritc_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    ddpg_continuous()
+    # ddpg_internal_state()
+    ddpg_pixel()
     # ppo_continuous()
 
     # action_conditional_video_prediction()
