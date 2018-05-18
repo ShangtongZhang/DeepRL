@@ -363,7 +363,8 @@ def ddpg_low_dim_state():
 def ddpg_pixel():
     config = Config()
     log_dir = get_default_log_dir(ddpg_pixel.__name__)
-    task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=4, **kwargs)
+    task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=1,
+                                           history_length=4, **kwargs)
 
     # each bullet environment should be started in a new process, it is a workaround
     # to the issue of self-collision
@@ -371,15 +372,15 @@ def ddpg_pixel():
     config.task_fn = lambda: ProcessTask(task_fn)
     config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
 
-    phi_body=NatureConvBody()
+    phi_body=DDPGConvBody()
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
         state_dim, action_dim, phi_body=phi_body,
-        actor_body=FCBody(phi_body.feature_dim, (200, 200), gate=F.relu),
-        critic_body=TwoLayerFCBodyWithAction(phi_body.feature_dim, action_dim, (200, 200), gate=F.relu),
+        actor_body=FCBody(phi_body.feature_dim, (50, ), gate=F.tanh),
+        critic_body=OneLayerFCBodyWithAction(phi_body.feature_dim, action_dim, 50, gate=F.tanh),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3), gpu=0)
 
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=16)
     config.discount = 0.99
     config.state_normalizer = ImageNormalizer()
     config.max_steps = 1e7
