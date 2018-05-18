@@ -363,7 +363,7 @@ def ddpg_low_dim_state():
 def ddpg_pixel():
     config = Config()
     log_dir = get_default_log_dir(ddpg_pixel.__name__)
-    task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=1, **kwargs)
+    task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=4, **kwargs)
 
     # each bullet environment should be started in a new process, it is a workaround
     # to the issue of self-collision
@@ -373,11 +373,11 @@ def ddpg_pixel():
 
     phi_body=NatureConvBody()
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
-        state_dim, action_dim, phi_body=NatureConvBody(),
+        state_dim, action_dim, phi_body=phi_body,
         actor_body=FCBody(phi_body.feature_dim, (200, 200), gate=F.relu),
         critic_body=TwoLayerFCBodyWithAction(phi_body.feature_dim, action_dim, (200, 200), gate=F.relu),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3), gpu=1)
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3), gpu=0)
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
@@ -443,7 +443,7 @@ if __name__ == '__main__':
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
     # ddpg_low_dim_state()
-    # ddpg_pixel()
+    ddpg_pixel()
     # ppo_continuous()
 
     # action_conditional_video_prediction()

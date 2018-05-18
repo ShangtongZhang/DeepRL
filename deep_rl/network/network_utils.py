@@ -12,6 +12,7 @@ import numpy as np
 class BaseNet:
     def set_gpu(self, gpu):
         if gpu >= 0 and torch.cuda.is_available():
+            gpu = gpu % torch.cuda.device_count()
             self.device = torch.device('cuda:%d' % (gpu))
         else:
             self.device = torch.device('cpu')
