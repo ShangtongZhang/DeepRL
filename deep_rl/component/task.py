@@ -21,7 +21,10 @@ class BaseTask:
         return self.env.reset()
 
     def step(self, action):
-        return self.env.step(action)
+        next_state, reward, done, info = self.env.step(action)
+        if done:
+            next_state = self.env.reset()
+        return next_state, reward, done, info
 
     def seed(self, random_seed):
         return self.env.seed(random_seed)
@@ -120,7 +123,6 @@ class Bullet(BaseTask):
 
 class PixelBullet(BaseTask):
     def __init__(self, name, seed=0, log_dir=None, frame_skip=4, history_length=4):
-        import pybullet_envs
         self.name = name
         env = gym.make(name)
         env.seed(seed)
@@ -173,10 +175,7 @@ class ProcessWrapper(mp.Process):
         while True:
             op, data = self.pipe.recv()
             if op == self.STEP:
-                ob, reward, done, info = task.step(data)
-                if done:
-                    ob = task.reset()
-                self.pipe.send([ob, reward, done, info])
+                self.pipe.send(task.step(data))
             elif op == self.RESET:
                 self.pipe.send(task.reset())
             elif op == self.EXIT:
