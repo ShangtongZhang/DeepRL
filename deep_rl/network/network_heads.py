@@ -5,6 +5,7 @@
 #######################################################################
 
 from .network_utils import *
+from .network_bodies import *
 
 class VanillaNet(nn.Module, BaseNet):
     def __init__(self, output_dim, body, gpu=-1):
@@ -36,24 +37,6 @@ class DuelingNet(nn.Module, BaseNet):
         if to_numpy:
             return q.cpu().detach().numpy()
         return q
-
-class ActorCriticNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, body, gpu=-1):
-        super(ActorCriticNet, self).__init__()
-        self.fc_actor = layer_init(nn.Linear(body.feature_dim, action_dim))
-        self.fc_critic = layer_init(nn.Linear(body.feature_dim, 1))
-        self.body = body
-        self.set_gpu(gpu)
-
-    def predict(self, x, to_numpy=False):
-        phi = self.body(self.tensor(x))
-        pre_prob = self.fc_actor(phi)
-        prob = F.softmax(pre_prob, dim=1)
-        log_prob = F.log_softmax(pre_prob, dim=1)
-        value = self.fc_critic(phi)
-        if to_numpy:
-            return prob.cpu().detach().numpy()
-        return prob, log_prob, value
 
 class CategoricalNet(nn.Module, BaseNet):
     def __init__(self, action_dim, num_atoms, body, gpu=-1):
@@ -109,67 +92,12 @@ class OptionCriticNet(nn.Module, BaseNet):
         log_pi = F.log_softmax(pi, dim=-1)
         return q, beta, log_pi
 
-class GaussianActorNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, body, gpu=-1):
-        super(GaussianActorNet, self).__init__()
-        self.fc_action = layer_init(nn.Linear(body.feature_dim, action_dim), 3e-3)
-        self.action_log_std = nn.Parameter(torch.zeros(1, action_dim))
-        self.body = body
-        self.set_gpu(gpu)
-
-    def predict(self, x):
-        x = self.tensor(x)
-        phi = self.body(x)
-        mean = F.tanh(self.fc_action(phi))
-        log_std = self.action_log_std.expand_as(mean)
-        std = log_std.exp()
-        return mean, std, log_std
-
-class GaussianCriticNet(nn.Module, BaseNet):
-    def __init__(self, body, gpu=-1):
-        super(GaussianCriticNet, self).__init__()
-        self.fc_value = layer_init(nn.Linear(body.feature_dim, 1), 3e-3)
-        self.body = body
-        self.set_gpu(gpu)
-
-    def predict(self, x):
-        x = self.tensor(x)
-        phi = self.body(x)
-        value = self.fc_value(phi)
-        return value
-
-class DeterministicActorNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, body, gpu=-1):
-        super(DeterministicActorNet, self).__init__()
-        self.fc_action = layer_init(nn.Linear(body.feature_dim, action_dim), 3e-3)
-        self.body = body
-        self.set_gpu(gpu)
-
-    def predict(self, x, to_numpy=False):
-        x = self.tensor(x)
-        phi = self.body(x)
-        a = F.tanh(self.fc_action(phi))
-        if to_numpy:
-            a = a.cpu().detach().numpy()
-        return a
-
-class DeterministicCriticNet(nn.Module, BaseNet):
-    def __init__(self, body, gpu=-1):
-        super(DeterministicCriticNet, self).__init__()
-        self.fc_value = layer_init(nn.Linear(body.feature_dim, 1), 3e-3)
-        self.body = body
-        self.set_gpu(gpu)
-
-    def predict(self, x, action):
-        x = self.tensor(x)
-        action = self.tensor(action)
-        phi = self.body(x, action)
-        value = self.fc_value(phi)
-        return value
-
-class DeterministicActorCriticNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, phi_body, actor_body, critic_body, actor_opt_fn, critic_opt_fn, gpu=-1):
-        super(DeterministicActorCriticNet, self).__init__()
+class ActorCriticNet(nn.Module):
+    def __init__(self, state_dim, action_dim, phi_body, actor_body, critic_body):
+        super(ActorCriticNet, self).__init__()
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
         self.phi_body = phi_body
         self.actor_body = actor_body
         self.critic_body = critic_body
@@ -179,8 +107,21 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
         self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
         self.phi_params = list(self.phi_body.parameters())
-        self.actor_opt = actor_opt_fn(self.actor_params + self.phi_params)
-        self.critic_opt = critic_opt_fn(self.critic_params + self.phi_params)
+
+class DeterministicActorCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 actor_opt_fn,
+                 critic_opt_fn,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None,
+                 gpu=-1):
+        super(DeterministicActorCriticNet, self).__init__()
+        self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
+        self.actor_opt = actor_opt_fn(self.network.actor_params + self.network.phi_params)
+        self.critic_opt = critic_opt_fn(self.network.critic_params + self.network.phi_params)
         self.set_gpu(gpu)
 
     def predict(self, obs, to_numpy=False):
@@ -192,10 +133,64 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
 
     def feature(self, obs):
         obs = self.tensor(obs)
-        return self.phi_body(obs)
+        return self.network.phi_body(obs)
 
     def actor(self, phi):
-        return F.tanh(self.fc_action(self.actor_body(phi)))
+        return F.tanh(self.network.fc_action(self.network.actor_body(phi)))
 
     def critic(self, phi, a):
-        return self.fc_critic(self.critic_body(phi, a))
+        return self.network.fc_critic(self.network.critic_body(phi, a))
+
+class GaussianActorCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None,
+                 gpu=-1):
+        super(GaussianActorCriticNet, self).__init__()
+        self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
+        self.std = nn.Parameter(torch.ones(1, action_dim))
+        self.set_gpu(gpu)
+
+    def predict(self, obs, action=None, to_numpy=False):
+        obs = self.tensor(obs)
+        phi = self.network.phi_body(obs)
+        phi_a = self.network.actor_body(phi)
+        phi_v = self.network.critic_body(phi)
+        mean = F.tanh(self.network.fc_action(phi_a))
+        if to_numpy:
+            return mean.cpu().detach().numpy()
+        v = self.network.fc_critic(phi_v)
+        dist = torch.distributions.Normal(mean, self.std)
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action)
+        log_prob = torch.sum(log_prob, dim=1, keepdim=True)
+        return action, log_prob, self.tensor(np.zeros((log_prob.size(0), 1))), v
+
+class CategoricalActorCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None,
+                 gpu=-1):
+        super(CategoricalActorCriticNet, self).__init__()
+        self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
+        self.set_gpu(gpu)
+
+    def predict(self, obs, action=None):
+        obs = self.tensor(obs)
+        phi = self.network.phi_body(obs)
+        phi_a = self.network.actor_body(phi)
+        phi_v = self.network.critic_body(phi)
+        prob = F.softmax(self.network.fc_action(phi_a), dim=-1)
+        v = self.network.fc_critic(phi_v)
+        dist = torch.distributions.Categorical(probs=prob)
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action).unsqueeze(-1)
+        return action, log_prob, dist.entropy().unsqueeze(-1), v
