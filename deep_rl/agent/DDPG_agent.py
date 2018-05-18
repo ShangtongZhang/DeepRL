@@ -7,6 +7,7 @@
 from ..network import *
 from ..component import *
 from .BaseAgent import *
+import torchvision
 
 class DDPGAgent(BaseAgent):
     def __init__(self, config):
@@ -47,6 +48,7 @@ class DDPGAgent(BaseAgent):
             if not deterministic:
                 action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
+            # torchvision.utils.save_image(torch.tensor(np.asarray(next_state)).unsqueeze(1), 'data/image/%s.png' % get_time_str())
             next_state = self.config.state_normalizer(next_state)
             total_reward += reward
             reward = self.config.reward_normalizer(reward)
