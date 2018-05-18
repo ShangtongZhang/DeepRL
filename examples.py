@@ -174,7 +174,7 @@ def a2c_pixel_atari(name):
     config.entropy_weight = 0.01
     config.rollout_length = 5
     config.gradient_clip = 0.5
-    config.logger = get_logger(skip=True)
+    config.logger = get_logger(file_name=a2c_pixel_atari.__name__, skip=True)
     run_iterations(A2CAgent(config))
 
 def categorical_dqn_pixel_atari(name):
@@ -251,7 +251,7 @@ def ppo_pixel_atari(name):
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
-    config.logger = get_logger()
+    config.logger = get_logger(file_name=ppo_pixel_atari.__name__)
     config.use_gae = True
     config.gae_tau = 0.95
     config.entropy_weight = 0.01
@@ -377,7 +377,7 @@ def ddpg_pixel():
         actor_body=FCBody(phi_body.feature_dim, (200, 200), gate=F.relu),
         critic_body=TwoLayerFCBodyWithAction(phi_body.feature_dim, action_dim, (200, 200), gate=F.relu),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3), gpu=0)
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3), gpu=1)
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
@@ -387,7 +387,7 @@ def ddpg_pixel():
         action_dim, LinearSchedule(0.3, 0, config.max_steps))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
-    config.logger = get_logger()
+    config.logger = get_logger(file_name=ddpg_pixel.__name__)
     run_episodes(DDPGAgent(config))
 
 def plot():
