@@ -44,11 +44,11 @@ class DDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
-            action = self.network.predict(np.stack([state]), True).flatten()
+            action = self.network.predict(np.stack([state]), True)
             if not deterministic:
                 action += self.random_process.sample()
+            action = action.flatten()
             next_state, reward, done, info = self.task.step(action)
-            # torchvision.utils.save_image(torch.tensor(np.asarray(next_state)).unsqueeze(1), 'data/image/%s.png' % get_time_str())
             next_state = self.config.state_normalizer(next_state)
             total_reward += reward
             reward = self.config.reward_normalizer(reward)

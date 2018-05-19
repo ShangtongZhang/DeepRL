@@ -13,7 +13,6 @@ class D3PGAgent(BaseAgent):
         self.task = config.task_fn()
         self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
-        self.optimizer = config.optimizer_fn(self.network.parameters())
         self.target_network.load_state_dict(self.network.state_dict())
 
         self.total_steps = 0
@@ -34,7 +33,7 @@ class D3PGAgent(BaseAgent):
         rollout = []
         states = self.states
         for _ in range(config.rollout_length):
-            actions = self.network.actor(states, True)
+            actions = self.network.predict(states, True)
             actions += self.random_process.sample()
             next_states, rewards, terminals, _ = self.task.step(actions)
             next_states = self.config.state_normalizer(next_states)
@@ -51,7 +50,9 @@ class D3PGAgent(BaseAgent):
 
         self.states = states
 
-        _, q_next, best = self.target_network.actor(states)
+        phi_next = self.target_network.feature(states)
+        action_next = self.target_network.actor(phi_next)
+        q_next = self.target_network.critic(phi_next, action_next)
         returns = q_next.max(1)[0].unsqueeze(1).detach()
         for i in reversed(range(len(rollout))):
             states, actions, rewards, terminals, next_states = rollout[i]
@@ -59,20 +60,22 @@ class D3PGAgent(BaseAgent):
             rewards = self.network.tensor(rewards).unsqueeze(1)
             returns = rewards + config.discount * terminals * returns
 
-            q = self.network.critic(states, actions)
-            q_loss = (q - returns).pow(2).mul(0.5).mean() * config.value_loss_weight
+            phi = self.network.feature(states)
+            actions = self.network.tensor(actions)
+            q = self.network.critic(phi, actions)
+            q_loss = (q - returns).pow(2).mul(0.5).mean()
 
-            self.optimizer.zero_grad()
+            self.network.zero_grad()
             q_loss.backward()
-            self.optimizer.step()
+            self.network.critic_opt.step()
 
-            _, q_values, _ = self.network.actor(states)
-            policy_loss = -q_values.sum(1).mean()
+            phi = self.network.feature(states)
+            action = self.network.actor(phi)
+            q = self.network.critic(phi.detach(), action)
+            policy_loss = -q.sum(1).mean()
 
-            self.optimizer.zero_grad()
+            self.network.zero_grad()
             policy_loss.backward()
-            self.network.zero_critic_grad()
-            self.optimizer.step()
-            self.soft_update(self.target_network, self.network)
+            self.network.actor_opt.step()
 
-        self.evaluate(config.rollout_length)
+            self.soft_update(self.target_network, self.network)

@@ -14,7 +14,6 @@ class EnsembleDDPGAgent(BaseAgent):
         self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.target_network.load_state_dict(self.network.state_dict())
-        self.opt = config.optimizer_fn(self.network.parameters())
         self.replay = config.replay_fn()
         self.random_process = config.random_process_fn(self.task.action_dim)
         self.total_steps = 0
@@ -28,7 +27,7 @@ class EnsembleDDPGAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
-        action = self.network.actor(state, to_numpy=True)[0].flatten()
+        action = self.network.predict(state, to_numpy=True)[0].flatten()
         self.config.state_normalizer.unset_read_only()
         return action
 
@@ -42,7 +41,7 @@ class EnsembleDDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
-            action, option = self.network.actor(np.stack([state]), to_numpy=True)
+            action, option = self.network.predict(np.stack([state]), to_numpy=True)
             if not deterministic:
                 action += self.random_process.sample()
             action = action.flatten()
@@ -63,33 +62,37 @@ class EnsembleDDPGAgent(BaseAgent):
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals, options = experiences
-                _, q_next, _ = self.target_network.actor(next_states)
+                phi_next = self.target_network.feature(next_states)
+                a_next = self.target_network.actor(phi_next)
+                q_next = self.target_network.critic(phi_next, a_next)
                 q_next = q_next.max(1)[0].unsqueeze(1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
                 q_next = q_next.detach()
-
-                q = self.network.critic(states, actions)
+                phi = self.network.feature(states)
+                actions = self.network.tensor(actions)
+                q = self.network.critic(phi, actions)
                 if not config.off_policy_critic:
                     q = q[self.network.tensor(np.arange(q.size(0))).long(),
                           self.network.tensor(options).long()].unsqueeze(-1)
-                q_loss = (q - q_next).pow(2).mul(0.5).sum(1).mean() * config.value_loss_weight
+                q_loss = (q - q_next).pow(2).mul(0.5).sum(1).mean()
 
-                self.opt.zero_grad()
+                self.network.zero_grad()
                 q_loss.backward()
-                self.opt.step()
+                self.network.critic_opt.step()
 
-                _, q_values, _ = self.network.actor(states)
+                phi = self.network.feature(states)
+                actions = self.network.actor(phi)
+                q = self.network.critic(phi.detach(), actions)
                 if not config.off_policy_actor:
-                    q_values = q_values[self.network.tensor(np.arange(q_values.size(0))).long(),
-                                        self.network.tensor(options).long()].unsqueeze(-1)
-                policy_loss = -q_values.sum(1).mean()
-                self.opt.zero_grad()
+                    q = q[self.network.tensor(np.arange(q.size(0))).long(),
+                          self.network.tensor(options).long()].unsqueeze(-1)
+                policy_loss = -q.sum(1).mean()
+                self.network.zero_grad()
                 policy_loss.backward()
-                self.network.zero_critic_grad()
-                self.opt.step()
+                self.network.actor_opt.step()
 
                 self.soft_update(self.target_network, self.network)
 

@@ -3,7 +3,6 @@ from deep_rl import *
 def d3pg_conginuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('tag', d3pg_conginuous.__name__)
-    kwargs.setdefault('value_loss_weight', 10.0)
     kwargs.setdefault('num_actors', 1)
     config.num_workers = 8
     if log_dir is None:
@@ -12,12 +11,15 @@ def d3pg_conginuous(game, log_dir=None, **kwargs):
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=log_dir,
                                               single_process=True)
 
-    config.network_fn = lambda state_dim, action_dim: EnsembleDeterministicNet(
+    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
+        state_dim, action_dim,
         actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
-        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
-        action_dim=action_dim, num_actors=kwargs['num_actors']
+        critic_body=TwoLayerFCBodyWithAction(
+            state_dim, action_dim, (400, 300), gate=F.tanh),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3)
     )
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
     config.max_steps = 1e7
@@ -34,7 +36,6 @@ def d3pg_conginuous(game, log_dir=None, **kwargs):
 def d3pg_ensemble(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('tag', d3pg_ensemble.__name__)
-    kwargs.setdefault('value_loss_weight', 10.0)
     kwargs.setdefault('num_options', 5)
     kwargs.setdefault('off_policy_actor', False)
     kwargs.setdefault('off_policy_critic', False)
@@ -47,11 +48,14 @@ def d3pg_ensemble(game, log_dir=None, **kwargs):
                                               single_process=True)
 
     config.network_fn = lambda state_dim, action_dim: ThinDeterministicOptionCriticNet(
+        action_dim, phi_body=DummyBody(state_dim),
         actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
         critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
-        action_dim=action_dim, num_options=kwargs['num_options']
+        num_options=kwargs['num_options'],
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3)
     )
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
     config.max_steps = 1e7
@@ -73,18 +77,21 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    # task_fn = lambda **kwargs: Bullet(game, **kwargs)
-    # config.task_fn = lambda : ProcessTask(task_fn)
-    # config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
-    config.task_fn = lambda: Roboschool(game)
-    config.evaluation_env = Roboschool(game, log_dir)
-    config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
-        action_dim, FCBody(state_dim, (300, 200), gate=config.gate))
-    config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
-        TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=config.gate))
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(
-        params, lr=1e-3, weight_decay=config.q_l2_weight)
+
+    # config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
+    config.evaluation_env = config.task_fn(log_dir=log_dir)
+
+    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
+        state_dim, action_dim,
+        actor_body=FCBody(state_dim, (300, 200), gate=config.gate),
+        critic_body=TwoLayerFCBodyWithAction(
+            state_dim, action_dim, (400, 300), gate=config.gate),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(
+            params, lr=1e-3, weight_decay=config.q_l2_weight)
+        )
+
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
@@ -100,7 +107,6 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
 def ensemble_ddpg(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('tag', ensemble_ddpg.__name__)
-    kwargs.setdefault('value_loss_weight', 10.0)
     kwargs.setdefault('num_options', 5)
     kwargs.setdefault('off_policy_actor', False)
     kwargs.setdefault('off_policy_critic', False)
@@ -109,11 +115,13 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: ThinDeterministicOptionCriticNet(
+        action_dim, phi_body=DummyBody(state_dim),
         actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
         critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
-        action_dim=action_dim, num_options=kwargs['num_options']
+        num_options=kwargs['num_options'],
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3)
     )
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
@@ -125,38 +133,6 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     config.merge(kwargs)
     run_episodes(EnsembleDDPGAgent(config))
-
-def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
-    config = Config()
-    kwargs.setdefault('tag', plan_ensemble_ddpg.__name__)
-    kwargs.setdefault('critic_loss_weight', 10.0)
-    kwargs.setdefault('num_actors', 5)
-    kwargs.setdefault('depth', 2)
-    kwargs.setdefault('align_next_v', False)
-    kwargs.setdefault('detach_action', False)
-
-    if log_dir is None:
-        log_dir = get_default_log_dir(kwargs['tag'])
-    # task_fn = lambda **kwargs: Bullet(game, **kwargs)
-    # config.task_fn = lambda: ProcessTask(task_fn)
-    # config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
-    config.task_fn = lambda: Roboschool(game)
-    config.evaluation_env = Roboschool(game, log_dir)
-    config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
-        body=FCBody(state_dim, (400, ), gate=F.tanh), action_dim=action_dim, num_actors=kwargs['num_actors'],
-        discount=config.discount, detach_action=kwargs['detach_action'])
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
-    config.discount = 0.99
-    config.state_normalizer = RunningStatsNormalizer()
-    config.max_steps = 1e6
-    config.random_process_fn = lambda action_dim: GaussianProcess(
-        action_dim, LinearSchedule(0.3, 0, 1e6))
-    config.min_memory_size = 64
-    config.target_network_mix = 1e-3
-    config.logger = get_logger(file_name=kwargs['tag'])
-    config.merge(kwargs)
-    run_episodes(PlanEnsembleDDPGAgent(config))
 
 def single_run(run, game, fn, tag, **kwargs):
     log_dir = './log/ensemble-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
@@ -207,9 +183,14 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    batch_job()
+    game = 'RoboschoolAnt-v1'
+    # ddpg_continuous(game)
+    # ensemble_ddpg(game, off_policy_actor=True, off_policy_critic=True)
+    # d3pg_conginuous(game)
+    d3pg_ensemble(game)
 
-    # game = 'RoboschoolAnt-v1'
+    # batch_job()
+
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
 
