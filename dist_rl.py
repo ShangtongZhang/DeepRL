@@ -61,7 +61,7 @@ def option_qr_dqn_cart_pole():
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: \
-        OptionQuantileNet(action_dim, config.num_quantiles, 1, FCBody(state_dim))
+        OptionQuantileNet(action_dim, config.num_quantiles, 5, FCBody(state_dim))
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
     config.discount = 0.99
     config.entropy_weight = 0.01
