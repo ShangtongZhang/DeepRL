@@ -28,7 +28,7 @@ class OptionNStepQRDQNAgent(BaseAgent):
         self.quantile_weight = 1.0 / self.config.num_quantiles
         self.cumulative_density = self.network.tensor(
             (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles))
-        candidate_quantile = np.asarray([[0.1, 0.3, 0.5, 0.7, 0.9]]) * config.num_quantiles
+        candidate_quantile = np.asarray([np.linspace(0.1, 0.9, config.num_options)]) * config.num_quantiles
         self.candidate_quantile = self.network.tensor(candidate_quantile).long().expand(
             config.num_workers, -1)
 
@@ -56,6 +56,7 @@ class OptionNStepQRDQNAgent(BaseAgent):
         for _ in range(config.rollout_length):
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
+            # config.logger.scalar_summary('option', options[0])
             # q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
