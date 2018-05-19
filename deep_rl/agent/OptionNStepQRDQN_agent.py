@@ -40,10 +40,14 @@ class OptionNStepQRDQNAgent(BaseAgent):
     def act(self, quantile_values, pi):
         dist = torch.distributions.Categorical(pi)
         option = dist.sample()
-        option_quantiles = self.candidate_quantile[self.network.range(option.size(0)), option]
-        quantile_values = quantile_values[self.network.range(option.size(0)), :, option_quantiles]
-        action = torch.max(quantile_values, dim=-1)[1]
-        return action, option
+        # option_quantiles = self.candidate_quantile[self.network.range(option.size(0)), option]
+        # quantile_values = quantile_values[self.network.range(option.size(0)), :, option_quantiles]
+        # action = torch.max(quantile_values, dim=-1)[1]
+        q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
+        actions = [self.policy.sample(v) for v in q_values]
+        # actions = torch.argmax(q_values, dim=-1)
+        # return actions.cpu().detach().numpy(), option
+        return actions, option
 
     def iteration(self):
         config = self.config
@@ -53,8 +57,7 @@ class OptionNStepQRDQNAgent(BaseAgent):
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
             # q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
-            # actions = [self.policy.sample(v) for v in q_values]
-            next_states, rewards, terminals, _ = self.task.step(actions.cpu().detach().numpy())
+            next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
@@ -80,6 +83,7 @@ class OptionNStepQRDQNAgent(BaseAgent):
         option_returns = v_option.detach()
         for i in reversed(range(len(rollout))):
             quantile_values, actions, rewards, terminals, options, pi, v_pi = rollout[i]
+            actions = self.network.tensor(actions).long()
             quantile_values = quantile_values[self.network.tensor(np.arange(config.num_workers)).long(),
                               actions, :]
             terminals = self.network.tensor(terminals).unsqueeze(1)
