@@ -334,15 +334,10 @@ def ppo_continuous():
 def ddpg_low_dim_state():
     config = Config()
     log_dir = get_default_log_dir(ddpg_low_dim_state.__name__)
-    # task_fn = lambda **kwargs: Pendulum(log_dir=log_dir)
-    # task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
-    task_fn = lambda **kwargs: Roboschool('RoboschoolAnt-v1', **kwargs)
-
-    # each bullet environment should be started in a new process, it is a workaround
-    # to the issue of self-collision
-    # https://github.com/bulletphysics/bullet3/issues/1643
-    config.task_fn = lambda: ProcessTask(task_fn)
-    config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
+    # config.task_fn = lambda **kwargs: Pendulum(log_dir=log_dir)
+    config.task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
+    # config.task_fn = lambda **kwargs: Roboschool('RoboschoolAnt-v1', **kwargs)
+    config.evaluation_env = config.task_fn(log_dir=log_dir)
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
         state_dim, action_dim,
@@ -363,14 +358,9 @@ def ddpg_low_dim_state():
 def ddpg_pixel():
     config = Config()
     log_dir = get_default_log_dir(ddpg_pixel.__name__)
-    task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=1,
+    config.task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=1,
                                            history_length=4, **kwargs)
-
-    # each bullet environment should be started in a new process, it is a workaround
-    # to the issue of self-collision
-    # https://github.com/bulletphysics/bullet3/issues/1643
-    config.task_fn = lambda: ProcessTask(task_fn)
-    config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
+    config.evaluation_env = config.task_fn(log_dir=log_dir)
 
     phi_body=DDPGConvBody()
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
@@ -444,7 +434,7 @@ if __name__ == '__main__':
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
     # ddpg_low_dim_state()
-    ddpg_pixel()
+    # ddpg_pixel()
     # ppo_continuous()
 
     # action_conditional_video_prediction()
