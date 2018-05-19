@@ -36,7 +36,7 @@ def quantile_regression_dqn_pixel_atari(name):
     config.num_quantiles = 200
     run_episodes(QuantileRegressionDQNAgent(config))
 
-def n_step_qr_dqn_cart_pole():
+def qr_dqn_cart_pole():
     config = Config()
     task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
     # config.evaluation_env = task_fn(None)
@@ -52,6 +52,24 @@ def n_step_qr_dqn_cart_pole():
     config.logger = get_logger()
     config.num_quantiles = 20
     run_iterations(NStepQRDQNAgent(config))
+
+def option_qr_dqn_cart_pole():
+    config = Config()
+    task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
+    # config.evaluation_env = task_fn(None)
+    config.num_workers = 5
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    config.network_fn = lambda state_dim, action_dim: \
+        OptionQuantileNet(action_dim, config.num_quantiles, 5, FCBody(state_dim))
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
+    config.discount = 0.99
+    config.entropy_weight = 0.01
+    config.target_network_update_freq = 200
+    config.rollout_length = 5
+    config.logger = get_logger()
+    config.num_quantiles = 20
+    run_iterations(OptionNStepQRDQNAgent(config))
 
 def n_step_dqn_pixel_atari(name):
     config = Config()
@@ -93,12 +111,15 @@ def n_step_qr_dqn_pixel_atari(name):
     config.num_quantiles = 200
     run_iterations(NStepQRDQNAgent(config))
 
+
 if __name__ == '__main__':
     # quantile_regression_dqn_cart_pole()
     # n_step_qr_dqn_cart_pole()
 
     game = 'BreakoutNoFrameskip-v4'
 
+    option_qr_dqn_cart_pole()
+
     # n_step_dqn_pixel_atari(game)
     # n_step_qr_dqn_pixel_atari(game)
-    quantile_regression_dqn_pixel_atari(game)
+    # quantile_regression_dqn_pixel_atari(game)

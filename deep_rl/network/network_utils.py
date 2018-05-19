@@ -24,6 +24,9 @@ class BaseNet:
         x = torch.tensor(x, device=self.device, dtype=torch.float32)
         return x
 
+    def range(self, end):
+        return self.tensor(np.arange(end)).long()
+
 def layer_init(layer, w_scale=1.0):
     nn.init.orthogonal_(layer.weight.data)
     layer.weight.data.mul_(w_scale)
