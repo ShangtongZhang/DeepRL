@@ -41,9 +41,7 @@ class Logger(object):
         self.all_steps = {}
 
     def to_numpy(self, v):
-        if isinstance(v, torch.autograd.Variable):
-            v = v.data
-        if isinstance(v, torch.FloatTensor):
+        if isinstance(v, torch.Tensor):
             v = v.cpu().detach().numpy()
         return v
 
