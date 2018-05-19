@@ -7,8 +7,8 @@ Implemented algorithms:
 * Quantile Regression DQN (Distributional DQN with Wasserstein Distance)
 * Synchronous Advantage Actor Critic (A2C)
 * Synchronous N-Step Q-Learning
-* Deep Deterministic Policy Gradient (DDPG)
-* (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO)
+* Deep Deterministic Policy Gradient (DDPG, pixel & low-dim-state)
+* (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO, pixel & low-dim-state)
 * The Option-Critic Architecture (OC)
 * Action Conditional Video Prediction
 
@@ -67,6 +67,7 @@ Please use this bibtex if you want to cite this repo
 
 ## DDPG 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ddpg_continuous-180407-234141.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ddpg-pixel.png)
 
 ## PPO 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ppo_continuous-180408-002056.png)
