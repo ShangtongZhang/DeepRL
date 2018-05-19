@@ -53,9 +53,10 @@ class DDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
-            action = actor.predict(np.stack([state]), True).flatten()
+            action = actor.predict(np.stack([state]), True)
             if not deterministic:
                 action += self.random_process.sample()
+            action = action.flatten()
             next_state, reward, done, info = self.task.step(action)
             if video_recorder is not None:
                 video_recorder.capture_frame()

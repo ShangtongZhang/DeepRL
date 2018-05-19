@@ -21,7 +21,10 @@ class BaseTask:
         return self.env.reset()
 
     def step(self, action):
-        return self.env.step(action)
+        next_state, reward, done, info = self.env.step(action)
+        if done:
+            next_state = self.env.reset()
+        return next_state, reward, done, info
 
     def seed(self, random_seed):
         return self.env.seed(random_seed)
@@ -118,6 +121,22 @@ class Bullet(BaseTask):
     def step(self, action):
         return BaseTask.step(self, np.clip(action, -1, 1))
 
+class PixelBullet(BaseTask):
+    def __init__(self, name, seed=0, log_dir=None, frame_skip=4, history_length=4):
+        self.name = name
+        env = gym.make(name)
+        env.seed(seed)
+        env = RenderEnv(env)
+        env = self.set_monitor(env, log_dir)
+        env = SkipEnv(env, skip=frame_skip)
+        env = WarpFrame(env)
+        env = WrapPyTorch(env)
+        if history_length:
+            env = StackFrame(env, history_length)
+        self.action_dim = env.action_space.shape[0]
+        self.state_dim = env.observation_space.shape
+        self.env = env
+
 class ProcessTask:
     def __init__(self, task_fn, log_dir=None):
         self.pipe, worker_pipe = mp.Pipe()
@@ -156,10 +175,7 @@ class ProcessWrapper(mp.Process):
         while True:
             op, data = self.pipe.recv()
             if op == self.STEP:
-                ob, reward, done, info = task.step(data)
-                if done:
-                    ob = task.reset()
-                self.pipe.send([ob, reward, done, info])
+                self.pipe.send(task.step(data))
             elif op == self.RESET:
                 self.pipe.send(task.reset())
             elif op == self.EXIT:
@@ -171,8 +187,11 @@ class ProcessWrapper(mp.Process):
                 raise Exception('Unknown command')
 
 class ParallelizedTask:
-    def __init__(self, task_fn, num_workers, log_dir=None):
-        self.tasks = [ProcessTask(task_fn, log_dir) for _ in range(num_workers)]
+    def __init__(self, task_fn, num_workers, log_dir=None, single_process=False):
+        if single_process:
+            self.tasks = [task_fn(log_dir=log_dir) for _ in range(num_workers)]
+        else:
+            self.tasks = [ProcessTask(task_fn, log_dir) for _ in range(num_workers)]
         self.state_dim = self.tasks[0].state_dim
         self.action_dim = self.tasks[0].action_dim
         self.name = self.tasks[0].name

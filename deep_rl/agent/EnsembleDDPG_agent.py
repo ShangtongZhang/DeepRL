@@ -28,11 +28,11 @@ class EnsembleDDPGAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
-        action = self.network.actor(state, to_numpy=True).flatten()
+        action = self.network.actor(state, to_numpy=True)[0].flatten()
         self.config.state_normalizer.unset_read_only()
         return action
 
-    def episode(self, deterministic=False, video_recorder=None):
+    def episode(self, deterministic=False):
         self.random_process.reset_states()
         state = self.task.reset()
         state = self.config.state_normalizer(state)
@@ -42,18 +42,17 @@ class EnsembleDDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
-            action = self.network.actor(np.stack([state]), to_numpy=True).flatten()
+            action, option = self.network.actor(np.stack([state]), to_numpy=True)
             if not deterministic:
                 action += self.random_process.sample()
+            action = action.flatten()
             next_state, reward, done, info = self.task.step(action)
-            if video_recorder is not None:
-                video_recorder.capture_frame()
             next_state = self.config.state_normalizer(next_state)
             total_reward += reward
             reward = self.config.reward_normalizer(reward)
 
             if not deterministic:
-                self.replay.feed([state, action, reward, next_state, int(done)])
+                self.replay.feed([state, action, reward, next_state, int(done), np.asscalar(option)])
                 self.total_steps += 1
 
             steps += 1
@@ -63,7 +62,7 @@ class EnsembleDDPGAgent(BaseAgent):
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
-                states, actions, rewards, next_states, terminals = experiences
+                states, actions, rewards, next_states, terminals, options = experiences
                 _, q_next, _ = self.target_network.actor(next_states)
                 q_next = q_next.max(1)[0].unsqueeze(1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
@@ -73,15 +72,19 @@ class EnsembleDDPGAgent(BaseAgent):
                 q_next = q_next.detach()
 
                 q = self.network.critic(states, actions)
-                q_loss = (q - q_next).pow(2).mul(0.5).mean() * config.value_loss_weight
-                # config.logger.scalar_summary('q_loss', q_loss, self.total_steps)
-                # config.logger.scalar_summary('reward_loss', r_loss, self.total_steps)
+                if not config.off_policy_critic:
+                    q = q[self.network.tensor(np.arange(q.size(0))).long(),
+                          self.network.tensor(options).long()].unsqueeze(-1)
+                q_loss = (q - q_next).pow(2).mul(0.5).sum(1).mean() * config.value_loss_weight
 
                 self.opt.zero_grad()
                 q_loss.backward()
                 self.opt.step()
 
                 _, q_values, _ = self.network.actor(states)
+                if not config.off_policy_actor:
+                    q_values = q_values[self.network.tensor(np.arange(q_values.size(0))).long(),
+                                        self.network.tensor(options).long()].unsqueeze(-1)
                 policy_loss = -q_values.sum(1).mean()
                 self.opt.zero_grad()
                 policy_loss.backward()

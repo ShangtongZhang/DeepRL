@@ -7,23 +7,24 @@ def plot(**kwargs):
     kwargs.setdefault('average', False)
     kwargs.setdefault('color', 0)
     kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('max_timesteps', 1e8)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=10, max_timesteps=1e6)
+    data = plotter.load_results(names, episode_window=100, max_timesteps=kwargs['max_timesteps'])
     print('')
 
     figure = kwargs['figure']
     color = kwargs['color']
     plt.figure(figure)
     if kwargs['average']:
-        x, y = plotter.average(data, 100, 1e6, top_k=kwargs['top_k'])
+        x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
         for i, name in enumerate(names):
             x, y = data[i]
             plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
     plt.legend()
-    plt.ylim([-200, 1400])
+    # plt.ylim([-200, 1400])
     # plt.ylim([-200, 2500])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
@@ -66,4 +67,46 @@ if __name__ == '__main__':
     # plot(pattern='.*ddpg_continuous-180511-095404.*', figure=0)
     # plot(pattern='.*plan_ensemble_detach-180511-100739.*', figure=1)
     # plot(pattern='.*plan_ensemble_detach-180511-100747.*', figure=1)
+    # plt.show()
+
+    # game = 'ensemble-RoboschoolAnt-v1'
+    # game = 'ensemble-RoboschoolHalfCheetah-v1'
+    # game = 'ensemble-RoboschoolHopper-v1'
+    # game = 'ensemble-RoboschoolWalker2d-v1'
+    game = 'RoboschoolHopper-v1'
+    # game = 'RoboschoolHumanoid-v1'
+    # plot(pattern='.*%s.*ddpg_continuous.*' % (game), figure=0, average=False)
+    # plot(pattern='.*%s.*plan_ensemble_detach.*' % (game), figure=1)
+    # plot(pattern='.*%s.*plan_ensemble_no_detach.*' % (game), figure=2)
+    # plt.show()
+
+    # plot(pattern='.*d3pg_conginuous-180514-114241.*', figure=0)
+    # plot(pattern='.*%s.*original_d3pg.*' % (game), figure=0, average=True, max_timesteps=5e6, color=0)
+    # plot(pattern='.*%s.*5_actors.*' % (game), figure=0, average=True, max_timesteps=5e6, color=1)
+    # plt.show()
+
+    # plot(pattern='.*%s.*original_ddpg.*' % (game), figure=0)
+    # plot(pattern='.*%s.*ensemble_off_policy.*' % (game), figure=1)
+    # plot(pattern='.*%s.*ensemble_on_policy.*' % (game), figure=2)
+
+    # plot(pattern='.*%s.*original_ddpg.*' % (game), figure=0, average=True, max_timesteps=1e6, color=0)
+    # plot(pattern='.*%s.*ensemble_off_policy.*' % (game), figure=0, average=True, max_timesteps=1e6, color=1)
+    # plot(pattern='.*%s.*ensemble_on_policy.*' % (game), figure=0, average=True, max_timesteps=1e6, color=2)
+    # plot(pattern='.*%s.*ensemble_half_off_policy.*' % (game), figure=0, average=True, max_timesteps=1e6, color=3)
+    # plt.show()
+
+    # plot(pattern='.*d3pg_ensemble-180516-120151.*', figure=0)
+    # plot(pattern='.*d3pg_ensemble-180516-120159.*', figure=1)
+    # plot(pattern='.*d3pg_ensemble-180516-121318.*', figure=2)
+    # plt.show()
+
+    # plot(pattern='.*log/option_no_beta_d3pg/ensemble-RoboschoolAnt-v1/d3pg_conginuous/original_d3pg.*', figure=0)
+    # plot(pattern='.*log/option_no_beta_d3pg/ensemble-RoboschoolAnt-v1/d3pg_ensemble/half_policy.*', figure=1)
+    # plot(pattern='.*log/option_no_beta_d3pg/ensemble-RoboschoolAnt-v1/d3pg_ensemble/on_policy.*', figure=2)
+    # plot(pattern='.*log/option_no_beta_d3pg/ensemble-RoboschoolAnt-v1/d3pg_ensemble/off_policy.*', figure=3)
+    # plt.show()
+
+    # plot(pattern='.*a2c_pixel_atari-180518-102724.*', figure=0)
+    # plot(pattern='.*ppo_pixel_atari-180518-102743.*', figure=1)
+    plot(pattern='.*ddpg_pixel.*', figure=2)
     plt.show()

@@ -298,7 +298,6 @@ class EnsembleDeterministicNet(nn.Module, BaseNet):
 
         self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 3e-3)
         self.fc_actors = layer_init(nn.Linear(actor_body.feature_dim, action_dim * num_actors))
-        # self.fc_actors = nn.ModuleList([layer_init(nn.Linear(actor_body.feature_dim, action_dim)) for _ in range(num_actors)])
         self.set_gpu(gpu)
 
     def actor(self, obs, to_numpy=False):
@@ -321,6 +320,46 @@ class EnsembleDeterministicNet(nn.Module, BaseNet):
     def zero_critic_grad(self):
         self.critic_body.zero_grad()
         self.fc_critic.zero_grad()
+
+class ThinDeterministicOptionCriticNet(nn.Module, BaseNet):
+    def __init__(self, actor_body, critic_body, action_dim, num_options, gpu=-1):
+        super(ThinDeterministicOptionCriticNet, self).__init__()
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.action_dim = action_dim
+        self.num_options = num_options
+
+        self.fc_actors = nn.ModuleList([layer_init(nn.Linear(
+            actor_body.feature_dim, action_dim)) for _ in range(num_options)])
+        self.fc_critics = nn.ModuleList([layer_init(nn.Linear(
+            critic_body.feature_dim, 1)) for _ in range(num_options)])
+        self.set_gpu(gpu)
+
+    def actor(self, obs, to_numpy=False):
+        obs = self.tensor(obs)
+        phi_actor = self.actor_body(obs)
+        actions = [F.tanh(fc_actor(phi_actor)) for fc_actor in self.fc_actors]
+        q_values = [fc_critic(self.critic_body(obs, action))
+                    for fc_critic, action in zip(self.fc_critics, actions)]
+        q_values = torch.cat(q_values, dim=1)
+        actions = torch.stack(actions).transpose(0, 1)
+        best = q_values.max(1)[1]
+        if to_numpy:
+            actions = actions[self.tensor(np.arange(actions.size(0))).long(), best, :]
+            return actions.detach().cpu().numpy(), best.detach().cpu().numpy()
+        return actions, q_values, best
+
+    def critic(self, obs, action):
+        obs = self.tensor(obs)
+        action = self.tensor(action)
+        phi = self.critic_body(obs, action)
+        q = [fc_critic(phi) for fc_critic in self.fc_critics]
+        q = torch.cat(q, dim=1)
+        return q
+
+    def zero_critic_grad(self):
+        self.critic_body.zero_grad()
+        self.fc_critics.zero_grad()
 
 class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
     def __init__(self, body, action_dim, num_actors, discount, detach_action, gpu=-1):

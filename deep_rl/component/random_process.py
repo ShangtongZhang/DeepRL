@@ -5,9 +5,13 @@ class RandomProcess(object):
         pass
 
 class GaussianProcess(RandomProcess):
-    def __init__(self, size, std_schedule):
+    def __init__(self, size, std_schedules):
         self.size = size
-        self.std_schedule = std_schedule
+        self.std_schedules = std_schedules
+
+    def get_std(self):
+        stds = [std() for std in self.std_schedules]
+        return np.reshape(np.asarray(stds), (-1, 1))
 
     def sample(self):
-        return np.random.randn(self.size) * self.std_schedule()
+        return np.random.randn(*self.size) * self.get_std()

@@ -4,31 +4,66 @@ def d3pg_conginuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('tag', d3pg_conginuous.__name__)
     kwargs.setdefault('value_loss_weight', 10.0)
-    kwargs.setdefault('num_actors', 3)
-    config.num_workers = 5
+    kwargs.setdefault('num_actors', 1)
+    config.num_workers = 8
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     task_fn = lambda log_dir: Roboschool(game, log_dir=log_dir)
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=log_dir)
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=log_dir,
+                                              single_process=True)
 
     config.network_fn = lambda state_dim, action_dim: EnsembleDeterministicNet(
         actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
-        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300], gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
         action_dim=action_dim, num_actors=kwargs['num_actors']
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
-    # config.max_steps = 1e6
+    config.max_steps = 1e7
     config.random_process_fn = lambda action_dim: GaussianProcess(
-        action_dim, LinearSchedule(0.3, 0, 1e6))
+        action_dim, std_schedules=[LinearSchedule(
+            0.3, 0, config.max_steps / config.num_workers) for _ in range(config.num_workers)])
 
     config.rollout_length = 5
-    config.min_memory_size = 64
     config.target_network_mix = 1e-3
-    config.logger = get_logger(file_name=kwargs['tag'])
+    config.logger = get_logger()
     config.merge(kwargs)
     run_iterations(D3PGAgent(config))
+
+def d3pg_ensemble(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', d3pg_ensemble.__name__)
+    kwargs.setdefault('value_loss_weight', 10.0)
+    kwargs.setdefault('num_options', 5)
+    kwargs.setdefault('off_policy_actor', False)
+    kwargs.setdefault('off_policy_critic', False)
+    kwargs.setdefault('random_option', False)
+    config.num_workers = 8
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+    task_fn = lambda log_dir: Roboschool(game, log_dir=log_dir)
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=log_dir,
+                                              single_process=True)
+
+    config.network_fn = lambda state_dim, action_dim: ThinDeterministicOptionCriticNet(
+        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
+        action_dim=action_dim, num_options=kwargs['num_options']
+    )
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.discount = 0.99
+    config.state_normalizer = RunningStatsNormalizer()
+    config.max_steps = 1e7
+    config.random_process_fn = lambda action_dim: GaussianProcess(
+        action_dim, std_schedules=[LinearSchedule(
+            0.3, 0, config.max_steps / config.num_workers) for _ in range(config.num_workers)])
+
+    config.rollout_length = 5
+    config.target_network_mix = 1e-3
+    config.logger = get_logger()
+    config.merge(kwargs)
+    run_iterations(EnsembleD3PGAgent(config))
 
 def ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
@@ -55,39 +90,41 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.state_normalizer = RunningStatsNormalizer()
     config.max_steps = 1e6
     config.random_process_fn = lambda action_dim: GaussianProcess(
-        action_dim, LinearSchedule(0.3, 0, 1e6))
+        (action_dim, ), [LinearSchedule(0.3, 0, 1e6)])
 
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
-    config.logger = get_logger(file_name=kwargs['tag'])
+    config.logger = get_logger()
     run_episodes(DDPGAgent(config))
 
-# def ensemble_ddpg(game, log_dir=None, **kwargs):
-#     config = Config()
-#     kwargs.setdefault('tag', ensemble_ddpg.__name__)
-#     kwargs.setdefault('value_loss_weight', 10.0)
-#     kwargs.setdefault('num_actors', 5)
-#     if log_dir is None:
-#         log_dir = get_default_log_dir(kwargs['tag'])
-#     config.task_fn = lambda: Roboschool(game)
-#     config.evaluation_env = Roboschool(game, log_dir=log_dir)
-#     config.network_fn = lambda state_dim, action_dim: EnsembleDeterministicNet(
-#         actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
-#         critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, [400, 300], gate=F.tanh),
-#         action_dim=action_dim, num_actors=kwargs['num_actors']
-#     )
-#     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-#     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
-#     config.discount = 0.99
-#     config.state_normalizer = RunningStatsNormalizer()
-#     config.max_steps = 1e6
-#     config.random_process_fn = lambda action_dim: GaussianProcess(
-#         action_dim, LinearSchedule(0.3, 0, 1e6))
-#     config.min_memory_size = 64
-#     config.target_network_mix = 1e-3
-#     config.logger = Logger('./log', logger)
-#     config.merge(kwargs)
-#     run_episodes(EnsembleDDPGAgent(config))
+def ensemble_ddpg(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', ensemble_ddpg.__name__)
+    kwargs.setdefault('value_loss_weight', 10.0)
+    kwargs.setdefault('num_options', 5)
+    kwargs.setdefault('off_policy_actor', False)
+    kwargs.setdefault('off_policy_critic', False)
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+    config.task_fn = lambda: Roboschool(game)
+    config.evaluation_env = Roboschool(game, log_dir=log_dir)
+    config.network_fn = lambda state_dim, action_dim: ThinDeterministicOptionCriticNet(
+        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
+        action_dim=action_dim, num_options=kwargs['num_options']
+    )
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.discount = 0.99
+    config.state_normalizer = RunningStatsNormalizer()
+    config.max_steps = 1e6
+    config.random_process_fn = lambda action_dim: GaussianProcess(
+        (action_dim, ), [LinearSchedule(0.3, 0, 1e6)])
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = get_logger()
+    config.merge(kwargs)
+    run_episodes(EnsembleDDPGAgent(config))
 
 def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
     config = Config()
@@ -121,11 +158,45 @@ def plan_ensemble_ddpg(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     run_episodes(PlanEnsembleDDPGAgent(config))
 
+def single_run(run, game, fn, tag, **kwargs):
+    log_dir = './log/ensemble-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
+    fn(game, log_dir, tag=tag, **kwargs)
+
 def multi_runs(game, fn, tag, **kwargs):
     runs = np.arange(0, 5)
-    for run in runs:
-        log_dir = './log/ensemble-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
-        fn(game, log_dir, tag=tag, **kwargs)
+    kwargs.setdefault('parallel', False)
+    if not kwargs['parallel']:
+        for run in runs:
+            single_run(run, game, fn, tag, **kwargs)
+        return
+    ps = [mp.Process(target=single_run, args=(run, game, fn, tag), kwargs=kwargs) for run in runs]
+    for p in ps:
+        p.start()
+        time.sleep(1)
+    for p in ps: p.join()
+
+def batch_job():
+    cf = Config()
+    cf.add_argument('ind_game', type=int)
+    cf.add_argument('ind_task', type=int)
+    cf.merge()
+
+
+    games = ['RoboschoolAnt-v1', 'RoboschoolWalker2d-v1', 'RoboschoolHalfCheetah-v1']
+    game = games[cf.ind_game]
+
+    def task1():
+        multi_runs(game, d3pg_conginuous, tag='original_d3pg', parallel=True)
+        multi_runs(game, d3pg_ensemble, tag='half_policy',
+                   off_policy_actor=False, off_policy_critic=True, parallel=True)
+    def task2():
+        multi_runs(game, d3pg_ensemble, tag='on_policy',
+                   off_policy_actor=False, off_policy_critic=False, parallel=True)
+        multi_runs(game, d3pg_ensemble, tag='off_policy',
+                   off_policy_actor=True, off_policy_critic=True, parallel=True)
+
+    tasks = [task1, task2]
+    tasks[cf.ind_task]()
 
 if __name__ == '__main__':
     mkdir('data')
@@ -136,11 +207,44 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    game = 'RoboschoolAnt-v1'
+    batch_job()
+
+    # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
+
     # game = 'RoboschoolHopper-v1'
-    # game = 'AntBulletEnv-v0'
+    # game = 'RoboschoolHumanoid-v1'
+    # game = 'RoboschoolReacher-v1'
+
+    # d3pg_ensemble(game)
+
+    # multi_runs(game, d3pg_conginuous, tag='original_d3pg', parallel=True)
+    # multi_runs(game, d3pg_ensemble, tag='off_policy',
+    #            off_policy_actor=True, off_policy_critic=True, parallel=True)
+    # multi_runs(game, d3pg_ensemble, tag='on_policy',
+    #            off_policy_actor=False, off_policy_critic=False, parallel=True)
+    # multi_runs(game, d3pg_ensemble, tag='half_policy',
+    #            off_policy_actor=False, off_policy_critic=True, parallel=True)
+
+    # d3pg_ensemble(game, off_policy_actor=False, off_policy_critic=False, random_option=True)
+    # d3pg_ensemble(game, off_policy_actor=False, off_policy_critic=False)
+    # d3pg_ensemble(game, off_policy_actor=True, off_policy_critic=True)
+    # d3pg_ensemble(game, off_policy_actor=False, off_policy_critic=True)
+
+    # multi_runs(game, ensemble_ddpg, tag='ensemble_half_off_policy',
+    #            num_options=5, off_policy_critic=True, off_policy_actor=False, parallel=True)
+    # multi_runs(game, ensemble_ddpg, tag='ensemble_off_policy',
+    #            num_options=5, off_policy_critic=True, off_policy_actor=True, parallel=True)
+    # multi_runs(game, ensemble_ddpg, tag='ensemble_on_policy',
+    #            num_options=5, off_policy_critic=False, off_policy_actor=False, parallel=True)
+    # multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
+
+    # ensemble_ddpg(game, num_options=5, off_policy=True)
+
+    # multi_runs(game, d3pg_conginuous, tag='original_d3pg')
+    # multi_runs(game, d3pg_conginuous, tag='5_actors', num_actors=5)
+
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg_tanh',
     #                 gate=F.tanh, q_l2_weight=0)
@@ -181,7 +285,4 @@ if __name__ == '__main__':
     # multi_runs(game, plan_ensemble_ddpg, tag='5_actors')
 
     # ensemble_ddpg(game, num_actors=10, tag='ensemble_ddpg_run_1')
-
-
-
 

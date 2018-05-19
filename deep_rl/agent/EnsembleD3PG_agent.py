@@ -6,7 +6,7 @@
 
 from .BaseAgent import *
 
-class D3PGAgent(BaseAgent):
+class EnsembleD3PGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -34,8 +34,13 @@ class D3PGAgent(BaseAgent):
         rollout = []
         states = self.states
         for _ in range(config.rollout_length):
-            actions = self.network.actor(states, True)
-            actions += self.random_process.sample()
+            if not config.random_option:
+                actions, options = self.network.actor(states, True)
+                actions += self.random_process.sample()
+            else:
+                actions = self.network.actor(states)[0].detach().cpu().numpy()
+                options = np.random.randint(0, config.num_options, size=config.num_workers)
+                actions = actions[np.arange(config.num_workers), options, :]
             next_states, rewards, terminals, _ = self.task.step(actions)
             next_states = self.config.state_normalizer(next_states)
             self.episode_rewards += rewards
@@ -45,28 +50,39 @@ class D3PGAgent(BaseAgent):
                     self.last_episode_rewards[i] = self.episode_rewards[i]
                     self.episode_rewards[i] = 0
 
-            rollout.append([states, actions, rewards, 1 - terminals, next_states])
+            rollout.append([states, actions, rewards, 1 - terminals, next_states, options])
             states = next_states
             self.total_steps += config.num_workers
 
         self.states = states
 
-        _, q_next, best = self.target_network.actor(states)
+        _, q_next, _ = self.target_network.actor(states)
+        # returns = q_next.detach()
         returns = q_next.max(1)[0].unsqueeze(1).detach()
         for i in reversed(range(len(rollout))):
-            states, actions, rewards, terminals, next_states = rollout[i]
+            states, actions, rewards, terminals, next_states, options = rollout[i]
             terminals = self.network.tensor(terminals).unsqueeze(1)
             rewards = self.network.tensor(rewards).unsqueeze(1)
             returns = rewards + config.discount * terminals * returns
 
             q = self.network.critic(states, actions)
-            q_loss = (q - returns).pow(2).mul(0.5).mean() * config.value_loss_weight
+            if not config.off_policy_critic:
+                q = q[self.network.tensor(np.arange(q.size(0))).long(),
+                      self.network.tensor(options).long()].unsqueeze(-1)
+                # masked_returns = returns[self.network.tensor(np.arange(returns.size(0))).long(),
+                #                          self.network.tensor(options).long()].unsqueeze(-1)
+            # else:
+            #     masked_returns = returns
+            q_loss = (q - returns).pow(2).mul(0.5).sum(1).mean() * config.value_loss_weight
 
             self.optimizer.zero_grad()
             q_loss.backward()
             self.optimizer.step()
 
             _, q_values, _ = self.network.actor(states)
+            if not config.off_policy_actor:
+                q_values = q_values[self.network.tensor(np.arange(q_values.size(0))).long(),
+                                    self.network.tensor(options).long()].unsqueeze(-1)
             policy_loss = -q_values.sum(1).mean()
 
             self.optimizer.zero_grad()
