@@ -14,6 +14,7 @@ class PPOAgent(BaseAgent):
         self.config = config
         self.task = config.task_fn()
         self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
+        self.opt = config.optimizer_fn(self.network.parameters())
         self.total_steps = 0
         self.episode_rewards = np.zeros(config.num_workers)
         self.last_episode_rewards = np.zeros(config.num_workers)
@@ -79,14 +80,14 @@ class PPOAgent(BaseAgent):
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean(0) + config.entropy_weight * entropy_loss
+                policy_loss = -torch.min(obj, obj_clipped).mean(0) - config.entropy_weight * entropy_loss.mean()
 
                 value_loss = 0.5 * (sampled_returns - values).pow(2).mean()
 
-                self.network.zero_grad()
+                self.opt.zero_grad()
                 (policy_loss + value_loss).backward()
                 nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
-                self.network.step()
+                self.opt.step()
 
         steps = config.rollout_length * config.num_workers
         self.total_steps += steps

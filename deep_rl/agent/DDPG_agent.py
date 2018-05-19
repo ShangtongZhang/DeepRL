@@ -7,21 +7,16 @@
 from ..network import *
 from ..component import *
 from .BaseAgent import *
+import torchvision
 
 class DDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
-        self.network = DisjointActorCriticWrapper(self.task.state_dim, self.task.action_dim,
-                                              config.actor_network_fn, config.critic_network_fn)
-        self.actor = self.network.actor
-        self.critic = self.network.critic
-        self.target_network = DisjointActorCriticWrapper(self.task.state_dim, self.task.action_dim,
-                                              config.actor_network_fn, config.critic_network_fn)
+        self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
+        self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.target_network.load_state_dict(self.network.state_dict())
-        self.actor_opt = config.actor_optimizer_fn(self.actor.parameters())
-        self.critic_opt = config.critic_optimizer_fn(self.critic.parameters())
         self.replay = config.replay_fn()
         self.random_process = config.random_process_fn(self.task.action_dim)
         self.total_steps = 0
@@ -35,31 +30,25 @@ class DDPGAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
-        action = self.actor.predict(state, to_numpy=True).flatten()
+        action = self.network.predict(state, to_numpy=True).flatten()
         self.config.state_normalizer.unset_read_only()
         return action
 
-    def episode(self, deterministic=False, video_recorder=None):
+    def episode(self, deterministic=False):
         self.random_process.reset_states()
         state = self.task.reset()
         state = self.config.state_normalizer(state)
 
         config = self.config
-        actor = self.network.actor
-        critic = self.network.critic
-        target_actor = self.target_network.actor
-        target_critic = self.target_network.critic
 
         steps = 0
         total_reward = 0.0
         while True:
-            action = actor.predict(np.stack([state]), True)
+            action = self.network.predict(np.stack([state]), True).flatten()
             if not deterministic:
                 action += self.random_process.sample()
-            action = action.flatten()
             next_state, reward, done, info = self.task.step(action)
-            if video_recorder is not None:
-                video_recorder.capture_frame()
+            # torchvision.utils.save_image(torch.tensor(np.asarray(next_state)).unsqueeze(1), 'data/image/%s.png' % get_time_str())
             next_state = self.config.state_normalizer(next_state)
             total_reward += reward
             reward = self.config.reward_normalizer(reward)
@@ -76,24 +65,30 @@ class DDPGAgent(BaseAgent):
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
-                q_next = target_critic.predict(next_states, target_actor.predict(next_states))
-                terminals = critic.tensor(terminals).unsqueeze(1)
-                rewards = critic.tensor(rewards).unsqueeze(1)
+
+                phi_next = self.target_network.feature(next_states)
+                a_next = self.target_network.actor(phi_next)
+                q_next = self.target_network.critic(phi_next, a_next)
+                terminals = self.network.tensor(terminals).unsqueeze(1)
+                rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
                 q_next.add_(rewards)
                 q_next = q_next.detach()
-                q = critic.predict(states, actions)
+                phi = self.network.feature(states)
+                q = self.network.critic(phi, self.network.tensor(actions))
                 critic_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean()
 
-                self.critic_opt.zero_grad()
+                self.network.zero_grad()
                 critic_loss.backward()
-                self.critic_opt.step()
+                self.network.critic_opt.step()
 
-                policy_loss = -critic.predict(states, actor.predict(states)).mean()
+                phi = self.network.feature(states)
+                action = self.network.actor(phi)
+                policy_loss = -self.network.critic(phi.detach(), action).mean()
 
-                self.actor_opt.zero_grad()
+                self.network.zero_grad()
                 policy_loss.backward()
-                self.actor_opt.step()
+                self.network.actor_opt.step()
 
                 self.soft_update(self.target_network, self.network)
 

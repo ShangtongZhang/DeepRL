@@ -31,12 +31,12 @@ def a2c_cart_pole():
     name = 'CartPole-v0'
     # name = 'MountainCar-v0'
     task_fn = lambda log_dir: ClassicalControl(name, max_steps=200, log_dir=log_dir)
-    config.evaluation_env = task_fn(None)
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(a2c_cart_pole.__name__))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda state_dim, action_dim: ActorCriticNet(action_dim, FCBody(state_dim))
+    config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
+        state_dim, action_dim, FCBody(state_dim), gpu=-1)
     config.policy_fn = SamplePolicy
     config.discount = 0.99
     config.logger = get_logger()
@@ -100,10 +100,9 @@ def ppo_cart_pole():
     task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
-    optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    network_fn = lambda state_dim, action_dim: ActorCriticNet(action_dim, FCBody(state_dim))
-    config.network_fn = lambda state_dim, action_dim: \
-        CategoricalActorCriticWrapper(state_dim, action_dim, network_fn, optimizer_fn)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
+        state_dim, action_dim, FCBody(state_dim), gpu=-1)
     config.discount = 0.99
     config.logger = get_logger()
     config.use_gae = True
@@ -164,8 +163,8 @@ def a2c_pixel_atari(name):
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
-    config.network_fn = lambda state_dim, action_dim: \
-        ActorCriticNet(action_dim, NatureConvBody(), gpu=1)
+    config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
+        state_dim, action_dim, NatureConvBody(), gpu=0)
     config.policy_fn = SamplePolicy
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -175,7 +174,7 @@ def a2c_pixel_atari(name):
     config.entropy_weight = 0.01
     config.rollout_length = 5
     config.gradient_clip = 0.5
-    config.logger = get_logger(skip=True)
+    config.logger = get_logger(file_name=a2c_pixel_atari.__name__, skip=True)
     run_iterations(A2CAgent(config))
 
 def categorical_dqn_pixel_atari(name):
@@ -246,14 +245,13 @@ def ppo_pixel_atari(name):
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(ppo_pixel_atari.__name__))
-    optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025)
-    network_fn = lambda state_dim, action_dim: ActorCriticNet(action_dim, NatureConvBody(), gpu=2)
-    config.network_fn = lambda state_dim, action_dim: \
-        CategoricalActorCriticWrapper(state_dim, action_dim, network_fn, optimizer_fn)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025)
+    config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
+        state_dim, action_dim, NatureConvBody(), gpu=0)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
-    config.logger = get_logger()
+    config.logger = get_logger(file_name=ppo_pixel_atari.__name__)
     config.use_gae = True
     config.gae_tau = 0.95
     config.entropy_weight = 0.01
@@ -312,17 +310,14 @@ def ppo_continuous():
     config = Config()
     config.num_workers = 1
     # task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
-    task_fn = lambda log_dir: Bullet('AntBulletEnv-v0', log_dir=log_dir)
+    # task_fn = lambda log_dir: Bullet('AntBulletEnv-v0', log_dir=log_dir)
+    task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
-    actor_network_fn = lambda state_dim, action_dim: GaussianActorNet(
-        action_dim, FCBody(state_dim))
-    critic_network_fn = lambda state_dim: GaussianCriticNet(FCBody(state_dim))
-    actor_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
-    critic_optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
-    config.network_fn = lambda state_dim, action_dim: \
-        GaussianActorCriticWrapper(state_dim, action_dim, actor_network_fn,
-                                     critic_network_fn, actor_optimizer_fn,
-                                     critic_optimizer_fn)
+
+    config.network_fn = lambda state_dim, action_dim: GaussianActorCriticNet(
+        state_dim, action_dim, actor_body=FCBody(state_dim),
+        critic_body=FCBody(state_dim), gpu=-1)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     # config.state_normalizer = RunningStatsNormalizer()
     config.discount = 0.99
     config.use_gae = True
@@ -336,24 +331,21 @@ def ppo_continuous():
     config.logger = get_logger()
     run_iterations(PPOAgent(config))
 
-def ddpg_continuous():
+def ddpg_low_dim_state():
     config = Config()
-    log_dir = get_default_log_dir(ddpg_continuous.__name__)
-    # config.task_fn = lambda: Pendulum(log_dir=log_dir)
-    task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
+    log_dir = get_default_log_dir(ddpg_low_dim_state.__name__)
+    # config.task_fn = lambda **kwargs: Pendulum(log_dir=log_dir)
+    config.task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
+    # config.task_fn = lambda **kwargs: Roboschool('RoboschoolAnt-v1', **kwargs)
+    config.evaluation_env = config.task_fn(log_dir=log_dir)
 
-    # each bullet environment should be started in a new process, it is a workaround
-    # to the issue of self-collision
-    # https://github.com/bulletphysics/bullet3/issues/1643
-    config.task_fn = lambda: ProcessTask(task_fn)
-    config.evaluation_env = ProcessTask(task_fn, log_dir=log_dir)
+    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
+        state_dim, action_dim,
+        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    config.actor_network_fn = lambda state_dim, action_dim: DeterministicActorNet(
-        action_dim, FCBody(state_dim, (300, 200), gate=F.tanh))
-    config.critic_network_fn = lambda state_dim, action_dim: DeterministicCriticNet(
-        TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh))
-    config.actor_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-    config.critic_optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-3)
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.state_normalizer = RunningStatsNormalizer()
@@ -361,6 +353,32 @@ def ddpg_continuous():
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
+    run_episodes(DDPGAgent(config))
+
+def ddpg_pixel():
+    config = Config()
+    log_dir = get_default_log_dir(ddpg_pixel.__name__)
+    config.task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=1,
+                                           history_length=4, **kwargs)
+    config.evaluation_env = config.task_fn(log_dir=log_dir)
+
+    phi_body=DDPGConvBody()
+    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
+        state_dim, action_dim, phi_body=phi_body,
+        actor_body=FCBody(phi_body.feature_dim, (50, ), gate=F.tanh),
+        critic_body=OneLayerFCBodyWithAction(phi_body.feature_dim, action_dim, 50, gate=F.tanh),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3), gpu=0)
+
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=16)
+    config.discount = 0.99
+    config.state_normalizer = ImageNormalizer()
+    config.max_steps = 1e7
+    config.random_process_fn = lambda action_dim: GaussianProcess(
+        action_dim, LinearSchedule(0.3, 0, config.max_steps))
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = get_logger(file_name=ddpg_pixel.__name__)
     run_episodes(DDPGAgent(config))
 
 def plot():
@@ -415,7 +433,8 @@ if __name__ == '__main__':
     # option_ciritc_pixel_atari('BreakoutNoFrameskip-v4')
     # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
 
-    # ddpg_continuous()
+    # ddpg_low_dim_state()
+    # ddpg_pixel()
     # ppo_continuous()
 
     # action_conditional_video_prediction()
