@@ -154,5 +154,6 @@ if __name__ == '__main__':
     # n_step_dqn_pixel_atari(game)
     # qr_dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
-    option_qr_dqn_pixel_atari(game, num_options=10, gpu=0, tag='option_qr_10_options')
+    # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
+    # option_qr_dqn_pixel_atari(game, num_options=10, gpu=1, tag='option_qr_10_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
