@@ -143,13 +143,10 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
     run_iterations(OptionNStepQRDQNAgent(config))
 
 if __name__ == '__main__':
-    # quantile_regression_dqn_cart_pole()
-    # n_step_qr_dqn_cart_pole()
-
-    game = 'BreakoutNoFrameskip-v4'
+    # game = 'BreakoutNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
-    # qr_dqn_cart_pole()
+    qr_dqn_cart_pole()
 
     # n_step_dqn_pixel_atari(game)
     # qr_dqn_pixel_atari(game)
