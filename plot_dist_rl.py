@@ -22,9 +22,13 @@ def plot(**kwargs):
     else:
         for i, name in enumerate(names):
             x, y = data[i]
-            plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
+            if len(names) > 1:
+                color = Plotter.COLORS[i]
+            else:
+                color = Plotter.COLORS[kwargs['color']]
+            plt.plot(x, y, color=color, label=name if i==0 else '')
     plt.legend()
-    plt.ylim([0, 400])
+    # plt.ylim([0, 400])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
@@ -35,8 +39,12 @@ if __name__ == '__main__':
     # plot(pattern='.*quantile_regression_dqn_pixel_atari-180517-121816.*', figure=2)
     # plt.show()
 
-    plot(pattern='.*5_options.*', figure=0)
-    plot(pattern='.*10_options.*', figure=1)
-    plot(pattern='.*20_options.*', figure=2)
+    # plot(pattern='.*5_options.*', figure=0)
+    # plot(pattern='.*10_options.*', figure=1)
+    # plot(pattern='.*20_options.*', figure=2)
+    plot(pattern='.*option_qr_10_options-180519-220446.*', figure=0, color=0)
+    plot(pattern='.*qr_dqn-180519-220432.*', figure=0, color=1)
+    # plot(pattern='.*ddpg_pixel-180519-220945.*', figure=0)
+    # plot(pattern='.*ddpg_pixel-180519-221016.*', figure=1)
     plt.show()
 
