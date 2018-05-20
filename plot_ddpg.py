@@ -72,8 +72,8 @@ if __name__ == '__main__':
     # game = 'ensemble-RoboschoolAnt-v1'
     # game = 'ensemble-RoboschoolHalfCheetah-v1'
     # game = 'ensemble-RoboschoolHopper-v1'
-    # game = 'ensemble-RoboschoolWalker2d-v1'
-    game = 'RoboschoolHopper-v1'
+    game = 'ensemble-RoboschoolWalker2d-v1'
+    # game = 'RoboschoolHopper-v1'
     # game = 'RoboschoolHumanoid-v1'
     # plot(pattern='.*%s.*ddpg_continuous.*' % (game), figure=0, average=False)
     # plot(pattern='.*%s.*plan_ensemble_detach.*' % (game), figure=1)
@@ -100,13 +100,13 @@ if __name__ == '__main__':
     # plot(pattern='.*d3pg_ensemble-180516-121318.*', figure=2)
     # plt.show()
 
-    # plot(pattern='.*log/option_no_beta_d3pg/ensemble-RoboschoolAnt-v1/d3pg_conginuous/original_d3pg.*', figure=0)
-    # plot(pattern='.*log/option_no_beta_d3pg/ensemble-RoboschoolAnt-v1/d3pg_ensemble/half_policy.*', figure=1)
-    # plot(pattern='.*log/option_no_beta_d3pg/ensemble-RoboschoolAnt-v1/d3pg_ensemble/on_policy.*', figure=2)
-    # plot(pattern='.*log/option_no_beta_d3pg/ensemble-RoboschoolAnt-v1/d3pg_ensemble/off_policy.*', figure=3)
-    # plt.show()
+    plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_conginuous/original_d3pg.*' % (game), figure=0, average=True, color=0, max_timesteps=1e7)
+    plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/half_policy.*' % (game), figure=0, average=True, color=1, max_timesteps=1e7)
+    plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/on_policy.*' % (game), figure=0, average=True, color=2, max_timesteps=1e7)
+    plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/off_policy.*' % (game), figure=0, average=True, color=3, max_timesteps=1e7)
+    plt.show()
 
     # plot(pattern='.*a2c_pixel_atari-180518-102724.*', figure=0)
     # plot(pattern='.*ppo_pixel_atari-180518-102743.*', figure=1)
-    plot(pattern='.*ddpg_pixel.*', figure=2)
-    plt.show()
+    # plot(pattern='.*ddpg_pixel.*', figure=2)
+    # plt.show()
