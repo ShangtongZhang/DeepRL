@@ -148,6 +148,23 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
     config.merge(kwargs)
     run_iterations(OptionNStepQRDQNAgent(config))
 
+def single_run(run, game, fn, tag, **kwargs):
+    log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
+    fn(game, log_dir=log_dir, tag=tag, **kwargs)
+
+def multi_runs(game, fn, tag, **kwargs):
+    runs = np.arange(0, 3)
+    kwargs.setdefault('parallel', False)
+    if not kwargs['parallel']:
+        for run in runs:
+            single_run(run, game, fn, tag, **kwargs)
+        return
+    ps = [mp.Process(target=single_run, args=(run, game, fn, tag), kwargs=kwargs) for run in runs]
+    for p in ps:
+        p.start()
+        time.sleep(1)
+    for p in ps: p.join()
+
 if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
     game = 'FreewayNoFrameskip-v4'
@@ -160,7 +177,9 @@ if __name__ == '__main__':
     # quantile_regression_dqn_pixel_atari(game)
 
     # qr_dqn_pixel_atari(game, gpu=0, tag='qr_dqn')
-    option_qr_dqn_pixel_atari(game, num_options=10, gpu=1, tag='option_qr_10_options')
+    # option_qr_dqn_pixel_atari(game, num_options=10, gpu=1, tag='option_qr_10_options')
 
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=10, gpu=1, tag='option_qr_10_options', parallel=True)
+    multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
