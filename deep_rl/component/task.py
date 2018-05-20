@@ -123,6 +123,7 @@ class Bullet(BaseTask):
 
 class PixelBullet(BaseTask):
     def __init__(self, name, seed=0, log_dir=None, frame_skip=4, history_length=4):
+        import pybullet_envs
         self.name = name
         env = gym.make(name)
         env.seed(seed)
