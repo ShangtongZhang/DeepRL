@@ -30,8 +30,13 @@ def plot(**kwargs):
     # plt.show()
 
 if __name__ == '__main__':
-    plot(pattern='.*n_step_dqn_pixel_atari-180517-092901.*', figure=0)
-    plot(pattern='.*n_step_qr_dqn_pixel_atari-180517-092933.*', figure=1)
-    plot(pattern='.*quantile_regression_dqn_pixel_atari-180517-121816.*', figure=2)
+    # plot(pattern='.*n_step_dqn_pixel_atari-180517-092901.*', figure=0)
+    # plot(pattern='.*n_step_qr_dqn_pixel_atari-180517-092933.*', figure=1)
+    # plot(pattern='.*quantile_regression_dqn_pixel_atari-180517-121816.*', figure=2)
+    # plt.show()
+
+    plot(pattern='.*5_options.*', figure=0)
+    plot(pattern='.*10_options.*', figure=1)
+    plot(pattern='.*20_options.*', figure=2)
     plt.show()
 

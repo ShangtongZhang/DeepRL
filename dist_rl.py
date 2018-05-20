@@ -72,15 +72,16 @@ def option_qr_dqn_cart_pole():
     config.num_quantiles = 20
     run_iterations(OptionNStepQRDQNAgent(config))
 
-def n_step_dqn_pixel_atari(name):
+def n_step_dqn_pixel_atari(name, **kwargs):
     config = Config()
+    kwargs.setdefault('gpu', 0)
     config.history_length = 4
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(n_step_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=0)
+    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -91,16 +92,20 @@ def n_step_dqn_pixel_atari(name):
     config.logger = get_logger()
     run_iterations(NStepDQNAgent(config))
 
-def qr_dqn_pixel_atari(name):
+def qr_dqn_pixel_atari(name, **kwargs):
     config = Config()
+    kwargs.setdefault('tag', qr_dqn_pixel_atari.__name__)
+    kwargs.setdefault('gpu', 0)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     config.history_length = 4
-    task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
+    task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length,
+                                         log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(qr_dqn_pixel_atari.__name__))
+                                              log_dir=kwargs['log_dir'], single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=1)
+        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -110,6 +115,7 @@ def qr_dqn_pixel_atari(name):
     config.gradient_clip = 5
     config.logger = get_logger(file_name=qr_dqn_pixel_atari.__name__)
     config.num_quantiles = 200
+    config.merge(kwargs)
     run_iterations(NStepQRDQNAgent(config))
 
 def option_qr_dqn_pixel_atari(name, **kwargs):
@@ -144,13 +150,17 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
 
 if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
+    game = 'FreewayNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
-    qr_dqn_cart_pole()
+    # qr_dqn_cart_pole()
 
     # n_step_dqn_pixel_atari(game)
     # qr_dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
+
+    # qr_dqn_pixel_atari(game, gpu=0, tag='qr_dqn')
+    option_qr_dqn_pixel_atari(game, num_options=10, gpu=1, tag='option_qr_10_options')
+
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
-    # option_qr_dqn_pixel_atari(game, num_options=10, gpu=1, tag='option_qr_10_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
