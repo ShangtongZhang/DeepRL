@@ -71,6 +71,47 @@ def d3pg_ensemble(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     run_iterations(EnsembleD3PGAgent(config))
 
+def d3pg_option(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', d3pg_option.__name__)
+    kwargs.setdefault('num_options', 5)
+    kwargs.setdefault('off_policy_actor', False)
+    kwargs.setdefault('off_policy_critic', False)
+    kwargs.setdefault('random_option', False)
+    kwargs.setdefault('beta_loss_weight', 0.1)
+    config.num_workers = 8
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+    task_fn = lambda log_dir: Roboschool(game, log_dir=log_dir)
+    # task_fn = lambda log_dir: Bullet(game, log_dir=log_dir)
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=log_dir,
+                                              single_process=True)
+
+    config.network_fn = lambda state_dim, action_dim: DeterministicOptionCriticNet(
+        action_dim, phi_body=DummyBody(state_dim),
+        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+        beta_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
+        num_options=kwargs['num_options'],
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3)
+    )
+
+    config.discount = 0.99
+    config.state_normalizer = RunningStatsNormalizer()
+    config.max_steps = 1e7
+    config.random_process_fn = lambda action_dim: GaussianProcess(
+        action_dim, std_schedules=[LinearSchedule(
+            0.3, 0, config.max_steps / config.num_workers) for _ in range(config.num_workers)])
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1e6, min_epsilon=0.05)
+
+    config.rollout_length = 5
+    config.target_network_mix = 1e-3
+    config.logger = get_logger()
+    config.termination_regularizer = 0.01
+    config.merge(kwargs)
+    run_iterations(OptionD3PGAgent(config))
+
 def ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -191,7 +232,9 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    # game = 'RoboschoolAnt-v1'
+    game = 'RoboschoolAnt-v1'
+
+    d3pg_option(game)
 
     # game = 'Walker2DBulletEnv-v0'
     # game = 'AntBulletEnv-v0'
@@ -214,7 +257,7 @@ if __name__ == '__main__':
     # d3pg_conginuous(game)
     # d3pg_ensemble(game)
 
-    batch_job()
+    # batch_job()
 
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'

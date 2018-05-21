@@ -121,5 +121,8 @@ class Batcher:
         np.random.shuffle(indices)
         self.data = [d[indices] for d in self.data]
 
+def to_numpy(x):
+    return x.detach().cpu().numpy()
+
 # def torch_max(tensor, dim):
 #     return torch.max(tensor, dim=dim, keepdim=True)[0]

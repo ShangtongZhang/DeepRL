@@ -256,3 +256,72 @@ class ThinDeterministicOptionCriticNet(nn.Module, BaseNet):
                  for fc_critic, action in zip(self.fc_critics, actions)]
         q = torch.cat(q, dim=1)
         return q
+
+class DeterministicOptionCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 action_dim,
+                 phi_body,
+                 actor_body,
+                 critic_body,
+                 beta_body,
+                 num_options,
+                 actor_opt_fn,
+                 critic_opt_fn,
+                 gpu=-1):
+        super(DeterministicOptionCriticNet, self).__init__()
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.beta_body = beta_body
+        self.action_dim = action_dim
+        self.num_options = num_options
+
+        self.fc_actors = nn.ModuleList([layer_init(nn.Linear(
+            actor_body.feature_dim, action_dim)) for _ in range(num_options)])
+        self.fc_beta = layer_init(nn.Linear(beta_body.feature_dim, num_options))
+        self.fc_critics = nn.ModuleList([layer_init(nn.Linear(
+            critic_body.feature_dim, 1)) for _ in range(num_options)])
+
+        self.actor_params = list(self.actor_body.parameters()) + list(self.fc_actors.parameters())
+        self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critics.parameters())
+        self.beta_params = list(self.beta_body.parameters()) + list(self.fc_beta.parameters())
+        self.phi_params = list(self.phi_body.parameters())
+
+        self.actor_opt = actor_opt_fn(self.actor_params + self.phi_params)
+        self.critic_opt = critic_opt_fn(self.critic_params + self.phi_params +
+                                        self.beta_params)
+
+        self.set_gpu(gpu)
+
+    def feature(self, obs):
+        obs = self.tensor(obs)
+        phi = self.phi_body(obs)
+        return phi
+
+    def predict(self, obs, to_numpy=False):
+        phi = self.feature(obs)
+        actions = self.actor(phi)
+        betas = self.termination(phi)
+        q_values = self.critic(phi, actions)
+        actions = torch.stack(actions).transpose(0, 1)
+        return q_values, betas, actions
+
+    def termination(self, phi):
+        phi_beta = self.beta_body(phi)
+        beta = F.sigmoid(self.fc_beta(phi_beta))
+        return beta
+
+    def actor(self, phi):
+        phi_actor = self.actor_body(phi)
+        actions = [F.tanh(fc_actor(phi_actor)) for fc_actor in self.fc_actors]
+        return actions
+
+    def critic(self, phi, actions):
+        if isinstance(actions, torch.Tensor):
+            phi = self.critic_body(phi, actions)
+            q = [fc_critic(phi) for fc_critic in self.fc_critics]
+        elif isinstance(actions, list):
+            q = [fc_critic(self.critic_body(phi, action))
+                 for fc_critic, action in zip(self.fc_critics, actions)]
+        q = torch.cat(q, dim=1)
+        return q
