@@ -52,7 +52,7 @@ class OptionCriticAgent(BaseAgent):
             options_next = np.copy(options)
             dice = np.random.rand(len(options_next))
             for j in range(len(dice)):
-                if dice[j] < np_betas_next[j]:
+                if dice[j] < np_betas_next[j] or terminals[j]:
                     options_next[j] = self.policy.sample(np_q_options_next[j])
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
