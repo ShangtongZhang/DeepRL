@@ -251,7 +251,7 @@ if __name__ == '__main__':
 
     # d3pg_option(game)
 
-    # game = 'AntBulletEnv-v0'
+    game = 'AntBulletEnv-v0'
     # game = 'Walker2DBulletEnv-v0'
     # game = 'HalfCheetahBulletEnv-v0'
     # game = 'HopperBulletEnv-v0'
