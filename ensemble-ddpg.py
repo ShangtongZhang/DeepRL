@@ -122,8 +122,8 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
 
-    # config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
-    config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
+    config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    # config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
     config.evaluation_env = config.task_fn(log_dir=log_dir)
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
@@ -247,16 +247,21 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolAnt-v1'
 
     # d3pg_option(game)
 
-    # game = 'Walker2DBulletEnv-v0'
     # game = 'AntBulletEnv-v0'
+    # game = 'Walker2DBulletEnv-v0'
+    # game = 'HalfCheetahBulletEnv-v0'
     # game = 'HopperBulletEnv-v0'
     # game = 'RacecarBulletEnv-v0'
     # game = 'KukaBulletEnv-v0'
     # game = 'MinitaurBulletEnv-v0'
+
+    # game = 'ReacherBulletEnv-v0'
+
+    multi_runs(game, ddpg_continuous, tag='original_ddpg')
 
     # import pybullet_envs
     # env = gym.make(game)
@@ -272,7 +277,7 @@ if __name__ == '__main__':
     # d3pg_conginuous(game)
     # d3pg_ensemble(game)
 
-    batch_job()
+    # batch_job()
 
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
