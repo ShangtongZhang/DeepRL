@@ -261,10 +261,21 @@ if __name__ == '__main__':
 
     # game = 'ReacherBulletEnv-v0'
 
-    multi_runs(game, ddpg_continuous, tag='original_ddpg')
+    # multi_runs(game, ddpg_continuous, tag='original_ddpg')
 
-    # import pybullet_envs
-    # env = gym.make(game)
+    import pybullet_envs
+    # games = [spec.id for spec in gym.envs.registry.all() if spec.id.find('Bullet') >= 0]
+    # bugs = []
+    # for game in games:
+    #     try:
+    #         env = gym.make(game)
+    #         env.reset()
+    #         env.step(np.random.random(env.action_space.shape))
+    #     except Exception as e:
+    #         print(e)
+    #         bugs.append(game)
+    # print(bugs)
+
     # s = env.reset()
     # image = env.render('rgb_array')
     # torchvision.utils.save_image(torch.tensor(image).transpose(2, 0), 'hello.png')
