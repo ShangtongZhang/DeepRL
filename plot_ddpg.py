@@ -69,13 +69,20 @@ if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_detach-180511-100747.*', figure=1)
     # plt.show()
 
-    games = ['Walker2DBulletEnv-v0',
-             'AntBulletEnv-v0',
-             'HopperBulletEnv-v0',
-             'RacecarBulletEnv-v0',
-             'KukaBulletEnv-v0',
-             'MinitaurBulletEnv-v0']
-    game = games[0]
+    # games = ['Walker2DBulletEnv-v0',
+    #          'AntBulletEnv-v0',
+    #          'HopperBulletEnv-v0',
+    #          'RacecarBulletEnv-v0',
+    #          'KukaBulletEnv-v0',
+    #          'MinitaurBulletEnv-v0']
+    # game = games[0]
+    games = ['RoboschoolAnt-v1',
+             'RoboschoolHalfCheetah-v1',
+             'RoboschoolHopper-v1',
+             'RoboschoolInvertedDoublePendulum-v1',
+             'RoboschoolReacher-v1',
+             'RoboschoolWalker2d-v1']
+    # games = games[:1]
 
     # game = 'ensemble-RoboschoolAnt-v1'
     # game = 'ensemble-RoboschoolHalfCheetah-v1'
@@ -120,5 +127,8 @@ if __name__ == '__main__':
     # plt.show()
 
     for i, game in enumerate(games):
-        plot(pattern='.*ensemble-%s/d3pg_conginuous.*' % (game), figure=i, average=True, max_timesteps=1e7)
+        plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*original_d3pg.*' % (game), figure=i, average=True, max_timesteps=1e7, color=0)
+        plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=1)
+        plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=2)
+        plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=3)
     plt.show()

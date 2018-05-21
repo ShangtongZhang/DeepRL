@@ -202,11 +202,19 @@ def batch_job():
     cf.merge()
 
     # games = ['RoboschoolAnt-v1', 'RoboschoolWalker2d-v1', 'RoboschoolHalfCheetah-v1']
-    games = [
-        'RoboschoolReacher-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolInvertedDoublePendulum-v1'
-    ]
+    # games = [
+    #     'RoboschoolReacher-v1',
+    #     'RoboschoolHopper-v1',
+    #     'RoboschoolInvertedDoublePendulum-v1'
+    # ]
+    games = ['RoboschoolAnt-v1',
+             'RoboschoolHalfCheetah-v1',
+             'RoboschoolHopper-v1',
+             'RoboschoolInvertedDoublePendulum-v1',
+             'RoboschoolReacher-v1',
+             'RoboschoolWalker2d-v1',
+             'RoboschoolInvertedPendulumSwingup-v1']
+
     # games = ['Walker2DBulletEnv-v0',
     #          'AntBulletEnv-v0',
     #          'HopperBulletEnv-v0',
@@ -219,15 +227,16 @@ def batch_job():
         multi_runs(game, d3pg_congtinuous, tag='original_d3pg', parallel=True)
         multi_runs(game, d3pg_ensemble, tag='half_policy',
                    off_policy_actor=False, off_policy_critic=True, parallel=True)
-    def task2():
+    # def task2():
         multi_runs(game, d3pg_ensemble, tag='on_policy',
                    off_policy_actor=False, off_policy_critic=False, parallel=True)
         multi_runs(game, d3pg_ensemble, tag='off_policy',
                    off_policy_actor=True, off_policy_critic=True, parallel=True)
 
-    tasks = [task1, task2]
-    tasks[cf.ind_task]()
+    # tasks = [task1, task2]
+    # tasks[cf.ind_task]()
     # task()
+    task1()
 
 if __name__ == '__main__':
     mkdir('data')
@@ -240,7 +249,7 @@ if __name__ == '__main__':
 
     game = 'RoboschoolAnt-v1'
 
-    d3pg_option(game)
+    # d3pg_option(game)
 
     # game = 'Walker2DBulletEnv-v0'
     # game = 'AntBulletEnv-v0'
@@ -263,7 +272,7 @@ if __name__ == '__main__':
     # d3pg_conginuous(game)
     # d3pg_ensemble(game)
 
-    # batch_job()
+    batch_job()
 
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
