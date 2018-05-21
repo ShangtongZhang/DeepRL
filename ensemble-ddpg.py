@@ -1,14 +1,14 @@
 from deep_rl import *
 
-def d3pg_conginuous(game, log_dir=None, **kwargs):
+def d3pg_congtinuous(game, log_dir=None, **kwargs):
     config = Config()
-    kwargs.setdefault('tag', d3pg_conginuous.__name__)
+    kwargs.setdefault('tag', d3pg_congtinuous.__name__)
     kwargs.setdefault('num_actors', 1)
     config.num_workers = 8
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    # task_fn = lambda log_dir: Roboschool(game, log_dir=log_dir)
-    task_fn = lambda log_dir: Bullet(game, log_dir=log_dir)
+    task_fn = lambda log_dir: Roboschool(game, log_dir=log_dir)
+    # task_fn = lambda log_dir: Bullet(game, log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=log_dir,
                                               single_process=True)
 
@@ -44,8 +44,8 @@ def d3pg_ensemble(game, log_dir=None, **kwargs):
     config.num_workers = 8
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    # task_fn = lambda log_dir: Roboschool(game, log_dir=log_dir)
-    task_fn = lambda log_dir: Bullet(game, log_dir=log_dir)
+    task_fn = lambda log_dir: Roboschool(game, log_dir=log_dir)
+    # task_fn = lambda log_dir: Bullet(game, log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=log_dir,
                                               single_process=True)
 
@@ -197,31 +197,36 @@ def multi_runs(game, fn, tag, **kwargs):
 def batch_job():
     cf = Config()
     cf.add_argument('ind_game', type=int)
-    # cf.add_argument('ind_task', type=int)
+    cf.add_argument('ind_task', type=int)
     cf.merge()
 
     # games = ['RoboschoolAnt-v1', 'RoboschoolWalker2d-v1', 'RoboschoolHalfCheetah-v1']
-    games = ['Walker2DBulletEnv-v0',
-             'AntBulletEnv-v0',
-             'HopperBulletEnv-v0',
-             'RacecarBulletEnv-v0',
-             'KukaBulletEnv-v0',
-             'MinitaurBulletEnv-v0']
+    games = [
+        'RoboschoolReacher-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolInvertedDoublePendulum-v1'
+    ]
+    # games = ['Walker2DBulletEnv-v0',
+    #          'AntBulletEnv-v0',
+    #          'HopperBulletEnv-v0',
+    #          'RacecarBulletEnv-v0',
+    #          'KukaBulletEnv-v0',
+    #          'MinitaurBulletEnv-v0']
     game = games[cf.ind_game]
 
-    def task():
-        multi_runs(game, d3pg_conginuous, tag='original_d3pg', parallel=True)
+    def task1():
+        multi_runs(game, d3pg_congtinuous, tag='original_d3pg', parallel=True)
         multi_runs(game, d3pg_ensemble, tag='half_policy',
                    off_policy_actor=False, off_policy_critic=True, parallel=True)
-    # def task2():
+    def task2():
         multi_runs(game, d3pg_ensemble, tag='on_policy',
                    off_policy_actor=False, off_policy_critic=False, parallel=True)
         multi_runs(game, d3pg_ensemble, tag='off_policy',
                    off_policy_actor=True, off_policy_critic=True, parallel=True)
 
-    # tasks = [task1, task2]
-    # tasks[cf.ind_task]()
-    task()
+    tasks = [task1, task2]
+    tasks[cf.ind_task]()
+    # task()
 
 if __name__ == '__main__':
     mkdir('data')

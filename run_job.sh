@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-for i in $(seq 0 5); do
-#    for j in $(seq 0 1); do
-    nohup python ensemble-ddpg.py $i &
-#    done
+for i in $(seq 0 2); do
+    for j in $(seq 0 1); do
+        nohup python ensemble-ddpg.py $i $j&
+    done
 done

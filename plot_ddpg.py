@@ -17,7 +17,7 @@ def plot(**kwargs):
     color = kwargs['color']
     plt.figure(figure)
     if kwargs['average']:
-        x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
+        x, y = plotter.average(data, 1000, kwargs['max_timesteps'], top_k=kwargs['top_k'])
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
         for i, name in enumerate(names):
@@ -69,10 +69,18 @@ if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_detach-180511-100747.*', figure=1)
     # plt.show()
 
+    games = ['Walker2DBulletEnv-v0',
+             'AntBulletEnv-v0',
+             'HopperBulletEnv-v0',
+             'RacecarBulletEnv-v0',
+             'KukaBulletEnv-v0',
+             'MinitaurBulletEnv-v0']
+    game = games[0]
+
     # game = 'ensemble-RoboschoolAnt-v1'
     # game = 'ensemble-RoboschoolHalfCheetah-v1'
     # game = 'ensemble-RoboschoolHopper-v1'
-    game = 'ensemble-RoboschoolWalker2d-v1'
+    # game = 'ensemble-RoboschoolWalker2d-v1'
     # game = 'RoboschoolHopper-v1'
     # game = 'RoboschoolHumanoid-v1'
     # plot(pattern='.*%s.*ddpg_continuous.*' % (game), figure=0, average=False)
@@ -100,13 +108,17 @@ if __name__ == '__main__':
     # plot(pattern='.*d3pg_ensemble-180516-121318.*', figure=2)
     # plt.show()
 
-    plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_conginuous/original_d3pg.*' % (game), figure=0, average=True, color=0, max_timesteps=1e7)
-    plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/half_policy.*' % (game), figure=0, average=True, color=1, max_timesteps=1e7)
-    plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/on_policy.*' % (game), figure=0, average=True, color=2, max_timesteps=1e7)
-    plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/off_policy.*' % (game), figure=0, average=True, color=3, max_timesteps=1e7)
-    plt.show()
+    # plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_conginuous/original_d3pg.*' % (game), figure=0, average=True, color=0, max_timesteps=1e7)
+    # plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/half_policy.*' % (game), figure=0, average=True, color=1, max_timesteps=1e7)
+    # plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/on_policy.*' % (game), figure=0, average=True, color=2, max_timesteps=1e7)
+    # plot(pattern='.*log/option_no_beta_d3pg/%s/d3pg_ensemble/off_policy.*' % (game), figure=0, average=True, color=3, max_timesteps=1e7)
+    # plt.show()
 
     # plot(pattern='.*a2c_pixel_atari-180518-102724.*', figure=0)
     # plot(pattern='.*ppo_pixel_atari-180518-102743.*', figure=1)
     # plot(pattern='.*ddpg_pixel.*', figure=2)
     # plt.show()
+
+    for i, game in enumerate(games):
+        plot(pattern='.*ensemble-%s/d3pg_conginuous.*' % (game), figure=i, average=True, max_timesteps=1e7)
+    plt.show()
