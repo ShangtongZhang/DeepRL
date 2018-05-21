@@ -103,7 +103,8 @@ def d3pg_option(game, log_dir=None, **kwargs):
     config.random_process_fn = lambda action_dim: GaussianProcess(
         action_dim, std_schedules=[LinearSchedule(
             0.3, 0, config.max_steps / config.num_workers) for _ in range(config.num_workers)])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1e6, min_epsilon=0.05)
+    # config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1e6, min_epsilon=0.05)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0, final_step=1e6, min_epsilon=0)
 
     config.rollout_length = 5
     config.target_network_mix = 1e-3
