@@ -17,7 +17,7 @@ def plot(**kwargs):
     color = kwargs['color']
     plt.figure(figure)
     if kwargs['average']:
-        x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
+        x, y = plotter.average(data, 1000, kwargs['max_timesteps'], top_k=kwargs['top_k'])
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
         for i, name in enumerate(names):
@@ -42,9 +42,16 @@ if __name__ == '__main__':
     # plot(pattern='.*5_options.*', figure=0)
     # plot(pattern='.*10_options.*', figure=1)
     # plot(pattern='.*20_options.*', figure=2)
-    plot(pattern='.*option_qr_10_options-180519-220446.*', figure=0, color=0)
-    plot(pattern='.*qr_dqn-180519-220432.*', figure=0, color=1)
+    # plot(pattern='.*option_qr_10_options-180519-220446.*', figure=0, color=0)
+    # plot(pattern='.*qr_dqn-180519-220432.*', figure=0, color=1)
     # plot(pattern='.*ddpg_pixel-180519-220945.*', figure=0)
     # plot(pattern='.*ddpg_pixel-180519-221016.*', figure=1)
+    # plt.show()
+    # plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/option_qr_dqn_pixel_atari.*', figure=0)
+    # plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/qr_dqn_pixel_atari.*', figure=1)
+    # plt.show()
+
+    plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/option_qr_dqn_pixel_atari.*', figure=0, average=True, color=0, max_timesteps=3e7)
+    plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/qr_dqn_pixel_atari.*', figure=0, average=True, color=1, max_timesteps=3e7)
     plt.show()
 

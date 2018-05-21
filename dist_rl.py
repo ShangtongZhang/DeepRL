@@ -167,7 +167,8 @@ def multi_runs(game, fn, tag, **kwargs):
 
 if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
-    game = 'FreewayNoFrameskip-v4'
+    # game = 'FreewayNoFrameskip-v4'
+    game = 'SeaquestNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
@@ -181,5 +182,6 @@ if __name__ == '__main__':
 
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
+
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=10, gpu=1, tag='option_qr_10_options', parallel=True)
     multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
