@@ -122,8 +122,8 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
 
-    config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
-    # config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
+    # config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
+    config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
     config.evaluation_env = config.task_fn(log_dir=log_dir)
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
@@ -224,7 +224,7 @@ def batch_job():
     game = games[cf.ind_game]
 
     def task1():
-        multi_runs(game, ddpg_continuous, tag='original_d3pg', parallel=True)
+        multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
         multi_runs(game, ensemble_ddpg, tag='half_policy',
                    off_policy_actor=False, off_policy_critic=True, parallel=True)
     # def task2():
@@ -248,6 +248,7 @@ if __name__ == '__main__':
     torch.set_num_threads(1)
 
     # game = 'RoboschoolAnt-v1'
+    # multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
 
     # d3pg_option(game)
 
