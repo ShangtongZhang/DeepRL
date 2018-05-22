@@ -168,7 +168,8 @@ def multi_runs(game, fn, tag, **kwargs):
 if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
-    game = 'SeaquestNoFrameskip-v4'
+    # game = 'SeaquestNoFrameskip-v4'
+    game = 'MsPacmanNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()

@@ -51,7 +51,9 @@ if __name__ == '__main__':
     # plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/qr_dqn_pixel_atari.*', figure=1)
     # plt.show()
 
-    plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/option_qr_dqn_pixel_atari.*', figure=0, average=True, color=0, max_timesteps=3e7)
-    plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/qr_dqn_pixel_atari.*', figure=0, average=True, color=1, max_timesteps=3e7)
+    # game = 'Freeway'
+    game = 'Seaquest'
+    plot(pattern='.*log/dist_rl-%sNoFrameskip-v4/option_qr_dqn_pixel_atari.*' % (game), figure=0, average=True, color=0, max_timesteps=3e7)
+    plot(pattern='.*log/dist_rl-%sNoFrameskip-v4/qr_dqn_pixel_atari.*' % (game), figure=0, average=True, color=1, max_timesteps=3e7)
     plt.show()
 
