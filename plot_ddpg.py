@@ -135,12 +135,21 @@ if __name__ == '__main__':
     #     plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=3)
     # plt.show()
 
-    games = [
-        'ensemble-AntBulletEnv-v0',
-        'ensemble-HalfCheetahBulletEnv-v0',
-        'ensemble-HopperBulletEnv-v0',
-        'ensemble-Walker2DBulletEnv-v0'
-    ]
-    for i, game in enumerate(games):
-        plot(pattern='.*log/%s.*' % (game), figure=i, average=True, max_timesteps=1e6)
+    # games = [
+    #     'ensemble-AntBulletEnv-v0',
+    #     'ensemble-HalfCheetahBulletEnv-v0',
+    #     'ensemble-HopperBulletEnv-v0',
+    #     'ensemble-Walker2DBulletEnv-v0'
+    # ]
+    # for i, game in enumerate(games):
+    #     plot(pattern='.*log/%s.*' % (game), figure=i, average=True, max_timesteps=1e6)
+    # plt.show()
+    # for i, game in enumerate(games):
+    #     plot(pattern='.*log/ensemble-%s/ddpg_continuous.*' % (game), figure=i)
+    # plt.show()
+
+    plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*original_ddpg.*', figure=0, average=True, max_timesteps=1e6, color=0)
+    plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*ensemble_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=1)
+    plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*on_policy.*', figure=0, average=True, max_timesteps=1e6, color=2)
+    plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*half_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=3)
     plt.show()
