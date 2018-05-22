@@ -28,7 +28,10 @@ class OptionNStepQRDQNAgent(BaseAgent):
         self.quantile_weight = 1.0 / self.config.num_quantiles
         self.cumulative_density = self.network.tensor(
             (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles))
-        candidate_quantile = np.asarray([np.linspace(0.1, 0.9, config.num_options)]) * config.num_quantiles
+        candidate_quantile = np.linspace(0.1, 0.9, config.num_options) * config.num_quantiles
+        if config.mean_option:
+            candidate_quantile = candidate_quantile.tolist() + [config.num_quantiles]
+            candidate_quantile = np.asarray([candidate_quantile])
         self.candidate_quantile = self.network.tensor(candidate_quantile).long().expand(
             config.num_workers, -1)
 
@@ -40,6 +43,9 @@ class OptionNStepQRDQNAgent(BaseAgent):
         dist = torch.distributions.Categorical(pi)
         option = dist.sample()
         option_quantiles = self.candidate_quantile[self.network.range(option.size(0)), option]
+        if self.config.mean_option:
+            mean_q_values = quantile_values.mean(-1).unsqueeze(-1)
+            quantile_values = torch.cat([quantile_values, mean_q_values], dim=-1)
         q_values = quantile_values[self.network.range(option.size(0)), :, option_quantiles]
         q_values = q_values.cpu().detach().numpy()
         actions = [self.policy.sample(v) for v in q_values]

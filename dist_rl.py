@@ -123,6 +123,7 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
     kwargs.setdefault('tag', qr_dqn_pixel_atari.__name__)
     kwargs.setdefault('num_options', 5)
     kwargs.setdefault('gpu', 0)
+    kwargs.setdefault('mean_option', 1)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     config.history_length = 4
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length,
@@ -132,7 +133,7 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
                                               log_dir=kwargs['log_dir'], single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'], NatureConvBody(),
+        OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'] + kwargs['mean_option'], NatureConvBody(),
                           gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
@@ -166,11 +167,13 @@ def multi_runs(game, fn, tag, **kwargs):
     for p in ps: p.join()
 
 if __name__ == '__main__':
+    mkdir('log')
+    mkdir('data')
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
-    # game = 'MsPacmanNoFrameskip-v4'
-    game = 'FrostbiteNoFrameskip-v4'
+    game = 'MsPacmanNoFrameskip-v4'
+    # game = 'FrostbiteNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
@@ -180,10 +183,10 @@ if __name__ == '__main__':
     # quantile_regression_dqn_pixel_atari(game)
 
     # qr_dqn_pixel_atari(game, gpu=0, tag='qr_dqn')
-    # option_qr_dqn_pixel_atari(game, num_options=10, gpu=1, tag='option_qr_10_options')
+    # option_qr_dqn_pixel_atari(game, num_options=9, gpu=1, tag='mean_and_10_options')
 
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
 
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=10, gpu=1, tag='option_qr_10_options', parallel=True)
-    multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
+    multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True)
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
