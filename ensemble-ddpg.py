@@ -224,13 +224,13 @@ def batch_job():
     game = games[cf.ind_game]
 
     def task1():
-        multi_runs(game, d3pg_congtinuous, tag='original_d3pg', parallel=True)
-        multi_runs(game, d3pg_ensemble, tag='half_policy',
+        multi_runs(game, ddpg_continuous, tag='original_d3pg', parallel=True)
+        multi_runs(game, ensemble_ddpg, tag='half_policy',
                    off_policy_actor=False, off_policy_critic=True, parallel=True)
     # def task2():
-        multi_runs(game, d3pg_ensemble, tag='on_policy',
+        multi_runs(game, ensemble_ddpg, tag='on_policy',
                    off_policy_actor=False, off_policy_critic=False, parallel=True)
-        multi_runs(game, d3pg_ensemble, tag='off_policy',
+        multi_runs(game, ensemble_ddpg, tag='off_policy',
                    off_policy_actor=True, off_policy_critic=True, parallel=True)
 
     # tasks = [task1, task2]
@@ -251,7 +251,7 @@ if __name__ == '__main__':
 
     # d3pg_option(game)
 
-    game = 'AntBulletEnv-v0'
+    # game = 'AntBulletEnv-v0'
     # game = 'Walker2DBulletEnv-v0'
     # game = 'HalfCheetahBulletEnv-v0'
     # game = 'HopperBulletEnv-v0'
@@ -263,7 +263,7 @@ if __name__ == '__main__':
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg')
 
-    import pybullet_envs
+    # import pybullet_envs
     # games = [spec.id for spec in gym.envs.registry.all() if spec.id.find('Bullet') >= 0]
     # bugs = []
     # for game in games:
@@ -288,7 +288,7 @@ if __name__ == '__main__':
     # d3pg_conginuous(game)
     # d3pg_ensemble(game)
 
-    # batch_job()
+    batch_job()
 
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
