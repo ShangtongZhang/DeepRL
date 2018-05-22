@@ -142,6 +142,30 @@ class SkipEnv(gym.Wrapper):
         obs = self.env.reset()
         return obs
 
+class RandomSkipEnv(gym.Wrapper):
+    def __init__(self, env=None, skip=0):
+        """Return only every `skip`-th frame"""
+        super(RandomSkipEnv, self).__init__(env)
+        self._skip       = skip
+
+    def step(self, action):
+        total_reward = 0.0
+        if self._skip == 0:
+            skip = 1
+        else:
+            skip = np.random.randint(self._skip) + 1
+        for _ in range(0, skip):
+            obs, reward, done, info = self.env.step(action)
+            total_reward += reward
+            if done:
+                break
+
+        return obs, total_reward, done, info
+
+    def reset(self):
+        obs = self.env.reset()
+        return obs
+
 class WarpFrame(gym.ObservationWrapper):
     def __init__(self, env):
         """Warp frames to 84x84 as done in the Nature paper and later work."""
