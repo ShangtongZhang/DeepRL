@@ -118,6 +118,7 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('gate', F.tanh)
     kwargs.setdefault('tag', ddpg_continuous.__name__)
     kwargs.setdefault('q_l2_weight', 0)
+    kwargs.setdefault('std_schedule', [LinearSchedule(0.3, 0, 1e6)])
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -141,7 +142,7 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.state_normalizer = RunningStatsNormalizer()
     config.max_steps = 1e6
     config.random_process_fn = lambda action_dim: GaussianProcess(
-        (action_dim, ), [LinearSchedule(0.3, 0, 1e6)])
+        (action_dim, ), kwargs['std_schedule'])
 
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
@@ -247,7 +248,17 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    # game = 'RoboschoolAnt-v1'
+    game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolWalker2d-v1'
+    # game = 'RoboschoolHalfCheetah-v1'
+    # game = 'RoboschoolHopper-v1'
+    # game = 'RoboschoolHumanoid-v1'
+    # game = 'RoboschoolHumanoidFlagrun-v1'
+    # game = 'RoboschoolReacher-v1'
+    # game = 'RoboschoolHumanoidFlagrunHarder-v1'
+
+    multi_runs(game, ddpg_continuous, tag='more_exploration', std_schedule=[LinearSchedule(0.3)])
+
     # multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
 
     # d3pg_option(game)
@@ -289,7 +300,7 @@ if __name__ == '__main__':
     # d3pg_conginuous(game)
     # d3pg_ensemble(game)
 
-    batch_job()
+    # batch_job()
 
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
