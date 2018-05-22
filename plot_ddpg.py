@@ -17,7 +17,7 @@ def plot(**kwargs):
     color = kwargs['color']
     plt.figure(figure)
     if kwargs['average']:
-        x, y = plotter.average(data, 1000, kwargs['max_timesteps'], top_k=kwargs['top_k'])
+        x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
         for i, name in enumerate(names):
@@ -128,20 +128,19 @@ if __name__ == '__main__':
     # plot(pattern='.*ddpg_pixel.*', figure=2)
     # plt.show()
 
-    for i, game in enumerate(games):
-        # plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*original_d3pg.*' % (game), figure=i, average=True, max_timesteps=1e7, color=0)
-        # plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=1)
-        # plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=2)
-        # plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=3)
-        plot(pattern='.*')
-    plt.show()
-
-    # games = [
-    #     'ensemble-AntBulletEnv-v0',
-    #     'ensemble-HalfCheetahBulletEnv-v0',
-    #     'ensemble-HopperBulletEnv-v0',
-    #     'ensemble-Walker2DBulletEnv-v0'
-    # ]
     # for i, game in enumerate(games):
-    #     plot(pattern='.*log/%s.*' % (game), figure=i)
+    #     plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*original_d3pg.*' % (game), figure=i, average=True, max_timesteps=1e7, color=0)
+    #     plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=1)
+    #     plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=2)
+    #     plot(pattern='.*option_no_beta_d3pg.*ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e7, color=3)
     # plt.show()
+
+    games = [
+        'ensemble-AntBulletEnv-v0',
+        'ensemble-HalfCheetahBulletEnv-v0',
+        'ensemble-HopperBulletEnv-v0',
+        'ensemble-Walker2DBulletEnv-v0'
+    ]
+    for i, game in enumerate(games):
+        plot(pattern='.*log/%s.*' % (game), figure=i, average=True, max_timesteps=1e6)
+    plt.show()
