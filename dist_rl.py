@@ -153,7 +153,7 @@ def single_run(run, game, fn, tag, **kwargs):
     fn(game, log_dir=log_dir, tag=tag, **kwargs)
 
 def multi_runs(game, fn, tag, **kwargs):
-    runs = np.arange(0, 3)
+    runs = np.arange(0, 2)
     kwargs.setdefault('parallel', False)
     if not kwargs['parallel']:
         for run in runs:
@@ -169,7 +169,8 @@ if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
-    game = 'MsPacmanNoFrameskip-v4'
+    # game = 'MsPacmanNoFrameskip-v4'
+    game = 'FrostbiteNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
