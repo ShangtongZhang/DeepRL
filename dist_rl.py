@@ -16,14 +16,18 @@ def quantile_regression_dqn_cart_pole():
     config.num_quantiles = 20
     run_episodes(QuantileRegressionDQNAgent(config))
 
-def quantile_regression_dqn_pixel_atari(name):
+def quantile_regression_dqn_pixel_atari(name, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', quantile_regression_dqn_pixel_atari.__name__)
+    kwargs.setdefault('gpu', 0)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     config = Config()
     config.history_length = 4
     config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                        log_dir=get_default_log_dir(quantile_regression_dqn_pixel_atari.__name__))
+                                        log_dir=kwargs['log_dir'])
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=1)
+        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=config.gpu)
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
     config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
     config.state_normalizer = ImageNormalizer()
@@ -31,10 +35,40 @@ def quantile_regression_dqn_pixel_atari(name):
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.exploration_steps= 50000
-    config.logger = get_logger(file_name=quantile_regression_dqn_pixel_atari.__name__)
+    config.logger = get_logger(file_name=kwargs['tag'])
     config.double_q = False
     config.num_quantiles = 200
+    config.merge(kwargs)
     run_episodes(QuantileRegressionDQNAgent(config))
+
+def option_quantile_regression_dqn_pixel_atari(name, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', option_quantile_regression_dqn_pixel_atari.__name__)
+    kwargs.setdefault('num_options', 5)
+    kwargs.setdefault('gpu', 0)
+    kwargs.setdefault('mean_option', 1)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    config = Config()
+    config.history_length = 4
+    config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
+                                        log_dir=kwargs['log_dir'])
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
+    config.network_fn = lambda state_dim, action_dim: \
+        OptionQuantileNet(action_dim, config.num_quantiles, config.num_options + config.mean_option,
+                          NatureConvBody(), gpu=config.gpu)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.exploration_steps= 50000
+    config.logger = get_logger(file_name=kwargs['tag'])
+    config.double_q = False
+    config.num_quantiles = 200
+    config.entropy_weight = 0.01
+    config.merge(kwargs)
+    run_episodes(OptionQuantileRegressionDQNAgent(config))
 
 def qr_dqn_cart_pole():
     config = Config()
@@ -176,7 +210,7 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     # game = 'BreakoutNoFrameskip-v4'
-    # game = 'FreewayNoFrameskip-v4'
+    game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
     # game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
@@ -187,14 +221,16 @@ if __name__ == '__main__':
     # game = 'PongNoFrameskip-v4'
     # game = 'BoxingNoFrameskip-v4'
     # game = 'IceHockeyNoFrameskip-v4'
-    game = 'DoubleDunkNoFrameskip-v4'
+    # game = 'DoubleDunkNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
 
     # n_step_dqn_pixel_atari(game)
     # qr_dqn_pixel_atari(game)
-    # quantile_regression_dqn_pixel_atari(game)
+
+    # quantile_regression_dqn_pixel_atari(game, gpu=0, tag='original_qr_dqn')
+    # option_quantile_regression_dqn_pixel_atari(game, num_options=9, gpu=0, tag='mean_and_9_options')
 
     # qr_dqn_pixel_atari(game, gpu=0, tag='qr_dqn')
     # option_qr_dqn_pixel_atari(game, num_options=9, gpu=1)
@@ -203,7 +239,7 @@ if __name__ == '__main__':
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
 
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True)
-    multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
 
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=1, tag='mean_and_9_options_random_skip', parallel=True)
     # multi_runs(game, qr_dqn_pixel_atari, gpu=1, tag='qr_dqn_random_skip', parallel=True)
