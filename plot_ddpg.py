@@ -2,6 +2,15 @@ import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
 
+def compute_stats(**kwargs):
+    plotter = Plotter()
+    names = plotter.load_log_dirs(**kwargs)
+    data = plotter.load_results(names, episode_window=0, max_timesteps=1e8)
+    max_rewards = []
+    for x, y in data:
+        max_rewards.append(np.max(y))
+    return np.mean(max_rewards), np.std(max_rewards) / np.sqrt(len(max_rewards))
+
 def plot(**kwargs):
     import matplotlib.pyplot as plt
     kwargs.setdefault('average', False)
@@ -17,7 +26,7 @@ def plot(**kwargs):
     color = kwargs['color']
     plt.figure(figure)
     if kwargs['average']:
-        x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
+        x, y = plotter.average(data, 1000, kwargs['max_timesteps'], top_k=kwargs['top_k'])
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
         for i, name in enumerate(names):
@@ -144,9 +153,14 @@ if __name__ == '__main__':
     # for i, game in enumerate(games):
     #     plot(pattern='.*log/%s.*' % (game), figure=i, average=True, max_timesteps=1e6)
     # plt.show()
-    # for i, game in enumerate(games):
-    #     plot(pattern='.*log/ensemble-%s/ddpg_continuous.*' % (game), figure=i)
-    # plt.show()
+    for i, game in enumerate(games):
+        stats = compute_stats(pattern='.*log/ensemble-%s/ddpg_continuous.*' % (game))
+        print(game, 'ddpg_continuous', stats)
+        stats = compute_stats(pattern='.*log/ensemble-%s.*half_policy.*' % (game))
+        print(game, 'half_policy', stats)
+        # plot(pattern='.*log/ensemble-%s/ddpg_continuous.*' % (game), figure=i, average=True, max_timesteps=1e6, color=0)
+        # plot(pattern='.*log/ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=1)
+    plt.show()
 
     # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*original_ddpg.*', figure=0, average=True, max_timesteps=1e6, color=0)
     # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*ensemble_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=1)
@@ -154,8 +168,8 @@ if __name__ == '__main__':
     # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*half_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=3)
     # plt.show()
 
-    plot(pattern='.*log/ensemble-RoboschoolAnt-v1.*', figure=0)
-    plot(pattern='.*log/ensemble-RoboschoolHumanoid-v1.*', figure=1)
-    plot(pattern='.*log/ensemble-RoboschoolHumanoidFlagrun-v1.*', figure=2)
-    plot(pattern='.*log/ensemble-RoboschoolHumanoidFlagrunHarder-v1.*', figure=3)
-    plt.show()
+    # plot(pattern='.*log/ensemble-RoboschoolAnt-v1.*', figure=0)
+    # plot(pattern='.*log/ensemble-RoboschoolHumanoid-v1.*', figure=1)
+    # plot(pattern='.*log/ensemble-RoboschoolHumanoidFlagrun-v1.*', figure=2)
+    # plot(pattern='.*log/ensemble-RoboschoolHumanoidFlagrunHarder-v1.*', figure=3)
+    # plt.show()
