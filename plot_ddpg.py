@@ -148,8 +148,14 @@ if __name__ == '__main__':
     #     plot(pattern='.*log/ensemble-%s/ddpg_continuous.*' % (game), figure=i)
     # plt.show()
 
-    plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*original_ddpg.*', figure=0, average=True, max_timesteps=1e6, color=0)
-    plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*ensemble_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=1)
-    plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*on_policy.*', figure=0, average=True, max_timesteps=1e6, color=2)
-    plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*half_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=3)
+    # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*original_ddpg.*', figure=0, average=True, max_timesteps=1e6, color=0)
+    # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*ensemble_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=1)
+    # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*on_policy.*', figure=0, average=True, max_timesteps=1e6, color=2)
+    # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*half_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=3)
+    # plt.show()
+
+    plot(pattern='.*log/ensemble-RoboschoolAnt-v1.*', figure=0)
+    plot(pattern='.*log/ensemble-RoboschoolHumanoid-v1.*', figure=1)
+    plot(pattern='.*log/ensemble-RoboschoolHumanoidFlagrun-v1.*', figure=2)
+    plot(pattern='.*log/ensemble-RoboschoolHumanoidFlagrunHarder-v1.*', figure=3)
     plt.show()
