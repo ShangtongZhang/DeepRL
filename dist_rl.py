@@ -184,7 +184,9 @@ if __name__ == '__main__':
     # game = 'JourneyEscapeNoFrameskip-v4'
     # game = 'SolarisNoFrameskip-v4'
     # game = 'TennisNoFrameskip-v4'
-    game = 'PongNoFrameskip-v4'
+    # game = 'PongNoFrameskip-v4'
+    # game = 'BoxingNoFrameskip-v4'
+    game = 'IceHockeyNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
@@ -199,8 +201,8 @@ if __name__ == '__main__':
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
 
-    multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False)
-    # multi_runs(game, qr_dqn_pixel_atari, gpu=1, tag='original_qr_dqn', parallel=False)
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True)
+    multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
 
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=1, tag='mean_and_9_options_random_skip', parallel=True)
     # multi_runs(game, qr_dqn_pixel_atari, gpu=1, tag='qr_dqn_random_skip', parallel=True)
