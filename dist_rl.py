@@ -115,7 +115,7 @@ def qr_dqn_pixel_atari(name, **kwargs):
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
-    config.max_steps = int(2e7)
+    config.max_steps = int(1e8)
     config.logger = get_logger(file_name=qr_dqn_pixel_atari.__name__)
     config.num_quantiles = 200
     config.merge(kwargs)
@@ -149,7 +149,7 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.entropy_weight = 0.01
-    config.max_steps = int(2e7)
+    config.max_steps = int(1e8)
     config.logger = get_logger(file_name=option_qr_dqn_pixel_atari.__name__)
     config.num_quantiles = 200
     config.merge(kwargs)
@@ -183,7 +183,8 @@ if __name__ == '__main__':
     # game = 'EnduroNoFrameskip-v4'
     # game = 'JourneyEscapeNoFrameskip-v4'
     # game = 'SolarisNoFrameskip-v4'
-    game = 'TennisNoFrameskip-v4'
+    # game = 'TennisNoFrameskip-v4'
+    game = 'PongNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
@@ -198,8 +199,8 @@ if __name__ == '__main__':
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
 
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False)
-    multi_runs(game, qr_dqn_pixel_atari, gpu=1, tag='original_qr_dqn', parallel=False)
+    multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False)
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=1, tag='original_qr_dqn', parallel=False)
 
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=1, tag='mean_and_9_options_random_skip', parallel=True)
     # multi_runs(game, qr_dqn_pixel_atari, gpu=1, tag='qr_dqn_random_skip', parallel=True)

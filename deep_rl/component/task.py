@@ -49,7 +49,7 @@ class PixelAtari(BaseTask):
             env = DatasetEnv(env)
             self.dataset_env = env
         env = self.set_monitor(env, log_dir)
-        env = RandomSkipEnv(env, skip=random_skip)
+        # env = RandomSkipEnv(env, skip=random_skip)
         env = wrap_deepmind(env, history_length=history_length)
         self.env = env
         self.action_dim = self.env.action_space.n

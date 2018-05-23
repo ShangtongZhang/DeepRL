@@ -53,9 +53,12 @@ if __name__ == '__main__':
 
     # game = 'Freeway'
     # game = 'Seaquest'
-    game = 'MsPacman'
+    # game = 'MsPacman'
     # game = 'Frostbite'
-    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*option_qr_10_options.*' % (game), figure=0, average=True, color=0, max_timesteps=3e7)
+    # game = 'Enduro'
+    # game = 'JourneyEscape'
+    game = 'Tennis'
+    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*option_qr_10_options.*' % (game), figure=0, average=True, color=0, max_timesteps=3e7)
     plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=True, color=1, max_timesteps=3e7)
     plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=True, color=2, max_timesteps=3e7)
     plt.show()
