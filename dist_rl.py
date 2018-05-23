@@ -186,7 +186,8 @@ if __name__ == '__main__':
     # game = 'TennisNoFrameskip-v4'
     # game = 'PongNoFrameskip-v4'
     # game = 'BoxingNoFrameskip-v4'
-    game = 'IceHockeyNoFrameskip-v4'
+    # game = 'IceHockeyNoFrameskip-v4'
+    game = 'DoubleDunkNoFrameskip-v4'
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
