@@ -157,6 +157,7 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     kwargs.setdefault('num_options', 5)
     kwargs.setdefault('off_policy_actor', False)
     kwargs.setdefault('off_policy_critic', False)
+    kwargs.setdefault('option_epsilon', LinearSchedule(0))
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     config.task_fn = lambda: Roboschool(game)
@@ -314,6 +315,15 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrun-v1'
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
+
+    multi_runs(game, ensemble_ddpg, tag='option_epsilon',
+               option_epsilon=LinearSchedule(1.0, 0, 1e6),
+               off_policy_actor=True, off_policy_critic=True, parallel=True)
+
+    # multi_runs(game, ensemble_ddpg, tag='option_epsilon',
+    #            option_epsilon=LinearSchedule(0, 0, 1e6),
+    #            off_policy_actor=True, off_policy_critic=True, parallel=False,
+    #            num_options=20)
 
     # gamma_ddpg(game, target_type='mixed')
 

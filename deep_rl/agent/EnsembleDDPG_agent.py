@@ -41,10 +41,14 @@ class EnsembleDDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
-            action, option = self.network.predict(np.stack([state]), to_numpy=True)
-            if not deterministic:
-                action += self.random_process.sample()
-            action = action.flatten()
+            if np.random.rand() > config.option_epsilon():
+                action, option = self.network.predict(np.stack([state]), to_numpy=True)
+                # if not deterministic:
+                #     action += self.random_process.sample()
+                action = action.flatten()
+            else:
+                action = (np.random.rand(self.task.action_dim) - 0.5) * 2
+                option = np.asarray([-1])
             next_state, reward, done, info = self.task.step(action)
             next_state = self.config.state_normalizer(next_state)
             total_reward += reward
