@@ -206,6 +206,79 @@ def multi_runs(game, fn, tag, **kwargs):
         time.sleep(1)
     for p in ps: p.join()
 
+def visualize(game, **kwargs):
+    from skimage import io
+    import json
+    config = Config()
+    kwargs.setdefault('tag', option_qr_dqn_pixel_atari.__name__)
+    kwargs.setdefault('num_options', 5)
+    kwargs.setdefault('gpu', -1)
+    kwargs.setdefault('mean_option', 1)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('random_skip', 0)
+    kwargs.setdefault('frame_stack', 4)
+    config.history_length = kwargs['frame_stack']
+    task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
+                                         log_dir=None, random_skip=kwargs['random_skip'])
+    config.num_workers = 16
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
+                                              log_dir=None, single_process=True)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
+    config.network_fn = lambda state_dim, action_dim: \
+        OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'] + kwargs['mean_option'],
+                          NatureConvBody(in_channels=config.history_length),
+                          gpu=kwargs['gpu'])
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0, final_step=100000, min_epsilon=0)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.rollout_length = 5
+    config.gradient_clip = 5
+    config.entropy_weight = 0.01
+    config.max_steps = int(1e8)
+    config.logger = get_logger(file_name=option_qr_dqn_pixel_atari.__name__)
+    config.num_quantiles = 200
+    config.merge(kwargs)
+    agent = OptionNStepQRDQNAgent(config)
+    agent.load('data/OptionNStepQRDQNAgent-FreewayNoFrameskip-v4-option-qr-model-FreewayNoFrameskip-v4.bin')
+    task = task_fn(None)
+    total_reward = 0
+    steps = 0
+    mkdir('data/%s' % (game))
+    action_meanings = task.env.unwrapped.get_action_meanings()
+    while True:
+        state = task.reset()
+        frame = task.env.env.env.rgb_frame
+        state = np.stack([state])
+        quantile_values, pi, v_pi = agent.network.predict(config.state_normalizer(state))
+
+        option = torch.argmax(pi, dim=1)
+        option_quantiles = agent.candidate_quantile[agent.network.range(option.size(0)), option]
+        if config.mean_option:
+            mean_q_values = quantile_values.mean(-1).unsqueeze(-1)
+            quantile_values = torch.cat([quantile_values, mean_q_values], dim=-1)
+        q_values = quantile_values[agent.network.range(option.size(0)), :, option_quantiles]
+        q_values = q_values.cpu().detach().numpy()
+        actions = [agent.policy.sample(v) for v in q_values]
+
+        # actions, options = agent.act(quantile_values, pi)
+        option = np.asscalar(option.cpu().detach().numpy())
+        action = actions[0]
+        if option == 9:
+            option_str = 'mean'
+        else:
+            option_str = 'quantile_%s' % ((option + 1) / 10.0)
+        decision_str = '%s-%s' % (option_str, action_meanings[action])
+        io.imsave('data/%s/frame-%d-%s.png' % (game, steps, decision_str), frame)
+        state, reward, done, _ = task.step(action)
+        total_reward += reward
+        steps += 1
+        if done:
+            break
+    print(total_reward)
+
+
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
@@ -223,6 +296,8 @@ if __name__ == '__main__':
     # game = 'IceHockeyNoFrameskip-v4'
     # game = 'DoubleDunkNoFrameskip-v4'
 
+    visualize(game, num_options=9)
+
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
 
@@ -233,7 +308,7 @@ if __name__ == '__main__':
     # option_quantile_regression_dqn_pixel_atari(game, num_options=9, gpu=0, tag='mean_and_9_options')
 
     # qr_dqn_pixel_atari(game, gpu=0, tag='qr_dqn')
-    option_qr_dqn_pixel_atari(game, num_options=9, gpu=0, tag='%s-option-qr' % (game))
+    # option_qr_dqn_pixel_atari(game, num_options=9, gpu=0, tag='%s-option-qr' % (game))
 
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
