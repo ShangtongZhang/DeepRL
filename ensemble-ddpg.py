@@ -318,8 +318,8 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
     multi_runs(game, ensemble_ddpg, tag='option_epsilon',
-               option_epsilon=LinearSchedule(0.3, 0, 1e6), action_based_noise=False,
-               off_policy_actor=True, off_policy_critic=True, parallel=False)
+               option_epsilon=LinearSchedule(0.7, 0, 1e6), action_based_noise=False,
+               off_policy_actor=True, off_policy_critic=True, parallel=True)
 
     # multi_runs(game, ensemble_ddpg, tag='option_epsilon',
     #            option_epsilon=LinearSchedule(0, 0, 1e6),
