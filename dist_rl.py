@@ -247,13 +247,17 @@ def visualize(game, **kwargs):
     steps = 0
     mkdir('data/%s' % (game))
     action_meanings = task.env.unwrapped.get_action_meanings()
+    task.seed(np.random.randint(0, 1000))
     while True:
         state = task.reset()
         frame = task.env.env.env.rgb_frame
         state = np.stack([state])
         quantile_values, pi, v_pi = agent.network.predict(config.state_normalizer(state))
 
+        # dist = torch.distributions.Categorical(pi)
+        # option = dist.sample()
         option = torch.argmax(pi, dim=1)
+
         option_quantiles = agent.candidate_quantile[agent.network.range(option.size(0)), option]
         if config.mean_option:
             mean_q_values = quantile_values.mean(-1).unsqueeze(-1)
@@ -283,7 +287,7 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     # game = 'BreakoutNoFrameskip-v4'
-    game = 'FreewayNoFrameskip-v4'
+    # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
     # game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
@@ -291,12 +295,32 @@ if __name__ == '__main__':
     # game = 'JourneyEscapeNoFrameskip-v4'
     # game = 'SolarisNoFrameskip-v4'
     # game = 'TennisNoFrameskip-v4'
-    # game = 'PongNoFrameskip-v4'
     # game = 'BoxingNoFrameskip-v4'
     # game = 'IceHockeyNoFrameskip-v4'
     # game = 'DoubleDunkNoFrameskip-v4'
 
-    visualize(game, num_options=9)
+    # game = 'FreewayNoFrameskip-v4'
+    # game = 'PongNoFrameskip-v4'
+    game = 'SkiingNoFrameskip-v4'
+    game = 'SpaceInvadersNoFrameskip-v4'
+    game = 'QbertNoFrameskip-v4'
+    game = 'DemonAttackNoFrameskip-v4'
+    # game = 'NoFrameskip-v4'
+    # game = 'NoFrameskip-v4'
+    # game = 'NoFrameskip-v4'
+
+
+    # games = [spec.id for spec in gym.envs.registry.all()]
+    # games = [game]
+    # for game in games:
+    #     try:
+    #         env = gym.make(game)
+    #         print(env.action_space.n)
+            # if env.action_space.n <= 6:
+            #     print(game)
+        # except:
+        #     continue
+    # visualize(game, num_options=9)
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
