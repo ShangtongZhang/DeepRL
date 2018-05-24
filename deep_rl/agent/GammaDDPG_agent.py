@@ -100,7 +100,6 @@ class GammaDDPGAgent(BaseAgent):
 
                 self.network.zero_grad()
                 (q_option_loss + q_loss.mul(config.critic_loss_weight)).backward()
-                # self.network.critic_opt.step()
                 self.opt.step()
 
                 phi = self.network.feature(states)
