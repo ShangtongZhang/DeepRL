@@ -233,7 +233,7 @@ if __name__ == '__main__':
     # option_quantile_regression_dqn_pixel_atari(game, num_options=9, gpu=0, tag='mean_and_9_options')
 
     # qr_dqn_pixel_atari(game, gpu=0, tag='qr_dqn')
-    # option_qr_dqn_pixel_atari(game, num_options=9, gpu=1)
+    option_qr_dqn_pixel_atari(game, num_options=9, gpu=0, tag='%s-option-qr' % (game))
 
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')

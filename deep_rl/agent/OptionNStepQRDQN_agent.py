@@ -62,7 +62,9 @@ class OptionNStepQRDQNAgent(BaseAgent):
         for _ in range(config.rollout_length):
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
-            # config.logger.scalar_summary('option', options[0])
+            for i in range(config.num_workers):
+                config.logger.scalar_summary('worker_%d' % (i), options[i])
+            config.logger.scalar_summary('mean_eipsode_reward', np.mean(self.last_episode_rewards))
             # q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
