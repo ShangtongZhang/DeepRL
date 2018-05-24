@@ -379,7 +379,7 @@ class GammaDeterministicOptionCriticNet(nn.Module, BaseNet):
         elif isinstance(actions, list):
             q = [fc_critic(self.critic_body(phi, action))
                  for fc_critic, action in zip(self.fc_critics, actions)]
-        q = torch.cat(q, dim=1)
+        q = torch.cat(q, dim=-1)
         return q
 
     def zero_non_actor_grad(self):

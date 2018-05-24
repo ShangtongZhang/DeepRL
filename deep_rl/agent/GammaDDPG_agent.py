@@ -70,7 +70,13 @@ class GammaDDPGAgent(BaseAgent):
                 states, actions, rewards, next_states, terminals, options = experiences
                 phi_next = self.target_network.feature(next_states)
                 a_next, q_options_next = self.target_network.actor(phi_next)
-                q_next = self.target_network.critic(phi_next, a_next)
+                if config.target_type == 'vanilla':
+                    q_next = self.target_network.critic(phi_next, a_next)
+                elif config.target_type == 'mixed':
+                    actions_next = torch.stack(a_next).transpose(0, 1)
+                    phi_next = phi_next.unsqueeze(1).expand(-1, actions_next.size(1), -1)
+                    q_next = self.network.critic(phi_next, actions_next)
+                    q_next = q_next.max(1)[0]
                 # q_next = q_next.max(1)[0].unsqueeze(1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)

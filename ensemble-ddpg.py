@@ -183,13 +183,11 @@ def gamma_ddpg(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('tag', gamma_ddpg.__name__)
     kwargs.setdefault('critic_loss_weight', 10.0)
-    # kwargs.setdefault('num_options', 5)
-    # kwargs.setdefault('off_policy_actor', False)
-    # kwargs.setdefault('off_policy_critic', False)
+    kwargs.setdefault('target_type', 'vanilla')
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     config.discount = 0.99
-    config.gammas = np.linspace(0.9, 1.0, 5)
+    config.gammas = np.linspace(0.9, 1.0, 5).tolist() + [config.discount, ]
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: GammaDeterministicOptionCriticNet(
@@ -287,7 +285,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    gamma_ddpg(game)
+    gamma_ddpg(game, target_type='mixed')
 
     # multi_runs(game, ddpg_continuous, tag='more_exploration', std_schedule=[LinearSchedule(0.3)])
 
