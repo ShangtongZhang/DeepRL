@@ -179,6 +179,36 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     config.merge(kwargs)
     run_episodes(EnsembleDDPGAgent(config))
 
+def gamma_ddpg(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', gamma_ddpg.__name__)
+    kwargs.setdefault('critic_loss_weight', 10.0)
+    # kwargs.setdefault('num_options', 5)
+    # kwargs.setdefault('off_policy_actor', False)
+    # kwargs.setdefault('off_policy_critic', False)
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+    config.discount = 0.99
+    config.gammas = np.linspace(0.9, 1.0, 5)
+    config.task_fn = lambda: Roboschool(game)
+    config.evaluation_env = Roboschool(game, log_dir=log_dir)
+    config.network_fn = lambda state_dim, action_dim: GammaDeterministicOptionCriticNet(
+        action_dim, phi_body=DummyBody(state_dim),
+        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
+        num_options=len(config.gammas))
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.state_normalizer = RunningStatsNormalizer()
+    config.max_steps = 1e6
+    config.random_process_fn = lambda action_dim: GaussianProcess(
+        (action_dim, ), [LinearSchedule(0.3, 0, 1e6)])
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = get_logger()
+    config.merge(kwargs)
+    run_episodes(GammaDDPGAgent(config))
+
 def single_run(run, game, fn, tag, **kwargs):
     log_dir = './log/ensemble-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game, log_dir, tag=tag, **kwargs)
@@ -257,7 +287,9 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    multi_runs(game, ddpg_continuous, tag='more_exploration', std_schedule=[LinearSchedule(0.3)])
+    gamma_ddpg(game)
+
+    # multi_runs(game, ddpg_continuous, tag='more_exploration', std_schedule=[LinearSchedule(0.3)])
 
     # multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
 

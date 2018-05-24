@@ -325,3 +325,64 @@ class DeterministicOptionCriticNet(nn.Module, BaseNet):
                  for fc_critic, action in zip(self.fc_critics, actions)]
         q = torch.cat(q, dim=1)
         return q
+
+class GammaDeterministicOptionCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 action_dim,
+                 phi_body,
+                 actor_body,
+                 critic_body,
+                 num_options,
+                 gpu=-1):
+        super(GammaDeterministicOptionCriticNet, self).__init__()
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.action_dim = action_dim
+        self.num_options = num_options
+
+        self.fc_q_options = layer_init(nn.Linear(actor_body.feature_dim, num_options))
+        self.fc_actors = nn.ModuleList([layer_init(nn.Linear(
+            actor_body.feature_dim, action_dim)) for _ in range(num_options)])
+        self.fc_critics = nn.ModuleList([layer_init(nn.Linear(
+            critic_body.feature_dim, 1)) for _ in range(num_options)])
+
+        self.set_gpu(gpu)
+
+    def feature(self, obs):
+        obs = self.tensor(obs)
+        phi = self.phi_body(obs)
+        return phi
+
+    def predict(self, obs, to_numpy=False):
+        phi = self.feature(obs)
+        actions, q_options = self.actor(phi)
+        # q_values = self.critic(phi, actions)
+        # actions = torch.stack(actions).transpose(0, 1)
+        # best = q_values.max(1)[1]
+        # if to_numpy:
+        #     actions = actions[self.tensor(np.arange(actions.size(0))).long(), best, :]
+        #     return actions.detach().cpu().numpy(), best.detach().cpu().numpy()
+        # return actions, q_values, best
+        return actions, q_options
+
+    def actor(self, phi):
+        phi_actor = self.actor_body(phi)
+        actions = [F.tanh(fc_actor(phi_actor)) for fc_actor in self.fc_actors]
+        q_options = self.fc_q_options(phi_actor)
+        return actions, q_options
+
+    def critic(self, phi, actions):
+        if isinstance(actions, torch.Tensor):
+            phi = self.critic_body(phi, actions)
+            q = [fc_critic(phi) for fc_critic in self.fc_critics]
+        elif isinstance(actions, list):
+            q = [fc_critic(self.critic_body(phi, action))
+                 for fc_critic, action in zip(self.fc_critics, actions)]
+        q = torch.cat(q, dim=1)
+        return q
+
+    def zero_non_actor_grad(self):
+        self.fc_q_options.zero_grad()
+        self.fc_critics.zero_grad()
+        self.critic_body.zero_grad()
