@@ -189,7 +189,8 @@ def gamma_ddpg(game, log_dir=None, **kwargs):
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     config.discount = 0.99
-    config.gammas = np.linspace(0.9, 1.0, 5).tolist() + [config.discount, ]
+    # config.gammas = np.linspace(0.9, 1.0, 5).tolist() + [config.discount, ]
+    config.gammas = np.linspace(0.9, 1.0, 5).tolist()
     config.task_fn = lambda: Roboschool(game)
     config.evaluation_env = Roboschool(game, log_dir=log_dir)
     config.network_fn = lambda state_dim, action_dim: GammaDeterministicOptionCriticNet(
@@ -305,7 +306,7 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    # game = 'RoboschoolAnt-v1'
+    game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
     # game = 'RoboschoolHopper-v1'
@@ -314,7 +315,14 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    batch_job()
+    # gamma_ddpg(game, target_type='mixed')
+
+    # multi_runs(game, gamma_ddpg, tag='mixed_target',
+    #            target_type='mixed', parallel=True)
+    # multi_runs(game, gamma_ddpg, tag='vanilla_target',
+    #            target_type='vanilla', parallel=True)
+
+    # batch_job()
 
     # multi_runs(game, ddpg_continuous, tag='var_test_original',
     #            gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=True)
