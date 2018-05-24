@@ -153,16 +153,16 @@ if __name__ == '__main__':
     # for i, game in enumerate(games):
     #     plot(pattern='.*log/%s.*' % (game), figure=i, average=True, max_timesteps=1e6)
     # plt.show()
-    for i, game in enumerate(games):
+    # for i, game in enumerate(games):
         # stats = compute_stats(pattern='.*log/ensemble-%s/ddpg_continuous.*' % (game))
         # print(game, 'ddpg_continuous', stats)
         # stats = compute_stats(pattern='.*log/ensemble-%s.*half_policy.*' % (game))
         # print(game, 'half_policy', stats)
-        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*original_ddpg.*' % (game), figure=i, average=True, max_timesteps=1e6, color=0)
-        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=1)
-        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=2)
-        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=3)
-    plt.show()
+        # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*original_ddpg.*' % (game), figure=i, average=True, max_timesteps=1e6, color=0)
+        # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=1)
+        # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=2)
+        # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=3)
+    # plt.show()
 
     # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*original_ddpg.*', figure=0, average=True, max_timesteps=1e6, color=0)
     # plot(pattern='.*option_no_beta_exp_replay.*Humanoid.*ensemble_off_policy.*', figure=0, average=True, max_timesteps=1e6, color=1)
@@ -174,4 +174,17 @@ if __name__ == '__main__':
     # plot(pattern='.*log/ensemble-RoboschoolHumanoid-v1.*', figure=1)
     # plot(pattern='.*log/ensemble-RoboschoolHumanoidFlagrun-v1.*', figure=2)
     # plot(pattern='.*log/ensemble-RoboschoolHumanoidFlagrunHarder-v1.*', figure=3)
+    # plt.show()
+
+    # plot(pattern='.*var_test_no_reward_scale.*', figure=0)
+    # plot(pattern='.*var_test_original.*', figure=1)
+    # plot(pattern='.*var_test_running_state.*', figure=2)
+    # plot(pattern='.*var_test_tanh-run.*', figure=3)
+    # plot(pattern='.*var_test_tanh_no_reward_scale-run.*', figure=4)
+    # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolHopper-v1/ddpg_continuous.*', figure=5)
+    # plt.show()
+
+    # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/gamma_ddpg/mixed_target.*', figure=0)
+    # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/gamma_ddpg/vanilla_target.*', figure=1)
+    # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=2)
     # plt.show()
