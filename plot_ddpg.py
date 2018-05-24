@@ -19,14 +19,14 @@ def plot(**kwargs):
     kwargs.setdefault('max_timesteps', 1e8)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=100, max_timesteps=kwargs['max_timesteps'])
+    data = plotter.load_results(names, episode_window=10, max_timesteps=kwargs['max_timesteps'])
     print('')
 
     figure = kwargs['figure']
     color = kwargs['color']
     plt.figure(figure)
     if kwargs['average']:
-        x, y = plotter.average(data, 1000, kwargs['max_timesteps'], top_k=kwargs['top_k'])
+        x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
         for i, name in enumerate(names):
@@ -187,4 +187,11 @@ if __name__ == '__main__':
     # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/gamma_ddpg/mixed_target.*', figure=0)
     # plot(pattern='.*log/ensemble-RoboschoolAnt-v1/gamma_ddpg/vanilla_target.*', figure=1)
     # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=2)
+    # plt.show()
+
+    # plot(pattern='.*ensemble_ddpg_exploration.*', figure=0, average=True, max_timesteps=4e5, color=0)
+    # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=0, average=True, max_timesteps=4e5, color=1)
+    # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*half_policy.*', figure=0, average=True, max_timesteps=4e5, color=2)
+    # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*off_policy.*', figure=0, average=True, max_timesteps=4e5, color=3)
+
     # plt.show()
