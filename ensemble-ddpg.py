@@ -119,6 +119,8 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('tag', ddpg_continuous.__name__)
     kwargs.setdefault('q_l2_weight', 0)
     kwargs.setdefault('std_schedule', [LinearSchedule(0.3, 0, 1e6)])
+    kwargs.setdefault('reward_scale', 1.0)
+    kwargs.setdefault('state_normalizer', RunningStatsNormalizer())
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -139,7 +141,7 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
-    config.state_normalizer = RunningStatsNormalizer()
+    config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
     config.max_steps = 1e6
     config.random_process_fn = lambda action_dim: GaussianProcess(
         (action_dim, ), kwargs['std_schedule'])
@@ -226,9 +228,36 @@ def multi_runs(game, fn, tag, **kwargs):
 
 def batch_job():
     cf = Config()
-    cf.add_argument('ind_game', type=int)
-    cf.add_argument('ind_task', type=int)
+    cf.add_argument('--ind1', type=int, default='0')
+    cf.add_argument('--ind2', type=int, default='0')
     cf.merge()
+
+    game = 'RoboschoolHopper-v1'
+
+    def task1():
+        multi_runs(game, ddpg_continuous, tag='var_test_original',
+               gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=True)
+
+    def task2():
+        multi_runs(game, ddpg_continuous, tag='var_test_tanh',
+               gate=F.tanh, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=True)
+
+    def task3():
+        multi_runs(game, ddpg_continuous, tag='var_test_running_state',
+               gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RunningStatsNormalizer(),
+               parallel=True)
+
+    def task4():
+        multi_runs(game, ddpg_continuous, tag='var_test_no_reward_scale',
+               gate=F.relu, q_l2_weight=0.01, reward_scale=1.0, state_normalizer=RescaleNormalizer(), parallel=True)
+
+    def task5():
+        multi_runs(game, ddpg_continuous, tag='var_test_tanh_no_reward_scale',
+               gate=F.tanh, reward_scale=1.0, state_normalizer=RescaleNormalizer(), parallel=True)
+
+    tasks = [task1, task2, task3, task4, task5]
+    tasks[cf.ind1]()
+
 
     # games = ['RoboschoolAnt-v1', 'RoboschoolWalker2d-v1', 'RoboschoolHalfCheetah-v1']
     # games = [
@@ -236,13 +265,13 @@ def batch_job():
     #     'RoboschoolHopper-v1',
     #     'RoboschoolInvertedDoublePendulum-v1'
     # ]
-    games = ['RoboschoolAnt-v1',
-             'RoboschoolHalfCheetah-v1',
-             'RoboschoolHopper-v1',
-             'RoboschoolInvertedDoublePendulum-v1',
-             'RoboschoolReacher-v1',
-             'RoboschoolWalker2d-v1',
-             'RoboschoolInvertedPendulumSwingup-v1']
+    # games = ['RoboschoolAnt-v1',
+    #          'RoboschoolHalfCheetah-v1',
+    #          'RoboschoolHopper-v1',
+    #          'RoboschoolInvertedDoublePendulum-v1',
+    #          'RoboschoolReacher-v1',
+    #          'RoboschoolWalker2d-v1',
+    #          'RoboschoolInvertedPendulumSwingup-v1']
 
     # games = ['Walker2DBulletEnv-v0',
     #          'AntBulletEnv-v0',
@@ -250,22 +279,22 @@ def batch_job():
     #          'RacecarBulletEnv-v0',
     #          'KukaBulletEnv-v0',
     #          'MinitaurBulletEnv-v0']
-    game = games[cf.ind_game]
+    # game = games[cf.ind_game]
 
-    def task1():
-        multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
-        multi_runs(game, ensemble_ddpg, tag='half_policy',
-                   off_policy_actor=False, off_policy_critic=True, parallel=True)
+    # def task1():
+    #     multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
+    #     multi_runs(game, ensemble_ddpg, tag='half_policy',
+    #                off_policy_actor=False, off_policy_critic=True, parallel=True)
     # def task2():
-        multi_runs(game, ensemble_ddpg, tag='on_policy',
-                   off_policy_actor=False, off_policy_critic=False, parallel=True)
-        multi_runs(game, ensemble_ddpg, tag='off_policy',
-                   off_policy_actor=True, off_policy_critic=True, parallel=True)
+    #     multi_runs(game, ensemble_ddpg, tag='on_policy',
+    #                off_policy_actor=False, off_policy_critic=False, parallel=True)
+    #     multi_runs(game, ensemble_ddpg, tag='off_policy',
+    #                off_policy_actor=True, off_policy_critic=True, parallel=True)
 
     # tasks = [task1, task2]
     # tasks[cf.ind_task]()
     # task()
-    task1()
+    # task1()
 
 if __name__ == '__main__':
     mkdir('data')
@@ -276,7 +305,7 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
     # game = 'RoboschoolHopper-v1'
@@ -285,7 +314,21 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    gamma_ddpg(game, target_type='mixed')
+    batch_job()
+
+    # multi_runs(game, ddpg_continuous, tag='var_test_original',
+    #            gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=True)
+    #
+    # multi_runs(game, ddpg_continuous, tag='var_test_tanh',
+    #            gate=F.tanh, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=True)
+    #
+    # multi_runs(game, ddpg_continuous, tag='var_test_running_state',
+    #            gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RunningStatsNormalizer(), parallel=True)
+    #
+    # multi_runs(game, ddpg_continuous, tag='var_test_no_reward_scale',
+    #            gate=F.relu, q_l2_weight=0.01, reward_scale=1.0, state_normalizer=RescaleNormalizer(), parallel=True)
+
+    # gamma_ddpg(game, target_type='mixed')
 
     # multi_runs(game, ddpg_continuous, tag='more_exploration', std_schedule=[LinearSchedule(0.3)])
 
