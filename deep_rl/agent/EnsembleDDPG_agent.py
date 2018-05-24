@@ -43,8 +43,8 @@ class EnsembleDDPGAgent(BaseAgent):
         while True:
             if np.random.rand() > config.option_epsilon():
                 action, option = self.network.predict(np.stack([state]), to_numpy=True)
-                # if not deterministic:
-                #     action += self.random_process.sample()
+                if config.action_based_noise:
+                    action += self.random_process.sample()
                 action = action.flatten()
             else:
                 action = (np.random.rand(self.task.action_dim) - 0.5) * 2
