@@ -70,7 +70,10 @@ if __name__ == '__main__':
     # plot(pattern='.*dist_rl_quantile_option_random_skip.*%s.*qr_dqn_random_skip.*' % (game), figure=0, average=True, color=1, max_timesteps=1e7)
     # plt.show()
 
-    plot(pattern='.*log/original_qr_dqn-180523-162532.*', figure=0)
-    plot(pattern='.*log/mean_and_9_options-180523-162542.*', figure=1)
+    # plot(pattern='.*log/original_qr_dqn-180523-162532.*', figure=0)
+    # plot(pattern='.*log/mean_and_9_options-180523-162542.*', figure=1)
+    # plt.show()
+
+    plot(pattern='.*log/PongNoFrameskip-v4-option-qr-180524-170331.*', figure=0)
     plt.show()
 
