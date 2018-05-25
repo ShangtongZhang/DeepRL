@@ -149,7 +149,7 @@ def qr_dqn_pixel_atari(name, **kwargs):
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
-    config.max_steps = int(1e8)
+    config.max_steps = int(3e7)
     config.logger = get_logger(file_name=qr_dqn_pixel_atari.__name__)
     config.num_quantiles = 200
     config.merge(kwargs)
@@ -183,7 +183,7 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.entropy_weight = 0.01
-    config.max_steps = int(1e8)
+    config.max_steps = int(3e7)
     config.logger = get_logger(file_name=option_qr_dqn_pixel_atari.__name__)
     config.num_quantiles = 200
     config.merge(kwargs)
@@ -194,7 +194,7 @@ def single_run(run, game, fn, tag, **kwargs):
     fn(game, log_dir=log_dir, tag=tag, **kwargs)
 
 def multi_runs(game, fn, tag, **kwargs):
-    runs = np.arange(0, 2)
+    runs = np.arange(0, 3)
     kwargs.setdefault('parallel', False)
     if not kwargs['parallel']:
         for run in runs:
@@ -247,7 +247,7 @@ def visualize(game, **kwargs):
     steps = 0
     mkdir('data/%s' % (game))
     action_meanings = task.env.unwrapped.get_action_meanings()
-    # task.seed()
+    task.seed(0)
     state = task.reset()
     while True:
         frame = task.env.env.env.rgb_frame
@@ -263,12 +263,13 @@ def visualize(game, **kwargs):
         actions = [agent.policy.sample(v) for v in q_values]
 
         option = np.asscalar(option.cpu().detach().numpy())
+        mean_action = np.argmax(mean_q_values.cpu().detach().numpy().flatten())
         action = actions[0]
         if option == 9:
             option_str = 'mean'
         else:
             option_str = 'quantile_%s' % ((option + 1) / 10.0)
-        decision_str = '%s-%s' % (option_str, action_meanings[action])
+        decision_str = '%s-%s-%s' % (option_str, action_meanings[action], action_meanings[mean_action])
         io.imsave('data/%s/frame-%d-%s.png' % (game, steps, decision_str), frame)
         state, reward, done, _ = task.step(action)
         total_reward += reward
@@ -277,10 +278,37 @@ def visualize(game, **kwargs):
             break
     print(total_reward)
 
+def batch_job():
+    cf = Config()
+    cf.add_argument('--ind1', type=int, default=0)
+    cf.add_argument('--ind2', type=int, default=2)
+    cf.merge()
+
+    games = ['FreewayNoFrameskip-v4',
+             'PongNoFrameskip-v4']
+    gpus = [2, 3]
+    game = games[cf.ind1]
+    gpu = gpus[cf.ind1]
+
+    def task1():
+        multi_runs(game, option_qr_dqn_pixel_atari, num_options=9,
+                   gpu=gpu, tag='9_options_only', mean_option=0, parallel=False)
+
+    def task2():
+        multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=gpu, tag='mean_and_9_options', parallel=False)
+
+    def task3():
+        multi_runs(game, qr_dqn_pixel_atari, gpu=gpu, tag='original_qr_dqn', parallel=False)
+
+    tasks = [task1, task2, task3]
+    tasks[cf.ind2]()
 
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
+    set_one_thread()
+    batch_job()
+
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
@@ -298,7 +326,7 @@ if __name__ == '__main__':
     # game = 'PongNoFrameskip-v4'
 
     # game = 'SkiingNoFrameskip-v4'
-    game = 'SpaceInvadersNoFrameskip-v4'
+    # game = 'SpaceInvadersNoFrameskip-v4'
     # game = 'QbertNoFrameskip-v4'
     # game = 'DemonAttackNoFrameskip-v4'
     # game = 'NoFrameskip-v4'

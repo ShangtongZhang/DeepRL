@@ -6,7 +6,6 @@ __pycache__/
 .idea
 exp_*
 upload.py
-*.sh
 data
 dataset
 draw_*
