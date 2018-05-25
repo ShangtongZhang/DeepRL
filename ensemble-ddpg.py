@@ -317,7 +317,7 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    # game = 'RoboschoolAnt-v1'
+    game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
     # game = 'RoboschoolHopper-v1'
@@ -326,9 +326,9 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    # multi_runs(game, ensemble_ddpg, tag='option_epsilon',
-    #            option_epsilon=LinearSchedule(0.7, 0, 1e6), action_based_noise=False,
-    #            off_policy_actor=True, off_policy_critic=True, parallel=True)
+    multi_runs(game, ensemble_ddpg, tag='option_epsilon',
+               option_epsilon=LinearSchedule(0.3, 0.3, 1e6), action_based_noise=False,
+               off_policy_actor=True, off_policy_critic=True, parallel=True)
 
     # multi_runs(game, ensemble_ddpg, tag='option_epsilon',
     #            option_epsilon=LinearSchedule(0, 0, 1e6),
@@ -342,7 +342,7 @@ if __name__ == '__main__':
     # multi_runs(game, gamma_ddpg, tag='vanilla_target',
     #            target_type='vanilla', parallel=True)
 
-    batch_job()
+    # batch_job()
 
     # multi_runs(game, ddpg_continuous, tag='var_test_original',
     #            gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=True)
