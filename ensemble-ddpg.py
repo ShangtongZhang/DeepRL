@@ -119,8 +119,7 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('tag', ddpg_continuous.__name__)
     kwargs.setdefault('q_l2_weight', 0)
     kwargs.setdefault('std_schedule', [LinearSchedule(0.3, 0, 1e6)])
-    kwargs.setdefault('reward_scale', 1.0)
-    kwargs.setdefault('state_normalizer', RunningStatsNormalizer())
+    kwargs.setdefault('reward_scale', 0.1)
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -173,7 +172,7 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     )
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
-    config.state_normalizer = RunningStatsNormalizer()
+    config.reward_normalizer = RescaleNormalizer(0.1)
     config.max_steps = 1e6
     config.random_process_fn = lambda action_dim: GaussianProcess(
         (action_dim, ), [LinearSchedule(0.3, 0, 1e6)])
