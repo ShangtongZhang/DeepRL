@@ -133,6 +133,7 @@ def qr_dqn_pixel_atari(name, **kwargs):
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('random_skip', 0)
     kwargs.setdefault('frame_stack', 4)
+    kwargs.setdefault('max_steps', 3e7)
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, random_skip=kwargs['random_skip'])
@@ -149,7 +150,6 @@ def qr_dqn_pixel_atari(name, **kwargs):
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
-    config.max_steps = int(3e7)
     config.logger = get_logger(file_name=qr_dqn_pixel_atari.__name__)
     config.num_quantiles = 200
     config.merge(kwargs)
@@ -165,6 +165,7 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
     kwargs.setdefault('random_skip', 0)
     kwargs.setdefault('frame_stack', 4)
     config.history_length = kwargs['frame_stack']
+    kwargs.setdefault('max_steps', 3e7)
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, random_skip=kwargs['random_skip'])
     config.num_workers = 16
@@ -183,7 +184,6 @@ def option_qr_dqn_pixel_atari(name, **kwargs):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.entropy_weight = 0.01
-    config.max_steps = int(3e7)
     config.logger = get_logger(file_name=option_qr_dqn_pixel_atari.__name__)
     config.num_quantiles = 200
     config.merge(kwargs)
@@ -307,7 +307,7 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    batch_job()
+    # batch_job()
 
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
@@ -329,9 +329,9 @@ if __name__ == '__main__':
     # game = 'SpaceInvadersNoFrameskip-v4'
     # game = 'QbertNoFrameskip-v4'
     # game = 'DemonAttackNoFrameskip-v4'
-    # game = 'NoFrameskip-v4'
-    # game = 'NoFrameskip-v4'
-    # game = 'NoFrameskip-v4'
+    # game = 'BeamRiderNoFrameskip-v4'
+    game = 'UpNDownNoFrameskip-v4'
+
 
     # games = [spec.id for spec in gym.envs.registry.all()]
     # games = [game]
@@ -360,5 +360,8 @@ if __name__ == '__main__':
     # option_qr_dqn_pixel_atari(game, num_options=20, gpu=0, tag='option_qr_20_options')
     # option_qr_dqn_pixel_atari(game, num_options=5, gpu=1, tag='option_qr_5_options')
 
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True)
-    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False, max_steps=int(1e8))
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False, max_steps=int(1e8))
+
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False)
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False)
