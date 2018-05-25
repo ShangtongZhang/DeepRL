@@ -49,10 +49,6 @@ class OptionNStepQRDQNAgent(BaseAgent):
         q_values = quantile_values[self.network.range(option.size(0)), :, option_quantiles]
         q_values = q_values.cpu().detach().numpy()
         actions = [self.policy.sample(v) for v in q_values]
-        # action = torch.max(quantile_values, dim=-1)[1]
-        # q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
-        # actions = torch.argmax(q_values, dim=-1)
-        # return actions.cpu().detach().numpy(), option
         return actions, option
 
     def iteration(self):
@@ -62,10 +58,9 @@ class OptionNStepQRDQNAgent(BaseAgent):
         for _ in range(config.rollout_length):
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
-            for i in range(config.num_workers):
-                config.logger.scalar_summary('worker_%d' % (i), options[i])
-            config.logger.scalar_summary('mean_eipsode_reward', np.mean(self.last_episode_rewards))
-            # q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
+            # for i in range(config.num_workers):
+            #     config.logger.scalar_summary('worker_%d' % (i), options[i])
+            # config.logger.scalar_summary('mean_eipsode_reward', np.mean(self.last_episode_rewards))
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
             rewards = config.reward_normalizer(rewards)

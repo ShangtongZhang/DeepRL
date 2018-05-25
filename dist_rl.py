@@ -295,16 +295,15 @@ if __name__ == '__main__':
     # game = 'DoubleDunkNoFrameskip-v4'
 
     # game = 'FreewayNoFrameskip-v4'
-    game = 'PongNoFrameskip-v4'
+    # game = 'PongNoFrameskip-v4'
 
     # game = 'SkiingNoFrameskip-v4'
-    # game = 'SpaceInvadersNoFrameskip-v4'
+    game = 'SpaceInvadersNoFrameskip-v4'
     # game = 'QbertNoFrameskip-v4'
     # game = 'DemonAttackNoFrameskip-v4'
     # game = 'NoFrameskip-v4'
     # game = 'NoFrameskip-v4'
     # game = 'NoFrameskip-v4'
-
 
     # games = [spec.id for spec in gym.envs.registry.all()]
     # games = [game]
@@ -335,6 +334,3 @@ if __name__ == '__main__':
 
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True)
     # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
-
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=1, tag='mean_and_9_options_random_skip', parallel=True)
-    # multi_runs(game, qr_dqn_pixel_atari, gpu=1, tag='qr_dqn_random_skip', parallel=True)
