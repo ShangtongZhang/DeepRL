@@ -228,7 +228,7 @@ def visualize(game, **kwargs):
         OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'] + kwargs['mean_option'],
                           NatureConvBody(in_channels=config.history_length),
                           gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=0.05, final_step=100000, min_epsilon=0.05)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0, final_step=100000, min_epsilon=0)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -241,24 +241,19 @@ def visualize(game, **kwargs):
     config.num_quantiles = 200
     config.merge(kwargs)
     agent = OptionNStepQRDQNAgent(config)
-    # agent.load('data/OptionNStepQRDQNAgent-FreewayNoFrameskip-v4-option-qr-model-FreewayNoFrameskip-v4.bin')
-    agent.load('data/OptionNStepQRDQNAgent-PongNoFrameskip-v4-option-qr-model-PongNoFrameskip-v4.bin')
+    agent.load('data/saved-OptionNStepQRDQNAgent-%s.bin' % (game))
     task = task_fn(None)
     total_reward = 0
     steps = 0
     mkdir('data/%s' % (game))
     action_meanings = task.env.unwrapped.get_action_meanings()
-    # task.seed(np.random.randint(0, 1000))
+    # task.seed()
+    state = task.reset()
     while True:
-        state = task.reset()
         frame = task.env.env.env.rgb_frame
         state = np.stack([state])
         quantile_values, pi, v_pi = agent.network.predict(config.state_normalizer(state))
-
-        dist = torch.distributions.Categorical(pi)
-        option = dist.sample()
         option = torch.argmax(pi, dim=1)
-
         option_quantiles = agent.candidate_quantile[agent.network.range(option.size(0)), option]
         if config.mean_option:
             mean_q_values = quantile_values.mean(-1).unsqueeze(-1)
@@ -268,9 +263,7 @@ def visualize(game, **kwargs):
         actions = [agent.policy.sample(v) for v in q_values]
 
         option = np.asscalar(option.cpu().detach().numpy())
-        # action = actions[0]
-        # action = 5
-        action = np.random.randint(0, 6)
+        action = actions[0]
         if option == 9:
             option_str = 'mean'
         else:
@@ -323,7 +316,7 @@ if __name__ == '__main__':
             #     print(game)
         # except:
         #     continue
-    visualize(game, num_options=9)
+    # visualize(game, num_options=9)
 
     # option_qr_dqn_cart_pole()
     # qr_dqn_cart_pole()
