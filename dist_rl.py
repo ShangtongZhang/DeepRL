@@ -354,7 +354,7 @@ if __name__ == '__main__':
     # option_qr_dqn_cliff()
 
     # multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=True)
-    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='option_qr_dqn', parallel=True)
+    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='option_qr_dqn', parallel=True)
 
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
@@ -378,6 +378,10 @@ if __name__ == '__main__':
     # game = 'DemonAttackNoFrameskip-v4'
     # game = 'BeamRiderNoFrameskip-v4'
     # game = 'UpNDownNoFrameskip-v4'
+
+    # game = 'BattleZoneNoFrameskip-v4'
+    # game = 'BankHeistNoFrameskip-v4'
+    game = 'RobotankNoFrameskip-v4'
 
 
     # games = [spec.id for spec in gym.envs.registry.all()]
@@ -411,4 +415,4 @@ if __name__ == '__main__':
     # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False, max_steps=int(1e8))
 
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False)
-    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False)
+    multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False)
