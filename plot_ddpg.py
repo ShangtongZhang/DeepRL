@@ -19,7 +19,7 @@ def plot(**kwargs):
     kwargs.setdefault('max_timesteps', 1e8)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=10, max_timesteps=kwargs['max_timesteps'])
+    data = plotter.load_results(names, episode_window=50, max_timesteps=kwargs['max_timesteps'])
     print('')
 
     figure = kwargs['figure']
@@ -86,13 +86,13 @@ if __name__ == '__main__':
     #          'MinitaurBulletEnv-v0']
     # game = games[0]
 
-    games = ['RoboschoolAnt-v1',
-             'RoboschoolHalfCheetah-v1',
-             'RoboschoolHopper-v1',
-             'RoboschoolInvertedDoublePendulum-v1',
-             'RoboschoolReacher-v1',
-             'RoboschoolWalker2d-v1',
-             'RoboschoolInvertedPendulumSwingup-v1']
+    # games = ['RoboschoolAnt-v1',
+    #          'RoboschoolHalfCheetah-v1',
+    #          'RoboschoolHopper-v1',
+    #          'RoboschoolInvertedDoublePendulum-v1',
+    #          'RoboschoolReacher-v1',
+    #          'RoboschoolWalker2d-v1',
+    #          'RoboschoolInvertedPendulumSwingup-v1']
     # games = games[:1]
 
     # game = 'ensemble-RoboschoolAnt-v1'
@@ -189,10 +189,28 @@ if __name__ == '__main__':
     # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=2)
     # plt.show()
 
-    plot(pattern='.*ensemble_ddpg_exploration_0\.7.*', figure=0, average=True, max_timesteps=1e6, color=0)
-    plot(pattern='.*ensemble_ddpg_exploration_0\.3.*', figure=0, average=True, max_timesteps=1e6, color=5)
-    plot(pattern='.*ensemble_ddpg_constant_0\.3.*', figure=0, average=True, max_timesteps=1e6, color=6)
-    plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=0, average=True, max_timesteps=1e6, color=1)
-    plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*half_policy.*', figure=0, average=True, max_timesteps=1e6, color=2)
-    plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*off_policy.*', figure=0, average=True, max_timesteps=1e6, color=3)
+    # plot(pattern='.*ensemble_ddpg_exploration_0\.7.*', figure=0, average=True, max_timesteps=1e6, color=0)
+    # plot(pattern='.*ensemble_ddpg_exploration_0\.3.*', figure=0, average=True, max_timesteps=1e6, color=5)
+    # plot(pattern='.*ensemble_ddpg_constant_0\.3.*', figure=0, average=True, max_timesteps=1e6, color=6)
+    # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=0, average=True, max_timesteps=1e6, color=1)
+    # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*half_policy.*', figure=0, average=True, max_timesteps=1e6, color=2)
+    # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*off_policy.*', figure=0, average=True, max_timesteps=1e6, color=3)
+    # plt.show()
+
+    games = [
+        'RoboschoolAnt-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1'
+    ]
+
+    for i, game in enumerate(games):
+        plot(pattern='.*log/ensemble-%s.*original_ddpg.*' % (game), figure=i, average=True, max_timesteps=1e6, color=0)
+        # plot(pattern='.*log/ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=1)
+        # plot(pattern='.*log/ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=2)
+        plot(pattern='.*log/ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=3)
     plt.show()
+
+
