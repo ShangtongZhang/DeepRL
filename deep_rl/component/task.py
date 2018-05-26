@@ -211,3 +211,61 @@ class ParallelizedTask:
         if self.single_process:
             return
         for task in self.tasks: task.close()
+
+class CliffWalking(gym.Env):
+    def __init__(self, random_action_prob):
+        self.width = 12
+        self.height = 4
+        self.action_dim = 4
+        self.S = (0, 0)
+        self.G = (self.width - 1, 0)
+        self.random_action_prob = random_action_prob
+        self.actions = [0, 1, 2, 3]
+        self.action_space = gym.spaces.discrete.Discrete(4)
+        self.observation_space = gym.spaces.box.Box(shape=(self.width * self.height, ), dtype=np.uint8,
+                                                    low=0, high=1)
+
+    def get_obs(self):
+        obs = np.zeros(self.width * self.height, dtype=np.uint8)
+        x, y = self.state
+        obs[y * self.width + x] = 1
+        return obs
+
+    def fall(self):
+        x, y = self.state
+        return y == 0 and (0 < x < self.width - 1)
+
+    def step(self, action):
+        if np.random.rand() < self.random_action_prob:
+            action = np.random.choice(self.actions)
+        x, y = self.state
+        if action == 0:
+            x = max(0, x - 1)
+        elif action == 1:
+            x = min(self.width - 1, x + 1)
+        elif action == 2:
+            y = max(0, y - 1)
+        elif action == 3:
+            y = min(self.height - 1, y + 1)
+        else:
+            assert False, "Illegal Action"
+
+        self.state = (x, y)
+
+        reward = -100 if self.fall() else -1
+        done = True if self.fall() or self.state == self.G else False
+
+        return self.get_obs(), reward, done, {}
+
+    def reset(self):
+        self.state = self.S
+        return self.get_obs()
+
+class CliffWalkingTask(BaseTask):
+    def __init__(self, random_action_prob, log_dir=None):
+        BaseTask.__init__(self)
+        self.name = 'CliffWalking'
+        self.env = CliffWalking(random_action_prob)
+        self.action_dim = self.env.action_space.n
+        self.state_dim = self.env.observation_space.shape[0]
+        self.env = self.set_monitor(self.env, log_dir)
