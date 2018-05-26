@@ -196,6 +196,7 @@ class ParallelizedTask:
         self.state_dim = self.tasks[0].state_dim
         self.action_dim = self.tasks[0].action_dim
         self.name = self.tasks[0].name
+        self.single_process = single_process
 
     def step(self, actions):
         results = [task.step(action) for task, action in zip(self.tasks, actions)]
@@ -207,4 +208,6 @@ class ParallelizedTask:
         return np.stack(results)
 
     def close(self):
+        if self.single_process:
+            return
         for task in self.tasks: task.close()
