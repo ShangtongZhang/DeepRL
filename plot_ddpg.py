@@ -191,6 +191,7 @@ if __name__ == '__main__':
 
     plot(pattern='.*ensemble_ddpg_exploration_0\.7.*', figure=0, average=True, max_timesteps=1e6, color=0)
     plot(pattern='.*ensemble_ddpg_exploration_0\.3.*', figure=0, average=True, max_timesteps=1e6, color=5)
+    plot(pattern='.*ensemble_ddpg_constant_0\.3.*', figure=0, average=True, max_timesteps=1e6, color=6)
     plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=0, average=True, max_timesteps=1e6, color=1)
     plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*half_policy.*', figure=0, average=True, max_timesteps=1e6, color=2)
     plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*off_policy.*', figure=0, average=True, max_timesteps=1e6, color=3)
