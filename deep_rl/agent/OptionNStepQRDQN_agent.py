@@ -39,16 +39,27 @@ class OptionNStepQRDQNAgent(BaseAgent):
         cond = (x < 1.0).float().detach()
         return 0.5 * x.pow(2) * cond + (x.abs() - 0.5) * (1 - cond)
 
-    def act(self, quantile_values, pi):
-        dist = torch.distributions.Categorical(pi)
-        option = dist.sample()
+    def evaluation_action(self, state):
+        self.config.state_normalizer.set_read_only()
+        state = self.config.state_normalizer(np.stack([state]))
+        quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(state))
+        actions, _ = self.act(quantile_values, pi, True)
+        self.config.state_normalizer.unset_read_only()
+        return actions[0]
+
+    def act(self, quantile_values, pi, deterministic=False):
+        if deterministic:
+            option = torch.argmax(pi, dim=-1)
+        else:
+            dist = torch.distributions.Categorical(pi)
+            option = dist.sample()
         option_quantiles = self.candidate_quantile[self.network.range(option.size(0)), option]
         if self.config.mean_option:
             mean_q_values = quantile_values.mean(-1).unsqueeze(-1)
             quantile_values = torch.cat([quantile_values, mean_q_values], dim=-1)
         q_values = quantile_values[self.network.range(option.size(0)), :, option_quantiles]
         q_values = q_values.cpu().detach().numpy()
-        actions = [self.policy.sample(v) for v in q_values]
+        actions = [self.policy.sample(v, deterministic=deterministic) for v in q_values]
         return actions, option
 
     def iteration(self):

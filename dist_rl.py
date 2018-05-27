@@ -178,9 +178,10 @@ def qr_dqn_pixel_atari(game, **kwargs):
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, random_skip=kwargs['random_skip'])
+    config.evaluation_env = task_fn(kwargs['log_dir'])
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=kwargs['log_dir'], single_process=True)
+                                              log_dir=None, single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         QuantileNet(action_dim, config.num_quantiles, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
@@ -210,8 +211,9 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, random_skip=kwargs['random_skip'])
     config.num_workers = 16
+    config.evaluation_env = task_fn(kwargs['log_dir'])
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=kwargs['log_dir'], single_process=True)
+                                              log_dir=None, single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'] + kwargs['mean_option'],
@@ -325,23 +327,28 @@ def batch_job():
     cf.add_argument('--ind2', type=int, default=2)
     cf.merge()
 
+    # games = ['FreewayNoFrameskip-v4',
+    #          'PongNoFrameskip-v4']
     games = ['FreewayNoFrameskip-v4',
-             'PongNoFrameskip-v4']
-    gpus = [2, 3]
+             'PongNoFrameskip-v4',
+             'BeamRiderNoFrameskip-v4',
+             'BattleZoneNoFrameskip-v4',
+             'JourneyEscapeNoFrameskip-v4',
+             'MsPacmanNoFrameskip-v4']
     game = games[cf.ind1]
-    gpu = gpus[cf.ind1]
+    # gpu = gpus[cf.ind1]
 
-    def task1():
-        multi_runs(game, option_qr_dqn_pixel_atari, num_options=9,
-                   gpu=gpu, tag='9_options_only', mean_option=0, parallel=False)
+    # def task1():
+    #     multi_runs(game, option_qr_dqn_pixel_atari, num_options=9,
+    #                tag='9_options_only', mean_option=0, parallel=False)
 
     def task2():
-        multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=gpu, tag='mean_and_9_options', parallel=False)
+        multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, tag='mean_and_9_options', parallel=False)
 
     def task3():
-        multi_runs(game, qr_dqn_pixel_atari, gpu=gpu, tag='original_qr_dqn', parallel=False)
+        multi_runs(game, qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=False)
 
-    tasks = [task1, task2, task3]
+    tasks = [task2, task3]
     tasks[cf.ind2]()
 
 if __name__ == '__main__':
@@ -381,8 +388,7 @@ if __name__ == '__main__':
 
     # game = 'BattleZoneNoFrameskip-v4'
     # game = 'BankHeistNoFrameskip-v4'
-    game = 'RobotankNoFrameskip-v4'
-
+    # game = 'RobotankNoFrameskip-v4'
 
     # games = [spec.id for spec in gym.envs.registry.all()]
     # games = [game]
@@ -415,4 +421,4 @@ if __name__ == '__main__':
     # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False, max_steps=int(1e8))
 
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False)
-    multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False)
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False)

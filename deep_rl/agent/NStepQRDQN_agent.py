@@ -33,6 +33,14 @@ class NStepQRDQNAgent(BaseAgent):
         cond = (x < 1.0).float().detach()
         return 0.5 * x.pow(2) * cond + (x.abs() - 0.5) * (1 - cond)
 
+    def evaluation_action(self, state):
+        self.config.state_normalizer.set_read_only()
+        state = self.config.state_normalizer(np.stack([state]))
+        quantile_values = self.network.predict(self.config.state_normalizer(state))
+        q_values = quantile_values.sum(-1).cpu().detach().numpy()
+        self.config.state_normalizer.unset_read_only()
+        return np.argmax(q_values.flatten())
+
     def iteration(self):
         config = self.config
         rollout = []
