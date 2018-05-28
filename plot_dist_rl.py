@@ -58,24 +58,24 @@ if __name__ == '__main__':
     # game = 'Enduro'
     # game = 'JourneyEscape'
     # game = 'Tennis'
-    # game = 'Pong'
+    game = 'Pong'
     # game = 'Boxing'
     # game = 'IceHockey'
     # game = 'Skiing'
     # game = 'SpaceInvaders'
     # game = 'UpNDown'
-    game = 'BeamRider'
+    # game = 'BeamRider'
     # game = 'Robotank'
     # game = 'BankHeist'
     # game = 'BattleZone'
-    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*option_qr_10_options.*' % (game), figure=0, average=True, color=0, max_timesteps=3e7)
-    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
-    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
-    # plt.show()
-
-    plot(pattern='.*dist_rl_deterministic.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
-    plot(pattern='.*dist_rl_deterministic.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
+    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*9_options_only.*' % (game), figure=0, average=False, color=0, max_timesteps=3e7)
+    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
+    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
     plt.show()
+
+    # plot(pattern='.*dist_rl_deterministic.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
+    # plot(pattern='.*dist_rl_deterministic.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
+    # plt.show()
 
     # plot(pattern='.*dist_rl_quantile_option_random_skip.*%s.*mean_and_9_options.*' % (game), figure=0, average=True, color=0, max_timesteps=1e7)
     # plot(pattern='.*dist_rl_quantile_option_random_skip.*%s.*qr_dqn_random_skip.*' % (game), figure=0, average=True, color=1, max_timesteps=1e7)
