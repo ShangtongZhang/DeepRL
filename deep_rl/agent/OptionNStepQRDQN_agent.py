@@ -48,7 +48,9 @@ class OptionNStepQRDQNAgent(BaseAgent):
         return actions[0]
 
     def act(self, quantile_values, pi, deterministic=False):
-        if deterministic:
+        if self.config.random_option:
+            option = self.network.tensor([np.random.randint(0, pi.size(1))]).long()
+        elif deterministic:
             option = torch.argmax(pi, dim=-1)
         else:
             dist = torch.distributions.Categorical(pi)

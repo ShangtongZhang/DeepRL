@@ -51,14 +51,14 @@ if __name__ == '__main__':
     # plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/qr_dqn_pixel_atari.*', figure=1)
     # plt.show()
 
-    # game = 'Freeway'
+    game = 'Freeway'
     # game = 'Seaquest'
     # game = 'MsPacman'
     # game = 'Frostbite'
     # game = 'Enduro'
     # game = 'JourneyEscape'
     # game = 'Tennis'
-    game = 'Pong'
+    # game = 'Pong'
     # game = 'Boxing'
     # game = 'IceHockey'
     # game = 'Skiing'

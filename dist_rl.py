@@ -110,6 +110,7 @@ def qr_dqn_cliff(**kwargs):
     kwargs.setdefault('tag', option_qr_dqn_cliff.__name__)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     config = Config()
+    config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'])
@@ -128,7 +129,9 @@ def qr_dqn_cliff(**kwargs):
 def option_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('tag', option_qr_dqn_cliff.__name__)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('random_option', False)
     config = Config()
+    config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 5
     config.num_options = 5
@@ -361,11 +364,14 @@ if __name__ == '__main__':
     # qr_dqn_cliff()
     # option_qr_dqn_cliff()
 
-    # multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=True)
-    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='option_qr_dqn', parallel=True)
+    parallel = True
+    multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel)
+    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='option_qr_dqn', parallel=parallel)
+    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
+               random_option=True, parallel=parallel)
 
     # game = 'BreakoutNoFrameskip-v4'
-    game = 'FreewayNoFrameskip-v4'
+    # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
     # game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
