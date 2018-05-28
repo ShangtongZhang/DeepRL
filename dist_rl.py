@@ -236,8 +236,6 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     run_iterations(OptionNStepQRDQNAgent(config))
 
 def single_run(run, game, fn, tag, **kwargs):
-    np.random.seed()
-    torch.manual_seed(np.random.randint(1000))
     log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
 
