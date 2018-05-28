@@ -120,6 +120,8 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('q_l2_weight', 0)
     kwargs.setdefault('std_schedule', [LinearSchedule(0.3, 0, 1e6)])
     kwargs.setdefault('reward_scale', 0.1)
+    kwargs.setdefault('option_epsilon', LinearSchedule(0))
+    kwargs.setdefault('action_based_noise', True)
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -216,8 +218,9 @@ def single_run(run, game, fn, tag, **kwargs):
     fn(game, log_dir, tag=tag, **kwargs)
 
 def multi_runs(game, fn, tag, **kwargs):
-    runs = np.arange(0, 5)
     kwargs.setdefault('parallel', False)
+    kwargs.setdefault('runs', 4)
+    runs = np.arange(0, kwargs['runs'])
     if not kwargs['parallel']:
         for run in runs:
             single_run(run, game, fn, tag, **kwargs)
@@ -231,7 +234,7 @@ def multi_runs(game, fn, tag, **kwargs):
 def batch_job():
     cf = Config()
     cf.add_argument('--ind1', type=int, default='0')
-    cf.add_argument('--ind2', type=int, default='0')
+    cf.add_argument('--ind2', type=int, default='3')
     cf.merge()
 
     # game = 'RoboschoolHopper-v1'
@@ -282,31 +285,56 @@ def batch_job():
     #          'KukaBulletEnv-v0',
     #          'MinitaurBulletEnv-v0']
 
+    # games = [
+    #     'RoboschoolAnt-v1',
+    #     'RoboschoolHopper-v1',
+    #     'RoboschoolWalker2d-v1',
+    #     'RoboschoolHalfCheetah-v1',
+    #     'RoboschoolReacher-v1',
+    #     'RoboschoolHumanoid-v1'
+    # ]
+    # game = games[cf.ind1]
+
+    # def task():
+    #     multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
+    #     multi_runs(game, ensemble_ddpg, tag='off_policy',
+    #                off_policy_actor=True, off_policy_critic=True, parallel=True)
+    #     multi_runs(game, ensemble_ddpg, tag='half_policy',
+    #                off_policy_actor=False, off_policy_critic=True, parallel=True)
+    #     multi_runs(game, ensemble_ddpg, tag='on_policy',
+    #                off_policy_actor=False, off_policy_critic=False, parallel=True)
+    #
+    # task()
+
     games = [
         'RoboschoolAnt-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1'
+        'RoboschoolHopper-v1'
     ]
     game = games[cf.ind1]
 
-    def task():
-        multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
-        multi_runs(game, ensemble_ddpg, tag='off_policy',
-                   off_policy_actor=True, off_policy_critic=True, parallel=True)
-        multi_runs(game, ensemble_ddpg, tag='half_policy',
-                   off_policy_actor=False, off_policy_critic=True, parallel=True)
-        multi_runs(game, ensemble_ddpg, tag='on_policy',
-                   off_policy_actor=False, off_policy_critic=False, parallel=True)
+    parallel = True
+    runs = 4
+    def task1():
+        multi_runs(game, ddpg_continuous, tag='constant_exploration_original_ddpg', parallel=parallel,
+                   std_schedules=[LinearSchedule(0.3)], runs=runs)
 
-    task()
+    def task2():
+        multi_runs(game, ddpg_continuous, tag='option_exploration_original_ddpg', parallel=parallel,
+                   option_epsilon=LinearSchedule(0.3, 0, 1e6), action_based_noise=False, runs=runs)
 
-    # tasks = [task1, task2]
-    # tasks[cf.ind_task]()
-    # task()
-    # task1()
+    def task3():
+        multi_runs(game, ensemble_ddpg, tag='constant_exploration_off_policy',
+                   std_schedules=[LinearSchedule(0.3)], off_policy_actor=True, off_policy_critic=True,
+                   parallel=parallel, runs=runs)
+
+    def task4():
+        multi_runs(game, ensemble_ddpg, tag='option_exploration_off_policy',
+                   option_epsilon=LinearSchedule(0.3, 0, 1e6), action_based_noise=False,
+                   off_policy_actor=True, off_policy_critic=True, parallel=parallel,
+                   runs=runs)
+
+    tasks = [task1, task2, task3, task4]
+    tasks[cf.ind2]()
 
 if __name__ == '__main__':
     mkdir('data')
@@ -326,9 +354,9 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    multi_runs(game, ensemble_ddpg, tag='option_epsilon',
-               option_epsilon=LinearSchedule(0.3, 0.3, 1e6), action_based_noise=False,
-               off_policy_actor=True, off_policy_critic=True, parallel=True)
+    # multi_runs(game, ensemble_ddpg, tag='option_epsilon',
+    #            option_epsilon=LinearSchedule(0.3, 0.3, 1e6), action_based_noise=False,
+    #            off_policy_actor=True, off_policy_critic=True, parallel=True)
 
     # multi_runs(game, ensemble_ddpg, tag='option_epsilon',
     #            option_epsilon=LinearSchedule(0, 0, 1e6),
@@ -342,7 +370,7 @@ if __name__ == '__main__':
     # multi_runs(game, gamma_ddpg, tag='vanilla_target',
     #            target_type='vanilla', parallel=True)
 
-    # batch_job()
+    batch_job()
 
     # multi_runs(game, ddpg_continuous, tag='var_test_original',
     #            gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=True)
