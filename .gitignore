@@ -13,6 +13,7 @@ log
 old_logs
 figure
 to_plot
+nohup.out
 
 # C extensions
 *.so
