@@ -113,7 +113,8 @@ def qr_dqn_cliff(**kwargs):
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 5
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'])
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
+                                              single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: \
         QuantileNet(action_dim, config.num_quantiles, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
@@ -136,7 +137,8 @@ def option_qr_dqn_cliff(**kwargs):
     config.num_workers = 5
     config.num_options = 5
     config.mean_option = True
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'])
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
+                                              single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: \
         OptionQuantileNet(action_dim, config.num_quantiles, config.num_options, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
@@ -365,10 +367,11 @@ if __name__ == '__main__':
     # option_qr_dqn_cliff()
 
     parallel = True
-    multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel)
-    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='option_qr_dqn', parallel=parallel)
+    runs = 8
+    multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
+    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='option_qr_dqn', parallel=parallel, runs=runs)
     multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
-               random_option=True, parallel=parallel)
+               random_option=True, parallel=parallel, runs=runs)
 
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
