@@ -52,9 +52,9 @@ class Plotter:
             xy_list = [self.window_func(x, y, episode_window, np.mean) for x, y in xy_list]
         return xy_list
 
-    def average(self, xy_list, bin, max_timesteps, top_k=0):
+    def average(self, xy_list, bin, max_timesteps, top_k=0, top_k_perf=lambda x: np.max(x)):
         if top_k:
-            perf = [np.max(y) for _, y in xy_list]
+            perf = [top_k_perf(y) for _, y in xy_list]
             top_k_runs = np.argsort(perf)[-top_k:]
             new_xy_list = []
             for r, (x, y) in enumerate(xy_list):

@@ -49,7 +49,7 @@ class OptionNStepQRDQNAgent(BaseAgent):
 
     def act(self, quantile_values, pi, deterministic=False):
         if self.config.random_option:
-            option = self.network.tensor([np.random.randint(0, pi.size(1))]).long()
+            option = self.network.tensor(np.random.randint(0, pi.size(1), size=self.config.num_workers)).long()
         elif deterministic:
             option = torch.argmax(pi, dim=-1)
         else:

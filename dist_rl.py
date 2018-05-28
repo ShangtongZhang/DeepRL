@@ -112,44 +112,42 @@ def qr_dqn_cliff(**kwargs):
     config = Config()
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
-    config.num_workers = 5
+    config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
                                               single_process=True)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.01)
     config.network_fn = lambda state_dim, action_dim: \
         QuantileNet(action_dim, config.num_quantiles, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
-    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=10000, min_epsilon=0.1)
-    config.discount = 0.99
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=config.max_steps, min_epsilon=0.1)
     config.target_network_update_freq = 200
     config.rollout_length = 5
     config.logger = get_logger()
     config.num_quantiles = 20
-    config.max_steps = int(2e5)
+    config.max_steps = int(3e5)
     run_iterations(NStepQRDQNAgent(config))
 
 def option_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('tag', option_qr_dqn_cliff.__name__)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('random_option', False)
+    kwargs.setdefault('mean_option', False)
+    kwargs.setdefault('num_options', 5)
     config = Config()
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
-    config.num_workers = 5
-    config.num_options = 5
-    config.mean_option = True
+    config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
                                               single_process=True)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.01)
     config.network_fn = lambda state_dim, action_dim: \
-        OptionQuantileNet(action_dim, config.num_quantiles, config.num_options, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
-    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=10000, min_epsilon=0.1)
-    config.discount = 0.99
+        OptionQuantileNet(action_dim, config.num_quantiles, config.num_options + config.mean_option, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=config.max_steps, min_epsilon=0.1)
     config.entropy_weight = 0.01
     config.target_network_update_freq = 200
     config.rollout_length = 5
     config.logger = get_logger()
     config.num_quantiles = 20
-    config.max_steps = int(2e5)
+    config.max_steps = int(3e5)
     run_iterations(OptionNStepQRDQNAgent(config))
 
 def n_step_dqn_pixel_atari(game, **kwargs):
@@ -238,6 +236,8 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     run_iterations(OptionNStepQRDQNAgent(config))
 
 def single_run(run, game, fn, tag, **kwargs):
+    np.random.seed()
+    torch.manual_seed(np.random.randint(1000))
     log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
 
@@ -364,14 +364,19 @@ if __name__ == '__main__':
     # batch_job()
 
     # qr_dqn_cliff()
-    # option_qr_dqn_cliff()
+    # option_qr_dqn_cliff(mean_option=False)
+    # option_qr_dqn_cliff(mean_option=True, num_options=5)
+    # option_qr_dqn_cliff(random_option=True)
 
     parallel = True
     runs = 8
     multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='option_qr_dqn', parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
-               random_option=True, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='mean_option_qr_dqn',
+    #            mean_option=True, parallel=parallel, runs=runs)
+    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
+               mean_option=False, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
+    #            random_option=True, parallel=parallel, runs=runs)
 
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'

@@ -213,13 +213,17 @@ class ParallelizedTask:
         for task in self.tasks: task.close()
 
 class CliffWalking(gym.Env):
-    def __init__(self, random_action_prob):
+    POSITIVE_REWARD = 0
+    NEGATIVE_REWARD = 1
+    def __init__(self, random_action_prob, reward_type=NEGATIVE_REWARD):
+        self.timeout = 100
         self.width = 12
         self.height = 4
         self.action_dim = 4
         self.S = (0, 0)
         self.G = (self.width - 1, 0)
         self.random_action_prob = random_action_prob
+        self.reward_type = reward_type
         self.actions = [0, 1, 2, 3]
         self.action_space = gym.spaces.discrete.Discrete(4)
         self.observation_space = gym.spaces.box.Box(shape=(self.width * self.height, ), dtype=np.uint8,
@@ -251,14 +255,16 @@ class CliffWalking(gym.Env):
             assert False, "Illegal Action"
 
         self.state = (x, y)
+        self.steps += 1
 
         reward = -100 if self.fall() else -1
-        done = True if self.fall() or self.state == self.G else False
+        done = True if self.fall() or self.state == self.G or self.steps == self.timeout else False
 
         return self.get_obs(), reward, done, {}
 
     def reset(self):
         self.state = self.S
+        self.steps = 0
         return self.get_obs()
 
 class CliffWalkingTask(BaseTask):

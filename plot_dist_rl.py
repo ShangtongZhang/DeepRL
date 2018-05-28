@@ -7,17 +7,21 @@ def plot(**kwargs):
     kwargs.setdefault('average', False)
     # kwargs.setdefault('color', 0)
     kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('top_k_perf', lambda x: np.mean(x[-20:]))
     kwargs.setdefault('max_timesteps', 1e8)
+    kwargs.setdefault('episode_window', 100)
+    kwargs.setdefault('x_interval', 1000)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=100, max_timesteps=kwargs['max_timesteps'])
+    data = plotter.load_results(names, episode_window=kwargs['episode_window'], max_timesteps=kwargs['max_timesteps'])
     print('')
 
     figure = kwargs['figure']
     plt.figure(figure)
     if kwargs['average']:
         color = kwargs['color']
-        x, y = plotter.average(data, 1000, kwargs['max_timesteps'], top_k=kwargs['top_k'])
+        x, y = plotter.average(data, kwargs['x_interval'], kwargs['max_timesteps'], top_k=kwargs['top_k'],
+                               top_k_perf=kwargs['top_k_perf'])
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
         for i, name in enumerate(names):
@@ -68,10 +72,10 @@ if __name__ == '__main__':
     # game = 'Robotank'
     # game = 'BankHeist'
     # game = 'BattleZone'
-    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*9_options_only.*' % (game), figure=0, average=False, color=0, max_timesteps=3e7)
-    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
-    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
-    plt.show()
+    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*9_options_only.*' % (game), figure=0, average=False, color=0, max_timesteps=3e7)
+    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
+    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
+    # plt.show()
 
     # plot(pattern='.*dist_rl_deterministic.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
     # plot(pattern='.*dist_rl_deterministic.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
@@ -88,7 +92,16 @@ if __name__ == '__main__':
     # plot(pattern='.*log/PongNoFrameskip-v4-option-qr-180524-170331.*', figure=0)
     # plt.show()
 
-    # plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff.*', figure=0, average=True, max_timesteps=int(2e5), color=0)
-    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff.*', figure=0, average=True, max_timesteps=int(2e5), color=1)
-    # plt.show()
+    kwargs = {
+        'episode_window': 100,
+        'top_k': 5,
+        'max_timesteps': int(3e5),
+        'average': True,
+        'x_interval': 100
+    }
+    plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff.*', figure=0, color=0, **kwargs)
+    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/mean_option_qr_dqn.*', figure=0, average=True, max_timesteps=int(2e5), color=1, episode_window=episode_window, x_interval=100)
+    plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/pure_quantiles_option_qr_dqn.*', figure=0, color=2, **kwargs)
+    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/random_option_qr_dqn.*', figure=0, average=True, max_timesteps=int(2e5), color=3, episode_window=episode_window, x_interval=100)
+    plt.show()
 
