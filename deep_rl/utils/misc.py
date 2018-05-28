@@ -16,7 +16,12 @@ except:
     # python == 2.7
     from pathlib2 import Path
 
+def random_seed():
+    np.random.seed()
+    torch.manual_seed(np.random.randint(int(1e6)))
+
 def run_episodes(agent):
+    random_seed()
     config = agent.config
     window_size = 100
     ep = 0
@@ -49,6 +54,7 @@ def run_episodes(agent):
     return steps, rewards, avg_test_rewards
 
 def run_iterations(agent):
+    random_seed()
     config = agent.config
     agent_name = agent.__class__.__name__
     iteration = 0
