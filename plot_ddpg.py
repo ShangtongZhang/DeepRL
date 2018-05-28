@@ -207,10 +207,10 @@ if __name__ == '__main__':
     ]
 
     for i, game in enumerate(games):
-        plot(pattern='.*log/ensemble-%s.*original_ddpg.*' % (game), figure=i, average=True, max_timesteps=1e6, color=0)
-        # plot(pattern='.*log/ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=1)
-        # plot(pattern='.*log/ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=2)
-        plot(pattern='.*log/ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=3)
+        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*original_ddpg.*' % (game), figure=i, average=True, max_timesteps=1e6, color=0)
+        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=1)
+        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=2)
+        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=3)
     plt.show()
 
 
