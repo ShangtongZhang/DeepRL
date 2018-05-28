@@ -237,7 +237,8 @@ def single_run(run, game, fn, tag, **kwargs):
     fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
 
 def multi_runs(game, fn, tag, **kwargs):
-    runs = np.arange(0, 5)
+    kwargs.setdefault('runs', 2)
+    runs = np.arange(0, kwargs['runs'])
     kwargs.setdefault('parallel', False)
     if not kwargs['parallel']:
         for run in runs:
@@ -364,7 +365,7 @@ if __name__ == '__main__':
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='option_qr_dqn', parallel=True)
 
     # game = 'BreakoutNoFrameskip-v4'
-    # game = 'FreewayNoFrameskip-v4'
+    game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
     # game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
