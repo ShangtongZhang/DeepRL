@@ -355,24 +355,30 @@ def batch_job():
     tasks = [task2, task3]
     tasks[cf.ind2]()
 
+def test_random_seed(**kwargs):
+    np.random.seed()
+    print(np.random.randint(100))
+
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
     # batch_job()
 
+    # multi_runs('xxx', test_random_seed, tag='xxx', parallel=True)
+
     # qr_dqn_cliff()
     # option_qr_dqn_cliff(mean_option=False)
     # option_qr_dqn_cliff(mean_option=True, num_options=5)
     # option_qr_dqn_cliff(random_option=True)
 
-    parallel = True
-    runs = 8
-    multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
+    # parallel = True
+    # runs = 8
+    # multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='mean_option_qr_dqn',
     #            mean_option=True, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
-               mean_option=False, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
+    #            mean_option=False, parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
     #            random_option=True, parallel=parallel, runs=runs)
 
