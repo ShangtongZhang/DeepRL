@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     # game = 'Freeway'
     # game = 'Seaquest'
-    game = 'MsPacman'
+    # game = 'MsPacman'
     # game = 'Frostbite'
     # game = 'Enduro'
     # game = 'JourneyEscape'
@@ -68,14 +68,14 @@ if __name__ == '__main__':
     # game = 'Skiing'
     # game = 'SpaceInvaders'
     # game = 'UpNDown'
-    # game = 'BeamRider'
+    game = 'BeamRider'
     # game = 'Robotank'
     # game = 'BankHeist'
     # game = 'BattleZone'
-    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*9_options_only.*' % (game), figure=0, average=False, color=0, max_timesteps=3e7)
-    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
-    # plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
-    # plt.show()
+    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*9_options_only.*' % (game), figure=0, average=False, color=0, max_timesteps=3e7)
+    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*original_qr_dqn.*' % (game), figure=0, average=False, color=1, max_timesteps=3e7)
+    plot(pattern='.*dist_rl_quantile_option_no_skip.*%sNoFrameskip-v4.*mean_and_9_options.*' % (game), figure=0, average=False, color=2, max_timesteps=3e7)
+    plt.show()
 
     # plot(pattern='.*log/dist_rl_deterministic/dist_rl-%sNoFrameskip-v4/option_qr_dqn_pixel_atari.*' % (game), figure=0, color=0)
     # plot(pattern='.*log/dist_rl_deterministic/dist_rl-%sNoFrameskip-v4/qr_dqn_pixel_atari' % (game), figure=0, color=1)
@@ -103,9 +103,9 @@ if __name__ == '__main__':
         'average': True,
         'x_interval': 100
     }
-    plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff.*', figure=0, color=0, **kwargs)
-    plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/mean_option_qr_dqn.*', figure=0, color=1, **kwargs)
-    plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/pure_quantiles_option_qr_dqn.*', figure=0, color=2, **kwargs)
+    # plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff.*', figure=0, color=0, **kwargs)
+    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/mean_option_qr_dqn.*', figure=0, color=1, **kwargs)
+    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/pure_quantiles_option_qr_dqn.*', figure=0, color=2, **kwargs)
     # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/random_option_qr_dqn.*', figure=0, color=3, **kwargs)
-    plt.show()
+    # plt.show()
 
