@@ -61,6 +61,8 @@ class Config:
         self.test_repetitions = 10
         self.evaluation_env = None
         self.termination_regularizer = 0
+        self.evaluation_episodes_interval = 0
+        self.evaluation_episodes = 0
 
     def add_argument(self, *args, **kwargs):
         self.parser.add_argument(*args, **kwargs)
