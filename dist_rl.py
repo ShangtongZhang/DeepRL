@@ -142,7 +142,7 @@ def option_qr_dqn_cliff(**kwargs):
     config.network_fn = lambda state_dim, action_dim: \
         OptionQuantileNet(action_dim, config.num_quantiles, config.num_options + config.mean_option, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=config.max_steps, min_epsilon=0.1)
-    config.entropy_weight = 0
+    config.entropy_weight = 0.01
     config.target_network_update_freq = 200
     config.rollout_length = 5
     config.logger = get_logger()
@@ -458,11 +458,12 @@ if __name__ == '__main__':
     # visualize_cliff_world()
 
     # qr_dqn_cliff()
-    option_qr_dqn_cliff(mean_option=False)
+    # option_qr_dqn_cliff(mean_option=False)
     # option_qr_dqn_cliff(mean_option=True, num_options=5)
     # option_qr_dqn_cliff(random_option=True)
 
-    # parallel = True
+    parallel = False
+    runs = np.arange(0, 300)
     # runs = np.arange(24, 30)
     # multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='mean_option_qr_dqn',
