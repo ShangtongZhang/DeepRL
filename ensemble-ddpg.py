@@ -220,7 +220,7 @@ def single_run(run, game, fn, tag, **kwargs):
 
 def multi_runs(game, fn, tag, **kwargs):
     kwargs.setdefault('parallel', False)
-    kwargs.setdefault('runs', 4)
+    kwargs.setdefault('runs', 5)
     runs = np.arange(0, kwargs['runs'])
     if not kwargs['parallel']:
         for run in runs:
@@ -378,7 +378,7 @@ if __name__ == '__main__':
     # multi_runs(game, gamma_ddpg, tag='vanilla_target',
     #            target_type='vanilla', parallel=True)
 
-    batch_job()
+    # batch_job()
 
     # multi_runs(game, ddpg_continuous, tag='var_test_original',
     #            gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=True)
