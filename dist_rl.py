@@ -181,10 +181,10 @@ def qr_dqn_pixel_atari(game, **kwargs):
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, random_skip=kwargs['random_skip'])
-    config.evaluation_env = task_fn(kwargs['log_dir'])
+    # config.evaluation_env = task_fn(kwargs['log_dir'])
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=None, single_process=True)
+                                              log_dir=kwargs['log_dir'], single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         QuantileNet(action_dim, config.num_quantiles, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
@@ -209,14 +209,15 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('random_skip', 0)
     kwargs.setdefault('frame_stack', 4)
-    config.history_length = kwargs['frame_stack']
     kwargs.setdefault('max_steps', 3e7)
+    kwargs.setdefault('random_option', False)
+    config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, random_skip=kwargs['random_skip'])
     config.num_workers = 16
-    config.evaluation_env = task_fn(kwargs['log_dir'])
+    # config.evaluation_env = task_fn(kwargs['log_dir'])
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=None, single_process=True)
+                                              log_dir=kwargs['log_dir'], single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'] + kwargs['mean_option'],
@@ -236,6 +237,7 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     run_iterations(OptionNStepQRDQNAgent(config))
 
 def single_run(run, game, fn, tag, **kwargs):
+    random_seed()
     log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
 
@@ -356,7 +358,7 @@ def batch_job():
     tasks[cf.ind2]()
 
 def test_random_seed(**kwargs):
-    np.random.seed()
+    random_seed()
     print(np.random.randint(100))
 
 if __name__ == '__main__':
@@ -402,7 +404,7 @@ if __name__ == '__main__':
     # game = 'SpaceInvadersNoFrameskip-v4'
     # game = 'QbertNoFrameskip-v4'
     # game = 'DemonAttackNoFrameskip-v4'
-    # game = 'BeamRiderNoFrameskip-v4'
+    game = 'BeamRiderNoFrameskip-v4'
     # game = 'UpNDownNoFrameskip-v4'
 
     # game = 'BattleZoneNoFrameskip-v4'
@@ -439,5 +441,6 @@ if __name__ == '__main__':
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False, max_steps=int(1e8))
     # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False, max_steps=int(1e8))
 
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False)
-    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False)
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True)
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='9_options_only', mean_option=False, parallel=True)
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
