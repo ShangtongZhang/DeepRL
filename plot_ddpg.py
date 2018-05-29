@@ -39,6 +39,41 @@ def plot(**kwargs):
     plt.ylabel('episode return')
     # plt.show()
 
+def ddpg_plot(**kwargs):
+    import matplotlib.pyplot as plt
+    kwargs.setdefault('average', False)
+    kwargs.setdefault('color', 0)
+    kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('max_timesteps', 1e8)
+    plotter = Plotter()
+    names = plotter.load_log_dirs(**kwargs)
+    data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    new_data = []
+    for x, y in data:
+        y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
+        x = np.arange(y.shape[0]) * kwargs['x_interval']
+        new_data.append([x, y])
+    data = new_data
+
+    print('')
+
+    figure = kwargs['figure']
+    color = kwargs['color']
+    plt.figure(figure)
+    if kwargs['average']:
+        x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
+        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+    else:
+        for i, name in enumerate(names):
+            x, y = data[i]
+            plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
+    plt.legend()
+    # plt.ylim([-200, 1400])
+    # plt.ylim([-200, 2500])
+    plt.xlabel('timesteps')
+    plt.ylabel('episode return')
+    # plt.show()
+
 if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
@@ -197,18 +232,32 @@ if __name__ == '__main__':
     # plot(pattern='.*log/option_no_beta_exp_replay/ensemble-RoboschoolAnt-v1/.*off_policy.*', figure=0, average=True, max_timesteps=1e6, color=3)
     # plt.show()
 
-    games = [
-        'RoboschoolAnt-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1'
-    ]
+    # games = [
+    #     'RoboschoolAnt-v1',
+    #     'RoboschoolHopper-v1',
+    #     'RoboschoolWalker2d-v1',
+    #     'RoboschoolHalfCheetah-v1',
+    #     'RoboschoolReacher-v1',
+    #     'RoboschoolHumanoid-v1'
+    # ]
+    #
+    # for i, game in enumerate(games):
+    #     plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*original_ddpg.*' % (game), figure=i, average=True, max_timesteps=1e6, color=0)
+    #     plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=1)
+    #     plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=2)
+    #     plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=3)
+    # plt.show()
 
-    for i, game in enumerate(games):
-        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*original_ddpg.*' % (game), figure=i, average=True, max_timesteps=1e6, color=0)
-        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*half_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=1)
-        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*on_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=2)
-        plot(pattern='.*log/option_no_beta_exp_replay/ensemble-%s.*off_policy.*' % (game), figure=i, average=True, max_timesteps=1e6, color=3)
+    # patterns = ['.*var_test_constant_exploration_tanh.*',
+    #             '.*var_test_no_reward_scale.*',
+    #             '.*var_test_option_exploration_constant_tanh.*',
+    #             '.*var_test_option_exploration_tanh.*',
+    #             '.*var_test_original.*',
+    #             '.*var_test_tanh.*']
+    # for i, p in enumerate(patterns):
+    #     # plot(pattern=p, figure=i, average=False, max_timesteps=1e6)
+    #     plot(pattern=p, figure=0, color=i, average=True, max_timesteps=1e6)
+    # plt.show()
+
+    ddpg_plot(pattern='.*log/ddpg_continuous.*', figure=0, x_interval=int(1e3), rep=20)
     plt.show()

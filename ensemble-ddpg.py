@@ -126,9 +126,10 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
 
-    # config.task_fn = lambda **kwargs: Bullet(game, **kwargs)
     config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
     config.evaluation_env = config.task_fn(log_dir=log_dir)
+    config.evaluation_episodes_interval = int(1e3)
+    config.evaluation_episodes = 20
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
         state_dim, action_dim,
@@ -143,7 +144,7 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.max_steps = 1e6
+    config.max_steps = 1e4
     config.random_process_fn = lambda action_dim: GaussianProcess(
         (action_dim, ), kwargs['std_schedule'])
 
@@ -361,6 +362,8 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrun-v1'
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
+
+    ddpg_continuous(game)
 
     # multi_runs(game, ensemble_ddpg, tag='option_epsilon',
     #            option_epsilon=LinearSchedule(0.3, 0.3, 1e6), action_based_noise=False,
