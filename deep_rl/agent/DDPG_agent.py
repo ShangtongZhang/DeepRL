@@ -48,10 +48,9 @@ class DDPGAgent(BaseAgent):
             self.evaluation_episodes()
 
             if np.random.rand() > config.option_epsilon():
-                action = self.network.predict(np.stack([state]), True)
+                action = self.network.predict(np.stack([state]), True).flatten()
                 if config.action_based_noise:
                     action += self.random_process.sample()
-                action = action.flatten()
             else:
                 action = (np.random.rand(self.task.action_dim) - 0.5) * 2
             next_state, reward, done, info = self.task.step(action)

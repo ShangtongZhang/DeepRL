@@ -118,18 +118,17 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('gate', F.tanh)
     kwargs.setdefault('tag', ddpg_continuous.__name__)
     kwargs.setdefault('q_l2_weight', 0)
-    kwargs.setdefault('std_schedule', [LinearSchedule(0.3, 0, 1e6)])
     kwargs.setdefault('reward_scale', 0.1)
     kwargs.setdefault('option_epsilon', LinearSchedule(0))
     kwargs.setdefault('action_based_noise', True)
+    kwargs.setdefault('noise', GaussianProcess)
+    kwargs.setdefault('std', LinearSchedule(0.2))
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
 
     config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
     config.evaluation_env = config.task_fn(log_dir=log_dir)
-    config.evaluation_episodes_interval = int(1e3)
-    config.evaluation_episodes = 20
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
         state_dim, action_dim,
@@ -144,10 +143,10 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.max_steps = 1e4
-    config.random_process_fn = lambda action_dim: GaussianProcess(
-        (action_dim, ), kwargs['std_schedule'])
-
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.max_steps = 1e6
+    config.evaluation_episodes_interval = int(1e4)
+    config.evaluation_episodes = 20
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
@@ -161,6 +160,8 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     kwargs.setdefault('off_policy_critic', False)
     kwargs.setdefault('option_epsilon', LinearSchedule(0))
     kwargs.setdefault('action_based_noise', True)
+    kwargs.setdefault('noise', GaussianProcess)
+    kwargs.setdefault('std', LinearSchedule(0.2))
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     config.task_fn = lambda: Roboschool(game)
@@ -177,8 +178,9 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(0.1)
     config.max_steps = 1e6
-    config.random_process_fn = lambda action_dim: GaussianProcess(
-        (action_dim, ), [LinearSchedule(0.3, 0, 1e6)])
+    config.evaluation_episodes_interval = int(1e4)
+    config.evaluation_episodes = 20
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
@@ -244,34 +246,34 @@ def batch_job():
     parallel = True
     def task1():
         multi_runs(game, ddpg_continuous, tag='var_test_original',
-               gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=parallel)
+               gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
 
     def task2():
         multi_runs(game, ddpg_continuous, tag='var_test_tanh',
-               gate=F.tanh, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=parallel)
+               gate=F.tanh, reward_scale=0.1, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
 
     def task3():
         multi_runs(game, ddpg_continuous, tag='var_test_no_reward_scale',
-               gate=F.relu, q_l2_weight=0.01, reward_scale=1.0, state_normalizer=RescaleNormalizer(), parallel=parallel)
+               gate=F.relu, q_l2_weight=0.01, reward_scale=1.0, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
 
     def task4():
-        multi_runs(game, ddpg_continuous, tag='var_test_constant_exploration_tanh',
-               gate=F.tanh, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=parallel,
-                   std_schedule=[LinearSchedule(0.3)])
+        multi_runs(game, ddpg_continuous, tag='var_test_gaussian_tanh',
+               gate=F.tanh, reward_scale=0.1, noise=GaussianProcess, parallel=parallel)
 
     def task5():
-        multi_runs(game, ddpg_continuous, tag='var_test_option_exploration_tanh',
-               gate=F.tanh, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=parallel,
-                   option_epsilon=LinearSchedule(0.3, 0, 1e6), action_based_noise=False)
+        multi_runs(game, ddpg_continuous, tag='var_test_gaussian_no_reward_scale',
+               gate=F.relu, q_l2_weight=0.01, reward_scale=1.0, noise=GaussianProcess, parallel=parallel)
 
     def task6():
-        multi_runs(game, ddpg_continuous, tag='var_test_option_exploration_constant_tanh',
-               gate=F.tanh, reward_scale=0.1, state_normalizer=RescaleNormalizer(), parallel=parallel,
-                   option_epsilon=LinearSchedule(0.3), action_based_noise=False)
+        multi_runs(game, ddpg_continuous, tag='var_test_gaussian_tanh_no_reward_scale',
+               gate=F.tanh, reward_scale=0.1, noise=GaussianProcess, parallel=parallel)
 
-    tasks = [task1, task2, task3, task4, task5, task6]
+    def task7():
+        multi_runs(game, ddpg_continuous, tag='var_test_tanh_no_reward_scale',
+               gate=F.tanh, reward_scale=1.0, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
+
+    tasks = [task1, task2, task3, task4, task5, task6, task7]
     tasks[cf.ind1]()
-
 
     # games = ['RoboschoolAnt-v1', 'RoboschoolWalker2d-v1', 'RoboschoolHalfCheetah-v1']
     # games = [
@@ -362,8 +364,9 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrun-v1'
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
+    batch_job()
 
-    ddpg_continuous(game)
+    # ddpg_continuous(game, noise=OrnsteinUhlenbeckProcess)
 
     # multi_runs(game, ensemble_ddpg, tag='option_epsilon',
     #            option_epsilon=LinearSchedule(0.3, 0.3, 1e6), action_based_noise=False,

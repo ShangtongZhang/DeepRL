@@ -42,10 +42,9 @@ class EnsembleDDPGAgent(BaseAgent):
         total_reward = 0.0
         while True:
             if np.random.rand() > config.option_epsilon():
-                action, option = self.network.predict(np.stack([state]), to_numpy=True)
+                action, option = self.network.predict(np.stack([state]), to_numpy=True).flatten()
                 if config.action_based_noise:
                     action += self.random_process.sample()
-                action = action.flatten()
             else:
                 action = (np.random.rand(self.task.action_dim) - 0.5) * 2
                 option = np.asarray([-1])
