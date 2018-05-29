@@ -98,14 +98,14 @@ if __name__ == '__main__':
 
     kwargs = {
         'episode_window': 100,
-        'top_k': 0,
+        'top_k': 20,
         'max_timesteps': int(3e5),
         'average': True,
         'x_interval': 100
     }
     plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff.*', figure=0, color=0, **kwargs)
-    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/mean_option_qr_dqn.*', figure=0, average=True, max_timesteps=int(2e5), color=1, episode_window=episode_window, x_interval=100)
+    plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/mean_option_qr_dqn.*', figure=0, color=1, **kwargs)
     plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/pure_quantiles_option_qr_dqn.*', figure=0, color=2, **kwargs)
-    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/random_option_qr_dqn.*', figure=0, average=True, max_timesteps=int(2e5), color=3, episode_window=episode_window, x_interval=100)
+    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/random_option_qr_dqn.*', figure=0, color=3, **kwargs)
     plt.show()
 

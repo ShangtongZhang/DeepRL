@@ -115,7 +115,7 @@ def qr_dqn_cliff(**kwargs):
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
                                               single_process=True)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.01)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
     config.network_fn = lambda state_dim, action_dim: \
         QuantileNet(action_dim, config.num_quantiles, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=config.max_steps, min_epsilon=0.1)
@@ -138,7 +138,7 @@ def option_qr_dqn_cliff(**kwargs):
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
                                               single_process=True)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.01)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
     config.network_fn = lambda state_dim, action_dim: \
         OptionQuantileNet(action_dim, config.num_quantiles, config.num_options + config.mean_option, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=config.max_steps, min_epsilon=0.1)
@@ -243,7 +243,9 @@ def single_run(run, game, fn, tag, **kwargs):
 
 def multi_runs(game, fn, tag, **kwargs):
     kwargs.setdefault('runs', 2)
-    runs = np.arange(0, kwargs['runs'])
+    runs = kwargs['runs']
+    if np.isscalar(runs):
+        runs = np.arange(0, runs)
     kwargs.setdefault('parallel', False)
     if not kwargs['parallel']:
         for run in runs:
@@ -374,13 +376,13 @@ if __name__ == '__main__':
     # option_qr_dqn_cliff(mean_option=True, num_options=5)
     # option_qr_dqn_cliff(random_option=True)
 
-    parallel = True
-    runs = 8
-    multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
+    # parallel = True
+    # runs = np.arange(24, 30)
+    # multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='mean_option_qr_dqn',
     #            mean_option=True, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
-               mean_option=False, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
+    #            mean_option=False, parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
     #            random_option=True, parallel=parallel, runs=runs)
 
