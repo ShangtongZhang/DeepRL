@@ -44,6 +44,9 @@ class DDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
+            self.evaluate()
+            self.evaluation_episodes()
+
             if np.random.rand() > config.option_epsilon():
                 action = self.network.predict(np.stack([state]), True)
                 if config.action_based_noise:
@@ -62,8 +65,6 @@ class DDPGAgent(BaseAgent):
 
             steps += 1
             state = next_state
-
-            self.evaluate()
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
