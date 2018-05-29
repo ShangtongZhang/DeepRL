@@ -462,12 +462,12 @@ if __name__ == '__main__':
     # option_qr_dqn_cliff(mean_option=True, num_options=5)
     # option_qr_dqn_cliff(random_option=True)
 
-    parallel = False
-    runs = np.arange(6, 30)
+    # parallel = False
+    # runs = np.arange(6, 30)
     # runs = np.arange(24, 30)
     # multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='mean_option_qr_dqn',
-               mean_option=True, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='mean_option_qr_dqn',
+    #            mean_option=True, parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
     #            mean_option=False, parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
@@ -476,7 +476,7 @@ if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
-    # game = 'MsPacmanNoFrameskip-v4'
+    game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
     # game = 'EnduroNoFrameskip-v4'
     # game = 'JourneyEscapeNoFrameskip-v4'
