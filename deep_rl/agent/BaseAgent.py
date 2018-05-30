@@ -6,6 +6,7 @@
 
 import torch
 import numpy as np
+from ..utils import *
 
 class BaseAgent:
     def __init__(self, config):
@@ -35,9 +36,28 @@ class BaseAgent:
         self.config.state_normalizer.unset_read_only()
         return np.argmax(action.flatten())
 
+    def deterministic_episode(self):
+        env = self.config.evaluation_env
+        state = env.reset()
+        total_rewards = 0
+        while True:
+            action = self.evaluation_action(state)
+            state, reward, done, _ = env.step(action)
+            if done:
+                break
+            total_rewards += reward
+        self.config.logger.info('evaluation episode return: %f' % (total_rewards))
+
+    def evaluation_episodes(self):
+        interval = self.config.evaluation_episodes_interval
+        if not interval or self.total_steps % interval:
+            return
+        for ep in range(self.config.evaluation_episodes):
+            self.deterministic_episode()
+
     def evaluate(self, steps=1):
         config = self.config
-        if config.evaluation_env is None:
+        if config.evaluation_env is None or self.config.evaluation_episodes_interval:
             return
         for _ in range(steps):
             action = self.evaluation_action(self.evaluation_state)

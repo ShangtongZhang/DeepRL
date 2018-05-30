@@ -335,9 +335,12 @@ def ddpg_low_dim_state():
     config = Config()
     log_dir = get_default_log_dir(ddpg_low_dim_state.__name__)
     # config.task_fn = lambda **kwargs: Pendulum(log_dir=log_dir)
-    config.task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
-    # config.task_fn = lambda **kwargs: Roboschool('RoboschoolAnt-v1', **kwargs)
+    # config.task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
+    config.task_fn = lambda **kwargs: Roboschool('RoboschoolHopper-v1', **kwargs)
     config.evaluation_env = config.task_fn(log_dir=log_dir)
+    config.max_steps = int(1e6)
+    config.evaluation_episodes_interval = int(1e4)
+    config.evaluation_episodes = 20
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
         state_dim, action_dim,
@@ -348,8 +351,8 @@ def ddpg_low_dim_state():
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
-    config.state_normalizer = RunningStatsNormalizer()
-    config.random_process_fn = lambda action_dim: GaussianProcess(action_dim, LinearSchedule(0.3, 0, 1e6))
+    config.random_process_fn = lambda action_dim: OrnsteinUhlenbeckProcess(
+        size=(action_dim, ), std=LinearSchedule(0.2))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
@@ -374,8 +377,8 @@ def ddpg_pixel():
     config.discount = 0.99
     config.state_normalizer = ImageNormalizer()
     config.max_steps = 1e7
-    config.random_process_fn = lambda action_dim: GaussianProcess(
-        action_dim, LinearSchedule(0.3, 0, config.max_steps))
+    config.random_process_fn = lambda action_dim: OrnsteinUhlenbeckProcess(
+        size=(action_dim, ), std=LinearSchedule(0.2))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger(file_name=ddpg_pixel.__name__)

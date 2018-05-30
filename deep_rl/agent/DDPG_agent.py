@@ -44,11 +44,13 @@ class DDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
+            self.evaluate()
+            self.evaluation_episodes()
+
             action = self.network.predict(np.stack([state]), True).flatten()
             if not deterministic:
                 action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
-            # torchvision.utils.save_image(torch.tensor(np.asarray(next_state)).unsqueeze(1), 'data/image/%s.png' % get_time_str())
             next_state = self.config.state_normalizer(next_state)
             total_reward += reward
             reward = self.config.reward_normalizer(reward)
@@ -59,8 +61,6 @@ class DDPGAgent(BaseAgent):
 
             steps += 1
             state = next_state
-
-            self.evaluate()
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
