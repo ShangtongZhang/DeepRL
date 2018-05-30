@@ -61,7 +61,10 @@ def ddpg_plot(**kwargs):
     color = kwargs['color']
     plt.figure(figure)
     if kwargs['average']:
-        x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
+        x = data[0][0]
+        y = [entry[1] for entry in data]
+        # y = np.transpose(np.stack(y))
+        y = np.stack(y)
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
         for i, name in enumerate(names):
@@ -259,5 +262,24 @@ if __name__ == '__main__':
     #     plot(pattern=p, figure=0, color=i, average=True, max_timesteps=1e6)
     # plt.show()
 
-    ddpg_plot(pattern='.*log/ddpg_continuous.*', figure=0, x_interval=int(1e3), rep=20)
+    # ddpg_plot(pattern='.*log/ddpg_continuous.*', figure=0, x_interval=int(1e3), rep=20)
+    # plt.show()
+
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True
+    }
+    patterns = [
+        'var_test_gaussian_no_reward_scale-run',
+        'var_test_gaussian_tanh-run',
+        'var_test_gaussian_tanh_no_reward_scale-run',
+        'var_test_no_reward_scale-run',
+        'var_test_original-run',
+        'var_test_tanh-run',
+        'var_test_tanh_no_reward_scale-run'
+    ]
+    for i, p in enumerate(patterns):
+        # ddpg_plot(pattern='.*ddpg_param_study.*%s.*' % (p), figure=i, **kwargs)
+        ddpg_plot(pattern='.*ddpg_param_study.*%s.*' % (p), figure=0, **kwargs, color=i)
     plt.show()
