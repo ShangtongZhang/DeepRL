@@ -28,6 +28,7 @@ class NStepQRDQNAgent(BaseAgent):
         self.quantile_weight = 1.0 / self.config.num_quantiles
         self.cumulative_density = self.network.tensor(
             (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles))
+        self.info = {'option': -1}
 
     def huber(self, x):
         cond = (x < 1.0).float().detach()

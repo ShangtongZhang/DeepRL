@@ -429,12 +429,12 @@ if __name__ == '__main__':
 
     # multi_runs('xxx', test_random_seed, tag='xxx', parallel=True)
 
-    option_qr_dqn_cliff(mean_option=True, num_options=5, max_steps=int(3e5))
+    # option_qr_dqn_cliff(mean_option=True, num_options=5, max_steps=int(3e5))
     # visualize_cliff_world(agent=option_qr_dqn_cliff(dry=True, mean_option=True),
     #                       filename='OptionNStepQRDQNAgent-option_qr_dqn_cliff-model-CliffWalking.bin')
 
 
-    # qr_dqn_cliff(max_steps=int(2e5))
+    # qr_dqn_cliff(max_steps=int(3e5))
     # visualize_cliff_world(agent=qr_dqn_cliff(dry=True),
     #                       filename='NStepQRDQNAgent-option_qr_dqn_cliff-model-CliffWalking.bin')
 
