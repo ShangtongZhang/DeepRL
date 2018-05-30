@@ -116,7 +116,7 @@ def qr_dqn_cliff(**kwargs):
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 16
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=None,
                                               single_process=True)
     if config.clip_reward:
         config.reward_normalizer = SignNormalizer()
@@ -128,6 +128,9 @@ def qr_dqn_cliff(**kwargs):
     config.rollout_length = 5
     config.logger = get_logger()
     config.num_quantiles = 20
+    config.evaluation_episodes = 20
+    config.evaluation_episodes_interval = 1600
+    config.evaluation_env = task_fn(kwargs['log_dir'])
     agent = NStepQRDQNAgent(config)
     if kwargs['dry']:
         return agent
@@ -145,7 +148,7 @@ def option_qr_dqn_cliff(**kwargs):
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 16
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=None,
                                               single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
     config.network_fn = lambda state_dim, action_dim: \
@@ -156,6 +159,9 @@ def option_qr_dqn_cliff(**kwargs):
     config.rollout_length = 5
     config.logger = get_logger()
     config.num_quantiles = 20
+    config.evaluation_episodes = 20
+    config.evaluation_episodes_interval = 1600
+    config.evaluation_env = task_fn(kwargs['log_dir'])
     agent = OptionNStepQRDQNAgent(config)
     if kwargs['dry']:
         return agent
@@ -429,7 +435,7 @@ if __name__ == '__main__':
 
     # multi_runs('xxx', test_random_seed, tag='xxx', parallel=True)
 
-    # option_qr_dqn_cliff(mean_option=True, num_options=5, max_steps=int(3e5))
+    option_qr_dqn_cliff(mean_option=True, num_options=5, max_steps=int(3e5))
     # visualize_cliff_world(agent=option_qr_dqn_cliff(dry=True, mean_option=True),
     #                       filename='OptionNStepQRDQNAgent-option_qr_dqn_cliff-model-CliffWalking.bin')
 

@@ -46,6 +46,10 @@ class NStepQRDQNAgent(BaseAgent):
         config = self.config
         rollout = []
         states = self.states
+
+        self.evaluate(config.rollout_length)
+        self.evaluation_episodes()
+
         for _ in range(config.rollout_length):
             quantile_values = self.network.predict(self.config.state_normalizer(states))
             q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
@@ -93,4 +97,3 @@ class NStepQRDQNAgent(BaseAgent):
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
 
-        self.evaluate(config.rollout_length)

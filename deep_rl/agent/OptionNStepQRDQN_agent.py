@@ -70,6 +70,10 @@ class OptionNStepQRDQNAgent(BaseAgent):
         config = self.config
         rollout = []
         states = self.states
+
+        self.evaluate(config.rollout_length)
+        self.evaluation_episodes()
+
         for _ in range(config.rollout_length):
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
@@ -132,5 +136,3 @@ class OptionNStepQRDQNAgent(BaseAgent):
         (loss + option_pi_loss + option_v_loss + config.entropy_weight * option_entropy_loss).backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
-
-        self.evaluate(config.rollout_length)
