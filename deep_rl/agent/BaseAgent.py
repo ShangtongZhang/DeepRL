@@ -46,7 +46,7 @@ class BaseAgent:
             if done:
                 break
             total_rewards += reward
-        return
+        self.config.logger.info('evaluation episode return: %f' % (total_rewards))
 
     def evaluation_episodes(self):
         interval = self.config.evaluation_episodes_interval
