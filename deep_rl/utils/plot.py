@@ -52,6 +52,19 @@ class Plotter:
             xy_list = [self.window_func(x, y, episode_window, np.mean) for x, y in xy_list]
         return xy_list
 
+    def load_evaluation_episodes_results(self,
+                                         dirs,
+                                         evaluation_episodes_interval,
+                                         evaluation_episodes,
+                                         max_timesteps=1e8):
+        raw_data = self.load_results(dirs, max_timesteps, episode_window=0)
+        ys = []
+        for x, y in raw_data:
+            y = np.reshape(np.asarray(y), (-1, evaluation_episodes)).mean(-1)
+            x = np.arange(y.shape[0]) * evaluation_episodes_interval
+            ys.append(y)
+        return x, np.stack(ys)
+
     def average(self, xy_list, bin, max_timesteps, top_k=0):
         if top_k:
             perf = [np.max(y) for _, y in xy_list]
