@@ -243,7 +243,7 @@ def batch_job():
 
     game = 'RoboschoolHopper-v1'
 
-    parallel = False
+    parallel = True
     def task1():
         multi_runs(game, ddpg_continuous, tag='var_test_original',
                gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
