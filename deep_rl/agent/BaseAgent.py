@@ -43,17 +43,20 @@ class BaseAgent:
         while True:
             action = self.evaluation_action(state)
             state, reward, done, _ = env.step(action)
+            total_rewards += reward
             if done:
                 break
-            total_rewards += reward
-        self.config.logger.info('evaluation episode return: %f' % (total_rewards))
+        return total_rewards
 
     def evaluation_episodes(self):
         interval = self.config.evaluation_episodes_interval
         if not interval or self.total_steps % interval:
             return
+        rewards = []
         for ep in range(self.config.evaluation_episodes):
-            self.deterministic_episode()
+            rewards.append(self.deterministic_episode())
+        self.config.logger.info('evaluation episode return: %f(%f)' % (
+            np.mean(rewards), np.std(rewards) / np.sqrt(len(rewards))))
 
     def evaluate(self, steps=1):
         config = self.config
