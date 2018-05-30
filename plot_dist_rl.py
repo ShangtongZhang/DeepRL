@@ -37,6 +37,51 @@ def plot(**kwargs):
     plt.ylabel('episode return')
     # plt.show()
 
+def deterministic_plot(**kwargs):
+    import matplotlib.pyplot as plt
+    kwargs.setdefault('average', False)
+    # kwargs.setdefault('color', 0)
+    kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('top_k_perf', lambda x: np.mean(x[-20:]))
+    kwargs.setdefault('max_timesteps', 1e8)
+    kwargs.setdefault('episode_window', 100)
+    kwargs.setdefault('x_interval', 1000)
+    plotter = Plotter()
+    names = plotter.load_log_dirs(**kwargs)
+    raw_data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    data = []
+    for x, y in raw_data:
+        y = np.reshape(np.asarray(y), (-1, 20)).mean(-1)
+        x = np.arange(y.shape[0]) * 1600
+        data.append([x, y])
+        # ys.append(y)
+    # return x, np.stack(ys)
+    print('')
+
+    figure = kwargs['figure']
+    plt.figure(figure)
+    if kwargs['average']:
+        color = kwargs['color']
+        x = data[0][0]
+        y = [entry[1] for entry in data if len(entry[1]) == 188]
+        # y = np.transpose(np.stack(y))
+        y = np.stack(y)
+        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+    else:
+        for i, name in enumerate(names):
+            x, y = data[i]
+            if 'color' not in kwargs.keys():
+                color = Plotter.COLORS[i]
+            else:
+                color = Plotter.COLORS[kwargs['color']]
+            plt.plot(x, y, color=color, label=name if i==0 else '')
+    plt.legend()
+    # plt.ylim([0, 400])
+    plt.xlabel('timesteps')
+    plt.ylabel('episode return')
+    # plt.show()
+
+
 if __name__ == '__main__':
     # plot(pattern='.*n_step_dqn_pixel_atari-180517-092901.*', figure=0)
     # plot(pattern='.*n_step_qr_dqn_pixel_atari-180517-092933.*', figure=1)
@@ -129,3 +174,14 @@ if __name__ == '__main__':
         plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
     plt.show()
 
+    # kwargs = {
+    #     'average': True,
+    # }
+    # patterns = [
+    #     'log/dist_rl-CliffWalking/qr_dqn_cliff/qr_dqn-run',
+    #     'log/dist_rl-CliffWalking/option_qr_dqn_cliff/pure_quantiles_option_qr_dqn-run',
+    #     'log/dist_rl-CliffWalking/option_qr_dqn_cliff/mean_option_qr_dqn-run'
+    # ]
+    # for i, p in enumerate(patterns):
+    #     deterministic_plot(pattern='.*%s.*' % (p), figure=0, color=i, **kwargs)
+    # plt.show()

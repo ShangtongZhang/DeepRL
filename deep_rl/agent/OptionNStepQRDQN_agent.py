@@ -77,8 +77,8 @@ class OptionNStepQRDQNAgent(BaseAgent):
         for _ in range(config.rollout_length):
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
-            for i in range(pi.size(1)):
-                config.logger.scalar_summary('option %d' % (i), pi[0, i])
+            # for i in range(pi.size(1)):
+            #     config.logger.scalar_summary('option %d' % (i), pi[0, i])
             # for i in range(config.num_workers):
             #     config.logger.histo_summary('worker_%d' % (i), pi[i])
                 # config.logger.scalar_summary('worker_%d' % (i), options[i])

@@ -435,7 +435,7 @@ if __name__ == '__main__':
 
     # multi_runs('xxx', test_random_seed, tag='xxx', parallel=True)
 
-    option_qr_dqn_cliff(mean_option=True, num_options=5, max_steps=int(3e5))
+    # option_qr_dqn_cliff(mean_option=True, num_options=5, max_steps=int(3e5))
     # visualize_cliff_world(agent=option_qr_dqn_cliff(dry=True, mean_option=True),
     #                       filename='OptionNStepQRDQNAgent-option_qr_dqn_cliff-model-CliffWalking.bin')
 
@@ -447,14 +447,14 @@ if __name__ == '__main__':
     # option_qr_dqn_cliff(mean_option=False)
     # option_qr_dqn_cliff(random_option=True)
 
-    # parallel = False
-    # runs = np.arange(6, 30)
+    parallel = True
+    runs = np.arange(0, 8)
     # runs = np.arange(24, 30)
     # multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='mean_option_qr_dqn',
     #            mean_option=True, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
-    #            mean_option=False, parallel=parallel, runs=runs)
+    multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
+               mean_option=False, parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
     #            random_option=True, parallel=parallel, runs=runs)
 
