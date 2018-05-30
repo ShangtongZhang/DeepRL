@@ -109,12 +109,17 @@ def option_qr_dqn_cart_pole():
 def qr_dqn_cliff(**kwargs):
     kwargs.setdefault('tag', option_qr_dqn_cliff.__name__)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('clip_reward', False)
+    kwargs.setdefault('dry', False)
+    kwargs.setdefault('max_steps', int(3e5))
     config = Config()
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
                                               single_process=True)
+    if config.clip_reward:
+        config.reward_normalizer = SignNormalizer()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
     config.network_fn = lambda state_dim, action_dim: \
         QuantileNet(action_dim, config.num_quantiles, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
@@ -123,8 +128,10 @@ def qr_dqn_cliff(**kwargs):
     config.rollout_length = 5
     config.logger = get_logger()
     config.num_quantiles = 20
-    config.max_steps = int(3e5)
-    run_iterations(NStepQRDQNAgent(config))
+    agent = NStepQRDQNAgent(config)
+    if kwargs['dry']:
+        return agent
+    run_iterations(agent)
 
 def option_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('tag', option_qr_dqn_cliff.__name__)
@@ -132,6 +139,8 @@ def option_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('random_option', False)
     kwargs.setdefault('mean_option', False)
     kwargs.setdefault('num_options', 5)
+    kwargs.setdefault('dry', False)
+    kwargs.setdefault('max_steps', int(3e5))
     config = Config()
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
@@ -147,8 +156,10 @@ def option_qr_dqn_cliff(**kwargs):
     config.rollout_length = 5
     config.logger = get_logger()
     config.num_quantiles = 20
-    config.max_steps = int(3e5)
-    run_iterations(OptionNStepQRDQNAgent(config))
+    agent = OptionNStepQRDQNAgent(config)
+    if kwargs['dry']:
+        return agent
+    run_iterations(agent)
 
 def n_step_dqn_pixel_atari(game, **kwargs):
     config = Config()
@@ -357,56 +368,18 @@ def draw_cliff_world_state(network, task):
     # ax.set_yticks([])
 
 def visualize_cliff_world(**kwargs):
-    np.random.seed(0)
-    kwargs.setdefault('tag', option_qr_dqn_cliff.__name__)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('random_option', False)
-    kwargs.setdefault('mean_option', False)
-    kwargs.setdefault('num_options', 5)
-    config = Config()
-    config.merge(kwargs)
-    task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
-    config.num_workers = 16
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'],
-                                              single_process=True)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
-    config.network_fn = lambda state_dim, action_dim: \
-        OptionQuantileNet(action_dim, config.num_quantiles, config.num_options + config.mean_option, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
-    config.policy_fn = lambda: GreedyPolicy(epsilon=0, final_step=config.max_steps, min_epsilon=0)
-    config.entropy_weight = 0
-    config.target_network_update_freq = 200
-    config.rollout_length = 5
-    config.logger = get_logger()
-    config.num_quantiles = 20
-    config.max_steps = int(3e5)
-    agent = OptionNStepQRDQNAgent(config)
-    agent.load('data/saved-OptionNStepQRDQNAgent-CliffWalking.bin')
+    # np.random.seed(0)
+    agent = kwargs['agent']
+    agent.load('data/saved/%s' % (kwargs['filename']))
     steps = 0
     total_reward = 0
-    task = task_fn(None)
+    task = CliffWalkingTask(random_action_prob=0.1)
 
     state = task.reset()
     while True:
-        state = np.stack([state])
-        quantile_values, pi, v_pi = agent.network.predict(config.state_normalizer(state))
-        option = torch.argmax(pi, dim=1)
-        option_quantiles = agent.candidate_quantile[agent.network.range(option.size(0)), option]
-        if config.mean_option:
-            mean_q_values = quantile_values.mean(-1).unsqueeze(-1)
-            quantile_values = torch.cat([quantile_values, mean_q_values], dim=-1)
-        q_values = quantile_values[agent.network.range(option.size(0)), :, option_quantiles]
-        q_values = q_values.cpu().detach().numpy()
-        actions = [agent.policy.sample(v) for v in q_values]
-
-        option = np.asscalar(option.cpu().detach().numpy())
-        # mean_action = np.argmax(mean_q_values.cpu().detach().numpy().flatten())
-        action = actions[0]
-        # if option == 9:
-        #     option_str = 'mean'
-        # else:
-        #     option_str = 'quantile_%s' % ((option + 1) / 10.0)
-        # decision_str = '%s-%s-%s' % (option_str, action_meanings[action], action_meanings[mean_action])
-        # io.imsave('data/%s/frame-%d-%s.png' % (game, steps, decision_str), frame)
+        print(task.env.state)
+        action = agent.evaluation_action(state)
+        print(agent.info['option'])
         state, reward, done, _ = task.step(action)
         total_reward += reward
         steps += 1
@@ -455,11 +428,17 @@ if __name__ == '__main__':
     # batch_job()
 
     # multi_runs('xxx', test_random_seed, tag='xxx', parallel=True)
-    # visualize_cliff_world()
 
-    # qr_dqn_cliff()
+    option_qr_dqn_cliff(mean_option=True, num_options=5, max_steps=int(3e5))
+    # visualize_cliff_world(agent=option_qr_dqn_cliff(dry=True, mean_option=True),
+    #                       filename='OptionNStepQRDQNAgent-option_qr_dqn_cliff-model-CliffWalking.bin')
+
+
+    # qr_dqn_cliff(max_steps=int(2e5))
+    # visualize_cliff_world(agent=qr_dqn_cliff(dry=True),
+    #                       filename='NStepQRDQNAgent-option_qr_dqn_cliff-model-CliffWalking.bin')
+
     # option_qr_dqn_cliff(mean_option=False)
-    # option_qr_dqn_cliff(mean_option=True, num_options=5)
     # option_qr_dqn_cliff(random_option=True)
 
     # parallel = False
@@ -476,7 +455,7 @@ if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
-    game = 'MsPacmanNoFrameskip-v4'
+    # game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
     # game = 'EnduroNoFrameskip-v4'
     # game = 'JourneyEscapeNoFrameskip-v4'

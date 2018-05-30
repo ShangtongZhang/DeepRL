@@ -71,9 +71,9 @@ def run_iterations(agent):
                 np.min(agent.last_episode_rewards)
             ))
         if iteration % (config.iteration_log_interval * 100) == 0:
-            with open('data/%s-%s-online-stats-%s.bin' % (agent_name, config.tag, agent.task.name), 'wb') as f:
-                pickle.dump({'rewards': rewards,
-                             'steps': steps}, f)
+            # with open('data/%s-%s-online-stats-%s.bin' % (agent_name, config.tag, agent.task.name), 'wb') as f:
+            #     pickle.dump({'rewards': rewards,
+            #                  'steps': steps}, f)
             agent.save('data/%s-%s-model-%s.bin' % (agent_name, config.tag, agent.task.name))
         iteration += 1
         if config.max_steps and agent.total_steps >= config.max_steps:

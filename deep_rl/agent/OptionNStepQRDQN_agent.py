@@ -34,6 +34,7 @@ class OptionNStepQRDQNAgent(BaseAgent):
             candidate_quantile = np.asarray([candidate_quantile])
         self.candidate_quantile = self.network.tensor(candidate_quantile).long().expand(
             config.num_workers, -1)
+        self.info = {}
 
     def huber(self, x):
         cond = (x < 1.0).float().detach()
@@ -43,8 +44,9 @@ class OptionNStepQRDQNAgent(BaseAgent):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(np.stack([state]))
         quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(state))
-        actions, _ = self.act(quantile_values, pi, True)
+        actions, options = self.act(quantile_values, pi, True)
         self.config.state_normalizer.unset_read_only()
+        self.info['option'] = np.asscalar(options.cpu().detach().numpy())
         return actions[0]
 
     def act(self, quantile_values, pi, deterministic=False):
@@ -71,8 +73,11 @@ class OptionNStepQRDQNAgent(BaseAgent):
         for _ in range(config.rollout_length):
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
+            for i in range(pi.size(1)):
+                config.logger.scalar_summary('option %d' % (i), pi[0, i])
             # for i in range(config.num_workers):
-            #     config.logger.scalar_summary('worker_%d' % (i), options[i])
+            #     config.logger.histo_summary('worker_%d' % (i), pi[i])
+                # config.logger.scalar_summary('worker_%d' % (i), options[i])
             # config.logger.scalar_summary('mean_eipsode_reward', np.mean(self.last_episode_rewards))
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
