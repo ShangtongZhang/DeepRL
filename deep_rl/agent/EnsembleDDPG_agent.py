@@ -41,8 +41,12 @@ class EnsembleDDPGAgent(BaseAgent):
         steps = 0
         total_reward = 0.0
         while True:
+            self.evaluate()
+            self.evaluation_episodes()
+
             if np.random.rand() > config.option_epsilon():
-                action, option = self.network.predict(np.stack([state]), to_numpy=True).flatten()
+                action, option = self.network.predict(np.stack([state]), to_numpy=True)
+                action = action.flatten()
                 if config.action_based_noise:
                     action += self.random_process.sample()
             else:
@@ -59,8 +63,6 @@ class EnsembleDDPGAgent(BaseAgent):
 
             steps += 1
             state = next_state
-
-            self.evaluate()
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
