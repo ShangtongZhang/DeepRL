@@ -177,7 +177,7 @@ def qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('random_skip', 0)
     kwargs.setdefault('frame_stack', 4)
-    kwargs.setdefault('max_steps', 3e7)
+    kwargs.setdefault('max_steps', 4e7)
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, random_skip=kwargs['random_skip'])
@@ -190,7 +190,7 @@ def qr_dqn_pixel_atari(game, **kwargs):
         QuantileNet(action_dim, config.num_quantiles, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
-    config.reward_normalizer = SignNormalizer()
+    # config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
@@ -209,7 +209,7 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('random_skip', 0)
     kwargs.setdefault('frame_stack', 4)
-    kwargs.setdefault('max_steps', 3e7)
+    kwargs.setdefault('max_steps', 4e7)
     kwargs.setdefault('random_option', False)
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
@@ -225,7 +225,7 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
                           gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
-    config.reward_normalizer = SignNormalizer()
+    # config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
@@ -530,6 +530,9 @@ if __name__ == '__main__':
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False, max_steps=int(1e8))
     # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False, max_steps=int(1e8))
 
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True)
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='9_options_only', mean_option=False, parallel=True)
-    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True)
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True, runs=np.arange(0, 2))
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True, runs=np.arange(2, 4))
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='9_options_only', mean_option=False, parallel=True, runs=np.arange(0, 2))
+    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='9_options_only', mean_option=False, parallel=True, runs=np.arange(2, 4))
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True, runs=np.arange(0, 2))
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True, runs=np.arange(2, 4))
