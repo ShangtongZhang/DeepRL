@@ -106,6 +106,29 @@ def option_qr_dqn_cart_pole():
     config.num_quantiles = 20
     run_iterations(OptionNStepQRDQNAgent(config))
 
+
+# replay cliff world
+def replay_qr_dqn_cliff(**kwargs):
+    kwargs.setdefault('tag', replay_qr_dqn_cliff.__name__)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('max_steps', int(3e5))
+    config = Config()
+    config.merge(kwargs)
+    config.task_fn = lambda: CliffWalkingTask(random_action_prob=0.1, log_dir=config.log_dir)
+    # config.evaluation_env = CliffWalkingTask(random_action_prob=0.1, log_dir=config.log_dir)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.01)
+    config.network_fn = lambda state_dim, action_dim: \
+        QuantileNet(action_dim, config.num_quantiles, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=10000, min_epsilon=0.1)
+    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=64)
+    config.discount = 0.99
+    config.target_network_update_freq = 2000
+    config.exploration_steps = 0
+    config.logger = get_logger()
+    config.num_quantiles = 20
+    run_episodes(QuantileRegressionDQNAgent(config))
+
+# n-step cliff world
 def qr_dqn_cliff(**kwargs):
     kwargs.setdefault('tag', option_qr_dqn_cliff.__name__)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
@@ -169,6 +192,8 @@ def option_qr_dqn_cliff(**kwargs):
         return agent
     run_iterations(agent)
 
+
+# n-step atari
 def n_step_dqn_pixel_atari(game, **kwargs):
     config = Config()
     kwargs.setdefault('gpu', 0)
@@ -255,6 +280,8 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     config.merge(kwargs)
     run_iterations(OptionNStepQRDQNAgent(config))
 
+
+# utility
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
     log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
@@ -434,6 +461,8 @@ if __name__ == '__main__':
     mkdir('data')
     set_one_thread()
     # batch_job()
+
+    replay_qr_dqn_cliff()
 
     # multi_runs('xxx', test_random_seed, tag='xxx', parallel=True)
     # option_qr_dqn_cliff(mean_option=False, num_options=5, max_steps=int(3e5))

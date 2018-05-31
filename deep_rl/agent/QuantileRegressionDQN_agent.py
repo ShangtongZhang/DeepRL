@@ -18,7 +18,6 @@ class QuantileRegressionDQNAgent(BaseAgent):
         self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.optimizer = config.optimizer_fn(self.network.parameters())
-        self.criterion = nn.MSELoss()
         self.target_network.load_state_dict(self.network.state_dict())
         self.replay = config.replay_fn()
         self.policy = config.policy_fn()
