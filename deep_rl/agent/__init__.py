@@ -9,3 +9,4 @@ from .OptionCritic_agent import *
 from .NStepQRDQN_agent import *
 from .OptionNStepQRDQN_agent import *
 from .OptionQuantileRegressionDQN_agent import *
+from .BootstrappedNStepQRDQN_agent import *
