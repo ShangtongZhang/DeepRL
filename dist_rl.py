@@ -220,7 +220,7 @@ def qr_dqn_pixel_atari(game, **kwargs):
 def option_qr_dqn_pixel_atari(game, **kwargs):
     config = Config()
     kwargs.setdefault('tag', option_qr_dqn_pixel_atari.__name__)
-    kwargs.setdefault('num_options', 5)
+    kwargs.setdefault('num_options', 9)
     kwargs.setdefault('gpu', 0)
     kwargs.setdefault('mean_option', 1)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
@@ -448,8 +448,8 @@ if __name__ == '__main__':
     # option_qr_dqn_cliff(mean_option=False)
     # option_qr_dqn_cliff(random_option=True)
 
-    parallel = False
-    runs = np.arange(0, 8)
+    # parallel = False
+    # runs = np.arange(0, 8)
     # runs = np.arange(24, 30)
     # multi_runs('CliffWalking', qr_dqn_cliff, tag='qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='mean_option_qr_dqn',
@@ -472,7 +472,7 @@ if __name__ == '__main__':
     # game = 'IceHockeyNoFrameskip-v4'
     # game = 'DoubleDunkNoFrameskip-v4'
 
-    # game = 'FreewayNoFrameskip-v4'
+    game = 'FreewayNoFrameskip-v4'
     # game = 'PongNoFrameskip-v4'
 
     # game = 'SkiingNoFrameskip-v4'
@@ -516,9 +516,9 @@ if __name__ == '__main__':
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False, max_steps=int(1e8))
     # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False, max_steps=int(1e8))
 
+    parallel = True
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True, runs=np.arange(0, 2))
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True, runs=np.arange(2, 4))
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='9_options_only', mean_option=False, parallel=True, runs=np.arange(0, 2))
-    # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='9_options_only', mean_option=False, parallel=True, runs=np.arange(2, 4))
-    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True, runs=np.arange(0, 2))
-    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=True, runs=np.arange(2, 4))
+
+    # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=parallel, runs=np.arange(0, 3))
+    multi_runs(game, option_qr_dqn_pixel_atari, mean_option=False, random_option=True, gpu=0, tag='random_option', parallel=parallel, runs=np.arange(0, 3))
