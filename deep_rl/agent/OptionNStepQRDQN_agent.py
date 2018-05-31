@@ -77,8 +77,8 @@ class OptionNStepQRDQNAgent(BaseAgent):
         for _ in range(config.rollout_length):
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
-            for i in range(pi.size(1)):
-                config.logger.scalar_summary('option %d' % (i), pi[0, i])
+            # for i in range(pi.size(1)):
+            #     config.logger.scalar_summary('option %d' % (i), pi[0, i])
             # for i in range(config.num_workers):
             #     config.logger.histo_summary('worker_%d' % (i), pi[i])
                 # config.logger.scalar_summary('worker_%d' % (i), options[i])
@@ -125,7 +125,7 @@ class OptionNStepQRDQNAgent(BaseAgent):
         loss = self.huber(diff) * (self.cumulative_density.view(1, -1) - (diff.detach() < 0).float()).abs()
         loss = loss.mean(1).sum()
         td_error = option_returns - v_pi
-        log_pi = pi.log()
+        log_pi = (pi + 1e-5).log()
         option_pi_loss = -log_pi[self.network.range(options.size(0)), options].unsqueeze(-1) * td_error.detach()
         option_pi_loss = option_pi_loss.mean()
         option_v_loss = 0.5 * td_error.pow(2)
