@@ -155,33 +155,33 @@ if __name__ == '__main__':
     # plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff/random_option_qr_dqn.*', figure=0, color=3, **kwargs)
     # plt.show()
 
-    # kwargs = {
-    #     'episode_window': 100,
-    #     'top_k': 0,
-    #     'max_timesteps': int(4e7),
-    #     'average': False,
-    #     'x_interval': 1000
-    # }
-    # patterns = [
-    #     'random_option',
-    #     'original_qr_dqn',
-    #     # '9_options_only',
-    #     # 'mean_and_9_options',
-    # ]
-    # for i, p in enumerate(patterns):
-    #     # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
-    #     # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
-    #     plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4.*%s.*' % (p), figure=0, **kwargs, color=i)
-    # plt.show()
-
     kwargs = {
-        'average': True,
+        'episode_window': 100,
+        'top_k': 0,
+        'max_timesteps': int(4e7),
+        'average': False,
+        'x_interval': 1000
     }
     patterns = [
-        'original_qr_dqn-run',
-        'per_episode_qr_dqn-run',
-        'per_step_qr_dqn-run'
+        'random_option',
+        'original_qr_dqn',
+        # '9_options_only',
+        # 'mean_and_9_options',
     ]
     for i, p in enumerate(patterns):
-        deterministic_plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
+        # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
+        # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
+        plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4.*%s.*' % (p), figure=0, color=i, **kwargs)
     plt.show()
+
+    # kwargs = {
+    #     'average': True,
+    # }
+    # patterns = [
+    #     'original_qr_dqn-run',
+    #     'per_episode_qr_dqn-run',
+    #     'per_step_qr_dqn-run'
+    # ]
+    # for i, p in enumerate(patterns):
+    #     deterministic_plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
+    # plt.show()

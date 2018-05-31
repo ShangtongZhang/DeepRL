@@ -205,8 +205,8 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 16
-    # config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'], single_process=True)
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=None, single_process=True)
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir']+'-train', single_process=True)
+    # config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=None, single_process=True)
     if config.clip_reward:
         config.reward_normalizer = SignNormalizer()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
@@ -218,7 +218,7 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     config.logger = get_logger()
     config.evaluation_episodes = 20
     config.evaluation_episodes_interval = 1600
-    config.evaluation_env = task_fn(kwargs['log_dir'])
+    config.evaluation_env = task_fn(kwargs['log_dir'] + '-test')
     agent = BootstrappedNStepQRDQNAgent(config)
     if kwargs['dry']:
         return agent
@@ -311,6 +311,40 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     config.merge(kwargs)
     run_iterations(OptionNStepQRDQNAgent(config))
 
+def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
+    config = Config()
+    kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
+    kwargs.setdefault('gpu', 0)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('random_skip', 0)
+    kwargs.setdefault('frame_stack', 4)
+    kwargs.setdefault('max_steps', 4e7)
+    kwargs.setdefault('option_type', None)
+    kwargs.setdefault('num_quantiles', 200)
+    kwargs.setdefault('candidate_options', np.linspace(0, kwargs['num_quantiles'] - 1, 10).astype(np.int64))
+    config.history_length = kwargs['frame_stack']
+    task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
+                                         log_dir=log_dir, random_skip=kwargs['random_skip'])
+    config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
+    config.num_workers = 16
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
+                                              log_dir=kwargs['log_dir']+'-train', single_process=True)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
+    config.network_fn = lambda state_dim, action_dim: \
+        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.rollout_length = 5
+    config.gradient_clip = 5
+    config.logger = get_logger(file_name=bootstrapped_qr_dqn_pixel_atari.__name__)
+    config.num_quantiles = 200
+    config.evaluation_episodes = 10
+    config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
+    config.merge(kwargs)
+    run_iterations(BootstrappedNStepQRDQNAgent(config))
 
 # utility
 def single_run(run, game, fn, tag, **kwargs):
@@ -497,9 +531,9 @@ if __name__ == '__main__':
     # bootstrapped_qr_dqn_cliff(option_type='per_step')
     # bootstrapped_qr_dqn_cliff(option_type='per_episode')
 
-    parallel = False
+    # parallel = False
     # runs = np.arange(0, 8)
-    runs = np.arange(8, 16)
+    # runs = np.arange(8, 16)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn',
     #            option_type='per_step', parallel=parallel, runs=runs)
@@ -538,7 +572,7 @@ if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
-    # game = 'MsPacmanNoFrameskip-v4'
+    game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
     # game = 'EnduroNoFrameskip-v4'
     # game = 'JourneyEscapeNoFrameskip-v4'
@@ -561,6 +595,15 @@ if __name__ == '__main__':
     # game = 'BattleZoneNoFrameskip-v4'
     # game = 'BankHeistNoFrameskip-v4'
     # game = 'RobotankNoFrameskip-v4'
+
+    parallel = True
+    # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=2)
+    # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_step_qr_dqn', parallel=parallel, runs=2,
+    #            option_type='per_step')
+    # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_qr_dqn', parallel=parallel, runs=2,
+    #            option_type='per_episode')
+
+    # bootstrapped_qr_dqn_pixel_atari(game)
 
     # games = [spec.id for spec in gym.envs.registry.all()]
     # games = [game]
