@@ -112,6 +112,8 @@ def qr_dqn_cliff(**kwargs):
     kwargs.setdefault('clip_reward', False)
     kwargs.setdefault('dry', False)
     kwargs.setdefault('max_steps', int(3e5))
+    kwargs.setdefault('random_option', False)
+    kwargs.setdefault('num_quantiles', 20)
     config = Config()
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
@@ -127,7 +129,6 @@ def qr_dqn_cliff(**kwargs):
     config.target_network_update_freq = 200
     config.rollout_length = 5
     config.logger = get_logger()
-    config.num_quantiles = 20
     # config.evaluation_episodes = 20
     # config.evaluation_episodes_interval = 1600
     # config.evaluation_env = task_fn(kwargs['log_dir'])
@@ -144,6 +145,7 @@ def option_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('num_options', 5)
     kwargs.setdefault('dry', False)
     kwargs.setdefault('max_steps', int(3e5))
+    kwargs.setdefault('num_quantiles', 20)
     config = Config()
     config.merge(kwargs)
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
@@ -447,6 +449,7 @@ if __name__ == '__main__':
 
     # option_qr_dqn_cliff(mean_option=False)
     # option_qr_dqn_cliff(random_option=True)
+    # qr_dqn_cliff(random_option=True)
 
     # parallel = False
     # runs = np.arange(0, 8)
@@ -456,7 +459,7 @@ if __name__ == '__main__':
     #            mean_option=True, parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='pure_quantiles_option_qr_dqn',
     #            mean_option=False, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', option_qr_dqn_cliff, tag='random_option_qr_dqn',
+    # multi_runs('CliffWalking', qr_dqn_cliff, tag='random_option_qr_dqn',
     #            random_option=True, parallel=parallel, runs=runs)
 
     # game = 'BreakoutNoFrameskip-v4'
@@ -472,7 +475,7 @@ if __name__ == '__main__':
     # game = 'IceHockeyNoFrameskip-v4'
     # game = 'DoubleDunkNoFrameskip-v4'
 
-    game = 'FreewayNoFrameskip-v4'
+    # game = 'FreewayNoFrameskip-v4'
     # game = 'PongNoFrameskip-v4'
 
     # game = 'SkiingNoFrameskip-v4'
@@ -516,9 +519,9 @@ if __name__ == '__main__':
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=False, max_steps=int(1e8))
     # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=False, max_steps=int(1e8))
 
-    parallel = True
+    # parallel = True
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='mean_and_9_options', parallel=True, runs=np.arange(0, 2))
     # multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, gpu=0, tag='9_options_only', mean_option=False, parallel=True, runs=np.arange(0, 2))
 
     # multi_runs(game, qr_dqn_pixel_atari, gpu=0, tag='original_qr_dqn', parallel=parallel, runs=np.arange(0, 3))
-    multi_runs(game, option_qr_dqn_pixel_atari, mean_option=False, random_option=True, gpu=0, tag='random_option', parallel=parallel, runs=np.arange(0, 3))
+    # multi_runs(game, option_qr_dqn_pixel_atari, mean_option=False, random_option=True, gpu=0, tag='random_option', parallel=parallel, runs=np.arange(0, 3))

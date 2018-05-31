@@ -52,7 +52,12 @@ class NStepQRDQNAgent(BaseAgent):
 
         for _ in range(config.rollout_length):
             quantile_values = self.network.predict(self.config.state_normalizer(states))
-            q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
+            if self.config.random_option:
+                options = self.network.tensor(np.random.randint(
+                    0, config.num_quantiles, size=config.num_workers)).long()
+                q_values = quantile_values[self.network.range(config.num_workers), :, options].cpu().detach().numpy()
+            else:
+                q_values = (quantile_values * self.quantile_weight).sum(-1).cpu().detach().numpy()
             actions = [self.policy.sample(v) for v in q_values]
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards

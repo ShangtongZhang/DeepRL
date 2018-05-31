@@ -145,35 +145,37 @@ if __name__ == '__main__':
     # plot(pattern='.*log/PongNoFrameskip-v4-option-qr-180524-170331.*', figure=0)
     # plt.show()
 
+    # kwargs = {
+    #     'episode_window': 100,
+    #     'top_k': 5,
+    #     'max_timesteps': int(3e5),
+    #     'average': True,
+    #     'x_interval': 100
+    # }
+    # plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff/qr_dqn-run.*', figure=0, color=0, **kwargs)
+    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/mean_option_qr_dqn.*', figure=0, color=1, **kwargs)
+    # plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/pure_quantiles_option_qr_dqn.*', figure=0, color=2, **kwargs)
+    # plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff/random_option_qr_dqn.*', figure=0, color=3, **kwargs)
+    # plt.show()
+
     kwargs = {
         'episode_window': 100,
-        'top_k': 5,
-        'max_timesteps': int(3e5),
-        'average': True,
-        'x_interval': 100
+        'top_k': 0,
+        'max_timesteps': int(4e7),
+        'average': False,
+        'x_interval': 1000
     }
-    plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff.*', figure=0, color=0, **kwargs)
-    plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/mean_option_qr_dqn.*', figure=0, color=1, **kwargs)
-    plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/pure_quantiles_option_qr_dqn.*', figure=0, color=2, **kwargs)
-    plot(pattern='.*log/dist_rl-CliffWalking/option_qr_dqn_cliff/random_option_qr_dqn.*', figure=0, color=3, **kwargs)
+    patterns = [
+        'random_option',
+        'original_qr_dqn',
+        # '9_options_only',
+        # 'mean_and_9_options',
+    ]
+    for i, p in enumerate(patterns):
+        # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
+        # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
+        plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4.*%s.*' % (p), figure=0, **kwargs, color=i)
     plt.show()
-
-    # kwargs = {
-    #     'episode_window': 1000,
-    #     'top_k': 0,
-    #     'max_timesteps': int(4e7),
-    #     'average': False,
-    #     'x_interval': 1000
-    # }
-    # patterns = [
-    #     'original_qr_dqn',
-    #     '9_options_only',
-    #     'mean_and_9_options',
-    # ]
-    # for i, p in enumerate(patterns):
-    #     # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
-    #     plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
-    # plt.show()
 
     # kwargs = {
     #     'average': True,
