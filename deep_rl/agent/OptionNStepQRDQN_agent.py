@@ -132,6 +132,11 @@ class OptionNStepQRDQNAgent(BaseAgent):
         option_v_loss = option_v_loss.mean()
         option_entropy_loss = (pi * log_pi).sum(-1).mean()
 
+        if self.config.random_option:
+            option_pi_loss = 0
+            option_v_loss = 0
+            option_entropy_loss = 0
+
         self.optimizer.zero_grad()
         (loss + option_pi_loss + option_v_loss + config.entropy_weight * option_entropy_loss).backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)

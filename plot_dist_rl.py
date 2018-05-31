@@ -147,7 +147,7 @@ if __name__ == '__main__':
 
     kwargs = {
         'episode_window': 100,
-        'top_k': 0,
+        'top_k': 5,
         'max_timesteps': int(3e5),
         'average': True,
         'x_interval': 100

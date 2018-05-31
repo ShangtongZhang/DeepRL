@@ -207,7 +207,7 @@ def qr_dqn_pixel_atari(game, **kwargs):
         QuantileNet(action_dim, config.num_quantiles, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
-    # config.reward_normalizer = SignNormalizer()
+    config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
@@ -242,7 +242,7 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
                           gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
-    # config.reward_normalizer = SignNormalizer()
+    config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
