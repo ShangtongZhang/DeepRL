@@ -159,18 +159,19 @@ if __name__ == '__main__':
     # plt.show()
 
     kwargs = {
-        'episode_window': 500,
+        'episode_window': 1000,
         'top_k': 0,
-        'max_timesteps': int(3e7),
-        'average': True,
+        'max_timesteps': int(4e7),
+        'average': False,
         'x_interval': 1000
     }
     patterns = [
+        'original_qr_dqn',
         '9_options_only',
         'mean_and_9_options',
-        'original_qr_dqn'
     ]
     for i, p in enumerate(patterns):
+        # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
         plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
     plt.show()
 
