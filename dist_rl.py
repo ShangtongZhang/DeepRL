@@ -199,26 +199,31 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('dry', False)
     kwargs.setdefault('max_steps', int(3e5))
     kwargs.setdefault('num_quantiles', 20)
+
     kwargs.setdefault('option_type', None)
-    kwargs.setdefault('candidate_options', np.linspace(0, kwargs['num_quantiles'] - 1, 10).astype(np.int64))
+    kwargs.setdefault('num_options', 10)
+    kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
+
     config = Config()
     config.merge(kwargs)
+
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir']+'-train', single_process=True)
-    # config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=None, single_process=True)
     if config.clip_reward:
         config.reward_normalizer = SignNormalizer()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
+        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options,
+                                   FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=config.max_steps, min_epsilon=0.1)
     config.target_network_update_freq = 200
     config.rollout_length = 5
     config.logger = get_logger()
-    config.evaluation_episodes = 20
-    config.evaluation_episodes_interval = 1600
-    config.evaluation_env = task_fn(kwargs['log_dir'] + '-test')
+    # config.evaluation_episodes = 20
+    # config.evaluation_episodes_interval = 1600
+    # config.evaluation_env = task_fn(kwargs['log_dir'] + '-test')
     agent = BootstrappedNStepQRDQNAgent(config)
     if kwargs['dry']:
         return agent
@@ -532,7 +537,7 @@ if __name__ == '__main__':
     # bootstrapped_qr_dqn_cliff(option_type='per_episode')
 
     # parallel = False
-    # runs = np.arange(0, 8)
+    # runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn',

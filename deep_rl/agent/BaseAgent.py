@@ -70,3 +70,4 @@ class BaseAgent:
                 self.evaluation_state = self.evaluation_env.reset()
                 self.config.logger.info('evaluation episode return: %f' % (self.evaluation_return))
                 self.evaluation_return = 0
+

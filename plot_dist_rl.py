@@ -159,39 +159,42 @@ if __name__ == '__main__':
     # game = 'BankHeist'
     # game = 'BattleZone'
 
-    train_kwargs = {
-        'episode_window': 100,
-        'top_k': 0,
-        'max_timesteps': int(4e7),
-        'average': False,
-        'x_interval': 1000
-    }
-    test_kwargs = {
-        'averate': False,
-        'x_interval': 16e4,
-        'rep': 10,
-        'max_timesteps': int(4e7),
-    }
-    patterns = [
-        'per_episode',
-        'per_step',
-        'original_qr_dqn',
-        # '9_options_only',
-        # 'mean_and_9_options',
-    ]
-    for i, p in enumerate(patterns):
-        # plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*train.*' % (game, p), figure=0, color=i, **train_kwargs)
-        deterministic_plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*test.*' % (game, p), figure=0, color=i, **test_kwargs)
-    plt.show()
-
-    # kwargs = {
-    #     'average': True,
+    # train_kwargs = {
+    #     'episode_window': 100,
+    #     'top_k': 0,
+    #     'max_timesteps': int(4e7),
+    #     'average': False,
+    #     'x_interval': 1000
+    # }
+    # test_kwargs = {
+    #     'averate': False,
+    #     'x_interval': 16e4,
+    #     'rep': 10,
+    #     'max_timesteps': int(4e7),
     # }
     # patterns = [
-    #     'original_qr_dqn-run',
-    #     'per_episode_qr_dqn-run',
-    #     'per_step_qr_dqn-run'
+    #     'per_episode',
+    #     'per_step',
+    #     'original_qr_dqn',
+    #     # '9_options_only',
+    #     # 'mean_and_9_options',
     # ]
     # for i, p in enumerate(patterns):
-    #     deterministic_plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
+    #     # plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*train.*' % (game, p), figure=0, color=i, **train_kwargs)
+    #     deterministic_plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*test.*' % (game, p), figure=0, color=i, **test_kwargs)
     # plt.show()
+
+    kwargs = {
+        'average': True,
+        'x_interval': 1000,
+        'top_k': 0,
+        'max_timesteps': int(3e5),
+    }
+    patterns = [
+        'original_qr_dqn-run',
+        'per_episode_qr_dqn-run',
+        'per_step_qr_dqn-run'
+    ]
+    for i, p in enumerate(patterns):
+        plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
+    plt.show()
