@@ -50,6 +50,7 @@ def ddpg_plot(**kwargs):
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
     new_data = []
     for x, y in data:
+        # y = y[: len(y) // kwargs['rep'] * kwargs['rep']]
         y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
         x = np.arange(y.shape[0]) * kwargs['x_interval']
         new_data.append([x, y])
@@ -270,16 +271,28 @@ if __name__ == '__main__':
         'rep': 20,
         'average': True
     }
-    patterns = [
-        'var_test_gaussian_no_reward_scale-run',
-        'var_test_gaussian_tanh-run',
-        'var_test_gaussian_tanh_no_reward_scale-run',
-        'var_test_no_reward_scale-run',
-        'var_test_original-run',
-        'var_test_tanh-run',
-        'var_test_tanh_no_reward_scale-run'
+    games = [
+        # 'RoboschoolAnt-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1'
     ]
-    for i, p in enumerate(patterns):
-        # ddpg_plot(pattern='.*ddpg_param_study.*%s.*' % (p), figure=i, **kwargs)
-        ddpg_plot(pattern='.*ddpg_param_study.*%s.*' % (p), figure=0, **kwargs, color=i)
+    # patterns = [
+    #     'var_test_gaussian_no_reward_scale-run',
+    #     'var_test_gaussian_tanh-run',
+    #     'var_test_gaussian_tanh_no_reward_scale-run',
+    #     'var_test_no_reward_scale-run',
+    #     'var_test_original-run',
+    #     'var_test_tanh-run',
+    #     'var_test_tanh_no_reward_scale-run'
+    # ]
+    patterns = [
+        'original_ddpg',
+        'off_policy'
+    ]
+    for i, game in enumerate(games):
+        for j, p in enumerate(patterns):
+            ddpg_plot(pattern='.*ddpg_ensemble_replay.*%s.*%s.*' % (game, p), figure=i, color=j, **kwargs)
     plt.show()
