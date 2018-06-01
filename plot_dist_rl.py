@@ -45,14 +45,16 @@ def deterministic_plot(**kwargs):
     kwargs.setdefault('top_k_perf', lambda x: np.mean(x[-20:]))
     kwargs.setdefault('max_timesteps', 1e8)
     kwargs.setdefault('episode_window', 100)
-    kwargs.setdefault('x_interval', 1000)
+    kwargs.setdefault('x_interval', 1600)
+    kwargs.setdefault('rep', 20)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     raw_data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
     data = []
     for x, y in raw_data:
-        y = np.reshape(np.asarray(y), (-1, 20)).mean(-1)
-        x = np.arange(y.shape[0]) * 1600
+        y = y[: len(y) // kwargs['rep'] * kwargs['rep']]
+        y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
+        x = np.arange(y.shape[0]) * kwargs['x_interval']
         data.append([x, y])
     print('')
 
@@ -97,23 +99,7 @@ if __name__ == '__main__':
     # plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4/qr_dqn_pixel_atari.*', figure=1)
     # plt.show()
 
-    game = 'Freeway'
-    # game = 'Seaquest'
-    # game = 'MsPacman'
-    # game = 'Frostbite'
-    # game = 'Enduro'
-    # game = 'JourneyEscape'
-    # game = 'Tennis'
-    # game = 'Pong'
-    # game = 'Boxing'
-    # game = 'IceHockey'
-    # game = 'Skiing'
-    # game = 'SpaceInvaders'
-    # game = 'UpNDown'
-    # game = 'BeamRider'
-    # game = 'Robotank'
-    # game = 'BankHeist'
-    # game = 'BattleZone'
+
     # kwargs = {
     #     'average': True
     # }
@@ -155,23 +141,47 @@ if __name__ == '__main__':
     # plot(pattern='.*log/dist_rl-CliffWalking/qr_dqn_cliff/random_option_qr_dqn.*', figure=0, color=3, **kwargs)
     # plt.show()
 
-    kwargs = {
+    # game = 'Freeway'
+    # game = 'Seaquest'
+    game = 'MsPacman'
+    # game = 'Frostbite'
+    # game = 'Enduro'
+    # game = 'JourneyEscape'
+    # game = 'Tennis'
+    # game = 'Pong'
+    # game = 'Boxing'
+    # game = 'IceHockey'
+    # game = 'Skiing'
+    # game = 'SpaceInvaders'
+    # game = 'UpNDown'
+    # game = 'BeamRider'
+    # game = 'Robotank'
+    # game = 'BankHeist'
+    # game = 'BattleZone'
+
+    train_kwargs = {
         'episode_window': 100,
         'top_k': 0,
         'max_timesteps': int(4e7),
         'average': False,
         'x_interval': 1000
     }
+    test_kwargs = {
+        'averate': False,
+        'x_interval': 16e4,
+        'rep': 10,
+        'max_timesteps': int(4e7),
+    }
     patterns = [
-        'random_option',
+        'per_episode',
+        'per_step',
         'original_qr_dqn',
         # '9_options_only',
         # 'mean_and_9_options',
     ]
     for i, p in enumerate(patterns):
-        # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
-        # plot(pattern='.*no_reward_clip.*%s.*' % (p), figure=0, **kwargs, color=i)
-        plot(pattern='.*log/dist_rl-FreewayNoFrameskip-v4.*%s.*' % (p), figure=0, color=i, **kwargs)
+        # plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*train.*' % (game, p), figure=0, color=i, **train_kwargs)
+        deterministic_plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*test.*' % (game, p), figure=0, color=i, **test_kwargs)
     plt.show()
 
     # kwargs = {

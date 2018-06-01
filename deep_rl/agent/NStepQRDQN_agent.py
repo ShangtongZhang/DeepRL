@@ -47,10 +47,10 @@ class NStepQRDQNAgent(BaseAgent):
         rollout = []
         states = self.states
 
-        self.evaluate(config.rollout_length)
-        self.evaluation_episodes()
-
         for _ in range(config.rollout_length):
+            self.evaluate(config.rollout_length)
+            self.evaluation_episodes()
+
             quantile_values = self.network.predict(self.config.state_normalizer(states))
             if self.config.random_option:
                 options = self.network.tensor(np.random.randint(

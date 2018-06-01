@@ -71,10 +71,10 @@ class OptionNStepQRDQNAgent(BaseAgent):
         rollout = []
         states = self.states
 
-        self.evaluate(config.rollout_length)
-        self.evaluation_episodes()
-
         for _ in range(config.rollout_length):
+            self.evaluate(config.rollout_length)
+            self.evaluation_episodes()
+
             quantile_values, pi, v_pi = self.network.predict(self.config.state_normalizer(states))
             actions, options = self.act(quantile_values, pi)
             # for i in range(pi.size(1)):
