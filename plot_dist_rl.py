@@ -193,7 +193,9 @@ if __name__ == '__main__':
     patterns = [
         'original_qr_dqn-run',
         'per_episode_qr_dqn-run',
-        'per_step_qr_dqn-run'
+        'per_step_qr_dqn-run',
+        'per_step_decay',
+        'per_episode_decay'
     ]
     for i, p in enumerate(patterns):
         plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)

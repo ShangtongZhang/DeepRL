@@ -62,7 +62,7 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
             quantile_values, option_values = self.network.predict(self.config.state_normalizer(states))
 
             greedy_options = torch.argmax(option_values, dim=-1)
-            random_option_prob = config.random_option_prob()
+            random_option_prob = config.random_option_prob(config.rollout_length)
             if config.option_type == 'per_step':
                 random_options = self.network.tensor(np.random.randint(
                     config.num_options, size=config.num_workers)).long()

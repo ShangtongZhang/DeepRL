@@ -317,7 +317,6 @@ def option_qr_dqn_pixel_atari(game, **kwargs):
     run_iterations(OptionNStepQRDQNAgent(config))
 
 def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
-    config = Config()
     kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
     kwargs.setdefault('gpu', 0)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
@@ -326,17 +325,24 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('max_steps', 4e7)
     kwargs.setdefault('option_type', None)
     kwargs.setdefault('num_quantiles', 200)
-    kwargs.setdefault('candidate_options', np.linspace(0, kwargs['num_quantiles'] - 1, 10).astype(np.int64))
+
+    kwargs.setdefault('option_type', None)
+    kwargs.setdefault('num_options', 10)
+    kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
+    config = Config()
+    config.merge(kwargs)
+
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, random_skip=kwargs['random_skip'])
-    config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
+    # config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
+        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -345,10 +351,8 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.logger = get_logger(file_name=bootstrapped_qr_dqn_pixel_atari.__name__)
-    config.num_quantiles = 200
-    config.evaluation_episodes = 10
-    config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
-    config.merge(kwargs)
+    # config.evaluation_episodes = 10
+    # config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
     run_iterations(BootstrappedNStepQRDQNAgent(config))
 
 # utility
@@ -498,28 +502,49 @@ def batch_job():
     cf.add_argument('--ind2', type=int, default=2)
     cf.merge()
 
-    # games = ['FreewayNoFrameskip-v4',
-    #          'PongNoFrameskip-v4']
     games = ['FreewayNoFrameskip-v4',
-             'PongNoFrameskip-v4',
-             'BeamRiderNoFrameskip-v4',
-             'BattleZoneNoFrameskip-v4',
-             'JourneyEscapeNoFrameskip-v4',
-             'MsPacmanNoFrameskip-v4']
+             'BeamRiderNoFrameskip-v4']
+    # games = ['FreewayNoFrameskip-v4',
+    #          'PongNoFrameskip-v4',
+    #          'BattleZoneNoFrameskip-v4',
+    #          'JourneyEscapeNoFrameskip-v4',
+    #          'MsPacmanNoFrameskip-v4']
     game = games[cf.ind1]
     # gpu = gpus[cf.ind1]
+
+
+    parallel = False
+    runs = 3
+    def task1():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=runs)
+
+    def task2():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_step_qr_dqn', parallel=parallel, runs=runs,
+               option_type='per_step')
+
+    def task3():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_qr_dqn', parallel=parallel, runs=runs,
+            option_type='per_episode')
+
+    def task4():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_step_decay_qr_dqn', parallel=parallel, runs=runs,
+               option_type='per_step', random_option_prob=LinearSchedule(1.0, 0, int(4e7)))
+
+    def task5():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_qr_dqn', parallel=parallel, runs=runs,
+               option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)))
 
     # def task1():
     #     multi_runs(game, option_qr_dqn_pixel_atari, num_options=9,
     #                tag='9_options_only', mean_option=0, parallel=False)
 
-    def task2():
-        multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, tag='mean_and_9_options', parallel=False)
+    # def task2():
+    #     multi_runs(game, option_qr_dqn_pixel_atari, num_options=9, tag='mean_and_9_options', parallel=False)
+    #
+    # def task3():
+    #     multi_runs(game, qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=False)
 
-    def task3():
-        multi_runs(game, qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=False)
-
-    tasks = [task2, task3]
+    tasks = [task1, task2, task3, task4, task5]
     tasks[cf.ind2]()
 
 def test_random_seed(**kwargs):
@@ -530,11 +555,12 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    # batch_job()
+    batch_job()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='per_step')
     # bootstrapped_qr_dqn_cliff(option_type='per_episode')
+    # bootstrapped_qr_dqn_cliff(option_type='decayed_per_step', random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
 
     # parallel = False
     # runs = np.arange(0, 16)
@@ -543,6 +569,10 @@ if __name__ == '__main__':
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn',
     #            option_type='per_step', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_qr_dqn',
+    #            option_type='per_episode', parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_decay_qr_dqn',
+    #            option_type='per_step', parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_qr_dqn',
     #            option_type='per_episode', parallel=parallel, runs=runs)
 
     # replay_qr_dqn_cliff()
@@ -577,7 +607,7 @@ if __name__ == '__main__':
     # game = 'BreakoutNoFrameskip-v4'
     # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
-    game = 'MsPacmanNoFrameskip-v4'
+    # game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
     # game = 'EnduroNoFrameskip-v4'
     # game = 'JourneyEscapeNoFrameskip-v4'
@@ -601,12 +631,16 @@ if __name__ == '__main__':
     # game = 'BankHeistNoFrameskip-v4'
     # game = 'RobotankNoFrameskip-v4'
 
-    parallel = True
+    # parallel = False
     # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=2)
     # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_step_qr_dqn', parallel=parallel, runs=2,
     #            option_type='per_step')
     # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_qr_dqn', parallel=parallel, runs=2,
     #            option_type='per_episode')
+    # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_step_decay_qr_dqn', parallel=parallel, runs=2,
+    #            option_type='per_step', random_option_prob=LinearSchedule(1.0, 0, int(4e7)))
+    # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_qr_dqn', parallel=parallel, runs=2,
+    #            option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)))
 
     # bootstrapped_qr_dqn_pixel_atari(game)
 
