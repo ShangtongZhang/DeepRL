@@ -350,7 +350,7 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
-    config.logger = get_logger(file_name=bootstrapped_qr_dqn_pixel_atari.__name__)
+    config.logger = get_logger()
     # config.evaluation_episodes = 10
     # config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
     run_iterations(BootstrappedNStepQRDQNAgent(config))
@@ -503,7 +503,10 @@ def batch_job():
     cf.merge()
 
     games = ['FreewayNoFrameskip-v4',
-             'BeamRiderNoFrameskip-v4']
+             'BeamRiderNoFrameskip-v4',
+             'BattleZoneNoFrameskip-v4',
+             'RobotankNoFrameskip-v4',
+             'PongNoFrameskip-v4']
     # games = ['FreewayNoFrameskip-v4',
     #          'PongNoFrameskip-v4',
     #          'BattleZoneNoFrameskip-v4',
@@ -513,7 +516,7 @@ def batch_job():
     # gpu = gpus[cf.ind1]
 
 
-    parallel = False
+    parallel = True
     runs = 3
     def task1():
         multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=runs)
