@@ -167,7 +167,7 @@ if __name__ == '__main__':
     train_kwargs = {
         'episode_window': 100,
         'top_k': 0,
-        'max_timesteps': int(2e7),
+        'max_timesteps': int(4e7),
         'average': True,
         'x_interval': 1000
     }
@@ -178,10 +178,10 @@ if __name__ == '__main__':
         'max_timesteps': int(4e7),
     }
     patterns = [
-        'per_episode_qr',
-        'per_step_qr',
+        # 'per_episode_qr',
+        # 'per_step_qr',
         'per_episode_decay',
-        'per_step_decay',
+        # 'per_step_decay',
         'original_qr_dqn',
         # '9_options_only',
         # 'mean_and_9_options',
