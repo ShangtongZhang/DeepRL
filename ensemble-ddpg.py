@@ -156,16 +156,17 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('tag', ensemble_ddpg.__name__)
     kwargs.setdefault('num_options', 5)
-    kwargs.setdefault('off_policy_actor', False)
-    kwargs.setdefault('off_policy_critic', False)
-    kwargs.setdefault('option_epsilon', LinearSchedule(0))
-    kwargs.setdefault('action_based_noise', True)
+    kwargs.setdefault('off_policy_actor', True)
+    # kwargs.setdefault('off_policy_critic', False)
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
+    # kwargs.setdefault('action_based_noise', True)
     kwargs.setdefault('noise', OrnsteinUhlenbeckProcess)
     kwargs.setdefault('std', LinearSchedule(0.2))
+    kwargs.setdefault('option_type', 'per_step')
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
-    config.task_fn = lambda: Roboschool(game)
-    config.evaluation_env = Roboschool(game, log_dir=log_dir)
+    config.task_fn = lambda: Roboschool(game, log_dir=log_dir+'-train')
+    config.evaluation_env = Roboschool(game, log_dir=log_dir+'-test')
     config.network_fn = lambda state_dim, action_dim: ThinDeterministicOptionCriticNet(
         action_dim, phi_body=DummyBody(state_dim),
         actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
@@ -306,17 +307,52 @@ def batch_job():
     ]
     game = games[cf.ind1]
 
-    parallel = True
-    def task():
-        multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=parallel)
-        multi_runs(game, ensemble_ddpg, tag='off_policy',
-                   off_policy_actor=True, off_policy_critic=True, parallel=parallel)
-        multi_runs(game, ensemble_ddpg, tag='half_policy',
-                   off_policy_actor=False, off_policy_critic=True, parallel=parallel)
-        multi_runs(game, ensemble_ddpg, tag='on_policy',
-                   off_policy_actor=False, off_policy_critic=False, parallel=parallel)
+    # parallel = True
+    # def task():
+    #     multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=parallel)
+    #     multi_runs(game, ensemble_ddpg, tag='off_policy',
+    #                off_policy_actor=True, off_policy_critic=True, parallel=parallel)
+    #     multi_runs(game, ensemble_ddpg, tag='half_policy',
+    #                off_policy_actor=False, off_policy_critic=True, parallel=parallel)
+    #     multi_runs(game, ensemble_ddpg, tag='on_policy',
+    #                off_policy_actor=False, off_policy_critic=False, parallel=parallel)
+    #
+    # task()
 
-    task()
+    games = [
+        'RoboschoolAnt-v1',
+        'RoboschoolWalker2d-v1',
+    ]
+    game = games[cf.ind1]
+
+    parallel = False
+    def task1():
+        multi_runs(game, ensemble_ddpg, tag='per_step_random',
+                   option_type='per_step', random_option_prob=LinearSchedule(1.0), parallel=parallel)
+
+    def task2():
+        multi_runs(game, ensemble_ddpg, tag='per_step_decay',
+                   option_type='per_step', random_option_prob=LinearSchedule(1.0, 0, int(1e6)), parallel=parallel)
+
+    def task3():
+        multi_runs(game, ensemble_ddpg, tag='per_episode_random',
+                   option_type='per_episode', random_option_prob=LinearSchedule(1.0), parallel=parallel)
+
+    def task4():
+        multi_runs(game, ensemble_ddpg, tag='per_episode_decay',
+                   option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(1e6)), parallel=parallel)
+
+    # def task5():
+    #     multi_runs(game, ensemble_ddpg, tag='per_step_decay_10', num_options=10,
+    #                option_type='per_step', random_option_prob=LinearSchedule(1.0, 0, int(1e6)), parallel=parallel)
+    #
+    # def task6():
+    #     multi_runs(game, ensemble_ddpg, tag='per_episode_decay_10', num_options=10,
+    #                option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(1e6)), parallel=parallel)
+
+    tasks = [task1, task2, task3, task4]
+
+    tasks[cf.ind2]()
 
     # games = [
     #     'RoboschoolAnt-v1',
@@ -357,7 +393,7 @@ if __name__ == '__main__':
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
 
-    # game = 'RoboschoolAnt-v1'
+    game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
     # game = 'RoboschoolHopper-v1'
@@ -366,6 +402,8 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
     batch_job()
+
+    # ensemble_ddpg(game, option_type='per_episode', random_option_prob=LinearSchedule(0.5))
 
     # ddpg_continuous(game, noise=OrnsteinUhlenbeckProcess)
 

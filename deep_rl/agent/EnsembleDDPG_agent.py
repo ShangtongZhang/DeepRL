@@ -37,28 +37,35 @@ class EnsembleDDPGAgent(BaseAgent):
         state = self.config.state_normalizer(state)
 
         config = self.config
-
         steps = 0
         total_reward = 0.0
         while True:
             self.evaluate()
             self.evaluation_episodes()
 
-            if np.random.rand() > config.option_epsilon():
-                action, option = self.network.predict(np.stack([state]), to_numpy=True)
-                action = action.flatten()
-                if config.action_based_noise:
-                    action += self.random_process.sample()
-            else:
-                action = (np.random.rand(self.task.action_dim) - 0.5) * 2
-                option = np.asarray([-1])
+            actions, q_values, _ = self.network.predict(np.stack([state]))
+
+            random_option_prob = config.random_option_prob()
+            if config.option_type == 'per_step' or (
+                config.option_type == 'per_episode' and steps == 0
+            ):
+                if np.random.rand() < random_option_prob:
+                    self.option = np.random.randint(config.num_options)
+                else:
+                    self.option = torch.argmax(q_values, dim=-1)
+                    self.option = np.asscalar(self.option.detach().cpu().numpy())
+
+            actions = actions.detach().cpu().numpy()
+            action = actions[0, self.option, :].flatten()
+            action += self.random_process.sample()
+
             next_state, reward, done, info = self.task.step(action)
             next_state = self.config.state_normalizer(next_state)
             total_reward += reward
             reward = self.config.reward_normalizer(reward)
 
             if not deterministic:
-                self.replay.feed([state, action, reward, next_state, int(done), np.asscalar(option)])
+                self.replay.feed([state, action, reward, next_state, int(done), self.option])
                 self.total_steps += 1
 
             steps += 1
@@ -70,7 +77,7 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi_next = self.target_network.feature(next_states)
                 a_next = self.target_network.actor(phi_next)
                 q_next = self.target_network.critic(phi_next, a_next)
-                q_next = q_next.max(1)[0].unsqueeze(1)
+                # q_next = q_next.max(1)[0].unsqueeze(1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
@@ -79,9 +86,9 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi = self.network.feature(states)
                 actions = self.network.tensor(actions)
                 q = self.network.critic(phi, actions)
-                if not config.off_policy_critic:
-                    q = q[self.network.tensor(np.arange(q.size(0))).long(),
-                          self.network.tensor(options).long()].unsqueeze(-1)
+                # if not config.off_policy_critic:
+                #     q = q[self.network.tensor(np.arange(q.size(0))).long(),
+                #           self.network.tensor(options).long()].unsqueeze(-1)
                 q_loss = (q - q_next).pow(2).mul(0.5).sum(1).mean()
 
                 self.network.zero_grad()
@@ -91,9 +98,9 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi = self.network.feature(states)
                 actions = self.network.actor(phi)
                 q = self.network.critic(phi.detach(), actions)
-                if not config.off_policy_actor:
-                    q = q[self.network.tensor(np.arange(q.size(0))).long(),
-                          self.network.tensor(options).long()].unsqueeze(-1)
+                # if not config.off_policy_actor:
+                #     q = q[self.network.tensor(np.arange(q.size(0))).long(),
+                #           self.network.tensor(options).long()].unsqueeze(-1)
                 policy_loss = -q.sum(1).mean()
                 self.network.zero_grad()
                 policy_loss.backward()
