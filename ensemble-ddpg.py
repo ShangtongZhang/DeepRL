@@ -156,13 +156,14 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('tag', ensemble_ddpg.__name__)
     kwargs.setdefault('num_options', 5)
-    kwargs.setdefault('off_policy_actor', True)
+    kwargs.setdefault('off_policy_actor', False)
     # kwargs.setdefault('off_policy_critic', False)
     kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
     # kwargs.setdefault('action_based_noise', True)
     kwargs.setdefault('noise', OrnsteinUhlenbeckProcess)
     kwargs.setdefault('std', LinearSchedule(0.2))
     kwargs.setdefault('option_type', 'per_step')
+    kwargs.setdefault('mask_q', True)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     config.task_fn = lambda: Roboschool(game, log_dir=log_dir+'-train')
@@ -239,7 +240,7 @@ def multi_runs(game, fn, tag, **kwargs):
 def batch_job():
     cf = Config()
     cf.add_argument('--ind1', type=int, default=0)
-    cf.add_argument('--ind2', type=int, default=3)
+    cf.add_argument('--ind2', type=int, default=0)
     cf.merge()
 
     # game = 'RoboschoolHopper-v1'
@@ -297,15 +298,15 @@ def batch_job():
     #          'KukaBulletEnv-v0',
     #          'MinitaurBulletEnv-v0']
 
-    games = [
-        'RoboschoolAnt-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1'
-    ]
-    game = games[cf.ind1]
+    # games = [
+    #     'RoboschoolAnt-v1',
+    #     'RoboschoolHopper-v1',
+    #     'RoboschoolWalker2d-v1',
+    #     'RoboschoolHalfCheetah-v1',
+    #     'RoboschoolReacher-v1',
+    #     'RoboschoolHumanoid-v1'
+    # ]
+    # game = games[cf.ind1]
 
     # parallel = True
     # def task():
@@ -325,7 +326,7 @@ def batch_job():
     ]
     game = games[cf.ind1]
 
-    parallel = False
+    parallel = True
     def task1():
         multi_runs(game, ensemble_ddpg, tag='per_step_random',
                    option_type='per_step', random_option_prob=LinearSchedule(1.0), parallel=parallel)
@@ -403,7 +404,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
     batch_job()
 
-    # ensemble_ddpg(game, option_type='per_episode', random_option_prob=LinearSchedule(0.5))
+    # ensemble_ddpg(game, option_type='per_episode', random_option_prob=LinearSchedule(0.5), mask_q=True)
 
     # ddpg_continuous(game, noise=OrnsteinUhlenbeckProcess)
 

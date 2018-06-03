@@ -48,9 +48,11 @@ def ddpg_plot(**kwargs):
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
+    min_y = np.min([len(y) for y in data])
+    data = [y[ :min_y] for y in data]
     new_data = []
-    for x, y in data:
-        # y = y[: len(y) // kwargs['rep'] * kwargs['rep']]
+    for y in data:
         y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
         x = np.arange(y.shape[0]) * kwargs['x_interval']
         new_data.append([x, y])
@@ -290,13 +292,32 @@ if __name__ == '__main__':
     #     'var_test_tanh-run',
     #     'var_test_tanh_no_reward_scale-run'
     # ]
+    # patterns = [
+    #     'original_ddpg',
+    #     'off_policy',
+    #     'on_policy',
+    #     'half_policy'
+    # ]
+    # for i, game in enumerate(games):
+    #     for j, p in enumerate(patterns):
+    #         ddpg_plot(pattern='.*ddpg_ensemble_replay.*%s.*%s.*' % (game, p), figure=i, color=j, **kwargs)
+    # plt.show()
+
+
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True
+    }
     patterns = [
-        'original_ddpg',
-        'off_policy',
-        'on_policy',
-        'half_policy'
+        'per_episode_decay',
+        'per_episode_random',
+        'per_step_decay',
+        'per_step_random'
     ]
-    for i, game in enumerate(games):
-        for j, p in enumerate(patterns):
-            ddpg_plot(pattern='.*ddpg_ensemble_replay.*%s.*%s.*' % (game, p), figure=i, color=j, **kwargs)
+    for i, p in enumerate(patterns):
+        ddpg_plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ensemble_ddpg.*%s.*test.*' % (p), figure=0, color=i, **kwargs)
+        # ddpg_plot(pattern='.*log/ensemble-RoboschoolWalker2d-v1/ensemble_ddpg.*%s.*test.*' % (p), figure=0, color=i, **kwargs)
+    ddpg_plot(pattern='.*log/ddpg_ensemble_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=0, color=4, **kwargs)
+    # ddpg_plot(pattern='.*log/ddpg_ensemble_replay/ensemble-RoboschoolWalker2d-v1/ddpg_continuous.*', figure=0, color=4, **kwargs)
     plt.show()

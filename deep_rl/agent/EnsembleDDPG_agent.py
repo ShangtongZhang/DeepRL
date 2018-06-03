@@ -65,7 +65,8 @@ class EnsembleDDPGAgent(BaseAgent):
             reward = self.config.reward_normalizer(reward)
 
             if not deterministic:
-                self.replay.feed([state, action, reward, next_state, int(done), self.option])
+                mask = np.random.binomial(n=1, p=0.5, size=config.num_options)
+                self.replay.feed([state, action, reward, next_state, int(done), self.option, mask])
                 self.total_steps += 1
 
             steps += 1
@@ -73,7 +74,8 @@ class EnsembleDDPGAgent(BaseAgent):
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
-                states, actions, rewards, next_states, terminals, options = experiences
+                states, actions, rewards, next_states, terminals, options, masks = experiences
+                masks = self.network.tensor(masks)
                 phi_next = self.target_network.feature(next_states)
                 a_next = self.target_network.actor(phi_next)
                 q_next = self.target_network.critic(phi_next, a_next)
@@ -89,7 +91,10 @@ class EnsembleDDPGAgent(BaseAgent):
                 # if not config.off_policy_critic:
                 #     q = q[self.network.tensor(np.arange(q.size(0))).long(),
                 #           self.network.tensor(options).long()].unsqueeze(-1)
-                q_loss = (q - q_next).pow(2).mul(0.5).sum(1).mean()
+                q_loss = q - q_next
+                if config.mask_q:
+                    q_loss = q_loss * masks
+                q_loss = q_loss.pow(2).mul(0.5).sum(1).mean()
 
                 self.network.zero_grad()
                 q_loss.backward()
@@ -98,9 +103,9 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi = self.network.feature(states)
                 actions = self.network.actor(phi)
                 q = self.network.critic(phi.detach(), actions)
-                # if not config.off_policy_actor:
-                #     q = q[self.network.tensor(np.arange(q.size(0))).long(),
-                #           self.network.tensor(options).long()].unsqueeze(-1)
+                if not config.off_policy_actor:
+                    q = q[self.network.tensor(np.arange(q.size(0))).long(),
+                          self.network.tensor(options).long()].unsqueeze(-1)
                 policy_loss = -q.sum(1).mean()
                 self.network.zero_grad()
                 policy_loss.backward()
