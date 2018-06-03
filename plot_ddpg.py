@@ -66,7 +66,9 @@ def ddpg_plot(**kwargs):
         y = [entry[1] for entry in data]
         # y = np.transpose(np.stack(y))
         y = np.stack(y)
-        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+        name = names[0].split('/')[-1]
+        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color])
+        plt.title(names[0])
     else:
         for i, name in enumerate(names):
             x, y = data[i]
@@ -272,7 +274,7 @@ if __name__ == '__main__':
         'average': True
     }
     games = [
-        # 'RoboschoolAnt-v1',
+        'RoboschoolAnt-v1',
         'RoboschoolHopper-v1',
         'RoboschoolWalker2d-v1',
         'RoboschoolHalfCheetah-v1',
@@ -290,7 +292,9 @@ if __name__ == '__main__':
     # ]
     patterns = [
         'original_ddpg',
-        'off_policy'
+        'off_policy',
+        'on_policy',
+        'half_policy'
     ]
     for i, game in enumerate(games):
         for j, p in enumerate(patterns):
