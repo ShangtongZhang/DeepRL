@@ -167,7 +167,7 @@ if __name__ == '__main__':
     train_kwargs = {
         'episode_window': 100,
         'top_k': 0,
-        'max_timesteps': int(1.4e7),
+        'max_timesteps': int(2e7),
         'average': True,
         'x_interval': 1000
     }
