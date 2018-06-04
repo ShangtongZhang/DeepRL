@@ -107,7 +107,7 @@ def replay_bootstrapped_qr_dqn_cliff(**kwargs):
 def replay_bootstrapped_qr_dqn_atari(game, **kwargs):
     kwargs.setdefault('tag', replay_bootstrapped_qr_dqn_atari.__name__)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('max_steps', int(1e6))
+    kwargs.setdefault('max_steps', int(4e6))
     kwargs.setdefault('num_quantiles', 200)
 
     kwargs.setdefault('option_type', None)
@@ -570,9 +570,9 @@ if __name__ == '__main__':
     # replay_bootstrapped_qr_dqn_atari(game, tag='per_step', option_type='per_step')
     # replay_bootstrapped_qr_dqn_atari(game, tag='per_episode', option_type='per_episode')
     # replay_bootstrapped_qr_dqn_atari(game, tag='per_step_decay', option_type='per_step_decay',
-    #                                  random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
-    # replay_bootstrapped_qr_dqn_atari(game, tag='per_episode_decay', option='per_episode_decay',
-    #                                  random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
+    #                                  random_option_prob=LinearSchedule(1.0, 0, int(4e6)))
+    replay_bootstrapped_qr_dqn_atari(game, tag='per_episode_decay', option='per_episode_decay',
+                                     random_option_prob=LinearSchedule(1.0, 0, int(4e6)))
 
     # parallel = False
     # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=2)
