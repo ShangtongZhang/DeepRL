@@ -565,15 +565,15 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    batch_job()
+    # batch_job()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='per_step')
     # bootstrapped_qr_dqn_cliff(option_type='per_episode')
     # bootstrapped_qr_dqn_cliff(option_type='decayed_per_step', random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
 
-    # parallel = False
-    # runs = np.arange(0, 16)
+    parallel = False
+    runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn',

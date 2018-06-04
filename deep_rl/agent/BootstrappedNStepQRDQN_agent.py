@@ -33,6 +33,8 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
             config.num_options, size=config.num_workers)).long()
         self.candidate_quantiles = self.network.tensor(config.candidate_quantiles).long()
 
+        self.is_initial_states = np.ones(config.num_workers, dtype=np.uint8)
+
     def option_to_q_values(self, options, quantiles):
         selected_quantiles = self.candidate_quantiles[options]
         q_values = quantiles[self.network.range(quantiles.size(0)), :, selected_quantiles]
@@ -63,11 +65,15 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
 
             greedy_options = torch.argmax(option_values, dim=-1)
             random_option_prob = config.random_option_prob(config.rollout_length)
+            random_options = self.network.tensor(np.random.randint(
+                config.num_options, size=config.num_workers)).long()
+            dice = self.network.tensor(np.random.rand(config.num_workers))
+            new_options = torch.where(dice < random_option_prob, random_options, greedy_options)
             if config.option_type == 'per_step':
-                random_options = self.network.tensor(np.random.randint(
-                    config.num_options, size=config.num_workers)).long()
-                dice = self.network.tensor(np.random.rand(config.num_workers))
-                self.options = torch.where(dice < random_option_prob, random_options, greedy_options)
+                self.options = new_options
+            elif config.option_type == 'per_episode':
+                self.options = torch.where(self.network.tensor(self.is_initial_states).byte(),
+                                           new_options, self.options)
 
             if config.option_type is not None:
                 q_values = self.option_to_q_values(self.options, quantile_values)
@@ -80,12 +86,9 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
             rewards = config.reward_normalizer(rewards)
+            self.is_initial_states = terminals.astype(np.uint8)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
-                    if np.random.rand() < random_option_prob:
-                        self.options[i] = self.network.tensor(np.random.randint(config.num_options))
-                    else:
-                        self.options[i] = greedy_options[i]
                     self.last_episode_rewards[i] = self.episode_rewards[i]
                     self.episode_rewards[i] = 0
 
