@@ -41,35 +41,6 @@ def quantile_regression_dqn_pixel_atari(game, **kwargs):
     config.merge(kwargs)
     run_episodes(QuantileRegressionDQNAgent(config))
 
-def option_quantile_regression_dqn_pixel_atari(game, **kwargs):
-    config = Config()
-    kwargs.setdefault('tag', option_quantile_regression_dqn_pixel_atari.__name__)
-    kwargs.setdefault('num_options', 5)
-    kwargs.setdefault('gpu', 0)
-    kwargs.setdefault('mean_option', 1)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    config = Config()
-    config.history_length = 4
-    config.task_fn = lambda: PixelAtari(game, frame_skip=4, history_length=config.history_length,
-                                        log_dir=kwargs['log_dir'])
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
-    config.network_fn = lambda state_dim, action_dim: \
-        OptionQuantileNet(action_dim, config.num_quantiles, config.num_options + config.mean_option,
-                          NatureConvBody(), gpu=config.gpu)
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
-    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
-    config.state_normalizer = ImageNormalizer()
-    config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
-    config.target_network_update_freq = 10000
-    config.exploration_steps= 50000
-    config.logger = get_logger(file_name=kwargs['tag'])
-    config.double_q = False
-    config.num_quantiles = 200
-    config.entropy_weight = 0.01
-    config.merge(kwargs)
-    run_episodes(OptionQuantileRegressionDQNAgent(config))
-
 def qr_dqn_cart_pole():
     config = Config()
     task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
@@ -87,46 +58,50 @@ def qr_dqn_cart_pole():
     config.num_quantiles = 20
     run_iterations(NStepQRDQNAgent(config))
 
-def option_qr_dqn_cart_pole():
-    config = Config()
-    task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
-    # config.evaluation_env = task_fn(None)
-    config.num_workers = 5
-    config.num_options = 5
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda state_dim, action_dim: \
-        OptionQuantileNet(action_dim, config.num_quantiles, config.num_options, FCBody(state_dim))
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=10000, min_epsilon=0.1)
-    config.discount = 0.99
-    config.entropy_weight = 0.01
-    config.target_network_update_freq = 200
-    config.rollout_length = 5
-    config.logger = get_logger()
-    config.num_quantiles = 20
-    run_iterations(OptionNStepQRDQNAgent(config))
-
-
 # replay cliff world
 def replay_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('tag', replay_qr_dqn_cliff.__name__)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('max_steps', int(3e5))
+    kwargs.setdefault('max_steps', int(4e4))
     config = Config()
     config.merge(kwargs)
-    config.task_fn = lambda: CliffWalkingTask(random_action_prob=0.1, log_dir=config.log_dir)
-    # config.evaluation_env = CliffWalkingTask(random_action_prob=0.1, log_dir=config.log_dir)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.01)
+    config.task_fn = lambda: CliffWalkingTask(random_action_prob=0, log_dir=config.log_dir, width=6)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.01)
     config.network_fn = lambda state_dim, action_dim: \
         QuantileNet(action_dim, config.num_quantiles, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=10000, min_epsilon=0.1)
-    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=64)
+    config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
     config.discount = 0.99
-    config.target_network_update_freq = 2000
+    config.target_network_update_freq = 200
     config.exploration_steps = 0
     config.logger = get_logger()
     config.num_quantiles = 20
     run_episodes(QuantileRegressionDQNAgent(config))
+
+def replay_bootstrapped_qr_dqn_cliff(**kwargs):
+    kwargs.setdefault('tag', replay_bootstrapped_qr_dqn_cliff.__name__)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('max_steps', int(4e4))
+    kwargs.setdefault('num_quantiles', 20)
+
+    kwargs.setdefault('option_type', None)
+    kwargs.setdefault('num_options', 10)
+    kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
+
+    config = Config()
+    config.merge(kwargs)
+    config.task_fn = lambda: CliffWalkingTask(random_action_prob=0, log_dir=config.log_dir, width=6)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.01)
+    config.network_fn = lambda state_dim, action_dim: \
+        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
+    config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=10000, min_epsilon=0.1)
+    config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
+    config.discount = 0.99
+    config.target_network_update_freq = 200
+    config.exploration_steps = 0
+    config.logger = get_logger()
+    run_episodes(BootstrappedQRDQN(config))
 
 # n-step cliff world
 def qr_dqn_cliff(**kwargs):
@@ -279,42 +254,6 @@ def qr_dqn_pixel_atari(game, **kwargs):
     config.num_quantiles = 200
     config.merge(kwargs)
     run_iterations(NStepQRDQNAgent(config))
-
-def option_qr_dqn_pixel_atari(game, **kwargs):
-    config = Config()
-    kwargs.setdefault('tag', option_qr_dqn_pixel_atari.__name__)
-    kwargs.setdefault('num_options', 9)
-    kwargs.setdefault('gpu', 0)
-    kwargs.setdefault('mean_option', 1)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('random_skip', 0)
-    kwargs.setdefault('frame_stack', 4)
-    kwargs.setdefault('max_steps', 4e7)
-    kwargs.setdefault('random_option', False)
-    config.history_length = kwargs['frame_stack']
-    task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
-                                         log_dir=log_dir, random_skip=kwargs['random_skip'])
-    config.num_workers = 16
-    # config.evaluation_env = task_fn(kwargs['log_dir'])
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=kwargs['log_dir'], single_process=True)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda state_dim, action_dim: \
-        OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'] + kwargs['mean_option'],
-                          NatureConvBody(in_channels=config.history_length),
-                          gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
-    config.state_normalizer = ImageNormalizer()
-    config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
-    config.target_network_update_freq = 10000
-    config.rollout_length = 5
-    config.gradient_clip = 5
-    config.entropy_weight = 0.01
-    config.logger = get_logger(file_name=option_qr_dqn_pixel_atari.__name__)
-    config.num_quantiles = 200
-    config.merge(kwargs)
-    run_iterations(OptionNStepQRDQNAgent(config))
 
 def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
@@ -565,7 +504,7 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    batch_job()
+    # batch_job()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='per_step')
@@ -581,11 +520,29 @@ if __name__ == '__main__':
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_qr_dqn',
     #            option_type='per_episode', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_decay_qr_dqn',
-    #            option_type='per_step', parallel=parallel, runs=runs)
+               # option_type='per_step', parallel=parallel, runs=runs,
+               # random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_qr_dqn',
-    #            option_type='per_episode', parallel=parallel, runs=runs)
+    #            option_type='per_episode', parallel=parallel, runs=runs,
+    #            random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
 
     # replay_qr_dqn_cliff()
+    # replay_bootstrapped_qr_dqn_cliff()
+    # replay_bootstrapped_qr_dqn_cliff(option_type='per_step')
+    # replay_bootstrapped_qr_dqn_cliff(option_type='per_episode', random_option_prob=LinearSchedule(
+    #     1.0, 0, int(4e4)))
+
+    parallel = False
+    runs = np.arange(0, 8)
+    # multi_runs('CliffWalking-replay', replay_bootstrapped_qr_dqn_cliff, tag='origin_qr_dqn', parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking-replay', replay_bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn', parallel=parallel, runs=runs,
+    #            option_type='per_step')
+    # multi_runs('CliffWalking-replay', replay_bootstrapped_qr_dqn_cliff, tag='per_episode_qr_dqn', parallel=parallel, runs=runs,
+    #            option_type='per_episode')
+    # multi_runs('CliffWalking-replay', replay_bootstrapped_qr_dqn_cliff, tag='per_step_decay_qr_dqn', parallel=parallel, runs=runs,
+    #            option_type='per_step', random_option_prob=LinearSchedule(1.0, 0, int(4e4)))
+    # multi_runs('CliffWalking-replay', replay_bootstrapped_qr_dqn_cliff, tag='per_episode_decay_qr_dqn', parallel=parallel, runs=runs,
+    #            option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e4)))
 
     # multi_runs('xxx', test_random_seed, tag='xxx', parallel=True)
     # option_qr_dqn_cliff(mean_option=False, num_options=5, max_steps=int(3e5))

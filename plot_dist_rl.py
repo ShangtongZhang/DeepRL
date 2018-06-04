@@ -209,13 +209,20 @@ if __name__ == '__main__':
         'top_k': 0,
         'max_timesteps': int(3e5),
     }
+    # kwargs = {
+    #     'average': True,
+    #     'x_interval': 100,
+    #     'top_k': 0,
+    #     'max_timesteps': int(4e4),
+    # }
     patterns = [
-        'original_qr_dqn-run',
+        # 'original_qr_dqn-run',
+        'origin_qr_dqn-run',
         'per_episode_qr_dqn-run',
         'per_step_qr_dqn-run',
         'per_step_decay',
         'per_episode_decay'
     ]
     for i, p in enumerate(patterns):
-        plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
+        plot(pattern='.*replay_bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
     plt.show()

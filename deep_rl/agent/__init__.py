@@ -7,6 +7,5 @@ from .QuantileRegressionDQN_agent import *
 from .PPO_agent import *
 from .OptionCritic_agent import *
 from .NStepQRDQN_agent import *
-from .OptionNStepQRDQN_agent import *
-from .OptionQuantileRegressionDQN_agent import *
 from .BootstrappedNStepQRDQN_agent import *
+from .BootstrappedQRDQN_agent import *

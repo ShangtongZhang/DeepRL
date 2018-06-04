@@ -216,10 +216,10 @@ class ParallelizedTask:
 class CliffWalking(gym.Env):
     POSITIVE_REWARD = 0
     NEGATIVE_REWARD = 1
-    def __init__(self, random_action_prob, reward_type=NEGATIVE_REWARD):
+    def __init__(self, random_action_prob, reward_type=NEGATIVE_REWARD, width=12, height=4):
         self.timeout = 100
-        self.width = 12
-        self.height = 4
+        self.width = width
+        self.height = height
         self.action_dim = 4
         self.S = (0, 0)
         self.G = (self.width - 1, 0)
@@ -269,10 +269,10 @@ class CliffWalking(gym.Env):
         return self.get_obs()
 
 class CliffWalkingTask(BaseTask):
-    def __init__(self, random_action_prob, log_dir=None):
+    def __init__(self, random_action_prob, log_dir=None, **kwargs):
         BaseTask.__init__(self)
         self.name = 'CliffWalking'
-        self.env = CliffWalking(random_action_prob)
+        self.env = CliffWalking(random_action_prob, **kwargs)
         self.action_dim = self.env.action_space.n
         self.state_dim = self.env.observation_space.shape[0]
         self.env = self.set_monitor(self.env, log_dir)
