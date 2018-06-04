@@ -79,7 +79,7 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi_next = self.target_network.feature(next_states)
                 a_next = self.target_network.actor(phi_next)
                 q_next = self.target_network.critic(phi_next, a_next)
-                # q_next = q_next.max(1)[0].unsqueeze(1)
+                q_next = q_next.max(1)[0].unsqueeze(1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
@@ -88,9 +88,9 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi = self.network.feature(states)
                 actions = self.network.tensor(actions)
                 q = self.network.critic(phi, actions)
-                # if not config.off_policy_critic:
-                #     q = q[self.network.tensor(np.arange(q.size(0))).long(),
-                #           self.network.tensor(options).long()].unsqueeze(-1)
+                if not config.off_policy_critic:
+                    q = q[self.network.tensor(np.arange(q.size(0))).long(),
+                          self.network.tensor(options).long()].unsqueeze(-1)
                 q_loss = q - q_next
                 if config.mask_q:
                     q_loss = q_loss * masks
