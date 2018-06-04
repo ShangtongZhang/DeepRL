@@ -22,7 +22,9 @@ def plot(**kwargs):
         color = kwargs['color']
         x, y = plotter.average(data, kwargs['x_interval'], kwargs['max_timesteps'], top_k=kwargs['top_k'],
                                top_k_perf=kwargs['top_k_perf'])
-        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+        name = names[0].split('/')[-1]
+        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color])
+        plt.title(names[0])
     else:
         for i, name in enumerate(names):
             x, y = data[i]
@@ -178,10 +180,10 @@ if __name__ == '__main__':
         'max_timesteps': int(4e7),
     }
     patterns = [
-        # 'per_episode_qr',
-        # 'per_step_qr',
+        'per_episode_qr',
+        'per_step_qr',
         'per_episode_decay',
-        # 'per_step_decay',
+        'per_step_decay',
         'original_qr_dqn',
         # '9_options_only',
         # 'mean_and_9_options',
@@ -191,7 +193,8 @@ if __name__ == '__main__':
             plot(pattern='.*dist-rl.*%s.*%s.*' % (game, p), figure=j, color=i, **train_kwargs)
         # plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*train.*' % (game, p), figure=0, color=i, **train_kwargs)
         # deterministic_plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*test.*' % (game, p), figure=0, color=i, **test_kwargs)
-    plt.show()
+        plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % (game))
+    # plt.show()
 
     # kwargs = {
     #     'average': True,

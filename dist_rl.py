@@ -502,11 +502,18 @@ def batch_job():
     cf.add_argument('--ind2', type=int, default=2)
     cf.merge()
 
-    games = ['FreewayNoFrameskip-v4',
-             'BeamRiderNoFrameskip-v4',
-             'BattleZoneNoFrameskip-v4',
-             'RobotankNoFrameskip-v4',
-             'PongNoFrameskip-v4']
+    # games = ['FreewayNoFrameskip-v4',
+    #          'BeamRiderNoFrameskip-v4',
+    #          'BattleZoneNoFrameskip-v4',
+    #          'RobotankNoFrameskip-v4',
+    #          'PongNoFrameskip-v4']
+    games = [
+        'BreakoutNoFrameskip-v4',
+        'AssaultNoFrameskip-v4',
+        'JamesbondNoFrameskip-v4',
+        'QbertNoFrameskip-v4',
+        'DemonAttackNoFrameskip-v4'
+    ]
     # games = ['FreewayNoFrameskip-v4',
     #          'PongNoFrameskip-v4',
     #          'BattleZoneNoFrameskip-v4',
