@@ -160,16 +160,23 @@ if __name__ == '__main__':
     # game = 'Robotank'
     # game = 'BankHeist'
     # game = 'BattleZone'
-    games = ['FreewayNoFrameskip-v4',
-             'BeamRiderNoFrameskip-v4',
-             'BattleZoneNoFrameskip-v4',
-             'RobotankNoFrameskip-v4',
-             'PongNoFrameskip-v4']
+    # games = ['FreewayNoFrameskip-v4',
+    #          'BeamRiderNoFrameskip-v4',
+    #          'BattleZoneNoFrameskip-v4',
+    #          'RobotankNoFrameskip-v4',
+    #          'PongNoFrameskip-v4']
+    games = [
+        'BreakoutNoFrameskip-v4',
+        'AssaultNoFrameskip-v4',
+        'JamesbondNoFrameskip-v4',
+        'QbertNoFrameskip-v4',
+        'DemonAttackNoFrameskip-v4'
+    ]
 
     train_kwargs = {
         'episode_window': 100,
         'top_k': 0,
-        'max_timesteps': int(4e7),
+        'max_timesteps': int(2e7),
         'average': True,
         'x_interval': 1000
     }
