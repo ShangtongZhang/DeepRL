@@ -74,6 +74,8 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
             elif config.option_type == 'per_episode':
                 self.options = torch.where(self.network.tensor(self.is_initial_states).byte(),
                                            new_options, self.options)
+            elif config.option_type is not None:
+                raise Exception('Unknown option type')
 
             if config.option_type is not None:
                 q_values = self.option_to_q_values(self.options, quantile_values)
@@ -105,7 +107,10 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
         processed_rollout = [None] * (len(rollout))
         quantile_values_next, option_values_next = self.target_network.predict(config.state_normalizer(states))
         a_next = torch.argmax(quantile_values_next.sum(-1), dim=1)
-        option_next = torch.argmax(option_values_next, dim=1)
+        if config.option_type == 'per_episode' and config.intro_q:
+            option_next = self.options
+        else:
+            option_next = torch.argmax(option_values_next, dim=1)
         returns = quantile_values_next[self.network.range(config.num_workers), a_next, :].detach()
         option_returns = option_values_next[self.network.range(config.num_workers), option_next].detach().unsqueeze(1)
         for i in reversed(range(len(rollout))):

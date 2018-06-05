@@ -203,46 +203,47 @@ if __name__ == '__main__':
     #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % (game))
     # plt.show()
 
+    kwargs = {
+        'average': True,
+        'x_interval': 1000,
+        'top_k': 0,
+        'max_timesteps': int(3e5),
+    }
     # kwargs = {
     #     'average': True,
-    #     'x_interval': 1000,
+    #     'x_interval': 100,
     #     'top_k': 0,
-    #     'max_timesteps': int(3e5),
+    #     'max_timesteps': int(4e4),
     # }
-    # # kwargs = {
-    # #     'average': True,
-    # #     'x_interval': 100,
-    # #     'top_k': 0,
-    # #     'max_timesteps': int(4e4),
-    # # }
-    # patterns = [
-    #     # 'original_qr_dqn-run',
-    #     'origin_qr_dqn-run',
-    #     'per_episode_qr_dqn-run',
-    #     'per_step_qr_dqn-run',
-    #     'per_step_decay',
-    #     'per_episode_decay'
-    # ]
-    # for i, p in enumerate(patterns):
-    #     plot(pattern='.*replay_bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
-    # plt.show()
-
-    kwargs = {
-        'episode_window': 100,
-        'top_k': 0,
-        'max_timesteps': int(3e6),
-        'average': False,
-        'x_interval': 1000
-    }
     patterns = [
-        'original_qr_dqn-',
-        'per_episode-',
-        'per_step-',
-        'per_step_decay-',
-        'per_episode_decay-'
+        'original_qr_dqn-run',
+        'per_episode_qr_dqn-run',
+        'per_step_qr_dqn-run',
+        'per_step_decay',
+        'per_episode_decay_qr',
+        'per_episode_decay_intro'
     ]
     for i, p in enumerate(patterns):
-        plot(pattern='.*replay_dist_rl.*%s.*' % (p), figure=0, color=i, **kwargs)
+        # plot(pattern='.*replay_bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
+        plot(pattern='.*dist_rl-CliffWalking/bootstrapped_qr_dqn_cliff.*%s.*' % (p), figure=0, color=i, **kwargs)
     plt.show()
+
+    # kwargs = {
+    #     'episode_window': 100,
+    #     'top_k': 0,
+    #     'max_timesteps': int(3e6),
+    #     'average': False,
+    #     'x_interval': 1000
+    # }
+    # patterns = [
+    #     'original_qr_dqn-',
+    #     'per_episode-',
+    #     'per_step-',
+    #     'per_step_decay-',
+    #     'per_episode_decay-'
+    # ]
+    # for i, p in enumerate(patterns):
+    #     plot(pattern='.*replay_dist_rl.*%s.*' % (p), figure=0, color=i, **kwargs)
+    # plt.show()
 
 

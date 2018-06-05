@@ -147,6 +147,7 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('num_options', 10)
     kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
     kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
+    kwargs.setdefault('intro_q', False)
 
     config = Config()
     config.merge(kwargs)
@@ -284,77 +285,77 @@ def multi_runs(game, fn, tag, **kwargs):
         time.sleep(1)
     for p in ps: p.join()
 
-def visualize(game, **kwargs):
-    from skimage import io
-    import json
-    config = Config()
-    kwargs.setdefault('tag', option_qr_dqn_pixel_atari.__name__)
-    kwargs.setdefault('num_options', 5)
-    kwargs.setdefault('gpu', -1)
-    kwargs.setdefault('mean_option', 1)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('random_skip', 0)
-    kwargs.setdefault('frame_stack', 4)
-    config.history_length = kwargs['frame_stack']
-    task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
-                                         log_dir=None, random_skip=kwargs['random_skip'])
-    config.num_workers = 16
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=None, single_process=True)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda state_dim, action_dim: \
-        OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'] + kwargs['mean_option'],
-                          NatureConvBody(in_channels=config.history_length),
-                          gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=0, final_step=100000, min_epsilon=0)
-    config.state_normalizer = ImageNormalizer()
-    config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
-    config.target_network_update_freq = 10000
-    config.rollout_length = 5
-    config.gradient_clip = 5
-    config.entropy_weight = 0.01
-    config.max_steps = int(1e8)
-    config.logger = get_logger(file_name=option_qr_dqn_pixel_atari.__name__)
-    config.num_quantiles = 200
-    config.merge(kwargs)
-    agent = OptionNStepQRDQNAgent(config)
-    agent.load('data/saved-OptionNStepQRDQNAgent-%s.bin' % (game))
-    task = task_fn(None)
-    total_reward = 0
-    steps = 0
-    mkdir('data/%s' % (game))
-    action_meanings = task.env.unwrapped.get_action_meanings()
-    task.seed(0)
-    state = task.reset()
-    while True:
-        frame = task.env.env.env.rgb_frame
-        state = np.stack([state])
-        quantile_values, pi, v_pi = agent.network.predict(config.state_normalizer(state))
-        option = torch.argmax(pi, dim=1)
-        option_quantiles = agent.candidate_quantile[agent.network.range(option.size(0)), option]
-        if config.mean_option:
-            mean_q_values = quantile_values.mean(-1).unsqueeze(-1)
-            quantile_values = torch.cat([quantile_values, mean_q_values], dim=-1)
-        q_values = quantile_values[agent.network.range(option.size(0)), :, option_quantiles]
-        q_values = q_values.cpu().detach().numpy()
-        actions = [agent.policy.sample(v) for v in q_values]
-
-        option = np.asscalar(option.cpu().detach().numpy())
-        mean_action = np.argmax(mean_q_values.cpu().detach().numpy().flatten())
-        action = actions[0]
-        if option == 9:
-            option_str = 'mean'
-        else:
-            option_str = 'quantile_%s' % ((option + 1) / 10.0)
-        decision_str = '%s-%s-%s' % (option_str, action_meanings[action], action_meanings[mean_action])
-        io.imsave('data/%s/frame-%d-%s.png' % (game, steps, decision_str), frame)
-        state, reward, done, _ = task.step(action)
-        total_reward += reward
-        steps += 1
-        if done:
-            break
-    print(total_reward)
+# def visualize(game, **kwargs):
+#     from skimage import io
+#     import json
+#     config = Config()
+#     kwargs.setdefault('tag', option_qr_dqn_pixel_atari.__name__)
+#     kwargs.setdefault('num_options', 5)
+#     kwargs.setdefault('gpu', -1)
+#     kwargs.setdefault('mean_option', 1)
+#     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+#     kwargs.setdefault('random_skip', 0)
+#     kwargs.setdefault('frame_stack', 4)
+#     config.history_length = kwargs['frame_stack']
+#     task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
+#                                          log_dir=None, random_skip=kwargs['random_skip'])
+#     config.num_workers = 16
+#     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
+#                                               log_dir=None, single_process=True)
+#     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
+#     config.network_fn = lambda state_dim, action_dim: \
+#         OptionQuantileNet(action_dim, config.num_quantiles, kwargs['num_options'] + kwargs['mean_option'],
+#                           NatureConvBody(in_channels=config.history_length),
+#                           gpu=kwargs['gpu'])
+#     config.policy_fn = lambda: GreedyPolicy(epsilon=0, final_step=100000, min_epsilon=0)
+#     config.state_normalizer = ImageNormalizer()
+#     config.reward_normalizer = SignNormalizer()
+#     config.discount = 0.99
+#     config.target_network_update_freq = 10000
+#     config.rollout_length = 5
+#     config.gradient_clip = 5
+#     config.entropy_weight = 0.01
+#     config.max_steps = int(1e8)
+#     config.logger = get_logger(file_name=option_qr_dqn_pixel_atari.__name__)
+#     config.num_quantiles = 200
+#     config.merge(kwargs)
+#     agent = OptionNStepQRDQNAgent(config)
+#     agent.load('data/saved-OptionNStepQRDQNAgent-%s.bin' % (game))
+#     task = task_fn(None)
+#     total_reward = 0
+#     steps = 0
+#     mkdir('data/%s' % (game))
+#     action_meanings = task.env.unwrapped.get_action_meanings()
+#     task.seed(0)
+#     state = task.reset()
+#     while True:
+#         frame = task.env.env.env.rgb_frame
+#         state = np.stack([state])
+#         quantile_values, pi, v_pi = agent.network.predict(config.state_normalizer(state))
+#         option = torch.argmax(pi, dim=1)
+#         option_quantiles = agent.candidate_quantile[agent.network.range(option.size(0)), option]
+#         if config.mean_option:
+#             mean_q_values = quantile_values.mean(-1).unsqueeze(-1)
+#             quantile_values = torch.cat([quantile_values, mean_q_values], dim=-1)
+#         q_values = quantile_values[agent.network.range(option.size(0)), :, option_quantiles]
+#         q_values = q_values.cpu().detach().numpy()
+#         actions = [agent.policy.sample(v) for v in q_values]
+#
+#         option = np.asscalar(option.cpu().detach().numpy())
+#         mean_action = np.argmax(mean_q_values.cpu().detach().numpy().flatten())
+#         action = actions[0]
+#         if option == 9:
+#             option_str = 'mean'
+#         else:
+#             option_str = 'quantile_%s' % ((option + 1) / 10.0)
+#         decision_str = '%s-%s-%s' % (option_str, action_meanings[action], action_meanings[mean_action])
+#         io.imsave('data/%s/frame-%d-%s.png' % (game, steps, decision_str), frame)
+#         state, reward, done, _ = task.step(action)
+#         total_reward += reward
+#         steps += 1
+#         if done:
+#             break
+#     print(total_reward)
 
 def draw_cliff_world_state(network, task):
     xs = np.arange(task.width)
@@ -477,10 +478,10 @@ if __name__ == '__main__':
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='per_step')
     # bootstrapped_qr_dqn_cliff(option_type='per_episode')
-    # bootstrapped_qr_dqn_cliff(option_type='decayed_per_step', random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
+    # bootstrapped_qr_dqn_cliff(option_type='per_episode', intro_q=True)
 
-    # parallel = False
-    # runs = np.arange(0, 16)
+    parallel = False
+    runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn',
@@ -493,6 +494,9 @@ if __name__ == '__main__':
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_qr_dqn',
     #            option_type='per_episode', parallel=parallel, runs=runs,
     #            random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_qr_dqn',
+    #            option_type='per_episode', parallel=parallel, runs=runs,
+    #            random_option_prob=LinearSchedule(1.0, 0, int(3e5)), intro_q=True)
 
     # replay_qr_dqn_cliff()
     # replay_bootstrapped_qr_dqn_cliff()
@@ -569,10 +573,10 @@ if __name__ == '__main__':
     # replay_bootstrapped_qr_dqn_atari(game, tag='original_qr_dqn')
     # replay_bootstrapped_qr_dqn_atari(game, tag='per_step', option_type='per_step')
     # replay_bootstrapped_qr_dqn_atari(game, tag='per_episode', option_type='per_episode')
-    # replay_bootstrapped_qr_dqn_atari(game, tag='per_step_decay', option_type='per_step_decay',
+    # replay_bootstrapped_qr_dqn_atari(game, tag='per_step_decay', option_type='per_step',
     #                                  random_option_prob=LinearSchedule(1.0, 0, int(4e6)))
-    replay_bootstrapped_qr_dqn_atari(game, tag='per_episode_decay', option='per_episode_decay',
-                                     random_option_prob=LinearSchedule(1.0, 0, int(4e6)))
+    # replay_bootstrapped_qr_dqn_atari(game, tag='per_episode_decay', option='per_episode',
+    #                                  random_option_prob=LinearSchedule(1.0, 0, int(4e6)))
 
     # parallel = False
     # multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=2)
