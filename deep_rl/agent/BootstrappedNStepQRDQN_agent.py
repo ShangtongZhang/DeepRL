@@ -47,8 +47,25 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(np.stack([state]))
-        quantile_values = self.network.predict(self.config.state_normalizer(state))
-        q_values = quantile_values.sum(-1).cpu().detach().numpy()
+        quantile_values, option_values = self.network.predict(self.config.state_normalizer(state))
+        greedy_options = torch.argmax(option_values, dim=-1)
+        if self.config.option_type == 'per_step':
+            q_values = self.option_to_q_values(greedy_options, quantile_values)
+        elif self.config.option_type == 'per_episode':
+            if not self.config.intro_q:
+                q_values = self.option_to_q_values(greedy_options, quantile_values)
+            else:
+                if self.info['initial_state']:
+                    q_values = self.option_to_q_values(greedy_options, quantile_values)
+                    self.info['episode_option'] = greedy_options.clone()
+                else:
+                    q_values = self.option_to_q_values(self.info['episode_option'], quantile_values)
+        elif self.config.option_type is None:
+            q_values = quantile_values.sum(-1)
+        else:
+            raise Exception('Unknown option type')
+
+        q_values = q_values.cpu().detach().numpy()
         self.config.state_normalizer.unset_read_only()
         return np.argmax(q_values.flatten())
 

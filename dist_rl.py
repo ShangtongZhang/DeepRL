@@ -165,9 +165,9 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     config.target_network_update_freq = 200
     config.rollout_length = 5
     config.logger = get_logger()
-    # config.evaluation_episodes = 20
-    # config.evaluation_episodes_interval = 1600
-    # config.evaluation_env = task_fn(kwargs['log_dir'] + '-test')
+    config.evaluation_episodes = 20
+    config.evaluation_episodes_interval = 1600
+    config.evaluation_env = task_fn(kwargs['log_dir'] + '-test')
     agent = BootstrappedNStepQRDQNAgent(config)
     if kwargs['dry']:
         return agent
@@ -477,11 +477,11 @@ if __name__ == '__main__':
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='per_step')
-    # bootstrapped_qr_dqn_cliff(option_type='per_episode')
+    # bootstrapped_qr_dqn_cliff(option_type='per_episode', intro_q=True)
     # bootstrapped_qr_dqn_cliff(option_type='per_episode', intro_q=True)
 
-    parallel = False
-    runs = np.arange(0, 16)
+    # parallel = False
+    # runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn',
