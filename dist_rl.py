@@ -228,7 +228,6 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
     kwargs.setdefault('gpu', 0)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('random_skip', 0)
     kwargs.setdefault('frame_stack', 4)
     kwargs.setdefault('max_steps', 4e7)
     kwargs.setdefault('option_type', None)
@@ -244,16 +243,16 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.merge(kwargs)
 
     config.history_length = kwargs['frame_stack']
-    task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
-                                         log_dir=log_dir, random_skip=kwargs['random_skip'])
-    config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
+    task_fn = lambda log_dir, episode_life=True: PixelAtari(game, frame_skip=4, history_length=config.history_length,
+                                         log_dir=log_dir, episode_life=episode_life)
+    config.evaluation_env = task_fn(kwargs['log_dir']+'-test', episode_life=False)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(2e6), min_epsilon=0.01)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(2e6), min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -416,7 +415,7 @@ def batch_job():
              'BeamRiderNoFrameskip-v4',
              'BattleZoneNoFrameskip-v4',
              'RobotankNoFrameskip-v4',
-             'JourneyEscapeNoFrameskip-v4',
+             'QbertNoFrameskip-v4',
              ]
     # games = [
     #     'BreakoutNoFrameskip-v4',
