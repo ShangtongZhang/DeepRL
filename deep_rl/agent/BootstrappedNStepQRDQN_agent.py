@@ -81,7 +81,7 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
             quantile_values, option_values = self.network.predict(self.config.state_normalizer(states))
 
             greedy_options = torch.argmax(option_values, dim=-1)
-            random_option_prob = config.random_option_prob(config.rollout_length)
+            random_option_prob = config.random_option_prob(config.num_workers)
             random_options = self.network.tensor(np.random.randint(
                 config.num_options, size=config.num_workers)).long()
             dice = self.network.tensor(np.random.rand(config.num_workers))
@@ -114,7 +114,7 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
             rollout.append([quantile_values, actions, rewards, 1 - terminals, self.options.clone(), option_values])
             states = next_states
 
-            self.policy.update_epsilon()
+            self.policy.update_epsilon(config.num_workers)
             self.total_steps += config.num_workers
             if self.total_steps // config.num_workers % config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())

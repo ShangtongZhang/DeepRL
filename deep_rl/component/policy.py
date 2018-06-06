@@ -20,8 +20,8 @@ class GreedyPolicy:
             return np.random.randint(0, len(action_value))
         return np.argmax(action_value)
 
-    def update_epsilon(self):
-        self.epsilon = self.init_epsilon - float(self.current_steps) / self.final_step * (self.init_epsilon - self.min_epsilon)
+    def update_epsilon(self, steps=1):
+        self.epsilon = self.init_epsilon - float(self.current_steps) / self.final_step * (self.init_epsilon - self.min_epsilon) * steps
         self.epsilon = max(self.epsilon, self.min_epsilon)
         self.current_steps += 1
 
