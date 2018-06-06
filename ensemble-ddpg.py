@@ -156,7 +156,7 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('tag', ensemble_ddpg.__name__)
     kwargs.setdefault('num_options', 5)
-    kwargs.setdefault('off_policy_actor', True)
+    kwargs.setdefault('off_policy_actor', False)
     kwargs.setdefault('off_policy_critic', True)
     kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
     # kwargs.setdefault('action_based_noise', True)
