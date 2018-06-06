@@ -49,17 +49,12 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
         state = self.config.state_normalizer(np.stack([state]))
         quantile_values, option_values = self.network.predict(self.config.state_normalizer(state))
         greedy_options = torch.argmax(option_values, dim=-1)
-        if self.config.option_type == 'per_step':
-            q_values = self.option_to_q_values(greedy_options, quantile_values)
-        elif self.config.option_type == 'per_episode':
-            if not self.config.intro_q:
-                q_values = self.option_to_q_values(greedy_options, quantile_values)
-            else:
-                if self.info['initial_state']:
-                    q_values = self.option_to_q_values(greedy_options, quantile_values)
-                    self.info['episode_option'] = greedy_options.clone()
-                else:
-                    q_values = self.option_to_q_values(self.info['episode_option'], quantile_values)
+        if self.config.option_type == 'constant_beta':
+            dice = np.random.rand()
+            start_new_option = self.info['initial_state'] or dice < self.config.target_beta
+            if start_new_option:
+                self.info['prev_option'] = greedy_options
+            q_values = self.option_to_q_values(self.info['prev_option'], quantile_values)
         elif self.config.option_type is None:
             q_values = quantile_values.sum(-1)
         else:
@@ -86,18 +81,18 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
                 config.num_options, size=config.num_workers)).long()
             dice = self.network.tensor(np.random.rand(config.num_workers))
             new_options = torch.where(dice < random_option_prob, random_options, greedy_options)
-            if config.option_type == 'per_step':
-                self.options = new_options
-            elif config.option_type == 'per_episode':
-                self.options = torch.where(self.network.tensor(self.is_initial_states).byte(),
-                                           new_options, self.options)
-            elif config.option_type is not None:
-                raise Exception('Unknown option type')
 
-            if config.option_type is not None:
+            dice = np.random.rand(config.num_workers)
+            start_new_options = np.logical_or(self.is_initial_states, dice < config.behavior_beta)
+            start_new_options = self.network.tensor(start_new_options.astype(np.uint8)).byte()
+
+            if config.option_type == 'constant_beta':
+                self.options = torch.where(start_new_options, new_options, self.options)
                 q_values = self.option_to_q_values(self.options, quantile_values)
-            else:
+            elif config.option_type is None:
                 q_values = (quantile_values * self.quantile_weight).sum(-1)
+            else:
+                raise Exception('Unknown option type')
 
             q_values = q_values.cpu().detach().numpy()
 
@@ -105,7 +100,7 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.episode_rewards += rewards
             rewards = config.reward_normalizer(rewards)
-            self.is_initial_states = terminals.astype(np.uint8)
+            self.is_initial_states = terminals
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
                     self.last_episode_rewards[i] = self.episode_rewards[i]
@@ -124,12 +119,12 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
         processed_rollout = [None] * (len(rollout))
         quantile_values_next, option_values_next = self.target_network.predict(config.state_normalizer(states))
         a_next = torch.argmax(quantile_values_next.sum(-1), dim=1)
-        if config.option_type == 'per_episode' and config.intro_q:
-            option_next = self.options
-        else:
-            option_next = torch.argmax(option_values_next, dim=1)
         returns = quantile_values_next[self.network.range(config.num_workers), a_next, :].detach()
-        option_returns = option_values_next[self.network.range(config.num_workers), option_next].detach().unsqueeze(1)
+
+        option_values_next = option_values_next.detach()
+        option_returns = config.target_beta * torch.max(option_values_next, dim=1)[0] + \
+                         (1 - config.target_beta) * option_values_next[self.network.range(config.num_workers), self.options]
+        option_returns = option_returns.unsqueeze(1)
         for i in reversed(range(len(rollout))):
             quantile_values, actions, rewards, terminals, options, option_values = rollout[i]
             actions = self.network.tensor(actions).long()

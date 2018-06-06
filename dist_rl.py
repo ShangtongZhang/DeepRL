@@ -146,8 +146,9 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('option_type', None)
     kwargs.setdefault('num_options', 10)
     kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
-    kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
-    kwargs.setdefault('intro_q', False)
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0, kwargs['max_steps']))
+    kwargs.setdefault('target_beta', 0.5)
+    kwargs.setdefault('behavior_beta', 0.5)
 
     config = Config()
     config.merge(kwargs)
@@ -464,15 +465,20 @@ if __name__ == '__main__':
     # batch_job()
 
     # bootstrapped_qr_dqn_cliff()
-    # bootstrapped_qr_dqn_cliff(option_type='per_episode', intro_q=True,
-    #                           random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
-    # bootstrapped_qr_dqn_cliff(option_type='per_episode', intro_q=False,
-    #                           random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
 
     parallel = False
     runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='1_and_1',
+    #            option_type='constant_beta', target_beta=1, behavior_beta=1, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='1_and_0',
+    #            option_type='constant_beta', target_beta=1, behavior_beta=0, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0_and_1',
+    #            option_type='constant_beta', target_beta=0, behavior_beta=1, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0_and_0',
+    #            option_type='constant_beta', target_beta=0, behavior_beta=0, parallel=parallel, runs=runs)
+
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_q',
     #            option_type='per_episode', parallel=parallel, runs=runs,
     #            random_option_prob=LinearSchedule(1.0, 0, int(3e5)), intro_q=True)
