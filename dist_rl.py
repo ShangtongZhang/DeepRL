@@ -470,19 +470,19 @@ if __name__ == '__main__':
     runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='1_and_1',
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t1b1',
     #            option_type='constant_beta', target_beta=1, behavior_beta=1, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='1_and_0',
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t1b0',
     #            option_type='constant_beta', target_beta=1, behavior_beta=0, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0_and_1',
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b1',
     #            option_type='constant_beta', target_beta=0, behavior_beta=1, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0_and_0',
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b0',
     #            option_type='constant_beta', target_beta=0, behavior_beta=0, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0.9_and_0.9',
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t09b09',
     #            option_type='constant_beta', target_beta=0.9, behavior_beta=0.9, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0.5_and_0.5',
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t05b05',
     #            option_type='constant_beta', target_beta=0.5, behavior_beta=0.5, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0.1_and_0.1',
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t01b01',
     #            option_type='constant_beta', target_beta=0.1, behavior_beta=0.1, parallel=parallel, runs=runs)
 
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_q',
@@ -494,7 +494,7 @@ if __name__ == '__main__':
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_random_off_termination',
     #            option_type='per_episode', parallel=parallel, runs=runs,
     #            random_option_prob=LinearSchedule(1.0), intro_q=False)
-
+    #
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn',
     #            option_type='per_step', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_qr_dqn',
