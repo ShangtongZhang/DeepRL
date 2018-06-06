@@ -402,7 +402,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrun-v1'
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
-    batch_job()
+    # batch_job()
 
     # ensemble_ddpg(game, option_type='per_episode', random_option_prob=LinearSchedule(0.5), mask_q=True)
 

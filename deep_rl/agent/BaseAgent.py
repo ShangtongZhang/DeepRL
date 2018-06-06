@@ -15,6 +15,7 @@ class BaseAgent:
         if self.evaluation_env is not None:
             self.evaluation_state = self.evaluation_env.reset()
             self.evaluation_return = 0
+        self.info = {}
 
     def close(self):
         if hasattr(self.task, 'close'):
@@ -40,8 +41,10 @@ class BaseAgent:
         env = self.config.evaluation_env
         state = env.reset()
         total_rewards = 0
+        self.info['initial_state'] = True
         while True:
             action = self.evaluation_action(state)
+            self.info['initial_state'] = False
             state, reward, done, _ = env.step(action)
             total_rewards += reward
             if done:
@@ -70,3 +73,4 @@ class BaseAgent:
                 self.evaluation_state = self.evaluation_env.reset()
                 self.config.logger.info('evaluation episode return: %f' % (self.evaluation_return))
                 self.evaluation_return = 0
+

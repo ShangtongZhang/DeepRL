@@ -27,7 +27,20 @@ class EnsembleDDPGAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
-        action = self.network.predict(state, to_numpy=True)[0].flatten()
+        actions, q_values, _ = self.network.predict(state)
+        greedy_option = torch.argmax(q_values, dim=-1)
+        if self.config.option_type == 'per_step':
+            actions = actions[0, greedy_option, :]
+        elif self.config.option_type == 'per_episode':
+            if not self.config.intro_q:
+                actions = actions[0, greedy_option, :]
+            else:
+                if self.info['initial_state']:
+                    self.info['episode_option'] = greedy_option.clone()
+                actions = actions[0, self.info['episode_option'], :]
+        else:
+            raise Exception('Unknown option type')
+        action = actions.cpu().detach().numpy().flatten()
         self.config.state_normalizer.unset_read_only()
         return action
 
@@ -79,7 +92,8 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi_next = self.target_network.feature(next_states)
                 a_next = self.target_network.actor(phi_next)
                 q_next = self.target_network.critic(phi_next, a_next)
-                q_next = q_next.max(1)[0].unsqueeze(1)
+                if not config.infro_q:
+                    q_next = q_next.max(1)[0].unsqueeze(1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
