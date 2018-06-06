@@ -461,7 +461,7 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    batch_job()
+    # batch_job()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='per_episode', intro_q=True,
@@ -469,10 +469,20 @@ if __name__ == '__main__':
     # bootstrapped_qr_dqn_cliff(option_type='per_episode', intro_q=False,
     #                           random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
 
-    # parallel = False
-    # runs = np.arange(0, 16)
+    parallel = False
+    runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_q',
+    #            option_type='per_episode', parallel=parallel, runs=runs,
+    #            random_option_prob=LinearSchedule(1.0, 0, int(3e5)), intro_q=True)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_off_termination',
+    #            option_type='per_episode', parallel=parallel, runs=runs,
+    #            random_option_prob=LinearSchedule(1.0, 0, int(3e5)), intro_q=False)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_random_off_termination',
+    #            option_type='per_episode', parallel=parallel, runs=runs,
+    #            random_option_prob=LinearSchedule(1.0), intro_q=False)
+
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_qr_dqn',
     #            option_type='per_step', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_qr_dqn',
@@ -480,12 +490,6 @@ if __name__ == '__main__':
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_decay_qr_dqn',
                # option_type='per_step', parallel=parallel, runs=runs,
                # random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_qr_dqn',
-    #            option_type='per_episode', parallel=parallel, runs=runs,
-    #            random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_qr_dqn',
-    #            option_type='per_episode', parallel=parallel, runs=runs,
-    #            random_option_prob=LinearSchedule(1.0, 0, int(3e5)), intro_q=True)
 
     # replay_qr_dqn_cliff()
     # replay_bootstrapped_qr_dqn_cliff()
