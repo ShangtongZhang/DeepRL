@@ -28,18 +28,9 @@ class EnsembleDDPGAgent(BaseAgent):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
         actions, q_values, _ = self.network.predict(state)
-        greedy_option = torch.argmax(q_values, dim=-1)
-        if self.config.option_type == 'per_step':
-            actions = actions[0, greedy_option, :]
-        elif self.config.option_type == 'per_episode':
-            if not self.config.intro_q:
-                actions = actions[0, greedy_option, :]
-            else:
-                if self.info['initial_state']:
-                    self.info['episode_option'] = greedy_option.clone()
-                actions = actions[0, self.info['episode_option'], :]
-        else:
-            raise Exception('Unknown option type')
+        if self.info['initial_state'] or np.random.rand() < self.config.target_beta:
+            self.info['prev_option'] = torch.argmax(q_values, dim=-1)
+        actions = actions[0, self.info['prev_option'], :]
         action = actions.cpu().detach().numpy().flatten()
         self.config.state_normalizer.unset_read_only()
         return action
@@ -59,14 +50,18 @@ class EnsembleDDPGAgent(BaseAgent):
             actions, q_values, _ = self.network.predict(np.stack([state]))
 
             random_option_prob = config.random_option_prob()
-            if config.option_type == 'per_step' or (
-                config.option_type == 'per_episode' and steps == 0
-            ):
-                if np.random.rand() < random_option_prob:
-                    self.option = np.random.randint(config.num_options)
-                else:
-                    self.option = torch.argmax(q_values, dim=-1)
-                    self.option = np.asscalar(self.option.detach().cpu().numpy())
+            greedy_option = torch.argmax(q_values, dim=-1)
+            greedy_option = np.asscalar(greedy_option.detach().cpu().numpy())
+            random_option = np.random.randint(config.num_options)
+            dice = np.random.rand()
+            if dice < random_option_prob:
+                new_option = random_option
+            else:
+                new_option = greedy_option
+
+            dice = np.random.rand()
+            if steps == 0 or dice < config.behavior_beta:
+                self.option = new_option
 
             actions = actions.detach().cpu().numpy()
             action = actions[0, self.option, :].flatten()
@@ -88,12 +83,15 @@ class EnsembleDDPGAgent(BaseAgent):
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals, options, masks = experiences
+                options = self.network.tensor(options).long()
                 masks = self.network.tensor(masks)
                 phi_next = self.target_network.feature(next_states)
                 a_next = self.target_network.actor(phi_next)
                 q_next = self.target_network.critic(phi_next, a_next)
-                if not config.infro_q:
-                    q_next = q_next.max(1)[0].unsqueeze(1)
+
+                q_next = config.target_beta * q_next.max(1)[0] + (1 - config.target_beta) *\
+                         q_next[self.network.range(options.size(0)), options]
+                q_next = q_next.unsqueeze(-1)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
@@ -102,12 +100,11 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi = self.network.feature(states)
                 actions = self.network.tensor(actions)
                 q = self.network.critic(phi, actions)
-                if not config.off_policy_critic:
-                    q = q[self.network.tensor(np.arange(q.size(0))).long(),
-                          self.network.tensor(options).long()].unsqueeze(-1)
+                # if not config.off_policy_critic:
+                q = q[self.network.range(q.size(0)), options].unsqueeze(-1)
                 q_loss = q - q_next
-                if config.mask_q:
-                    q_loss = q_loss * masks
+                # if config.mask_q:
+                #     q_loss = q_loss * masks
                 q_loss = q_loss.pow(2).mul(0.5).sum(1).mean()
 
                 self.network.zero_grad()
@@ -117,9 +114,8 @@ class EnsembleDDPGAgent(BaseAgent):
                 phi = self.network.feature(states)
                 actions = self.network.actor(phi)
                 q = self.network.critic(phi.detach(), actions)
-                if not config.off_policy_actor:
-                    q = q[self.network.tensor(np.arange(q.size(0))).long(),
-                          self.network.tensor(options).long()].unsqueeze(-1)
+                # if not config.off_policy_actor:
+                q = q[self.network.range(q.size(0)), options].unsqueeze(-1)
                 policy_loss = -q.sum(1).mean()
                 self.network.zero_grad()
                 policy_loss.backward()

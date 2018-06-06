@@ -158,12 +158,15 @@ def ensemble_ddpg(game, log_dir=None, **kwargs):
     kwargs.setdefault('num_options', 5)
     kwargs.setdefault('off_policy_actor', False)
     kwargs.setdefault('off_policy_critic', True)
-    kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0, int(1e6)))
     # kwargs.setdefault('action_based_noise', True)
     kwargs.setdefault('noise', OrnsteinUhlenbeckProcess)
     kwargs.setdefault('std', LinearSchedule(0.2))
     kwargs.setdefault('option_type', 'per_step')
     kwargs.setdefault('mask_q', False)
+    kwargs.setdefault('target_beta', 0.5)
+    kwargs.setdefault('behavior_beta', 0.5)
+
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
     config.task_fn = lambda: Roboschool(game, log_dir=log_dir+'-train')
@@ -328,20 +331,20 @@ def batch_job():
 
     parallel = True
     def task1():
-        multi_runs(game, ensemble_ddpg, tag='per_step_random',
-                   option_type='per_step', random_option_prob=LinearSchedule(1.0), parallel=parallel)
+        multi_runs(game, ensemble_ddpg, tag='t1b1',
+                   target_beta=1, behavior_beta=1, parallel=parallel)
 
     def task2():
-        multi_runs(game, ensemble_ddpg, tag='per_step_decay',
-                   option_type='per_step', random_option_prob=LinearSchedule(1.0, 0, int(1e6)), parallel=parallel)
+        multi_runs(game, ensemble_ddpg, tag='t1b0',
+                   target_beta=1, behavior_beta=0, parallel=parallel)
 
     def task3():
-        multi_runs(game, ensemble_ddpg, tag='per_episode_random',
-                   option_type='per_episode', random_option_prob=LinearSchedule(1.0), parallel=parallel)
+        multi_runs(game, ensemble_ddpg, tag='t0b1',
+                   target_beta=0, behavior_beta=1, parallel=parallel)
 
     def task4():
-        multi_runs(game, ensemble_ddpg, tag='per_episode_decay',
-                   option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(1e6)), parallel=parallel)
+        multi_runs(game, ensemble_ddpg, tag='t0b0',
+                   target_beta=0, behavior_beta=0, parallel=parallel)
 
     # def task5():
     #     multi_runs(game, ensemble_ddpg, tag='per_step_decay_10', num_options=10,
@@ -402,7 +405,9 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrun-v1'
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
-    # batch_job()
+    batch_job()
+
+    # ensemble_ddpg(game)
 
     # ensemble_ddpg(game, option_type='per_episode', random_option_prob=LinearSchedule(0.5), mask_q=True)
 
