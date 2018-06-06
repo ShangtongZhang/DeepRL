@@ -158,9 +158,16 @@ if __name__ == '__main__':
     }
     patterns = [
         'original_qr_dqn',
-        'per_episode_random_off_termination',
-        'per_episode_decay_off_termination',
-        'per_episode_decay_intro_q',
+        # 'per_episode_random_off_termination',
+        # 'per_episode_decay_off_termination',
+        # 'per_episode_decay_intro_q',
+        '/1_and_1',
+        '/0_and_1',
+        '/0_and_0',
+        '/1_and_0',
+        '/0\.9_and_0\.9',
+        '/0\.5_and_0\.5',
+        '/0\.1_and_0\.1',
     ]
     for i, p in enumerate(patterns):
         # plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*train.*' % (p), figure=0, color=i, **train_kwargs)

@@ -478,6 +478,12 @@ if __name__ == '__main__':
     #            option_type='constant_beta', target_beta=0, behavior_beta=1, parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0_and_0',
     #            option_type='constant_beta', target_beta=0, behavior_beta=0, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0.9_and_0.9',
+    #            option_type='constant_beta', target_beta=0.9, behavior_beta=0.9, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0.5_and_0.5',
+    #            option_type='constant_beta', target_beta=0.5, behavior_beta=0.5, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='0.1_and_0.1',
+    #            option_type='constant_beta', target_beta=0.1, behavior_beta=0.1, parallel=parallel, runs=runs)
 
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_q',
     #            option_type='per_episode', parallel=parallel, runs=runs,
