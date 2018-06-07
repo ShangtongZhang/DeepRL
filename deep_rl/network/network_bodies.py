@@ -23,6 +23,23 @@ class NatureConvBody(nn.Module):
         y = F.relu(self.fc4(y))
         return y
 
+class CliffConvBody(nn.Module):
+    def __init__(self, in_channels=3):
+        super(CliffConvBody, self).__init__()
+        self.feature_dim = 48
+        self.encoder = nn.Sequential(
+            layer_init(nn.Conv2d(in_channels, 24, kernel_size=3, stride=1)),
+            nn.ReLU(),
+            layer_init(nn.Conv2d(24, 24, kernel_size=3, stride=1)),
+            nn.ReLU(),
+            layer_init(nn.Conv2d(24, 48, kernel_size=4, stride=2)),
+            nn.ReLU()
+        )
+
+    def forward(self, x):
+        y = self.encoder(x)
+        return y.view(y.size(0), -1)
+
 class DDPGConvBody(nn.Module):
     def __init__(self, in_channels=4):
         super(DDPGConvBody, self).__init__()

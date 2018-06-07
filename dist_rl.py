@@ -174,6 +174,41 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
         return agent
     run_iterations(agent)
 
+def bootstrapped_qr_dqn_ice(**kwargs):
+    kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
+    kwargs.setdefault('gpu', 0)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('max_steps', 4e6)
+    kwargs.setdefault('option_type', None)
+    kwargs.setdefault('num_quantiles', 50)
+
+    kwargs.setdefault('num_options', 10)
+    kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0, kwargs['max_steps']))
+    kwargs.setdefault('target_beta', 0.5)
+    kwargs.setdefault('behavior_beta', 0.5)
+
+    config = Config()
+    config.merge(kwargs)
+
+    task_fn = lambda log_dir: IceCliffWalkingTask(log_dir=log_dir)
+    # config.evaluation_env = task_fn(kwargs['log_dir']+'-test', episode_life=False)
+    config.num_workers = 16
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
+                                              log_dir=kwargs['log_dir']+'-train', single_process=True)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
+    config.network_fn = lambda state_dim, action_dim: \
+        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, CliffConvBody(in_channels=3), gpu=kwargs['gpu'])
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(1e6), min_epsilon=0.05)
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.rollout_length = 5
+    config.gradient_clip = 5
+    config.logger = get_logger()
+    # config.evaluation_episodes = 10
+    # config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
+    run_iterations(BootstrappedNStepQRDQNAgent(config))
+
 # n-step atari
 def n_step_dqn_pixel_atari(game, **kwargs):
     config = Config()
@@ -465,6 +500,7 @@ if __name__ == '__main__':
     # batch_job()
 
     # bootstrapped_qr_dqn_cliff()
+    bootstrapped_qr_dqn_ice()
 
     parallel = False
     runs = np.arange(0, 16)

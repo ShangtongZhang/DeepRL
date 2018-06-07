@@ -275,3 +275,103 @@ class CliffWalkingTask(BaseTask):
         self.action_dim = self.env.action_space.n
         self.state_dim = self.env.observation_space.shape[0]
         self.env = self.set_monitor(self.env, log_dir)
+
+class IceCliffWalking(gym.Env):
+    def __init__(self, random_action_prob=0, size=8, num_traps=16):
+        self.timeout = 100.0
+        self.size = size
+        self.num_traps = num_traps
+        self.random_action_prob = random_action_prob
+        self.actions = [np.array([1, 0]),
+                        np.array([0, -1]),
+                        np.array([-1, 0]),
+                        np.array([0, 1])]
+        self.action_space = gym.spaces.discrete.Discrete(len(self.actions))
+        self.observation_space = gym.spaces.box.Box(shape=(3, self.size, self.size), dtype=np.float32,
+                                                    low=0, high=1)
+
+    def rand_location(self):
+        return np.random.randint(0, self.size, size=2).tolist()
+
+    def dist(self, loc1, loc2):
+        return np.abs(loc1[0] - loc2[0]) + np.abs(loc1[1] - loc2[1])
+
+    def reset(self):
+        self.agent = self.rand_location()
+        self.goal = self.rand_location()
+        while self.goal == self.agent or self.dist(self.agent, self.goal) <= 6:
+            self.goal = self.rand_location()
+        self.traps = []
+        while len(self.traps) < self.num_traps:
+            trap = self.rand_location()
+            if trap != self.goal and trap != self.agent and (trap not in self.traps):
+                self.traps.append(trap)
+        self.steps = 0
+        self.base_obs = np.zeros((3, self.size, self.size))
+        self.base_obs[1, self.goal[0], self.goal[1]] = 1
+        for trap in self.traps:
+            self.base_obs[2, trap[0], trap[1]] = 1
+        return self.get_obs()
+
+    def get_obs(self):
+        obs = np.copy(self.base_obs)
+        obs[0] = self.steps / self.timeout
+        obs[1, self.agent[0], self.agent[1]] = 1
+        return obs
+
+    def fall(self):
+        x, y = self.agent
+        if x < 0 or x >= self.size or y < 0 or y >= self.size:
+            return True
+        return False
+
+    def slip(self):
+        if self.agent in self.traps:
+            return True
+        return False
+
+    def step(self, action):
+        if np.random.rand() < self.random_action_prob:
+            action = np.random.randint(0, len(self.actions))
+        self.agent += self.actions[action]
+        self.agent = self.agent.tolist()
+        while self.slip():
+            action = np.random.randint(0, len(self.actions))
+            self.agent += self.actions[action]
+            self.agent = self.agent.tolist()
+
+        self.steps += 1
+
+        if self.fall():
+            reward = -1
+            done = True
+        else:
+            done = (self.agent == self.goal)
+            reward = 10 if done else -0.1
+
+        if done:
+            next_obs = self.base_obs
+        else:
+            next_obs = self.get_obs()
+
+        return next_obs, reward, done, {}
+
+    def print(self):
+        out = np.zeros([self.size, self.size])
+        out[self.agent[0], self.agent[1]] = 1
+        out[self.goal[0], self.goal[1]] = 2
+        for trap in self.traps:
+            out[trap[0], trap[1]] = 3
+        chars = {0: ".", 1: "x", 2: "O", 3: "#"}
+        pretty = "\n".join(["".join([chars[x] for x in row]) for row in out])
+        print(pretty)
+        print(self.steps)
+
+class IceCliffWalkingTask(BaseTask):
+    def __init__(self, log_dir=None, **kwargs):
+        BaseTask.__init__(self)
+        self.name = 'IceCliffWalking'
+        self.env = IceCliffWalking(**kwargs)
+        self.action_dim = self.env.action_space.n
+        self.state_dim = self.env.observation_space.shape
+        self.env = self.set_monitor(self.env, log_dir)
