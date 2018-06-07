@@ -135,41 +135,39 @@ if __name__ == '__main__':
         # '9_options_only',
         # 'mean_and_9_options',
     ]
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            plot(pattern='.*dist-rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-        # plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*train.*' % (game, p), figure=0, color=i, **train_kwargs)
-        # deterministic_plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*test.*' % (game, p), figure=0, color=i, **test_kwargs)
-        plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % (game))
-    plt.show()
-
-    # train_kwargs = {
-    #     'average': True,
-    #     'x_interval': 1000,
-    #     'top_k': 0,
-    #     'max_timesteps': int(3e5),
-    # }
-    # test_kwargs = {
-    #     'average': True,
-    #     'x_interval': 1600,
-    #     'rep': 20,
-    #     'max_timesteps': int(3e6),
-    # }
-    # patterns = [
-    #     'original_qr_dqn',
-    #     # 'per_episode_random_off_termination',
-    #     # 'per_episode_decay_off_termination',
-    #     # 'per_episode_decay_intro_q',
-    #     '/1_and_1',
-    #     '/0_and_1',
-    #     '/0_and_0',
-    #     '/1_and_0',
-    #     '/0\.9_and_0\.9',
-    #     '/0\.5_and_0\.5',
-    #     '/0\.1_and_0\.1',
-    # ]
-    # for i, p in enumerate(patterns):
-    #     # plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*train.*' % (p), figure=0, color=i, **train_kwargs)
-    #     deterministic_plot(pattern='.*dist_rl-CliffWalking/bootstrapped_qr_dqn_cliff.*%s.*test.*' % (p), figure=0, color=i, **test_kwargs)
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+    #         plot(pattern='.*dist-rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+    #     # plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*train.*' % (game, p), figure=0, color=i, **train_kwargs)
+    #     # deterministic_plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*test.*' % (game, p), figure=0, color=i, **test_kwargs)
+    #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % (game))
     # plt.show()
+
+    train_kwargs = {
+        'average': True,
+        'x_interval': 1000,
+        'top_k': 0,
+        'max_timesteps': int(3e5),
+    }
+    test_kwargs = {
+        'average': True,
+        'x_interval': 1600,
+        'rep': 20,
+        'max_timesteps': int(3e6),
+    }
+    patterns = [
+        'original_qr_dqn',
+        # 't1b1',
+        't1b0',
+        # 't0b1',
+        't0b0',
+        # 't095b095',
+        # 't09b09',
+        # 't05b05',
+        't01b01',
+    ]
+    for i, p in enumerate(patterns):
+        plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*train.*' % (p), figure=0, color=i, **train_kwargs)
+        # deterministic_plot(pattern='.*dist_rl-CliffWalking/bootstrapped_qr_dqn_cliff.*%s.*test.*' % (p), figure=0, color=i, **test_kwargs)
+    plt.show()
 

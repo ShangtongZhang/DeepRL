@@ -469,23 +469,23 @@ if __name__ == '__main__':
     parallel = False
     runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t1b1',
-               option_type='constant_beta', target_beta=1, behavior_beta=1, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t1b0',
-               option_type='constant_beta', target_beta=1, behavior_beta=0, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b1',
-               option_type='constant_beta', target_beta=0, behavior_beta=1, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b0',
-               option_type='constant_beta', target_beta=0, behavior_beta=0, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t095b095',
-               option_type='constant_beta', target_beta=0.9, behavior_beta=0.9, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t09b09',
-               option_type='constant_beta', target_beta=0.9, behavior_beta=0.9, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t05b05',
-               option_type='constant_beta', target_beta=0.5, behavior_beta=0.5, parallel=parallel, runs=runs)
-    multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t01b01',
-               option_type='constant_beta', target_beta=0.1, behavior_beta=0.1, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t1b1',
+    #            option_type='constant_beta', target_beta=1, behavior_beta=1, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t1b0',
+    #            option_type='constant_beta', target_beta=1, behavior_beta=0, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b1',
+    #            option_type='constant_beta', target_beta=0, behavior_beta=1, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b0',
+    #            option_type='constant_beta', target_beta=0, behavior_beta=0, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t095b095',
+    #            option_type='constant_beta', target_beta=0.9, behavior_beta=0.9, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t09b09',
+    #            option_type='constant_beta', target_beta=0.9, behavior_beta=0.9, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t05b05',
+    #            option_type='constant_beta', target_beta=0.5, behavior_beta=0.5, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t01b01',
+    #            option_type='constant_beta', target_beta=0.1, behavior_beta=0.1, parallel=parallel, runs=runs)
 
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_q',
     #            option_type='per_episode', parallel=parallel, runs=runs,
