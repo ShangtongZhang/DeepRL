@@ -12,3 +12,4 @@ from .OptionCritic_agent import *
 from .EnsembleD3PG_agent import *
 from .OptionD3PG_agent import *
 from .GammaDDPG_agent import *
+from .PlanDDPG_agent import *

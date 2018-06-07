@@ -386,3 +386,119 @@ class GammaDeterministicOptionCriticNet(nn.Module, BaseNet):
         self.fc_q_options.zero_grad()
         self.fc_critics.zero_grad()
         self.critic_body.zero_grad()
+
+class EnvModel(nn.Module):
+    def __init__(self, phi_dim, action_dim):
+        super(EnvModel, self).__init__()
+        self.hidden_dim = 300
+        self.fc_r1 = layer_init(nn.Linear(phi_dim + action_dim, self.hidden_dim))
+        self.fc_r2 = layer_init(nn.Linear(self.hidden_dim, 1))
+
+        self.fc_t1 = layer_init(nn.Linear(phi_dim, phi_dim))
+        self.fc_t2 = layer_init(nn.Linear(phi_dim + action_dim, phi_dim))
+
+    def forward(self, phi_s, action):
+        phi = torch.cat([phi_s, action], dim=1)
+        r = self.fc_r2(F.tanh(self.fc_r1(phi)))
+
+        phi_s_prime = phi_s + F.tanh(self.fc_t1(phi_s))
+        phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
+        phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
+
+        return phi_s_prime, r
+
+class ActorModel(nn.Module):
+    def __init__(self, phi_dim, action_dim):
+        super(ActorModel, self).__init__()
+        self.hidden_dim = 300
+        self.layers = nn.Sequential(
+            layer_init(nn.Linear(phi_dim, self.hidden_dim)),
+            nn.Tanh(),
+            layer_init(nn.Linear(self.hidden_dim, action_dim), 3e-3),
+            nn.Tanh()
+        )
+
+    def forward(self, phi_s):
+        return self.layers(phi_s)
+
+class CriticModel(nn.Module):
+    def __init__(self, phi_dim, action_dim):
+        super(CriticModel, self).__init__()
+        self.hidden_dim = 300
+        self.layers = nn.Sequential(
+            layer_init(nn.Linear(phi_dim + action_dim, self.hidden_dim)),
+            nn.Tanh(),
+            layer_init(nn.Linear(self.hidden_dim, 1), 3e-3)
+        )
+
+    def forward(self, phi_s, action):
+        phi = torch.cat([phi_s, action], dim=-1)
+        return self.layers(phi)
+
+class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 phi_body,
+                 num_actors,
+                 discount,
+                 detach_action,
+                 gpu=-1):
+        super(PlanEnsembleDeterministicNet, self).__init__()
+        self.phi_body = phi_body
+        phi_dim = phi_body.feature_dim
+        self.critic_model = CriticModel(phi_dim, action_dim)
+        self.actor_models = nn.ModuleList([ActorModel(phi_dim, action_dim) for _ in range(num_actors)])
+        self.env_model = EnvModel(phi_dim, action_dim)
+
+        self.discount = discount
+        self.detach_action = detach_action
+        self.num_actors = num_actors
+        self.set_gpu(gpu)
+
+    def predict(self, obs, depth, to_numpy=False):
+        phi = self.feature(obs)
+        actions = self.compute_a(phi)
+        q_values = [self.compute_q(phi, action, depth) for action in actions]
+        q_values = torch.stack(q_values).squeeze(-1).t()
+        actions = torch.stack(actions).t()
+        if to_numpy:
+            best = q_values.max(1)[1]
+            actions = actions[self.range(actions.size(0)), best, :]
+            return actions.detach().cpu().numpy()
+        return q_values.max(1)[0].unsqueeze(-1)
+
+    def feature(self, obs):
+        obs = self.tensor(obs)
+        return self.phi_body(obs)
+
+    def compute_a(self, phi, detach=True):
+        actions = [actor_model(phi) for actor_model in self.actor_models]
+        if detach:
+            for action in actions: action.detach_()
+        return actions
+
+    def compute_q(self, phi, action, depth=1, immediate_reward=False):
+        if depth == 1:
+            q = self.critic_model(phi, action)
+            if immediate_reward:
+                return q, 0
+            return q
+        else:
+            phi_prime, r = self.env_model(phi, action)
+            a_prime = self.compute_a(phi_prime)
+            a_prime = torch.stack(a_prime)
+            phi_prime = phi_prime.unsqueeze(0).expand(
+                (self.num_actors, ) + (-1, ) * len(phi_prime.size())
+            )
+            q_prime = self.compute_q(phi_prime, a_prime, depth - 1)
+            q_prime = q_prime.max(0)[0]
+            q = r + self.discount * q_prime
+            if immediate_reward:
+                return q, r
+            return q
+
+    def actor(self, obs):
+        phi = self.compute_phi(obs)
+        actions = self.compute_a(phi, detach=False)
+        return actions
