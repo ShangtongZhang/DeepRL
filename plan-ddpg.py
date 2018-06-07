@@ -80,7 +80,7 @@ def plan_ddpg(game, log_dir=None, **kwargs):
 
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
-    log_dir = './log/ensemble-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
+    log_dir = './log/plan-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game, log_dir, tag=tag, **kwargs)
 
 def multi_runs(game, fn, tag, **kwargs):
@@ -103,46 +103,6 @@ def batch_job():
     cf.add_argument('--ind2', type=int, default=0)
     cf.merge()
 
-    # game = 'RoboschoolHopper-v1'
-    #
-    # parallel = True
-    # def task1():
-    #     multi_runs(game, ddpg_continuous, tag='var_test_original',
-    #            gate=F.relu, q_l2_weight=0.01, reward_scale=0.1, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
-    #
-    # def task2():
-    #     multi_runs(game, ddpg_continuous, tag='var_test_tanh',
-    #            gate=F.tanh, reward_scale=0.1, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
-    #
-    # def task3():
-    #     multi_runs(game, ddpg_continuous, tag='var_test_no_reward_scale',
-    #            gate=F.relu, q_l2_weight=0.01, reward_scale=1.0, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
-    #
-    # def task4():
-    #     multi_runs(game, ddpg_continuous, tag='var_test_gaussian_tanh',
-    #            gate=F.tanh, reward_scale=0.1, noise=GaussianProcess, parallel=parallel)
-    #
-    # def task5():
-    #     multi_runs(game, ddpg_continuous, tag='var_test_gaussian_no_reward_scale',
-    #            gate=F.relu, q_l2_weight=0.01, reward_scale=1.0, noise=GaussianProcess, parallel=parallel)
-    #
-    # def task6():
-    #     multi_runs(game, ddpg_continuous, tag='var_test_gaussian_tanh_no_reward_scale',
-    #            gate=F.tanh, reward_scale=0.1, noise=GaussianProcess, parallel=parallel)
-    #
-    # def task7():
-    #     multi_runs(game, ddpg_continuous, tag='var_test_tanh_no_reward_scale',
-    #            gate=F.tanh, reward_scale=1.0, noise=OrnsteinUhlenbeckProcess, parallel=parallel)
-    #
-    # tasks = [task1, task2, task3, task4, task5, task6, task7]
-    # tasks[cf.ind1]()
-
-    # games = ['RoboschoolAnt-v1', 'RoboschoolWalker2d-v1', 'RoboschoolHalfCheetah-v1']
-    # games = [
-    #     'RoboschoolReacher-v1',
-    #     'RoboschoolHopper-v1',
-    #     'RoboschoolInvertedDoublePendulum-v1'
-    # ]
     # games = ['RoboschoolAnt-v1',
     #          'RoboschoolHalfCheetah-v1',
     #          'RoboschoolHopper-v1',
@@ -168,18 +128,6 @@ def batch_job():
     # ]
     # game = games[cf.ind1]
 
-    # parallel = True
-    # def task():
-    #     multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=parallel)
-    #     multi_runs(game, ensemble_ddpg, tag='off_policy',
-    #                off_policy_actor=True, off_policy_critic=True, parallel=parallel)
-    #     multi_runs(game, ensemble_ddpg, tag='half_policy',
-    #                off_policy_actor=False, off_policy_critic=True, parallel=parallel)
-    #     multi_runs(game, ensemble_ddpg, tag='on_policy',
-    #                off_policy_actor=False, off_policy_critic=False, parallel=parallel)
-    #
-    # task()
-
     games = [
         'RoboschoolAnt-v1',
         'RoboschoolWalker2d-v1',
@@ -187,63 +135,24 @@ def batch_job():
     game = games[cf.ind1]
 
     parallel = True
-    # def task1():
-    #     multi_runs(game, ensemble_ddpg, tag='t1b1',
-    #                target_beta=1, behavior_beta=1, parallel=parallel)
-    #
-    # def task2():
-    #     multi_runs(game, ensemble_ddpg, tag='t1b0',
-    #                target_beta=1, behavior_beta=0, parallel=parallel)
-    #
-    # def task3():
-    #     multi_runs(game, ensemble_ddpg, tag='t0b1',
-    #                target_beta=0, behavior_beta=1, parallel=parallel)
-    #
-    # def task4():
-    #     multi_runs(game, ensemble_ddpg, tag='t0b0',
-    #                target_beta=0, behavior_beta=0, parallel=parallel)
-    #
-    # # def task5():
-    # #     multi_runs(game, ensemble_ddpg, tag='per_step_decay_10', num_options=10,
-    # #                option_type='per_step', random_option_prob=LinearSchedule(1.0, 0, int(1e6)), parallel=parallel)
-    # #
-    # # def task6():
-    # #     multi_runs(game, ensemble_ddpg, tag='per_episode_decay_10', num_options=10,
-    # #                option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(1e6)), parallel=parallel)
-    #
-    # tasks = [task1, task2, task3, task4]
-    #
-    # tasks[cf.ind2]()
+    def task1():
+        multi_runs(game, plan_ddpg, tag='d1m1', parallel=parallel,
+                   depth=1, mask=True)
 
-    # games = [
-    #     'RoboschoolAnt-v1',
-    #     'RoboschoolHopper-v1'
-    # ]
-    # game = games[cf.ind1]
-    #
-    # parallel = True
-    # runs = 4
-    # def task1():
-    #     multi_runs(game, ddpg_continuous, tag='constant_exploration_original_ddpg', parallel=parallel,
-    #                std_schedules=[LinearSchedule(0.3)], runs=runs)
-    #
-    # def task2():
-    #     multi_runs(game, ddpg_continuous, tag='option_exploration_original_ddpg', parallel=parallel,
-    #                option_epsilon=LinearSchedule(0.3, 0, 1e6), action_based_noise=False, runs=runs)
-    #
-    # def task3():
-    #     multi_runs(game, ensemble_ddpg, tag='constant_exploration_off_policy',
-    #                std_schedules=[LinearSchedule(0.3)], off_policy_actor=True, off_policy_critic=True,
-    #                parallel=parallel, runs=runs)
-    #
-    # def task4():
-    #     multi_runs(game, ensemble_ddpg, tag='option_exploration_off_policy',
-    #                option_epsilon=LinearSchedule(0.3, 0, 1e6), action_based_noise=False,
-    #                off_policy_actor=True, off_policy_critic=True, parallel=parallel,
-    #                runs=runs)
-    #
-    # tasks = [task1, task2, task3, task4]
-    # tasks[cf.ind2]()
+    def task2():
+        multi_runs(game, plan_ddpg, tag='d1m0', parallel=parallel,
+                   depth=1, mask=False)
+
+    def task3():
+        multi_runs(game, plan_ddpg, tag='d2m1', parallel=parallel,
+                   depth=2, mask=True)
+    def task4():
+        multi_runs(game, plan_ddpg, tag='d1m0', parallel=parallel,
+                   depth=2, mask=False)
+
+    tasks = [task1, task2, task3, task4]
+
+    tasks[cf.ind2]()
 
 if __name__ == '__main__':
     mkdir('data')
@@ -253,6 +162,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
+    batch_job()
 
     game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
@@ -262,7 +172,6 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrun-v1'
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
-    # batch_job()
 
-    plan_ddpg(game, mask=True)
+    # plan_ddpg(game, mask=True)
 
