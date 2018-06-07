@@ -309,15 +309,21 @@ if __name__ == '__main__':
         'rep': 20,
         'average': True
     }
+    # patterns = [
+    #     'per_episode_decay',
+    #     'per_episode_random',
+    #     'per_step_decay',
+    #     'per_step_random'
+    # ]
     patterns = [
-        'per_episode_decay',
-        'per_episode_random',
-        'per_step_decay',
-        'per_step_random'
+        't0b0',
+        't0b1',
+        't1b0',
+        't1b1'
     ]
     for i, p in enumerate(patterns):
-        ddpg_plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ensemble_ddpg.*%s.*test.*' % (p), figure=0, color=i, **kwargs)
-        # ddpg_plot(pattern='.*log/ensemble-RoboschoolWalker2d-v1/ensemble_ddpg.*%s.*test.*' % (p), figure=0, color=i, **kwargs)
-    ddpg_plot(pattern='.*log/ddpg_ensemble_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=0, color=4, **kwargs)
-    # ddpg_plot(pattern='.*log/ddpg_ensemble_replay/ensemble-RoboschoolWalker2d-v1/ddpg_continuous.*', figure=0, color=4, **kwargs)
+        # ddpg_plot(pattern='.*log/ensemble-RoboschoolAnt-v1/ensemble_ddpg.*%s.*test.*' % (p), figure=0, color=i, **kwargs)
+        ddpg_plot(pattern='.*log/ensemble-RoboschoolWalker2d-v1/ensemble_ddpg.*%s.*test.*' % (p), figure=0, color=i, **kwargs)
+    # ddpg_plot(pattern='.*log/ddpg_ensemble_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=0, color=4, **kwargs)
+    ddpg_plot(pattern='.*log/ddpg_ensemble_replay/ensemble-RoboschoolWalker2d-v1/ddpg_continuous.*', figure=0, color=4, **kwargs)
     plt.show()
