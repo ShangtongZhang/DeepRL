@@ -147,7 +147,7 @@ def batch_job():
         multi_runs(game, plan_ddpg, tag='d2m1', parallel=parallel,
                    depth=2, mask=True)
     def task4():
-        multi_runs(game, plan_ddpg, tag='d1m0', parallel=parallel,
+        multi_runs(game, plan_ddpg, tag='d2m0', parallel=parallel,
                    depth=2, mask=False)
 
     tasks = [task1, task2, task3, task4]
