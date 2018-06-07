@@ -50,6 +50,7 @@ def plan_ddpg(game, log_dir=None, **kwargs):
     kwargs.setdefault('critic_loss_weight', 10)
     kwargs.setdefault('num_actors', 5)
     kwargs.setdefault('detach_action', True)
+    kwargs.setdefault('mask', False)
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -72,7 +73,6 @@ def plan_ddpg(game, log_dir=None, **kwargs):
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
-    # config.evaluation_episodes = 1
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
@@ -264,5 +264,5 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
     # batch_job()
 
-    plan_ddpg(game)
+    plan_ddpg(game, mask=True)
 

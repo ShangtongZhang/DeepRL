@@ -56,7 +56,8 @@ class PlanDDPGAgent(BaseAgent):
             reward = self.config.reward_normalizer(reward)
 
             if not deterministic:
-                self.replay.feed([state, action, reward, next_state, int(done)])
+                mask = np.random.binomial(n=1, p=0.5, size=config.num_actors)
+                self.replay.feed([state, action, reward, next_state, int(done), mask])
                 self.total_steps += 1
 
             steps += 1
@@ -64,7 +65,8 @@ class PlanDDPGAgent(BaseAgent):
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
-                states, actions, rewards, next_states, terminals = experiences
+                states, actions, rewards, next_states, terminals, masks = experiences
+                masks = self.network.tensor(masks)
 
                 q_next = self.target_network.predict(next_states, depth=config.depth, to_numpy=False)
                 terminals = self.network.tensor(terminals).unsqueeze(1)
@@ -102,6 +104,8 @@ class PlanDDPGAgent(BaseAgent):
                 actions = torch.stack(actions)
                 action_grads = torch.stack([-dead_action.grad.detach()
                                             for dead_action in dead_actions])
+                if config.mask:
+                    action_grads = action_grads * masks.t().unsqueeze(-1)
                 self.opt.zero_grad()
                 actions.backward(action_grads)
                 self.opt.step()
