@@ -39,6 +39,43 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(DDPGAgent(config))
 
+def ddpg_shared(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('gate', F.tanh)
+    kwargs.setdefault('tag', ddpg_shared.__name__)
+    kwargs.setdefault('q_l2_weight', 0)
+    kwargs.setdefault('reward_scale', 1.0)
+    kwargs.setdefault('noise', OrnsteinUhlenbeckProcess)
+    kwargs.setdefault('std', LinearSchedule(0.2))
+    config.merge(kwargs)
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+
+    config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
+    config.evaluation_env = config.task_fn(log_dir=log_dir)
+
+    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
+        state_dim, action_dim,
+        phi_body=FCBody(state_dim, (400, ), gate=config.gate),
+        actor_body=FCBody(400, (300, ), gate=config.gate),
+        critic_body=FCBodyWithAction(400, action_dim, (300, ), gate=config.gate),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(
+            params, lr=1e-3, weight_decay=config.q_l2_weight)
+        )
+
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.discount = 0.99
+    config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.max_steps = 1e6
+    config.evaluation_episodes_interval = int(1e4)
+    config.evaluation_episodes = 20
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = get_logger()
+    run_episodes(DDPGAgent(config))
+
 def plan_ddpg(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -162,9 +199,9 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    batch_job()
+    # batch_job()
 
-    game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
     # game = 'RoboschoolHopper-v1'
@@ -174,4 +211,12 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
     # plan_ddpg(game, mask=True)
+    # ddpg_shared(game)
+
+    parallel = True
+    game = 'RoboschoolAnt-v1'
+    multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
+    game = 'RoboschoolWalker2d-v1'
+    multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
+
 

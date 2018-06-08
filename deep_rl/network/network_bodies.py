@@ -49,6 +49,20 @@ class FCBody(nn.Module):
             x = self.gate(layer(x))
         return x
 
+class FCBodyWithAction(nn.Module):
+    def __init__(self, state_dim, action_dim, hidden_units=(64, 64), gate=F.relu):
+        super(FCBodyWithAction, self).__init__()
+        dims = (state_dim + action_dim, ) + hidden_units
+        self.layers = nn.ModuleList([layer_init(nn.Linear(dim_in, dim_out)) for dim_in, dim_out in zip(dims[:-1], dims[1:])])
+        self.gate = gate
+        self.feature_dim = dims[-1]
+
+    def forward(self, x, a):
+        x = torch.cat([x, a], dim=-1)
+        for layer in self.layers:
+            x = self.gate(layer(x))
+        return x
+
 class TwoLayerFCBodyWithAction(nn.Module):
     def __init__(self, state_dim, action_dim, hidden_units=(64, 64), gate=F.relu):
         super(TwoLayerFCBodyWithAction, self).__init__()
