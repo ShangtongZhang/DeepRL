@@ -9,6 +9,7 @@ import pickle
 import os
 import datetime
 import torch
+import sys
 try:
     # python >= 3.5
     from pathlib import Path
@@ -130,5 +131,21 @@ class Batcher:
 def to_numpy(x):
     return x.detach().cpu().numpy()
 
-# def torch_max(tensor, dim):
-#     return torch.max(tensor, dim=dim, keepdim=True)[0]
+def console(fn):
+    def wrapper(*args, **kwargs):
+        if 'id' in kwargs:
+            kwargs['ids'] = [kwargs['id']]
+            del kwargs['id']
+        if 'ids' in kwargs:
+            ids = kwargs['ids']
+            if len(ids) + 1 != len(sys.argv):
+                return
+            valid = True
+            for i, id in enumerate(ids):
+                if id != int(sys.argv[i + 1]):
+                    valid = False
+                    break
+            if not valid:
+                return
+        fn(*args, **kwargs)
+    return wrapper
