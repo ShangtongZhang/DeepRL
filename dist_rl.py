@@ -444,7 +444,7 @@ def visualize_cliff_world(**kwargs):
 def batch_job():
     cf = Config()
     cf.add_argument('--ind1', type=int, default=0)
-    cf.add_argument('--ind2', type=int, default=2)
+    cf.add_argument('--ind2', type=int, default=0)
     cf.merge()
 
     games = ['FreewayNoFrameskip-v4',
@@ -486,21 +486,37 @@ def batch_job():
     #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_off_termination', parallel=parallel, runs=runs,
     #            option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)), intro_q=True)
 
+    # def task1():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=runs, gpu=0, parallel=parallel,
+    #            target_beta=1, behavior_beta=1, option_type='constant_beta')
+    #
+    # def task2():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0', runs=runs, gpu=1, parallel=parallel,
+    #            target_beta=1, behavior_beta=0, option_type='constant_beta')
+    #
+    # def task3():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b1', runs=runs, gpu=2, parallel=parallel,
+    #            target_beta=0, behavior_beta=1, option_type='constant_beta')
+    #
+    # def task4():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0', runs=runs, gpu=3, parallel=parallel,
+    #            target_beta=0, behavior_beta=0, option_type='constant_beta')
+
     def task1():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=runs, gpu=0, parallel=parallel,
-               target_beta=1, behavior_beta=1)
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1e03', runs=runs, gpu=0, parallel=parallel,
+               target_beta=1, behavior_beta=1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
 
     def task2():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0', runs=runs, gpu=1, parallel=parallel,
-               target_beta=1, behavior_beta=0)
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0e03', runs=runs, gpu=1, parallel=parallel,
+               target_beta=1, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
 
     def task3():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b1', runs=runs, gpu=2, parallel=parallel,
-               target_beta=0, behavior_beta=1)
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b1e03', runs=runs, gpu=2, parallel=parallel,
+               target_beta=0, behavior_beta=1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
 
     def task4():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0', runs=runs, gpu=3, parallel=parallel,
-               target_beta=0, behavior_beta=0)
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0e03', runs=runs, gpu=3, parallel=parallel,
+               target_beta=0, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
 
     tasks = [task1, task2, task3, task4]
     tasks[cf.ind2]()
@@ -518,7 +534,7 @@ if __name__ == '__main__':
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_ice()
     parallel = True
-    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=3, gpu=0, parallel=parallel)
+    # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=3, gpu=0, parallel=parallel)
     # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=3, gpu=0, parallel=parallel,
     #            target_beta=1, behavior_beta=1)
     # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0', runs=3, gpu=1, parallel=parallel,

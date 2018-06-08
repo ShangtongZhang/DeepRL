@@ -118,7 +118,7 @@ if __name__ == '__main__':
         'episode_window': 100,
         'top_k': 0,
         'max_timesteps': int(4e7),
-        'average': True,
+        'average': False,
         'x_interval': 1000
     }
     test_kwargs = {
@@ -135,12 +135,30 @@ if __name__ == '__main__':
         # '9_options_only',
         # 'mean_and_9_options',
     ]
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            plot(pattern='.*dist-rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+    #         plot(pattern='.*dist-rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
     #     # plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*train.*' % (game, p), figure=0, color=i, **train_kwargs)
     #     # deterministic_plot(pattern='.*log/dist_rl-%sNoFrameskip-v4.*%s.*test.*' % (game, p), figure=0, color=i, **test_kwargs)
-        plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % (game))
+    #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % (game))
+    # plt.show()
+
+    train_kwargs = {
+        'episode_window': 1000,
+        'top_k': 0,
+        'max_timesteps': int(4e7),
+        'average': True,
+        'x_interval': 1000
+    }
+    patterns = [
+        'original',
+        't0b0',
+        't1b0',
+        't0b1',
+        't1b1',
+    ]
+    for i, p in enumerate(patterns):
+        plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
     plt.show()
 
     train_kwargs = {
