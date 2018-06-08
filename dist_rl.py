@@ -178,9 +178,9 @@ def bootstrapped_qr_dqn_ice(**kwargs):
     kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
     kwargs.setdefault('gpu', 0)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('max_steps', 4e6)
+    kwargs.setdefault('max_steps', 4e7)
     kwargs.setdefault('option_type', None)
-    kwargs.setdefault('num_quantiles', 50)
+    kwargs.setdefault('num_quantiles', 200)
 
     kwargs.setdefault('num_options', 10)
     kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
@@ -192,21 +192,21 @@ def bootstrapped_qr_dqn_ice(**kwargs):
     config.merge(kwargs)
 
     task_fn = lambda log_dir: IceCliffWalkingTask(log_dir=log_dir)
-    # config.evaluation_env = task_fn(kwargs['log_dir']+'-test', episode_life=False)
+    config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, CliffConvBody(in_channels=3), gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(1e6), min_epsilon=0.05)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(2e6), min_epsilon=0.05)
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
     config.logger = get_logger()
-    # config.evaluation_episodes = 10
-    # config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
+    config.evaluation_episodes = 10
+    config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
     run_iterations(BootstrappedNStepQRDQNAgent(config))
 
 # n-step atari
@@ -272,7 +272,7 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('option_type', None)
     kwargs.setdefault('num_options', 10)
     kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
-    kwargs.setdefault('random_option_prob', LinearSchedule(1.0))
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0.3, kwargs['max_steps']))
     kwargs.setdefault('intro_q', False)
 
     config = Config()
@@ -471,20 +471,36 @@ def batch_job():
 
     parallel = True
     runs = 3
+    # def task1():
+    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=runs)
+    #
+    # def task2():
+    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_random_off_termination', parallel=parallel, runs=runs,
+    #         option_type='per_episode', intro_q=False)
+    #
+    # def task3():
+    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_intro_q', parallel=parallel, runs=runs,
+    #            option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)), intro_q=True)
+    #
+    # def task4():
+    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_off_termination', parallel=parallel, runs=runs,
+    #            option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)), intro_q=True)
+
     def task1():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=runs)
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=runs, gpu=0, parallel=parallel,
+               target_beta=1, behavior_beta=1)
 
     def task2():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_random_off_termination', parallel=parallel, runs=runs,
-            option_type='per_episode', intro_q=False)
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0', runs=runs, gpu=1, parallel=parallel,
+               target_beta=1, behavior_beta=0)
 
     def task3():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_intro_q', parallel=parallel, runs=runs,
-               option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)), intro_q=True)
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b1', runs=runs, gpu=2, parallel=parallel,
+               target_beta=0, behavior_beta=1)
 
     def task4():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_off_termination', parallel=parallel, runs=runs,
-               option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)), intro_q=True)
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0', runs=runs, gpu=3, parallel=parallel,
+               target_beta=0, behavior_beta=0)
 
     tasks = [task1, task2, task3, task4]
     tasks[cf.ind2]()
@@ -500,7 +516,18 @@ if __name__ == '__main__':
     # batch_job()
 
     # bootstrapped_qr_dqn_cliff()
-    bootstrapped_qr_dqn_ice()
+    # bootstrapped_qr_dqn_ice()
+    parallel = True
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=3, gpu=0, parallel=parallel)
+    # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=3, gpu=0, parallel=parallel,
+    #            target_beta=1, behavior_beta=1)
+    # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0', runs=3, gpu=1, parallel=parallel,
+    #            target_beta=1, behavior_beta=0)
+    # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b1', runs=3, gpu=2, parallel=parallel,
+    #            target_beta=0, behavior_beta=1)
+    # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0', runs=3, gpu=3, parallel=parallel,
+    #            target_beta=0, behavior_beta=0)
+
 
     parallel = False
     runs = np.arange(0, 16)
@@ -587,7 +614,7 @@ if __name__ == '__main__':
     #            random_option=True, parallel=parallel, runs=runs)
 
     # game = 'BreakoutNoFrameskip-v4'
-    game = 'FreewayNoFrameskip-v4'
+    # game = 'FreewayNoFrameskip-v4'
     # game = 'SeaquestNoFrameskip-v4'
     # game = 'MsPacmanNoFrameskip-v4'
     # game = 'FrostbiteNoFrameskip-v4'
