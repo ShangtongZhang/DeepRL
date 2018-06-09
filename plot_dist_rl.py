@@ -144,7 +144,7 @@ if __name__ == '__main__':
     # plt.show()
 
     train_kwargs = {
-        'episode_window': 1000,
+        'episode_window': 5000,
         'top_k': 0,
         'max_timesteps': int(4e7),
         'average': True,
@@ -152,13 +152,14 @@ if __name__ == '__main__':
     }
     patterns = [
         'original',
-        't0b0',
-        't1b0',
-        't0b1',
-        't1b1',
+        't0b0e03',
+        't1b0e03',
+        't0b1e03',
+        't1b1e03',
     ]
     for i, p in enumerate(patterns):
         plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
+        plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % ('IceCliff-epsilon-0.3'))
     plt.show()
 
     train_kwargs = {
