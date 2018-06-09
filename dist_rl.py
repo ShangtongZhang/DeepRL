@@ -503,20 +503,20 @@ def batch_job():
     #            target_beta=0, behavior_beta=0, option_type='constant_beta')
 
     def task1():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=1, behavior_beta=1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b01e03', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0.1, behavior_beta=0.1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
 
     def task2():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0e03', runs=runs, gpu=1, parallel=parallel,
-               target_beta=1, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t005b005e03', runs=runs, gpu=1, parallel=parallel,
+               target_beta=0.05, behavior_beta=0.05, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
 
     def task3():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b1e03', runs=runs, gpu=2, parallel=parallel,
-               target_beta=0, behavior_beta=1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t05b05e03', runs=runs, gpu=2, parallel=parallel,
+               target_beta=0.5, behavior_beta=0.5, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
 
     def task4():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0e03', runs=runs, gpu=3, parallel=parallel,
-               target_beta=0, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t09b09e03', runs=runs, gpu=3, parallel=parallel,
+               target_beta=0.9, behavior_beta=0.9, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
 
     tasks = [task1, task2, task3, task4]
     tasks[cf.ind2]()
@@ -529,7 +529,7 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    # batch_job()
+    batch_job()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_ice()
