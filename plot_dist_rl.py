@@ -11,6 +11,7 @@ def plot(**kwargs):
     kwargs.setdefault('max_timesteps', 1e8)
     kwargs.setdefault('episode_window', 100)
     kwargs.setdefault('x_interval', 1000)
+    kwargs.setdefault('down_sample', True)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=kwargs['episode_window'], max_timesteps=kwargs['max_timesteps'])
@@ -22,6 +23,10 @@ def plot(**kwargs):
         color = kwargs['color']
         x, y = plotter.average(data, kwargs['x_interval'], kwargs['max_timesteps'], top_k=kwargs['top_k'],
                                top_k_perf=kwargs['top_k_perf'])
+        if kwargs['down_sample']:
+            indices = np.linspace(0, len(x) - 1, 500).astype(np.int)
+            x = x[indices]
+            y = y[:, indices]
         name = names[0].split('/')[-1]
         sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color])
         plt.title(names[0])
@@ -34,10 +39,10 @@ def plot(**kwargs):
                 color = Plotter.COLORS[kwargs['color']]
             plt.plot(x, y, color=color, label=name if i==0 else '')
     plt.legend()
-    # plt.ylim([0, 400])
+    if 'y_lim' in kwargs.keys():
+        plt.ylim(kwargs['y_lim'])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
-    # plt.show()
 
 def deterministic_plot(**kwargs):
     import matplotlib.pyplot as plt
@@ -64,8 +69,9 @@ def deterministic_plot(**kwargs):
     plt.figure(figure)
     if kwargs['average']:
         color = kwargs['color']
+        data = [plotter.window_func(x, y, kwargs['episode_window'], np.mean) for x, y in data]
         x = data[0][0]
-        y = [entry[1] for entry in data if len(entry[1]) == 188]
+        y = [y for x, y in data]
         y = np.stack(y)
         sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
     else:
@@ -77,7 +83,8 @@ def deterministic_plot(**kwargs):
                 color = Plotter.COLORS[kwargs['color']]
             plt.plot(x, y, color=color, label=name if i==0 else '')
     plt.legend()
-    # plt.ylim([0, 400])
+    if 'y_lim' in kwargs:
+        plt.ylim(kwargs['y_lim'])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
@@ -148,8 +155,27 @@ if __name__ == '__main__':
         'top_k': 0,
         'max_timesteps': int(4e7),
         'average': True,
-        'x_interval': 1000
+        'x_interval': 1000,
+        'y_lim': [-2, 5],
+        'tag': 'tbe03'
     }
+    test_kwargs = {
+        'episode_window': 50,
+        'average': True,
+        'x_interval': 16e4,
+        'rep': 10,
+        'max_timesteps': int(4e7),
+        'y_lim': [-2, 5]
+    }
+
+    patterns = [
+        'original',
+        't0b0-',
+        't1b0-',
+        't0b1-',
+        't1b1-',
+    ]
+
     patterns = [
         'original',
         't0b0e03',
@@ -157,10 +183,30 @@ if __name__ == '__main__':
         't0b1e03',
         't1b1e03',
     ]
+
+    patterns = [
+        'original',
+        't005b0e03',
+        't01b0e03',
+        't05b0e03',
+        't09b0e03',
+    ]
+
+    patterns = [
+        'original',
+        't005b005e03',
+        't01b01e03',
+        't05b05e03',
+        't09b09e03',
+    ]
+
+
     for i, p in enumerate(patterns):
         plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
-        plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % ('IceCliff-epsilon-0.3'))
-    plt.show()
+        plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (train_kwargs['tag']))
+        deterministic_plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **test_kwargs)
+        plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (train_kwargs['tag']))
+    # plt.show()
 
     train_kwargs = {
         'average': True,
