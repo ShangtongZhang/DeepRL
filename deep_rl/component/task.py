@@ -277,7 +277,7 @@ class CliffWalkingTask(BaseTask):
         self.env = self.set_monitor(self.env, log_dir)
 
 class IceCliffWalking(gym.Env):
-    def __init__(self, random_action_prob=0, size=8, num_traps=16):
+    def __init__(self, random_action_prob=0, size=8, num_traps=8):
         self.timeout = 100.0
         self.size = size
         self.num_traps = num_traps

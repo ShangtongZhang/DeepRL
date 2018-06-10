@@ -4,7 +4,8 @@ GPUs=(0 1 2 3)
 for i in $(seq 0 3); do
     export CUDA_VISIBLE_DEVICES=${GPUs[$i]}
     sleep 4s
-    nohup py dist_rl.py --ind1 $1 --ind2 $i >| ice_cliff.txt &
+#    echo $(($i + $1))
+    nohup py dist_rl.py --ind1 0 --ind2 $(($i + $1)) >| ice_cliff.txt &
 done
 
 #export CUDA_VISIBLE_DEVICES=1

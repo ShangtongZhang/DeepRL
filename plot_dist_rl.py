@@ -23,6 +23,7 @@ def plot(**kwargs):
         color = kwargs['color']
         x, y = plotter.average(data, kwargs['x_interval'], kwargs['max_timesteps'], top_k=kwargs['top_k'],
                                top_k_perf=kwargs['top_k_perf'])
+        print(y.shape)
         if kwargs['down_sample']:
             indices = np.linspace(0, len(x) - 1, 500).astype(np.int)
             x = x[indices]
@@ -143,12 +144,12 @@ if __name__ == '__main__':
         # '9_options_only',
         # 'mean_and_9_options',
     ]
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            plot(pattern='.*dist-rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+            # plot(pattern='.*dist-rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
             # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
         # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s.png' % (game))
-    plt.show()
+    # plt.show()
 
     train_kwargs = {
         'episode_window': 5000,
@@ -157,7 +158,8 @@ if __name__ == '__main__':
         'average': True,
         'x_interval': 1000,
         'y_lim': [-2, 5],
-        'tag': 'tbe03'
+        'down_sample': True,
+        'tag': 'b0e03'
     }
     test_kwargs = {
         'episode_window': 50,
@@ -186,24 +188,35 @@ if __name__ == '__main__':
 
     patterns = [
         'original',
+        't0b0e03',
         't005b0e03',
         't01b0e03',
         't05b0e03',
         't09b0e03',
+        't1b0e03',
     ]
 
-    patterns = [
-        'original',
-        't005b005e03',
-        't01b01e03',
-        't05b05e03',
-        't09b09e03',
-    ]
+    # patterns = [
+    #     'original',
+    #     't005b005e03',
+    #     't01b01e03',
+    #     't05b05e03',
+    #     't09b09e03',
+    # ]
+    #
+    # patterns = [
+    #     'original',
+    #     't0b0e03',
+    #     't005b005e03',
+    #     't01b01e03',
+    #     't05b05e03',
+    #     't09b09e03',
+    #     't1b1e03',
+    # ]
 
-
-    # for i, p in enumerate(patterns):
-    #     plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
-    #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (train_kwargs['tag']))
+    for i, p in enumerate(patterns):
+        plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
+        plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (train_kwargs['tag']))
     #     deterministic_plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **test_kwargs)
     #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (train_kwargs['tag']))
     # plt.show()
