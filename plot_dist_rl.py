@@ -157,9 +157,9 @@ if __name__ == '__main__':
         'max_timesteps': int(4e7),
         'average': True,
         'x_interval': 1000,
-        'y_lim': [-2, 5],
+        # 'y_lim': [-2, 5],
         'down_sample': True,
-        'tag': 'b0e03'
+        'tag': 'tbe03'
     }
     test_kwargs = {
         'episode_window': 50,
@@ -170,31 +170,31 @@ if __name__ == '__main__':
         'y_lim': [-2, 5]
     }
 
-    patterns = [
-        'original',
-        't0b0-',
-        't1b0-',
-        't0b1-',
-        't1b1-',
-    ]
-
-    patterns = [
-        'original',
-        't0b0e03',
-        't1b0e03',
-        't0b1e03',
-        't1b1e03',
-    ]
-
-    patterns = [
-        'original',
-        't0b0e03',
-        't005b0e03',
-        't01b0e03',
-        't05b0e03',
-        't09b0e03',
-        't1b0e03',
-    ]
+    # patterns = [
+    #     'original',
+    #     't0b0-',
+    #     't1b0-',
+    #     't0b1-',
+    #     't1b1-',
+    # ]
+    #
+    # patterns = [
+    #     'original',
+    #     't0b0e03',
+    #     't1b0e03',
+    #     't0b1e03',
+    #     't1b1e03',
+    # ]
+    #
+    # patterns = [
+    #     'original',
+    #     't0b0e03',
+    #     't005b0e03',
+    #     't01b0e03',
+    #     't05b0e03',
+    #     't09b0e03',
+    #     't1b0e03',
+    # ]
 
     # patterns = [
     #     'original',
@@ -214,9 +214,31 @@ if __name__ == '__main__':
     #     't1b1e03',
     # ]
 
+    patterns = [
+        'original',
+        't0b0e03',
+        't005b0e03',
+        't01b0e03',
+        't05b0e03',
+        't09b0e03',
+        't1b0e03',
+    ]
+
+    patterns = [
+        'original',
+        't0b0e03',
+        't005b005e03',
+        't01b01e03',
+        't05b05e03',
+        't09b09e03',
+        't1b1e03',
+    ]
+
     for i, p in enumerate(patterns):
         plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
         plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (train_kwargs['tag']))
+        plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **train_kwargs)
+        plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (train_kwargs['tag']))
     #     deterministic_plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **test_kwargs)
     #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (train_kwargs['tag']))
     # plt.show()
