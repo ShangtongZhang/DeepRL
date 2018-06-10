@@ -205,8 +205,8 @@ def bootstrapped_qr_dqn_ice(**kwargs):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.logger = get_logger()
-    config.evaluation_episodes = 10
-    config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
+    # config.evaluation_episodes = 10
+    # config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
     run_iterations(BootstrappedNStepQRDQNAgent(config))
 
 # n-step atari
@@ -444,7 +444,7 @@ def visualize_cliff_world(**kwargs):
 def batch_job():
     cf = Config()
     cf.add_argument('--ind1', type=int, default=0)
-    cf.add_argument('--ind2', type=int, default=11)
+    cf.add_argument('--ind2', type=int, default=0)
     cf.merge()
 
     games = ['FreewayNoFrameskip-v4',

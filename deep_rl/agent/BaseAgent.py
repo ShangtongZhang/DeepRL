@@ -12,10 +12,11 @@ class BaseAgent:
     def __init__(self, config):
         self.config = config
         self.evaluation_env = self.config.evaluation_env
+        self.info = {}
         if self.evaluation_env is not None:
             self.evaluation_state = self.evaluation_env.reset()
+            self.info['initial_state'] = True
             self.evaluation_return = 0
-        self.info = {}
 
     def close(self):
         if hasattr(self.task, 'close'):
@@ -68,9 +69,11 @@ class BaseAgent:
         for _ in range(steps):
             action = self.evaluation_action(self.evaluation_state)
             self.evaluation_state, reward, done, _ = self.evaluation_env.step(action)
+            self.info['initial_state'] = False
             self.evaluation_return += reward
             if done:
                 self.evaluation_state = self.evaluation_env.reset()
+                self.info['initial_state'] = True
                 self.config.logger.info('evaluation episode return: %f' % (self.evaluation_return))
                 self.evaluation_return = 0
 
