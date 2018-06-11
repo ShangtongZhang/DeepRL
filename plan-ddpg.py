@@ -213,10 +213,10 @@ if __name__ == '__main__':
     # plan_ddpg(game, mask=True)
     # ddpg_shared(game)
 
-    parallel = True
-    game = 'RoboschoolAnt-v1'
-    multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
-    game = 'RoboschoolWalker2d-v1'
-    multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
+    # parallel = True
+    # game = 'RoboschoolAnt-v1'
+    # multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
+    # game = 'RoboschoolWalker2d-v1'
+    # multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
 
 

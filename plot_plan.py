@@ -320,10 +320,10 @@ if __name__ == '__main__':
         'd1m1',
         'd2m0',
         'd2m1',
+        'shared',
+        'ddpg_continuous'
     ]
     for i, p in enumerate(patterns):
-        # ddpg_plot(pattern='.*log/plan-RoboschoolAnt-v1.*plan_ddpg.*%s.*' % (p), figure=0, color=i, **kwargs)
-        ddpg_plot(pattern='.*log/plan-RoboschoolWalker2d-v1.*plan_ddpg.*%s.*' % (p), figure=0, color=i, **kwargs)
-    # ddpg_plot(pattern='.*log/ddpg_ensemble_replay/ensemble-RoboschoolAnt-v1/ddpg_continuous.*', figure=0, color=4, **kwargs)
-    ddpg_plot(pattern='.*log/ddpg_ensemble_replay/ensemble-RoboschoolWalker2d-v1/ddpg_continuous.*', figure=0, color=4, **kwargs)
+        # ddpg_plot(pattern='.*log/plan-RoboschoolAnt-v1.*%s.*' % (p), figure=0, color=i, **kwargs)
+        ddpg_plot(pattern='.*log/plan-RoboschoolWalker2d-v1.*%s.*' % (p), figure=0, color=i, **kwargs)
     plt.show()
