@@ -324,6 +324,6 @@ if __name__ == '__main__':
         'ddpg_continuous'
     ]
     for i, p in enumerate(patterns):
-        # ddpg_plot(pattern='.*log/plan-RoboschoolAnt-v1.*%s.*' % (p), figure=0, color=i, **kwargs)
-        ddpg_plot(pattern='.*log/plan-RoboschoolWalker2d-v1.*%s.*' % (p), figure=0, color=i, **kwargs)
+        ddpg_plot(pattern='.*DTreePG/plan-RoboschoolAnt-v1.*%s.*' % (p), figure=0, color=i, **kwargs)
+        ddpg_plot(pattern='.*DTreePG/plan-RoboschoolWalker2d-v1.*%s.*' % (p), figure=1, color=i, **kwargs)
     plt.show()

@@ -166,28 +166,33 @@ def batch_job():
     # game = games[cf.ind1]
 
     games = [
-        'RoboschoolAnt-v1',
-        'RoboschoolWalker2d-v1',
+        # 'RoboschoolAnt-v1',
+        # 'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
     ]
     game = games[cf.ind1]
 
     parallel = True
-    def task1():
-        multi_runs(game, plan_ddpg, tag='d1m1', parallel=parallel,
-                   depth=1, mask=True)
+    # def task1():
+    #     multi_runs(game, plan_ddpg, tag='d1m1', parallel=parallel,
+    #                depth=1, mask=True)
 
     def task2():
         multi_runs(game, plan_ddpg, tag='d1m0', parallel=parallel,
                    depth=1, mask=False)
 
-    def task3():
-        multi_runs(game, plan_ddpg, tag='d2m1', parallel=parallel,
-                   depth=2, mask=True)
+    # def task3():
+    #     multi_runs(game, plan_ddpg, tag='d2m1', parallel=parallel,
+    #                depth=2, mask=True)
     def task4():
         multi_runs(game, plan_ddpg, tag='d2m0', parallel=parallel,
                    depth=2, mask=False)
 
-    tasks = [task1, task2, task3, task4]
+    # tasks = [task1, task2, task3, task4]
+    tasks = [task2, task4]
 
     tasks[cf.ind2]()
 
@@ -199,7 +204,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    # batch_job()
+    batch_job()
 
     # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
