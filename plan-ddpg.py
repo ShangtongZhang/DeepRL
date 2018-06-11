@@ -204,7 +204,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    batch_job()
+    # batch_job()
 
     # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
@@ -218,10 +218,15 @@ if __name__ == '__main__':
     # plan_ddpg(game, mask=True)
     # ddpg_shared(game)
 
-    # parallel = True
-    # game = 'RoboschoolAnt-v1'
-    # multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
-    # game = 'RoboschoolWalker2d-v1'
-    # multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
+    games = [
+        # 'RoboschoolAnt-v1',
+        # 'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
+    ]
+    # for game in games:
+    #     multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=True)
 
 
