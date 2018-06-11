@@ -70,7 +70,7 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
         states = self.states
 
         for _ in range(config.rollout_length):
-            self.evaluate(config.rollout_length * config.num_workers)
+            self.evaluate(config.num_workers)
             self.evaluation_episodes()
 
             quantile_values, option_values = self.network.predict(self.config.state_normalizer(states))
