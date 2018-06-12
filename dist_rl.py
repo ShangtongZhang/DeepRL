@@ -266,14 +266,14 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('frame_stack', 4)
     kwargs.setdefault('max_steps', 4e7)
-    kwargs.setdefault('option_type', None)
     kwargs.setdefault('num_quantiles', 200)
 
     kwargs.setdefault('option_type', None)
     kwargs.setdefault('num_options', 10)
     kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
     kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0.3, kwargs['max_steps']))
-    kwargs.setdefault('intro_q', False)
+    kwargs.setdefault('target_beta', 0.5)
+    kwargs.setdefault('behavior_beta', 0.5)
 
     config = Config()
     config.merge(kwargs)
@@ -296,8 +296,8 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.logger = get_logger()
-    config.evaluation_episodes = 10
-    config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
+    # config.evaluation_episodes = 10
+    # config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
     run_iterations(BootstrappedNStepQRDQNAgent(config))
 
 # utility
@@ -471,20 +471,32 @@ def batch_job():
 
     parallel = True
     runs = 3
-    # def task1():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original_qr_dqn', parallel=parallel, runs=runs)
-    #
-    # def task2():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_random_off_termination', parallel=parallel, runs=runs,
-    #         option_type='per_episode', intro_q=False)
-    #
-    # def task3():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_intro_q', parallel=parallel, runs=runs,
-    #            option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)), intro_q=True)
-    #
-    # def task4():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='per_episode_decay_off_termination', parallel=parallel, runs=runs,
-    #            option_type='per_episode', random_option_prob=LinearSchedule(1.0, 0, int(4e7)), intro_q=True)
+    def task1():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', parallel=parallel, runs=runs,
+                   option_type=None)
+
+    def task2():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0e03', parallel=parallel, runs=runs,
+            option_type='constant_beta', target_beta=0, behavior_beta=0)
+
+    def task3():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b0e03', parallel=parallel, runs=runs,
+               option_type='constant_beta', target_beta=0.1, behavior_beta=0)
+
+    def task4():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t05b0e03', parallel=parallel, runs=runs,
+               option_type='constant_beta', target_beta=0.5, behavior_beta=0)
+
+    def task5():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t09b0e03', parallel=parallel, runs=runs,
+               option_type='constant_beta', target_beta=0.9, behavior_beta=0)
+
+    def task6():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t1b0e03', parallel=parallel, runs=runs,
+               option_type='constant_beta', target_beta=1.0, behavior_beta=0)
+
+    tasks = [task1, task2, task3, task4, task5, task6]
+    tasks[cf.ind2]()
 
     # def task1():
     #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=runs, gpu=0, parallel=parallel,
@@ -502,55 +514,55 @@ def batch_job():
     #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0', runs=runs, gpu=3, parallel=parallel,
     #            target_beta=0, behavior_beta=0, option_type='constant_beta')
 
-    def task0():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task1():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t005b0e03', runs=runs, gpu=1, parallel=parallel,
-               target_beta=0.05, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task2():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b0e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0.1, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task3():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t05b0e03', runs=runs, gpu=2, parallel=parallel,
-               target_beta=0.5, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task4():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t09b0e03', runs=runs, gpu=3, parallel=parallel,
-               target_beta=0.9, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task5():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0e03', runs=runs, gpu=3, parallel=parallel,
-               target_beta=1, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task6():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t005b005e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0.05, behavior_beta=0.05, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task7():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b01e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0.1, behavior_beta=0.1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task8():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t05b05e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0.5, behavior_beta=0.5, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task9():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t09b09e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0.9, behavior_beta=0.9, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task10():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=1, behavior_beta=1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
-
-    def task11():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=runs, gpu=0, parallel=parallel, option_type=None)
-
-    tasks = [task0, task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11]
-    tasks[cf.ind2]()
+    # def task0():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0e03', runs=runs, gpu=0, parallel=parallel,
+    #            target_beta=0, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task1():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t005b0e03', runs=runs, gpu=1, parallel=parallel,
+    #            target_beta=0.05, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task2():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b0e03', runs=runs, gpu=0, parallel=parallel,
+    #            target_beta=0.1, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task3():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t05b0e03', runs=runs, gpu=2, parallel=parallel,
+    #            target_beta=0.5, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task4():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t09b0e03', runs=runs, gpu=3, parallel=parallel,
+    #            target_beta=0.9, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task5():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0e03', runs=runs, gpu=3, parallel=parallel,
+    #            target_beta=1, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task6():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t005b005e03', runs=runs, gpu=0, parallel=parallel,
+    #            target_beta=0.05, behavior_beta=0.05, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task7():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b01e03', runs=runs, gpu=0, parallel=parallel,
+    #            target_beta=0.1, behavior_beta=0.1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task8():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t05b05e03', runs=runs, gpu=0, parallel=parallel,
+    #            target_beta=0.5, behavior_beta=0.5, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task9():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t09b09e03', runs=runs, gpu=0, parallel=parallel,
+    #            target_beta=0.9, behavior_beta=0.9, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task10():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1e03', runs=runs, gpu=0, parallel=parallel,
+    #            target_beta=1, behavior_beta=1, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+    #
+    # def task11():
+    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=runs, gpu=0, parallel=parallel, option_type=None)
+    #
+    # tasks = [task0, task1, task2, task3, task4, task5, task6, task7, task8, task9, task10, task11]
+    # tasks[cf.ind2]()
 
 def test_random_seed(**kwargs):
     random_seed()
