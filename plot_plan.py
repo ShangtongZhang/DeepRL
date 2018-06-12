@@ -315,15 +315,23 @@ if __name__ == '__main__':
     #     'per_step_decay',
     #     'per_step_random'
     # ]
+    games = [
+        # 'RoboschoolAnt-v1',
+        # 'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
+    ]
     patterns = [
-        'd1m0',
-        'd1m1',
-        'd2m0',
-        'd2m1',
+        # 'd1m0',
+        # 'd1m1',
+        # 'd2m0',
+        # 'd2m1',
         'shared',
         'ddpg_continuous'
     ]
-    for i, p in enumerate(patterns):
-        ddpg_plot(pattern='.*DTreePG/plan-RoboschoolAnt-v1.*%s.*' % (p), figure=0, color=i, **kwargs)
-        ddpg_plot(pattern='.*DTreePG/plan-RoboschoolWalker2d-v1.*%s.*' % (p), figure=1, color=i, **kwargs)
+    for j, game in enumerate(games):
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
     plt.show()
