@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
@@ -159,7 +161,8 @@ if __name__ == '__main__':
         'x_interval': 1000,
         # 'y_lim': [-2, 5],
         'down_sample': True,
-        'tag': 'tbe03'
+        # 'tag': 'tbe03',
+        'tag': 'b0e03',
     }
     test_kwargs = {
         'episode_window': 50,
@@ -224,15 +227,15 @@ if __name__ == '__main__':
         't1b0e03',
     ]
 
-    patterns = [
-        'original',
-        't0b0e03',
-        't005b005e03',
-        't01b01e03',
-        't05b05e03',
-        't09b09e03',
-        't1b1e03',
-    ]
+    # patterns = [
+    #     'original',
+    #     't0b0e03',
+    #     't005b005e03',
+    #     't01b01e03',
+    #     't05b05e03',
+    #     't09b09e03',
+    #     't1b1e03',
+    # ]
 
     for i, p in enumerate(patterns):
         plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
