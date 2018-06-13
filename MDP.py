@@ -2,12 +2,13 @@ import numpy as np
 import torch
 
 class Chain:
-    def __init__(self, num_states, reward_std=0.1):
+    def __init__(self, num_states, up_std=0.1, left_std=1.0):
         self.num_states = num_states
         self.state = 0
         self.action_dim = 2
         self.state_dim = num_states
-        self.reward_std = reward_std
+        self.up_std = up_std
+        self.left_std = left_std
 
     def reset(self):
         self.state = 0
@@ -16,13 +17,13 @@ class Chain:
     def step(self, action):
         if action == 0:
             self.state += 1
-            reward = np.random.randn() * self.reward_std
+            reward = np.random.randn() * self.left_std
             done = (self.state == self.num_states)
             if done:
-                reward = 10.0
+                reward += 10.0
             return self.state, reward, done, None
         elif action == 1:
-            return -1, 0, True, None
+            return -1, np.random.randn() * self.up_std, True, None
 
 class BaseAgent:
     def eval(self):
@@ -76,7 +77,8 @@ class QAgent(BaseAgent):
         return total_rewards, self.eval()
 
 class QuantileAgent(BaseAgent):
-    def __init__(self, env_fn, lr=0.1, epsilon=0.1, discount=1.0, num_quantiles=5, mean_exploration=False):
+    def __init__(self, env_fn, lr=0.1, epsilon=0.1, discount=1.0, num_quantiles=5, mean_exploration=False,
+                 active_quantile=-1):
         self.env = env_fn()
         self.eval_env = env_fn()
         self.q_values = np.zeros((self.env.state_dim, self.env.action_dim, num_quantiles))
@@ -87,6 +89,7 @@ class QuantileAgent(BaseAgent):
         self.cumulative_density = (2 * np.arange(num_quantiles) + 1) / (2.0 * num_quantiles)
         self.cumulative_density = torch.FloatTensor(self.cumulative_density)
         self.mean_exploration = mean_exploration
+        self.active_quantile = active_quantile
 
     def act(self, state, eval=False):
         if not eval:
@@ -96,7 +99,7 @@ class QuantileAgent(BaseAgent):
                 if self.mean_exploration:
                     q = self.q_values[state, :, :].mean(-1)
                 else:
-                    q = self.q_values[state, :, -1:].mean(-1)
+                    q = self.q_values[state, :, self.active_quantile]
                 best_q = np.max(q)
                 candidates = [i for i in range(self.env.action_dim) if q[i] == best_q]
                 return np.random.choice(candidates)
@@ -151,8 +154,14 @@ def run_episodes(agent):
         print('episode %d, return %f, eval return %f' % (ep, online_rewards, eval_rewards))
 
 if __name__ == '__main__':
-    # agent = QAgent(lambda :Chain(8))
-    agent = QuantileAgent(lambda :Chain(8))
+    agent = QAgent(lambda :Chain(25, up_std=0.1, left_std=0.2))
+    # agent = QuantileAgent(lambda :Chain(25, up_std=0.1, left_std=0.2), active_quantile=-1)
+    # agent = QuantileAgent(lambda :Chain(25, up_std=0.1, left_std=0.2), active_quantile=0)
+
+    # agent = QAgent(lambda :Chain(25, up_std=0.2, left_std=0.1))
+    # agent = QuantileAgent(lambda :Chain(25, up_std=0.2, left_std=0.1), active_quantile=0)
+
+    # original quantile dqn
     # agent = QuantileAgent(lambda :Chain(8), mean_exploration=True)
     run_episodes(agent)
 
