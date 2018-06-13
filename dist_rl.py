@@ -198,7 +198,7 @@ def bootstrapped_qr_dqn_ice(**kwargs):
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, CliffConvBody(in_channels=3), gpu=kwargs['gpu'])
+        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, CliffConvBody(in_channels=4), gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(2e6), min_epsilon=0.05)
     config.discount = 0.99
     config.target_network_update_freq = 10000
@@ -469,8 +469,8 @@ def batch_job():
     # gpu = gpus[cf.ind1]
 
 
-    parallel = True
-    # runs = 3
+    parallel = False
+    runs = 3
     # def task1():
     #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', parallel=parallel, runs=runs,
     #                option_type=None)
