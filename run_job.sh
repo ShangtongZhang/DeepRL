@@ -5,9 +5,9 @@ for i in $(seq 0 5); do
     export CUDA_VISIBLE_DEVICES=${GPUs[$i]}
     sleep 4s
 #    echo $(($i + $1))
-#    nohup py dist_rl.py --ind1 0 --ind2 $(($i + $1)) >| ice_cliff.txt &
+    nohup py dist_rl.py --ind1 0 --ind2 $(($i + $1)) >| ice_cliff_$1_$i.txt &
 #    echo atari_$1_program_$i
-    nohup py dist_rl.py --ind1 $1 --ind2 $i >| atari_$1_program_$i.out &
+#    nohup py dist_rl.py --ind1 $1 --ind2 $i >| atari_$1_program_$i.out &
 done
 
 #export CUDA_VISIBLE_DEVICES=1

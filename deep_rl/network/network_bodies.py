@@ -24,7 +24,7 @@ class NatureConvBody(nn.Module):
         return y
 
 class CliffConvBody(nn.Module):
-    def __init__(self, in_channels=3):
+    def __init__(self, in_channels=4):
         super(CliffConvBody, self).__init__()
         self.feature_dim = 128
         self.encoder = nn.Sequential(

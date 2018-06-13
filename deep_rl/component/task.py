@@ -307,7 +307,7 @@ class IceCliffWalking(gym.Env):
             if trap != self.goal and trap != self.agent and (trap not in self.traps):
                 self.traps.append(trap)
         self.steps = 0
-        self.base_obs = np.zeros((3, self.size, self.size))
+        self.base_obs = np.zeros((4, self.size, self.size))
         self.base_obs[1, self.goal[0], self.goal[1]] = 1
         for trap in self.traps:
             self.base_obs[2, trap[0], trap[1]] = 1
@@ -315,8 +315,8 @@ class IceCliffWalking(gym.Env):
 
     def get_obs(self):
         obs = np.copy(self.base_obs)
-        obs[0] = self.steps / self.timeout
-        obs[1, self.agent[0], self.agent[1]] = 1
+        obs[3] = self.steps / self.timeout
+        obs[0, self.agent[0], self.agent[1]] = 1
         return obs
 
     def fall(self):
