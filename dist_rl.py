@@ -454,7 +454,7 @@ def test_random_seed(**kwargs):
 def batch_atari():
     cf = Config()
     cf.add_argument('--ind1', type=int, default=0)
-    cf.add_argument('--ind2', type=int, default=0)
+    cf.add_argument('--ind2', type=int, default=3)
     cf.merge()
 
     games = ['FreewayNoFrameskip-v4',
@@ -495,6 +495,8 @@ def batch_atari():
     tasks[cf.ind2]()
 
 def batch_ice_cliff():
+    parallel = True
+    runs = 3
     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0_ns_sp', runs=runs, gpu=0, parallel=parallel,
                target_beta=0, behavior_beta=0, option_type='constant_beta',
                random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
@@ -545,8 +547,8 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    # batch_ice_cliff()
-    batch_atari()
+    batch_ice_cliff()
+    # batch_atari()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)
