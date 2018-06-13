@@ -469,7 +469,7 @@ def batch_job():
     # gpu = gpus[cf.ind1]
 
 
-    parallel = False
+    parallel = True
     runs = 3
     # def task1():
     #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', parallel=parallel, runs=runs,
