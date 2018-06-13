@@ -27,7 +27,7 @@ class QuantileRegressionDQNAgent(BaseAgent):
             (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles))
 
     def huber(self, x):
-        cond = (x < 1.0).float().detach()
+        cond = (x.abs() < 1.0).float().detach()
         return 0.5 * x.pow(2) * cond + (x.abs() - 0.5) * (1 - cond)
 
     def evaluation_action(self, state):
