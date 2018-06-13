@@ -177,7 +177,7 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
 
 def bootstrapped_qr_dqn_ice(**kwargs):
     kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
-    kwargs.setdefault('gpu', 0)
+    kwargs.setdefault('gpu', -1)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('max_steps', 4e7)
     kwargs.setdefault('option_type', None)
@@ -190,23 +190,25 @@ def bootstrapped_qr_dqn_ice(**kwargs):
     kwargs.setdefault('behavior_beta', 0.5)
     kwargs.setdefault('smoothed_quantiles', False)
 
+    kwargs.setdefault('penalty', -1)
+
     config = Config()
     config.merge(kwargs)
 
-    task_fn = lambda log_dir: IceCliffWalkingTask(log_dir=log_dir, num_traps=0)
-    # config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
+    task_fn = lambda log_dir: IceCliffWalkingTask(log_dir=log_dir, num_traps=0, penalty=config.penalty)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, CliffConvBody(in_channels=4), gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(2e6), min_epsilon=0.05)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(4e6), min_epsilon=0.05)
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
     config.logger = get_logger()
+    # config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
     # config.evaluation_episodes = 10
     # config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
     run_iterations(BootstrappedNStepQRDQNAgent(config))
@@ -291,7 +293,7 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(2e6), min_epsilon=0.05)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(4e6), min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -309,6 +311,7 @@ def single_run(run, game, fn, tag, **kwargs):
     log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
 
+@console
 def multi_runs(game, fn, tag, **kwargs):
     kwargs.setdefault('runs', 2)
     runs = kwargs['runs']
@@ -444,7 +447,11 @@ def visualize_cliff_world(**kwargs):
             break
     print(total_reward)
 
-def batch_job():
+def test_random_seed(**kwargs):
+    random_seed()
+    print(np.random.randint(100))
+
+def batch_atari():
     cf = Config()
     cf.add_argument('--ind1', type=int, default=0)
     cf.add_argument('--ind2', type=int, default=0)
@@ -452,123 +459,100 @@ def batch_job():
 
     games = ['FreewayNoFrameskip-v4',
              'BeamRiderNoFrameskip-v4',
-             'BattleZoneNoFrameskip-v4',
-             'RobotankNoFrameskip-v4',
-             'QbertNoFrameskip-v4',
+             # 'BattleZoneNoFrameskip-v4',
+             # 'RobotankNoFrameskip-v4',
+             # 'QbertNoFrameskip-v4',
              ]
-    # games = [
-    #     'BreakoutNoFrameskip-v4',
-    #     'AssaultNoFrameskip-v4',
-    #     'JamesbondNoFrameskip-v4',
-    #     'QbertNoFrameskip-v4',
-    #     'DemonAttackNoFrameskip-v4'
-    # ]
-    # games = ['FreewayNoFrameskip-v4',
-    #          'PongNoFrameskip-v4',
-    #          'BattleZoneNoFrameskip-v4',
-    #          'JourneyEscapeNoFrameskip-v4',
-    #          'MsPacmanNoFrameskip-v4']
-    game = games[cf.ind1]
-    # gpu = gpus[cf.ind1]
 
+    game = games[cf.ind1]
 
     parallel = True
     runs = 3
-    # def task1():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', parallel=parallel, runs=runs,
-    #                option_type=None)
-    #
-    # def task2():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0e03', parallel=parallel, runs=runs,
-    #         option_type='constant_beta', target_beta=0, behavior_beta=0)
-    #
-    # def task3():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b0e03', parallel=parallel, runs=runs,
-    #            option_type='constant_beta', target_beta=0.1, behavior_beta=0)
-    #
-    # def task4():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t05b0e03', parallel=parallel, runs=runs,
-    #            option_type='constant_beta', target_beta=0.5, behavior_beta=0)
-    #
-    # def task5():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t09b0e03', parallel=parallel, runs=runs,
-    #            option_type='constant_beta', target_beta=0.9, behavior_beta=0)
-    #
-    # def task6():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t1b0e03', parallel=parallel, runs=runs,
-    #            option_type='constant_beta', target_beta=1.0, behavior_beta=0)
-    #
-    # tasks = [task1, task2, task3, task4, task5, task6]
-    # tasks[cf.ind2]()
-
-    # def task1():
-    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=runs, gpu=0, parallel=parallel,
-    #            target_beta=1, behavior_beta=1, option_type='constant_beta')
-    #
-    # def task2():
-    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b0', runs=runs, gpu=1, parallel=parallel,
-    #            target_beta=1, behavior_beta=0, option_type='constant_beta')
-    #
-    # def task3():
-    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b1', runs=runs, gpu=2, parallel=parallel,
-    #            target_beta=0, behavior_beta=1, option_type='constant_beta')
-    #
-    # def task4():
-    #     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0', runs=runs, gpu=3, parallel=parallel,
-    #            target_beta=0, behavior_beta=0, option_type='constant_beta')
 
     def task0():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0_ns', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0, behavior_beta=0, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+                   smoothed_quantiles=False)
 
     def task1():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b0e03', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0.1, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b01_ns', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+                   smoothed_quantiles=False)
 
     def task2():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t05b0e03', runs=runs, gpu=2, parallel=parallel,
-               target_beta=0.5, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0_s', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0, behavior_beta=0, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+                   smoothed_quantiles=True)
 
     def task3():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t09b0e03', runs=runs, gpu=3, parallel=parallel,
-               target_beta=0.9, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0.3, 4e7))
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', runs=runs, gpu=0, parallel=parallel,
+                   option_type=None)
 
-    def task4():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0e00', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0, 4e7))
-
-    def task5():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b0e00', runs=runs, gpu=0, parallel=parallel,
-               target_beta=0.1, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0, 4e7))
-
-    def task6():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t05b0e00', runs=runs, gpu=2, parallel=parallel,
-               target_beta=0.5, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0, 4e7))
-
-    def task7():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t09b0e00', runs=runs, gpu=3, parallel=parallel,
-               target_beta=0.9, behavior_beta=0, option_type='constant_beta', random_option_prob=LinearSchedule(1.0, 0, 4e7))
-
-    def task8():
-        multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=runs, gpu=0, parallel=parallel, option_type=None)
-
-    tasks = [task0, task1, task2, task3, task4, task5, task6, task7, task8]
+    tasks = [task0, task1, task2, task3]
     tasks[cf.ind2]()
 
-def test_random_seed(**kwargs):
-    random_seed()
-    print(np.random.randint(100))
+def batch_ice_cliff():
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0_ns_sp', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0, behavior_beta=0, option_type='constant_beta',
+               random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+               smoothed_quantiles=False, penalty=-1, id=0)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b01_ns_sp', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
+               random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+               smoothed_quantiles=False, penalty=-1, id=1)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0_s_sp', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0, behavior_beta=0, option_type='constant_beta',
+               random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+               smoothed_quantiles=True, penalty=-1, id=2)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b01_s_sp', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
+               random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+               smoothed_quantiles=True, penalty=-1, id=3)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0_ns_lp', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0, behavior_beta=0, option_type='constant_beta',
+               random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+               smoothed_quantiles=False, penalty=-10, id=4)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b01_ns_lp', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
+               random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+               smoothed_quantiles=False, penalty=-10, id=5)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0_s_lp', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0, behavior_beta=0, option_type='constant_beta',
+               random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+               smoothed_quantiles=True, penalty=-10, id=6)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t01b01_s_lp', runs=runs, gpu=0, parallel=parallel,
+               target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
+               random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+               smoothed_quantiles=True, penalty=-10, id=7)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original_sp', runs=runs, gpu=0, parallel=parallel,
+               option_type=None, penalty=-1, id=8)
+
+    multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original_lp', runs=runs, gpu=0, parallel=parallel,
+               option_type=None, penalty=-10, id=9)
 
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    # batch_job()
+    # batch_ice_cliff()
+    batch_atari()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0, smoothed_quantiles=True)
-    # bootstrapped_qr_dqn_ice()
+    # bootstrapped_qr_dqn_ice(option_type=None)
+    # bootstrapped_qr_dqn_ice(option_type=None, penalty=-10)
     # parallel = True
     # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=3, gpu=0, parallel=parallel)
     # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=3, gpu=0, parallel=parallel,

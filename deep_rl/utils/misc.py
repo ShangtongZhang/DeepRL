@@ -9,6 +9,7 @@ import pickle
 import os
 import datetime
 import torch
+import sys
 try:
     # python >= 3.5
     from pathlib import Path
@@ -38,11 +39,11 @@ def run_episodes(agent):
         config.logger.info('episode %d, reward %f, avg reward %f, total steps %d, episode step %d' % (
             ep, reward, avg_reward, agent.total_steps, step))
 
-        if config.save_interval and ep % config.save_interval == 0:
-            with open('data/%s-%s-online-stats-%s.bin' % (
-                    agent_type, config.tag, agent.task.name), 'wb') as f:
-                pickle.dump([steps, rewards], f)
-            agent.save('data/%s-%s-model-%s.bin' % (agent_type, config.tag, agent.task.name))
+        # if config.save_interval and ep % config.save_interval == 0:
+        #     with open('data/%s-%s-online-stats-%s.bin' % (
+        #             agent_type, config.tag, agent.task.name), 'wb') as f:
+        #         pickle.dump([steps, rewards], f)
+        #     agent.save('data/%s-%s-model-%s.bin' % (agent_type, config.tag, agent.task.name))
 
         if config.episode_limit and ep > config.episode_limit:
             break
@@ -70,11 +71,11 @@ def run_iterations(agent):
                 np.max(agent.last_episode_rewards),
                 np.min(agent.last_episode_rewards)
             ))
-        # if iteration % (config.iteration_log_interval * 100) == 0:
-            # with open('data/%s-%s-online-stats-%s.bin' % (agent_name, config.tag, agent.task.name), 'wb') as f:
-            #     pickle.dump({'rewards': rewards,
-            #                  'steps': steps}, f)
-            # agent.save('data/%s-%s-model-%s.bin' % (agent_name, config.tag, agent.task.name))
+        if iteration % (config.iteration_log_interval * 100) == 0:
+            with open('data/%s-%s-online-stats-%s.bin' % (agent_name, config.tag, agent.task.name), 'wb') as f:
+                pickle.dump({'rewards': rewards,
+                             'steps': steps}, f)
+            agent.save('data/%s-%s-model-%s.bin' % (agent_name, config.tag, agent.task.name))
         iteration += 1
         if config.max_steps and agent.total_steps >= config.max_steps:
             agent.close()
@@ -126,3 +127,25 @@ class Batcher:
         indices = np.arange(self.num_entries)
         np.random.shuffle(indices)
         self.data = [d[indices] for d in self.data]
+
+def to_numpy(x):
+    return x.detach().cpu().numpy()
+
+def console(fn):
+    def wrapper(*args, **kwargs):
+        if 'id' in kwargs:
+            kwargs['ids'] = [kwargs['id']]
+            del kwargs['id']
+        if 'ids' in kwargs:
+            ids = kwargs['ids']
+            if len(ids) + 1 != len(sys.argv):
+                return
+            valid = True
+            for i, id in enumerate(ids):
+                if id != int(sys.argv[i + 1]):
+                    valid = False
+                    break
+            if not valid:
+                return
+        fn(*args, **kwargs)
+    return wrapper
