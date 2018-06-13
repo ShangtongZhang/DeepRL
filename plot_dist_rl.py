@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
@@ -200,13 +200,13 @@ if __name__ == '__main__':
         't09b0e03',
     ]
 
-    for i, p in enumerate(patterns):
-        plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
-        plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (tag))
-        plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **train_kwargs)
-        plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (tag))
-        # deterministic_plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **test_kwargs)
-        # plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (train_kwargs['tag']))
+    # for i, p in enumerate(patterns):
+    #     plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
+    #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (tag))
+    #     plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **train_kwargs)
+    #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (tag))
+    #     # deterministic_plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **test_kwargs)
+    #     # plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (train_kwargs['tag']))
     # plt.show()
 
     train_kwargs = {
@@ -214,6 +214,7 @@ if __name__ == '__main__':
         'x_interval': 1000,
         'top_k': 0,
         'max_timesteps': int(3e5),
+        'down_sample': False
     }
     test_kwargs = {
         'average': True,
@@ -222,18 +223,11 @@ if __name__ == '__main__':
         'max_timesteps': int(3e6),
     }
     patterns = [
-        'original_qr_dqn',
-        # 't1b1',
-        't1b0',
-        # 't0b1',
-        't0b0',
-        # 't095b095',
-        # 't09b09',
-        # 't05b05',
-        't01b01',
+        'original',
+        't0b0ns',
+        't0b0s',
     ]
-    # for i, p in enumerate(patterns):
-    #     plot(pattern='.*bootstrapped_qr_dqn_cliff.*%s.*train.*' % (p), figure=0, color=i, **train_kwargs)
-        # deterministic_plot(pattern='.*dist_rl-CliffWalking/bootstrapped_qr_dqn_cliff.*%s.*test.*' % (p), figure=0, color=i, **test_kwargs)
-    # plt.show()
+    for i, p in enumerate(patterns):
+        plot(pattern='.*dist_rl-CliffWalking.*bootstrapped_qr_dqn_cliff.*%s.*train.*' % (p), figure=0, color=i, **train_kwargs)
+    plt.show()
 

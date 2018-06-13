@@ -36,8 +36,16 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
         self.is_initial_states = np.ones(config.num_workers, dtype=np.uint8)
 
     def option_to_q_values(self, options, quantiles):
-        selected_quantiles = self.candidate_quantiles[options]
-        q_values = quantiles[self.network.range(quantiles.size(0)), :, selected_quantiles]
+        config = self.config
+        if config.smoothed_quantiles:
+            if config.num_quantiles % config.num_options:
+                raise Exception('Smoothed quantile options is not supported')
+            quantiles = quantiles.view(quantiles.size(0), quantiles.size(1), config.num_options, -1)
+            quantiles = quantiles.mean(-1)
+            q_values = quantiles[self.network.range(quantiles.size(0)), :, options]
+        else:
+            selected_quantiles = self.candidate_quantiles[options]
+            q_values = quantiles[self.network.range(quantiles.size(0)), :, selected_quantiles]
         return q_values
 
     def huber(self, x):

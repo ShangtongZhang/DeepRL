@@ -149,6 +149,7 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0, kwargs['max_steps']))
     kwargs.setdefault('target_beta', 0.5)
     kwargs.setdefault('behavior_beta', 0.5)
+    kwargs.setdefault('smoothed_quantiles', False)
 
     config = Config()
     config.merge(kwargs)
@@ -161,14 +162,14 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
     config.network_fn = lambda state_dim, action_dim: \
         QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options,
-                                   FCBody(state_dim, hidden_units=(128, ), gate=F.relu))
+                                   FCBody(state_dim, hidden_units=(128, ), gate=F.relu), gpu=-1)
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=config.max_steps, min_epsilon=0.1)
     config.target_network_update_freq = 200
     config.rollout_length = 5
     config.logger = get_logger()
-    config.evaluation_episodes = 20
-    config.evaluation_episodes_interval = 1600
-    config.evaluation_env = task_fn(kwargs['log_dir'] + '-test')
+    # config.evaluation_episodes = 20
+    # config.evaluation_episodes_interval = 1600
+    # config.evaluation_env = task_fn(kwargs['log_dir'] + '-test')
     agent = BootstrappedNStepQRDQNAgent(config)
     if kwargs['dry']:
         return agent
@@ -187,12 +188,13 @@ def bootstrapped_qr_dqn_ice(**kwargs):
     kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0, kwargs['max_steps']))
     kwargs.setdefault('target_beta', 0.5)
     kwargs.setdefault('behavior_beta', 0.5)
+    kwargs.setdefault('smoothed_quantiles', False)
 
     config = Config()
     config.merge(kwargs)
 
-    task_fn = lambda log_dir: IceCliffWalkingTask(log_dir=log_dir)
-    config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
+    task_fn = lambda log_dir: IceCliffWalkingTask(log_dir=log_dir, num_traps=0)
+    # config.evaluation_env = task_fn(kwargs['log_dir']+'-test')
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
@@ -274,6 +276,7 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0.3, kwargs['max_steps']))
     kwargs.setdefault('target_beta', 0.5)
     kwargs.setdefault('behavior_beta', 0.5)
+    kwargs.setdefault('smoothed_quantiles', False)
 
     config = Config()
     config.merge(kwargs)
@@ -281,7 +284,7 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir, episode_life=True: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, episode_life=episode_life)
-    config.evaluation_env = task_fn(kwargs['log_dir']+'-test', episode_life=False)
+    # config.evaluation_env = task_fn(kwargs['log_dir']+'-test', episode_life=False)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
@@ -560,11 +563,13 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    batch_job()
+    # batch_job()
 
     # bootstrapped_qr_dqn_cliff()
+    # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)
+    # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0, smoothed_quantiles=True)
     # bootstrapped_qr_dqn_ice()
-    parallel = True
+    # parallel = True
     # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=3, gpu=0, parallel=parallel)
     # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t1b1', runs=3, gpu=0, parallel=parallel,
     #            target_beta=1, behavior_beta=1)
@@ -579,23 +584,13 @@ if __name__ == '__main__':
     parallel = False
     runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original_qr_dqn', parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t1b1',
-    #            option_type='constant_beta', target_beta=1, behavior_beta=1, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t1b0',
-    #            option_type='constant_beta', target_beta=1, behavior_beta=0, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b1',
-    #            option_type='constant_beta', target_beta=0, behavior_beta=1, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b0',
-    #            option_type='constant_beta', target_beta=0, behavior_beta=0, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t095b095',
-    #            option_type='constant_beta', target_beta=0.9, behavior_beta=0.9, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t09b09',
-    #            option_type='constant_beta', target_beta=0.9, behavior_beta=0.9, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t05b05',
-    #            option_type='constant_beta', target_beta=0.5, behavior_beta=0.5, parallel=parallel, runs=runs)
-    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t01b01',
-    #            option_type='constant_beta', target_beta=0.1, behavior_beta=0.1, parallel=parallel, runs=runs)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='original', parallel=parallel, runs=runs,
+    #            option_type=None)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b0ns', parallel=parallel, runs=runs,
+    #            option_type='constant_beta', target_beta=0, behavior_beta=0, smoothed_quantiles=False)
+    # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b0s', parallel=parallel, runs=runs,
+    #            option_type='constant_beta', target_beta=0, behavior_beta=0, smoothed_quantiles=True)
+
 
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_q',
     #            option_type='per_episode', parallel=parallel, runs=runs,
