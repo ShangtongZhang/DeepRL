@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #export CUDA_VISIBLE_DEVICES=0
 GPUs=(0 1 2 3 0 1)
-for i in $(seq 0 5); do
+for i in $(seq 0 2); do
     export CUDA_VISIBLE_DEVICES=${GPUs[$i]}
     sleep 4s
 #    echo $(($i + $1))
