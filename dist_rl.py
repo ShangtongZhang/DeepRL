@@ -547,7 +547,7 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    batch_ice_cliff()
+    # batch_ice_cliff()
     # batch_atari()
 
     # bootstrapped_qr_dqn_cliff()
