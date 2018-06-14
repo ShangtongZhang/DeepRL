@@ -1,5 +1,5 @@
 import matplotlib
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
@@ -129,7 +129,7 @@ if __name__ == '__main__':
         'episode_window': 100,
         'top_k': 0,
         # 'max_timesteps': int(4e7),
-        'max_timesteps': int(1e7),
+        'max_timesteps': int(3e7),
         'average': True,
         'x_interval': 1000
     }
@@ -140,23 +140,15 @@ if __name__ == '__main__':
         'max_timesteps': int(4e7),
     }
     patterns = [
-        # 'original_qr_dqn',
-        # 'per_episode_random_off_termination',
-        # 'per_episode_decay_off_termination',
-        # 'per_episode_decay_intro_q',
-        # '9_options_only',
-        # 'mean_and_9_options',
         'original',
-        't0b0e03',
-        't01b0e03',
-        't05b0e03',
-        't09b0e03',
-        't1b0e03',
+        't0b0_ns',
+        't01b01_ns',
+        't0b0_s',
     ]
-    # for j, game in enumerate(games):
-    #     for i, p in enumerate(patterns):
-            # plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-            # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+    for j, game in enumerate(games):
+        for i, p in enumerate(patterns):
+            plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+            plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
             # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
             # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
@@ -200,6 +192,24 @@ if __name__ == '__main__':
         't09b0e03',
     ]
 
+    tag = 'small-penalty'
+    patterns = [
+        't0b0_ns_sp',
+        't01b01_ns_sp',
+        't0b0_s_sp',
+        't01b01_s_sp',
+        'original_sp',
+    ]
+
+    tag = 'large-penalty'
+    patterns = [
+        't0b0_ns_lp',
+        't01b01_ns_lp',
+        't0b0_s_lp',
+        't01b01_s_lp',
+        'original_lp',
+    ]
+
     # for i, p in enumerate(patterns):
     #     plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
     #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (tag))
@@ -227,7 +237,7 @@ if __name__ == '__main__':
         't0b0ns',
         't0b0s',
     ]
-    for i, p in enumerate(patterns):
-        plot(pattern='.*dist_rl-CliffWalking.*bootstrapped_qr_dqn_cliff.*%s.*train.*' % (p), figure=0, color=i, **train_kwargs)
-    plt.show()
+    # for i, p in enumerate(patterns):
+    #     plot(pattern='.*dist_rl-CliffWalking.*bootstrapped_qr_dqn_cliff.*%s.*train.*' % (p), figure=0, color=i, **train_kwargs)
+    # plt.show()
 
