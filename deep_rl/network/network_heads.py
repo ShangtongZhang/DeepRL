@@ -592,7 +592,7 @@ class QuantileEnsembleDDPGNet(nn.Module, BaseNet):
             best = torch.argmax(q_values, dim=-1)
             best_action = actions[self.range(actions.size(0)), best, :]
             return best_action.cpu().detach().numpy()
-        return q_values
+        return q_values, actions
 
     def feature(self, obs):
         obs = self.tensor(obs)

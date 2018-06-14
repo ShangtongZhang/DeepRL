@@ -91,6 +91,7 @@ def ucb_ddpg_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('std', LinearSchedule(0.2))
     kwargs.setdefault('num_quantiles', 20)
     kwargs.setdefault('num_actors', 5)
+    kwargs.setdefault('ucb_constant', 0)
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -122,7 +123,7 @@ def ucb_ddpg_continuous(game, log_dir=None, **kwargs):
 
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
-    log_dir = './log/plan-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
+    log_dir = './log/ucb-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game, log_dir, tag=tag, **kwargs)
 
 def multi_runs(game, fn, tag, **kwargs):
@@ -202,7 +203,8 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
     # quantile_ddpg_continuous(game)
-    ucb_ddpg_continuous(game)
+    # ucb_ddpg_continuous(game)
+    ucb_ddpg_continuous(game, ucb_constant=50)
 
     games = [
         # 'RoboschoolAnt-v1',

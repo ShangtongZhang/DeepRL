@@ -8,6 +8,7 @@ from ..network import *
 from ..component import *
 from .BaseAgent import *
 import torchvision
+import math
 
 class QuantileEnsembleDDPGAgent(BaseAgent):
     def __init__(self, config):
@@ -49,7 +50,16 @@ class QuantileEnsembleDDPGAgent(BaseAgent):
             self.evaluate()
             self.evaluation_episodes()
 
-            action = self.network.predict(np.stack([state]), True).flatten()
+            q_values, actions = self.network.predict(np.stack([state]))
+
+            ucb_eps = config.ucb_constant * math.sqrt(math.log(self.total_steps + 1) / (self.total_steps + 1))
+            upper_bound = q_values[:, :, -self.config.num_quantiles // 2:].mean(-1)
+            q_values = q_values.mean(-1) + ucb_eps * upper_bound
+
+            best = torch.argmax(q_values, dim=-1)
+            action = actions[self.network.range(actions.size(0)), best, :]
+            action = action.cpu().detach().numpy().flatten()
+
             action += self.random_process.sample()
 
             next_state, reward, done, info = self.task.step(action)
