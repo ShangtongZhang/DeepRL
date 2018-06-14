@@ -207,11 +207,11 @@ if __name__ == '__main__':
     # ucb_ddpg_continuous(game)
     # ucb_ddpg_continuous(game, ucb_constant=50)
 
-    parallel = False
-    multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel, id=0)
-    multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c0', parallel=parallel, id=1)
-    multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c10', parallel=parallel, id=2)
-    multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c50', parallel=parallel, id=3)
+    parallel = True
+    # multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel)
+    # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c0', parallel=parallel)
+    # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c10', parallel=parallel)
+    # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c50', parallel=parallel)
 
     games = [
         # 'RoboschoolAnt-v1',
