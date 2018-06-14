@@ -13,3 +13,4 @@ from .OptionD3PG_agent import *
 from .GammaDDPG_agent import *
 from .PlanDDPG_agent import *
 from .QuantileDDPG_agent import *
+from .QuantileEnsembleDDPG_agent import *
