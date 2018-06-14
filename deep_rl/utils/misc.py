@@ -149,3 +149,6 @@ def console(fn):
                 return
         fn(*args, **kwargs)
     return wrapper
+
+def huber(x, k=1.0):
+    return torch.where(x.abs() < k, 0.5 * x.pow(2), k * (x.abs() - 0.5 * k))

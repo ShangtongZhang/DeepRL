@@ -39,14 +39,17 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(DDPGAgent(config))
 
-def ddpg_shared(game, log_dir=None, **kwargs):
+def quantile_ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
-    kwargs.setdefault('tag', ddpg_shared.__name__)
+    kwargs.setdefault('tag', ddpg_continuous.__name__)
     kwargs.setdefault('q_l2_weight', 0)
     kwargs.setdefault('reward_scale', 1.0)
+    kwargs.setdefault('option_epsilon', LinearSchedule(0))
+    kwargs.setdefault('action_based_noise', True)
     kwargs.setdefault('noise', OrnsteinUhlenbeckProcess)
     kwargs.setdefault('std', LinearSchedule(0.2))
+    kwargs.setdefault('num_quantiles', 20)
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -54,14 +57,14 @@ def ddpg_shared(game, log_dir=None, **kwargs):
     config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
     config.evaluation_env = config.task_fn(log_dir=log_dir)
 
-    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
-        state_dim, action_dim,
-        phi_body=FCBody(state_dim, (400, ), gate=config.gate),
-        actor_body=FCBody(400, (300, ), gate=config.gate),
-        critic_body=FCBodyWithAction(400, action_dim, (300, ), gate=config.gate),
+    config.network_fn = lambda state_dim, action_dim: QuantileDDPGNet(
+        state_dim, action_dim, config.num_quantiles,
+        actor_body=FCBody(state_dim, (300, 200), gate=config.gate),
+        critic_body=TwoLayerFCBodyWithAction(
+            state_dim, action_dim, (400, 300), gate=config.gate),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
-            params, lr=1e-3, weight_decay=config.q_l2_weight)
+            params, lr=1e-3, weight_decay=config.q_l2_weight),
         )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
@@ -74,46 +77,7 @@ def ddpg_shared(game, log_dir=None, **kwargs):
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
-    run_episodes(DDPGAgent(config))
-
-def plan_ddpg(game, log_dir=None, **kwargs):
-    config = Config()
-    kwargs.setdefault('gate', F.tanh)
-    kwargs.setdefault('tag', ddpg_continuous.__name__)
-    kwargs.setdefault('reward_scale', 1.0)
-    kwargs.setdefault('noise', OrnsteinUhlenbeckProcess)
-    kwargs.setdefault('std', LinearSchedule(0.2))
-    kwargs.setdefault('depth', 2)
-    kwargs.setdefault('critic_loss_weight', 10)
-    kwargs.setdefault('num_actors', 5)
-    kwargs.setdefault('detach_action', True)
-    kwargs.setdefault('mask', False)
-    config.merge(kwargs)
-    if log_dir is None:
-        log_dir = get_default_log_dir(kwargs['tag'])
-
-    config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
-    config.evaluation_env = config.task_fn(log_dir=log_dir)
-
-    config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
-        state_dim, action_dim,
-        phi_body=FCBody(state_dim, (400, ), gate=F.tanh),
-        num_actors=config.num_actors,
-        discount=config.discount,
-        detach_action=config.detach_action)
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
-
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
-    config.discount = 0.99
-    config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
-    config.max_steps = 1e6
-    config.evaluation_episodes_interval = int(1e4)
-    config.evaluation_episodes = 20
-    config.min_memory_size = 64
-    config.target_network_mix = 1e-3
-    config.logger = get_logger()
-    run_episodes(PlanDDPGAgent(config))
+    run_episodes(QuantileDDPGAgent(config))
 
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
@@ -176,25 +140,6 @@ def batch_job():
     game = games[cf.ind1]
 
     parallel = True
-    # def task1():
-    #     multi_runs(game, plan_ddpg, tag='d1m1', parallel=parallel,
-    #                depth=1, mask=True)
-
-    def task2():
-        multi_runs(game, plan_ddpg, tag='d1m0', parallel=parallel,
-                   depth=1, mask=False)
-
-    # def task3():
-    #     multi_runs(game, plan_ddpg, tag='d2m1', parallel=parallel,
-    #                depth=2, mask=True)
-    def task4():
-        multi_runs(game, plan_ddpg, tag='d2m0', parallel=parallel,
-                   depth=2, mask=False)
-
-    # tasks = [task1, task2, task3, task4]
-    tasks = [task2, task4]
-
-    tasks[cf.ind2]()
 
 if __name__ == '__main__':
     mkdir('data')
@@ -206,7 +151,7 @@ if __name__ == '__main__':
     torch.set_num_threads(1)
     # batch_job()
 
-    # game = 'RoboschoolAnt-v1'
+    game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
     # game = 'RoboschoolHalfCheetah-v1'
     # game = 'RoboschoolHopper-v1'
@@ -215,8 +160,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    # plan_ddpg(game, mask=True)
-    # ddpg_shared(game)
+    quantile_ddpg_continuous(game)
 
     games = [
         # 'RoboschoolAnt-v1',
@@ -226,7 +170,3 @@ if __name__ == '__main__':
         'RoboschoolReacher-v1',
         'RoboschoolHumanoid-v1',
     ]
-    # for game in games:
-    #     multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=True)
-
-

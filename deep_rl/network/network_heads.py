@@ -502,3 +502,50 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
         phi = self.compute_phi(obs)
         actions = self.compute_a(phi, detach=False)
         return actions
+
+class QuantileDDPGNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 num_quantiles,
+                 actor_opt_fn,
+                 critic_opt_fn,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None,
+                 gpu=-1):
+        super(QuantileDDPGNet, self).__init__()
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, num_quantiles), 1e-3)
+        self.num_quantiles = num_quantiles
+
+        self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
+        self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
+        self.phi_params = list(self.phi_body.parameters())
+
+        self.actor_opt = actor_opt_fn(self.actor_params + self.phi_params)
+        self.critic_opt = critic_opt_fn(self.critic_params + self.phi_params)
+        self.set_gpu(gpu)
+
+    def predict(self, obs, to_numpy=False):
+        phi = self.feature(obs)
+        action = self.actor(phi)
+        if to_numpy:
+            return action.cpu().detach().numpy()
+        return action
+
+    def feature(self, obs):
+        obs = self.tensor(obs)
+        return self.phi_body(obs)
+
+    def actor(self, phi):
+        return F.tanh(self.fc_action(self.actor_body(phi)))
+
+    def critic(self, phi, a):
+        return self.fc_critic(self.critic_body(phi, a))
