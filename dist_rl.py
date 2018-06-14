@@ -457,9 +457,9 @@ def batch_atari():
 
     games = ['FreewayNoFrameskip-v4',
              'BeamRiderNoFrameskip-v4',
+             'RobotankNoFrameskip-v4',
+             'QbertNoFrameskip-v4',
              # 'BattleZoneNoFrameskip-v4',
-             # 'RobotankNoFrameskip-v4',
-             # 'QbertNoFrameskip-v4',
              ]
 
     game = games[cf.ind1]
@@ -480,10 +480,10 @@ def batch_atari():
                    smoothed_quantiles=False)
 
     def task2():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0_s', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0, behavior_beta=0, option_type='constant_beta',
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001_ns', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
                    random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
-                   smoothed_quantiles=True)
+                   smoothed_quantiles=False)
 
     def task3():
         multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', runs=runs, gpu=0, parallel=parallel,
@@ -532,8 +532,8 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    batch_ice_cliff()
-    # batch_atari()
+    # batch_ice_cliff()
+    batch_atari()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)
