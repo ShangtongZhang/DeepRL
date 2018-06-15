@@ -187,9 +187,9 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
         phi = self.network.phi_body(obs)
         phi_a = self.network.actor_body(phi)
         phi_v = self.network.critic_body(phi)
-        prob = F.softmax(self.network.fc_action(phi_a), dim=-1)
+        logits = self.network.fc_action(phi_a)
         v = self.network.fc_critic(phi_v)
-        dist = torch.distributions.Categorical(probs=prob)
+        dist = torch.distributions.Categorical(logits=logits)
         if action is None:
             action = dist.sample()
         log_prob = dist.log_prob(action).unsqueeze(-1)
