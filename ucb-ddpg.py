@@ -210,8 +210,8 @@ if __name__ == '__main__':
     parallel = True
     # multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel)
     # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c0', parallel=parallel)
-    # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c10', parallel=parallel)
-    # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c50', parallel=parallel)
+    # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c10', parallel=parallel, ucb_constant=10)
+    multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c50', parallel=parallel, ucb_constant=50)
 
     games = [
         # 'RoboschoolAnt-v1',
