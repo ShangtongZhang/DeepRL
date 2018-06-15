@@ -468,28 +468,64 @@ def batch_atari():
     runs = 3
 
     def task0():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0_ns', runs=runs, gpu=0, parallel=parallel,
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0_s', runs=runs, gpu=0, parallel=parallel,
                    target_beta=0, behavior_beta=0, option_type='constant_beta',
                    random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
-                   smoothed_quantiles=False)
+                   smoothed_quantiles=True)
 
     def task1():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b01_ns', runs=runs, gpu=0, parallel=parallel,
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b01_s', runs=runs, gpu=0, parallel=parallel,
                    target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
                    random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
-                   smoothed_quantiles=False)
+                   smoothed_quantiles=True)
 
     def task2():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001_ns', runs=runs, gpu=0, parallel=parallel,
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001_s', runs=runs, gpu=0, parallel=parallel,
                    target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
                    random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
-                   smoothed_quantiles=False)
+                   smoothed_quantiles=True)
 
     def task3():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', runs=runs, gpu=0, parallel=parallel,
-                   option_type=None)
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0e0_s', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0, behavior_beta=0, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
+                   smoothed_quantiles=True)
 
-    tasks = [task0, task1, task2, task3]
+    def task4():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b01e0_s', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
+                   smoothed_quantiles=True)
+
+    def task5():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001e0_s', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
+                   smoothed_quantiles=True)
+
+    def task6():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0e0_ns', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0, behavior_beta=0, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
+                   smoothed_quantiles=False)
+
+    def task7():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b01e0_ns', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
+                   smoothed_quantiles=False)
+
+    def task8():
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001e0_ns', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
+                   smoothed_quantiles=False)
+
+    # def task3():
+    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', runs=runs, gpu=0, parallel=parallel,
+    #                option_type=None)
+
+    tasks = [task0, task1, task2, task3, task4, task5, task6, task7, task8]
     tasks[cf.ind2]()
 
 def batch_ice_cliff():

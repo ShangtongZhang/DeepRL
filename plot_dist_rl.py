@@ -112,10 +112,10 @@ if __name__ == '__main__':
     # game = 'BankHeist'
     # game = 'BattleZone'
     games = [
-        'FreewayNoFrameskip-v4',
-        'BeamRiderNoFrameskip-v4',
+        # 'FreewayNoFrameskip-v4',
+        # 'BeamRiderNoFrameskip-v4',
         # 'BattleZoneNoFrameskip-v4',
-        # 'RobotankNoFrameskip-v4',
+        'RobotankNoFrameskip-v4',
         # 'QbertNoFrameskip-v4',
     ]
     # games = [
@@ -128,8 +128,8 @@ if __name__ == '__main__':
     train_kwargs = {
         'episode_window': 100,
         'top_k': 0,
-        # 'max_timesteps': int(4e7),
-        'max_timesteps': int(3e7),
+        'max_timesteps': int(4e7),
+        # 'max_timesteps': int(3e7),
         'average': True,
         'x_interval': 1000
     }
@@ -143,7 +143,8 @@ if __name__ == '__main__':
         'original',
         't0b0_ns',
         't01b01_ns',
-        't0b0_s',
+        't001b001_ns',
+        # 't0b0_s',
     ]
     for j, game in enumerate(games):
         for i, p in enumerate(patterns):
@@ -192,22 +193,15 @@ if __name__ == '__main__':
         't09b0e03',
     ]
 
-    tag = 'small-penalty'
+    tag = 'on-termination'
     patterns = [
-        't0b0_ns_sp',
-        't01b01_ns_sp',
-        't0b0_s_sp',
-        't01b01_s_sp',
-        'original_sp',
-    ]
-
-    tag = 'large-penalty'
-    patterns = [
-        't0b0_ns_lp',
-        't01b01_ns_lp',
-        't0b0_s_lp',
-        't01b01_s_lp',
-        'original_lp',
+        't0b0_ns',
+        't001b001_ns',
+        't01b01_ns',
+        't0b0_s',
+        't001b001_s',
+        't01b01_s',
+        'original',
     ]
 
     # for i, p in enumerate(patterns):
