@@ -106,6 +106,8 @@ if __name__ == '__main__':
         'original',
         'q_ddpg',
         'ucb_ddpg_c0',
+        'ucb_ddpg_c10',
+        'ucb_ddpg_c50',
     ]
     for j, game in enumerate(games):
         for i, p in enumerate(patterns):
