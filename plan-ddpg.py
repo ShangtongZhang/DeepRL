@@ -168,33 +168,37 @@ def batch_job():
     games = [
         # 'RoboschoolAnt-v1',
         # 'RoboschoolWalker2d-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1',
+        # 'RoboschoolHopper-v1',
+        # 'RoboschoolHalfCheetah-v1',
+        # 'RoboschoolReacher-v1',
+        # 'RoboschoolHumanoid-v1',
+        'RoboschoolPong-v1',
+        'RoboschoolHumanoidFlagrun-v1',
+        'RoboschoolHumanoidFlagrunHarder-v1',
+        'RoboschoolInvertedPendulum-v1',
+        'RoboschoolInvertedPendulumSwingup-v1',
+        'RoboschoolInvertedDoublePendulum-v1',
     ]
     game = games[cf.ind1]
 
     parallel = True
-    # def task1():
-    #     multi_runs(game, plan_ddpg, tag='d1m1', parallel=parallel,
-    #                depth=1, mask=True)
+
+    def task1():
+        multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
 
     def task2():
         multi_runs(game, plan_ddpg, tag='d1m0', parallel=parallel,
                    depth=1, mask=False)
 
-    # def task3():
-    #     multi_runs(game, plan_ddpg, tag='d2m1', parallel=parallel,
-    #                depth=2, mask=True)
-    def task4():
+    def task3():
         multi_runs(game, plan_ddpg, tag='d2m0', parallel=parallel,
                    depth=2, mask=False)
 
-    # tasks = [task1, task2, task3, task4]
-    tasks = [task2, task4]
-
-    tasks[cf.ind2]()
+    task1()
+    task2()
+    task3()
+    # tasks = [task1, task2, task3]
+    # tasks[cf.ind2]()
 
 if __name__ == '__main__':
     mkdir('data')
