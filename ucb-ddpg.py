@@ -133,6 +133,9 @@ def option_ddpg_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('std', LinearSchedule(0.2))
     kwargs.setdefault('num_quantiles', 20)
     kwargs.setdefault('num_actors', 5)
+    kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, kwargs['num_actors']))
+    kwargs.setdefault('beta', 0)
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0, int(1e6)))
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])

@@ -659,7 +659,7 @@ class QuantileOptionDDPGNet(nn.Module, BaseNet):
 
     def actor(self, phi):
         actor_phi = self.actor_body(phi)
-        actions =  F.tanh(self.fc_action(actor_phi)).view(-1, self.num_actors, self.action_dim)
+        actions = F.tanh(self.fc_action(actor_phi)).view(-1, self.num_actors, self.action_dim)
         q_options = self.fc_q_option(actor_phi)
         return actions, q_options
 

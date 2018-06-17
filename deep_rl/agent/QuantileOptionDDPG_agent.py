@@ -36,7 +36,12 @@ class QuantileOptionDDPGAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
-        action = self.network.predict(state, to_numpy=True).flatten()
+        phi = self.network.feature(state)
+        actions, q_options = self.network.actor(phi)
+        if self.info['initial_state'] or np.random.rand() < self.config.beta:
+            self.info['prev_option'] = torch.argmax(q_options, dim=-1)
+        action = actions[0, self.info['prev_option']]
+        action = to_numpy(action).flatten()
         self.config.state_normalizer.unset_read_only()
         return action
 
@@ -105,10 +110,10 @@ class QuantileOptionDDPGAgent(BaseAgent):
                 critic_loss = critic_loss.mean(1).mean(0).sum()
 
                 options = self.network.tensor(options).long()
-                q_option_next = config.beta * q_option_next.max(-1) + (1 - config.beta) * \
+                q_option_next = config.beta * q_option_next.max(-1)[0] + (1 - config.beta) * \
                                 q_option_next[self.network.range(options.size(0)), options]
                 q_option_next = q_option_next.unsqueeze(-1)
-                q_option_next = config.discount * q_option_next (1 - terminals)
+                q_option_next = config.discount * q_option_next * (1 - terminals)
                 q_option_next.add_(rewards)
                 q_option_next = q_option_next.detach()
 
@@ -121,16 +126,15 @@ class QuantileOptionDDPGAgent(BaseAgent):
                 self.network.critic_opt.step()
 
                 phi = self.network.feature(states)
-                action = self.network.actor(phi)
-                q = self.network.critic(
-                    phi.detach().unsqueeze(1).expand(-1, action.size(1), -1), action).mean(-1).sum(-1).mean()
+                action, _ = self.network.actor(phi)
+                q = self.network.critic(phi.detach().unsqueeze(1).expand(-1, action.size(1), -1), action)
                 q = q.view(q.size(0), q.size(1), config.num_actors, -1).mean(-1)
                 policy_loss = 0
                 for i in range(config.num_actors):
                     policy_loss -= q[:, i, i]
 
                 self.network.zero_grad()
-                policy_loss.backward()
+                policy_loss.mean().backward()
                 self.network.actor_opt.step()
 
                 self.soft_update(self.target_network, self.network)
