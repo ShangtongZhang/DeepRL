@@ -25,8 +25,6 @@ class QuantileOptionDDPGAgent(BaseAgent):
         self.cumulative_density = self.network.tensor(
             (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles))
 
-        self.candidate_quantiles = self.network.tensor(config.candidate_quantiles).long()
-
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.detach_()
@@ -91,12 +89,7 @@ class QuantileOptionDDPGAgent(BaseAgent):
 
                 phi_next = self.target_network.feature(next_states)
                 a_next, q_option_next = self.target_network.actor(phi_next)
-                q_next = self.target_network.critic(
-                    phi_next.unsqueeze(1).expand(-1, a_next.size(1), -1), a_next)
-
-                best_a_next = torch.argmax(q_next.mean(-1), dim=-1)
-                q_next = q_next[self.network.range(q_next.size(0)), best_a_next, :]
-
+                q_next = self.target_network.critic(phi_next, a_next[np.arange(phi_next.size(0)), -1, :])
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)
@@ -128,10 +121,11 @@ class QuantileOptionDDPGAgent(BaseAgent):
                 phi = self.network.feature(states)
                 action, _ = self.network.actor(phi)
                 q = self.network.critic(phi.detach().unsqueeze(1).expand(-1, action.size(1), -1), action)
-                q = q.view(q.size(0), q.size(1), config.num_actors, -1).mean(-1)
+                q = q.view(q.size(0), q.size(1), config.num_actors - 1, -1).mean(-1)
                 policy_loss = 0
-                for i in range(config.num_actors):
+                for i in range(0, config.num_actors - 1):
                     policy_loss -= q[:, i, i]
+                policy_loss -= q[self.network.range(q.size(0)), -1, :].mean(-1)
 
                 self.network.zero_grad()
                 policy_loss.mean().backward()
