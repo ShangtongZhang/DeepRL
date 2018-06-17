@@ -150,7 +150,7 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
         target_quantile_values = target_quantile_values.t().unsqueeze(-1)
         diff = target_quantile_values - quantile_values
         loss = self.huber(diff) * (self.cumulative_density.view(1, -1) - (diff.detach() < 0).float()).abs()
-        loss = loss.mean(1).sum()
+        loss = loss.mean(0).mean(0).sum()
 
         if config.option_type is not None:
             option_loss = (option_values - option_returns).pow(2).mul(0.5).mean()

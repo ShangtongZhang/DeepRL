@@ -139,6 +139,7 @@ if __name__ == '__main__':
         'rep': 10,
         'max_timesteps': int(4e7),
     }
+
     patterns = [
         'original',
         't0b0_ns',
@@ -146,6 +147,27 @@ if __name__ == '__main__':
         't001b001_ns',
         # 't0b0_s',
     ]
+
+    patterns = [
+        't0b0_ns',
+        't001b001_ns',
+        't01b01_ns',
+
+        't0b0e0_ns',
+        't01b01e0_ns',
+        't001b001e0_ns',
+
+        't0b0_s',
+        't001b001_s',
+        't01b01_s',
+
+        't0b0e0_s',
+        't01b01e0_s',
+        't001b001e0_s',
+
+        'original',
+    ]
+
     for j, game in enumerate(games):
         for i, p in enumerate(patterns):
             plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)

@@ -215,20 +215,24 @@ def bootstrapped_qr_dqn_ice(**kwargs):
 def n_step_dqn_pixel_atari(game, **kwargs):
     config = Config()
     kwargs.setdefault('gpu', 0)
+    kwargs.setdefault('tag', n_step_dqn_pixel_atari.__name__)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     config.history_length = 4
-    task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
+    task_fn = lambda log_dir: PixelAtari(game, frame_skip=4, history_length=config.history_length,
+                                         log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(n_step_dqn_pixel_atari.__name__))
+                                              log_dir=kwargs['log_dir']+'-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
+    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(4e6), min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
+    config.max_steps = int(4e7)
     config.logger = get_logger()
     run_iterations(NStepDQNAgent(config))
 
@@ -273,10 +277,10 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('option_type', None)
     kwargs.setdefault('num_options', 10)
     kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, 10))
-    kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0.3, kwargs['max_steps']))
-    kwargs.setdefault('target_beta', 0.5)
-    kwargs.setdefault('behavior_beta', 0.5)
-    kwargs.setdefault('smoothed_quantiles', False)
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0, kwargs['max_steps']))
+    kwargs.setdefault('target_beta', 0.01)
+    kwargs.setdefault('behavior_beta', 0.01)
+    kwargs.setdefault('smoothed_quantiles', True)
 
     config = Config()
     config.merge(kwargs)
@@ -284,7 +288,6 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir, episode_life=True: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                          log_dir=log_dir, episode_life=episode_life)
-    # config.evaluation_env = task_fn(kwargs['log_dir']+'-test', episode_life=False)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
@@ -299,8 +302,6 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.logger = get_logger()
-    # config.evaluation_episodes = 10
-    # config.evaluation_episodes_interval = config.num_workers * config.target_network_update_freq
     run_iterations(BootstrappedNStepQRDQNAgent(config))
 
 # utility
@@ -459,7 +460,7 @@ def batch_atari():
              'BeamRiderNoFrameskip-v4',
              'RobotankNoFrameskip-v4',
              'QbertNoFrameskip-v4',
-             # 'BattleZoneNoFrameskip-v4',
+             'BattleZoneNoFrameskip-v4',
              ]
 
     game = games[cf.ind1]
@@ -468,64 +469,26 @@ def batch_atari():
     runs = 3
 
     def task0():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0_s', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0, behavior_beta=0, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001_s_le', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
                    smoothed_quantiles=True)
 
     def task1():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b01_s', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001_s_se', runs=runs, gpu=0, parallel=parallel,
+                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
+                   random_option_prob=LinearSchedule(1.0, 0, 4e6),
                    smoothed_quantiles=True)
 
     def task2():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001_s', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0.3, 4e7),
-                   smoothed_quantiles=True)
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='n_step_qr_dqn', runs=runs, gpu=0, parallel=parallel,
+                   option_type=None)
 
     def task3():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0e0_s', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0, behavior_beta=0, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
-                   smoothed_quantiles=True)
+        multi_runs(game, n_step_dqn_pixel_atari, tag='n_step_dqn', runs=runs, gpu=0, parallel=parallel,
+                   option_type=None)
 
-    def task4():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b01e0_s', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
-                   smoothed_quantiles=True)
-
-    def task5():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001e0_s', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
-                   smoothed_quantiles=True)
-
-    def task6():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t0b0e0_ns', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0, behavior_beta=0, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
-                   smoothed_quantiles=False)
-
-    def task7():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t01b01e0_ns', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0.1, behavior_beta=0.1, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
-                   smoothed_quantiles=False)
-
-    def task8():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001e0_ns', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0, 4e7),
-                   smoothed_quantiles=False)
-
-    # def task3():
-    #     multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='original', runs=runs, gpu=0, parallel=parallel,
-    #                option_type=None)
-
-    tasks = [task0, task1, task2, task3, task4, task5, task6, task7, task8]
+    tasks = [task0, task1, task2, task3]
     tasks[cf.ind2]()
 
 def batch_ice_cliff():
