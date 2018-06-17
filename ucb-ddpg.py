@@ -133,7 +133,6 @@ def option_ddpg_continuous(game, log_dir=None, **kwargs):
     kwargs.setdefault('std', LinearSchedule(0.2))
     kwargs.setdefault('num_quantiles', 20)
     kwargs.setdefault('num_actors', 6)
-    # kwargs.setdefault('candidate_quantiles', np.linspace(0, kwargs['num_quantiles'] - 1, kwargs['num_actors']))
     kwargs.setdefault('beta', 0)
     kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0, int(1e6)))
     kwargs.setdefault('detach', False)
@@ -169,7 +168,7 @@ def option_ddpg_continuous(game, log_dir=None, **kwargs):
 
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
-    log_dir = './log/ucb-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
+    log_dir = './log/option-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game, log_dir, tag=tag, **kwargs)
 
 @console
@@ -250,12 +249,21 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
     # option_ddpg_continuous(game)
-    option_ddpg_continuous(game, detach=True)
+    # option_ddpg_continuous(game, detach=True)
     # quantile_ddpg_continuous(game)
     # ucb_ddpg_continuous(game)
     # ucb_ddpg_continuous(game, ucb_constant=50)
 
     parallel = True
+    multi_runs(game, option_ddpg_continuous, tag='b0e0d0', parallel=parallel,
+               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=False, id=0)
+    multi_runs(game, option_ddpg_continuous, tag='b0e0d1', parallel=parallel,
+               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=True, id=0)
+    multi_runs(game, option_ddpg_continuous, tag='b0e1d0', parallel=parallel,
+               beta=0, random_option_prob=LinearSchedule(1.0, 1.0, int(1e6)), detach=False, id=1)
+    multi_runs(game, option_ddpg_continuous, tag='b0e1d1', parallel=parallel,
+               beta=0, random_option_prob=LinearSchedule(1.0, 1.0, int(1e6)), detach=True, id=1)
+
     # multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel)
     # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c0', parallel=parallel)
     # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c10', parallel=parallel, ucb_constant=10)
