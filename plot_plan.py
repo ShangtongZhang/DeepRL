@@ -316,18 +316,16 @@ if __name__ == '__main__':
     #     'per_step_random'
     # ]
     games = [
-        # 'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
+        'RoboschoolAnt-v1',
+        'RoboschoolWalker2d-v1',
         'RoboschoolHopper-v1',
         'RoboschoolHalfCheetah-v1',
         'RoboschoolReacher-v1',
         'RoboschoolHumanoid-v1',
     ]
     patterns = [
-        # 'd1m0',
-        # 'd1m1',
-        # 'd2m0',
-        # 'd2m1',
+        'd1m0',
+        'd2m0',
         'shared',
         'ddpg_continuous'
     ]
