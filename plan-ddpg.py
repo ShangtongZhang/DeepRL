@@ -208,7 +208,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    # batch_job()
+    batch_job()
 
     # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
