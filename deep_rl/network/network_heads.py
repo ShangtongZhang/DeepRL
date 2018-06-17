@@ -612,6 +612,7 @@ class QuantileOptionDDPGNet(nn.Module, BaseNet):
                  num_actors,
                  actor_opt_fn,
                  critic_opt_fn,
+                 detach=False,
                  phi_body=None,
                  actor_body=None,
                  critic_body=None,
@@ -629,6 +630,7 @@ class QuantileOptionDDPGNet(nn.Module, BaseNet):
         self.num_quantiles = num_quantiles
         self.num_actors = num_actors
         self.action_dim = action_dim
+        self.detach = detach
 
         self.actor_params = list(self.actor_body.parameters()) + \
                             list(self.fc_action.parameters())
@@ -660,6 +662,8 @@ class QuantileOptionDDPGNet(nn.Module, BaseNet):
     def actor(self, phi):
         actor_phi = self.actor_body(phi)
         actions = F.tanh(self.fc_action(actor_phi)).view(-1, self.num_actors, self.action_dim)
+        if self.detach:
+            actor_phi = actor_phi.detach()
         q_options = self.fc_q_option(actor_phi)
         return actions, q_options
 
