@@ -204,8 +204,8 @@ def batch_job():
 
     parallel = True
     multi_runs(game, option_ddpg_continuous, tag='b0e0d0', parallel=parallel,
-               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=False, id=0)
-    quantile_ddpg_continuous(game, 'q_ddpg')
+               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=False)
+    multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg')
 
 if __name__ == '__main__':
     mkdir('data')
