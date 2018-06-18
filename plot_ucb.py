@@ -109,6 +109,15 @@ if __name__ == '__main__':
         'ucb_ddpg_c10',
         'ucb_ddpg_c50',
     ]
+
+    patterns = [
+        'original',
+        'b0e0d0',
+        'b0e0d1',
+        'b0e1d0',
+        # 'b0e1d1',
+        'q_ddpg',
+    ]
     for j, game in enumerate(games):
         for i, p in enumerate(patterns):
             ddpg_plot(pattern='.*log/ucb-ddpg/ucb-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
