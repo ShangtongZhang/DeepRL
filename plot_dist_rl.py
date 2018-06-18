@@ -112,11 +112,11 @@ if __name__ == '__main__':
     # game = 'BankHeist'
     # game = 'BattleZone'
     games = [
-        # 'FreewayNoFrameskip-v4',
-        # 'BeamRiderNoFrameskip-v4',
-        # 'BattleZoneNoFrameskip-v4',
+        'FreewayNoFrameskip-v4',
+        'BeamRiderNoFrameskip-v4',
+        'BattleZoneNoFrameskip-v4',
         'RobotankNoFrameskip-v4',
-        # 'QbertNoFrameskip-v4',
+        'QbertNoFrameskip-v4',
     ]
     # games = [
     #     'BreakoutNoFrameskip-v4',
@@ -128,8 +128,8 @@ if __name__ == '__main__':
     train_kwargs = {
         'episode_window': 100,
         'top_k': 0,
-        'max_timesteps': int(4e7),
-        # 'max_timesteps': int(3e7),
+        # 'max_timesteps': int(4e7),
+        'max_timesteps': int(3e7),
         'average': True,
         'x_interval': 1000
     }
@@ -149,23 +149,10 @@ if __name__ == '__main__':
     ]
 
     patterns = [
-        't0b0_ns',
-        't001b001_ns',
-        't01b01_ns',
-
-        't0b0e0_ns',
-        't01b01e0_ns',
-        't001b001e0_ns',
-
-        't0b0_s',
-        't001b001_s',
-        't01b01_s',
-
-        't0b0e0_s',
-        't01b01e0_s',
-        't001b001e0_s',
-
-        'original',
+        't001b001_s_le',
+        # 't001b001_s_se',
+        'n_step_qr_dqn',
+        # 'n_step_dqn',
     ]
 
     for j, game in enumerate(games):
