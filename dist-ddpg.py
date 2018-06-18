@@ -192,34 +192,9 @@ def batch_job():
     cf.add_argument('--ind2', type=int, default=0)
     cf.merge()
 
-    # games = ['RoboschoolAnt-v1',
-    #          'RoboschoolHalfCheetah-v1',
-    #          'RoboschoolHopper-v1',
-    #          'RoboschoolInvertedDoublePendulum-v1',
-    #          'RoboschoolReacher-v1',
-    #          'RoboschoolWalker2d-v1',
-    #          'RoboschoolInvertedPendulumSwingup-v1']
-
-    # games = ['Walker2DBulletEnv-v0',
-    #          'AntBulletEnv-v0',
-    #          'HopperBulletEnv-v0',
-    #          'RacecarBulletEnv-v0',
-    #          'KukaBulletEnv-v0',
-    #          'MinitaurBulletEnv-v0']
-
-    # games = [
-    #     'RoboschoolAnt-v1',
-    #     'RoboschoolHopper-v1',
-    #     'RoboschoolWalker2d-v1',
-    #     'RoboschoolHalfCheetah-v1',
-    #     'RoboschoolReacher-v1',
-    #     'RoboschoolHumanoid-v1'
-    # ]
-    # game = games[cf.ind1]
-
     games = [
         # 'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
+        'RoboschoolWalker2d-v1',
         'RoboschoolHopper-v1',
         'RoboschoolHalfCheetah-v1',
         'RoboschoolReacher-v1',
@@ -228,6 +203,9 @@ def batch_job():
     game = games[cf.ind1]
 
     parallel = True
+    multi_runs(game, option_ddpg_continuous, tag='b0e0d0', parallel=parallel,
+               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=False, id=0)
+    quantile_ddpg_continuous(game, 'q_ddpg')
 
 if __name__ == '__main__':
     mkdir('data')
@@ -237,7 +215,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    # batch_job()
+    batch_job()
 
     game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
@@ -254,9 +232,9 @@ if __name__ == '__main__':
     # ucb_ddpg_continuous(game)
     # ucb_ddpg_continuous(game, ucb_constant=50)
 
-    parallel = True
-    multi_runs(game, option_ddpg_continuous, tag='b0e0d0', parallel=parallel,
-               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=False, id=0)
+    # parallel = True
+    # multi_runs(game, option_ddpg_continuous, tag='b0e0d0', parallel=parallel,
+    #            beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=False, id=0)
     # multi_runs(game, option_ddpg_continuous, tag='b0e0d1', parallel=parallel,
     #            beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=True, id=0)
     # multi_runs(game, option_ddpg_continuous, tag='b0e1d0', parallel=parallel,
