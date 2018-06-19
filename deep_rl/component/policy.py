@@ -7,23 +7,19 @@
 import numpy as np
 
 class GreedyPolicy:
-    def __init__(self, epsilon, final_step, min_epsilon):
-        self.init_epsilon = self.epsilon = epsilon
-        self.current_steps = 0
-        self.min_epsilon = min_epsilon
-        self.final_step = final_step
+    def __init__(self, epsilon):
+        self.epsilon = epsilon
 
     def sample(self, action_value, deterministic=False):
+        random_action_prob = self.epsilon(0)
         if deterministic:
             return np.argmax(action_value)
-        if np.random.rand() < self.epsilon:
+        if np.random.rand() < random_action_prob:
             return np.random.randint(0, len(action_value))
         return np.argmax(action_value)
 
     def update_epsilon(self, steps=1):
-        self.epsilon = self.init_epsilon - float(self.current_steps) / self.final_step * (self.init_epsilon - self.min_epsilon) * steps
-        self.epsilon = max(self.epsilon, self.min_epsilon)
-        self.current_steps += 1
+        self.epsilon(steps)
 
 class StochasticGreedyPolicy:
     def __init__(self, epsilons, final_step, min_epsilons, probs):

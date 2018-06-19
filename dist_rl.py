@@ -281,6 +281,7 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('target_beta', 0.01)
     kwargs.setdefault('behavior_beta', 0.01)
     kwargs.setdefault('smoothed_quantiles', True)
+    kwargs.setdefault('q_epsilon', LinearSchedule(1.0, 0.05, 4e6))
 
     config = Config()
     config.merge(kwargs)
@@ -294,7 +295,7 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
         QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(4e6), min_epsilon=0.05)
+    config.policy_fn = lambda: GreedyPolicy(config.q_epsilon)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -532,7 +533,7 @@ if __name__ == '__main__':
     mkdir('data')
     set_one_thread()
     # batch_ice_cliff()
-    batch_atari()
+    # batch_atari()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)
