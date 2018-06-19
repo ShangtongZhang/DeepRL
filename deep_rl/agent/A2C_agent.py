@@ -48,7 +48,7 @@ class A2CAgent(BaseAgent):
             log_prob, value, actions, rewards, terminals, entropy = rollout[i]
             terminals = self.network.tensor(terminals).unsqueeze(1)
             rewards = self.network.tensor(rewards).unsqueeze(1)
-            next_value = rollout[i + 1][2]
+            next_value = rollout[i + 1][1]
             returns = rewards + config.discount * terminals * returns
             if not config.use_gae:
                 advantages = returns - value.detach()
