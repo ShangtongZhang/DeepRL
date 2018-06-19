@@ -528,12 +528,33 @@ def batch_ice_cliff():
     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=runs, gpu=0, parallel=parallel,
                option_type=None, id=6)
 
+def tmp_batch():
+    cf = Config()
+    cf.add_argument('--ind1', type=int, default=0)
+    cf.add_argument('--ind2', type=int, default=3)
+    cf.merge()
+
+    games = ['FreewayNoFrameskip-v4',
+             'BeamRiderNoFrameskip-v4',
+             'RobotankNoFrameskip-v4',
+             'QbertNoFrameskip-v4',
+             'BattleZoneNoFrameskip-v4',
+             ]
+
+    game = games[cf.ind1]
+
+    parallel = True
+    runs = 3
+    multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='n_step_qr_le_dqn', runs=runs, gpu=0, parallel=parallel,
+               option_type=None, q_epsilon=LinearSchedule(1.0, 0, 4e7))
+
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
     # batch_ice_cliff()
     # batch_atari()
+    tmp_batch()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)
