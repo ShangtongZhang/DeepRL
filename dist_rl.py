@@ -225,7 +225,7 @@ def n_step_dqn_pixel_atari(game, **kwargs):
                                               log_dir=kwargs['log_dir']+'-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=kwargs['gpu'])
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=int(4e6), min_epsilon=0.05)
+    config.policy_fn = lambda: GreedyPolicy(LinearSchedule(1.0, 0.05, 4e6))
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -457,11 +457,18 @@ def batch_atari():
     cf.add_argument('--ind2', type=int, default=3)
     cf.merge()
 
-    games = ['FreewayNoFrameskip-v4',
-             'BeamRiderNoFrameskip-v4',
-             'RobotankNoFrameskip-v4',
-             'QbertNoFrameskip-v4',
-             'BattleZoneNoFrameskip-v4',
+    # games = ['FreewayNoFrameskip-v4',
+    #          'BeamRiderNoFrameskip-v4',
+    #          'RobotankNoFrameskip-v4',
+    #          'QbertNoFrameskip-v4',
+    #          'BattleZoneNoFrameskip-v4',
+    #          ]
+
+    games = ['AlienNoFrameskip-v4',
+             'AmidarNoFrameskip-v4',
+             'SeaquestNoFrameskip-v4',
+             'MsPacmanNoFrameskip-v4',
+             'EnduroNoFrameskip-v4',
              ]
 
     game = games[cf.ind1]
@@ -476,10 +483,8 @@ def batch_atari():
                    smoothed_quantiles=True)
 
     def task1():
-        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001_s_se', runs=runs, gpu=0, parallel=parallel,
-                   target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
-                   random_option_prob=LinearSchedule(1.0, 0, 4e6),
-                   smoothed_quantiles=True)
+        multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='n_step_qr_le_dqn', runs=runs, gpu=0, parallel=parallel,
+                   option_type=None, q_epsilon=LinearSchedule(1.0, 0, 4e7))
 
     def task2():
         multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='n_step_qr_dqn', runs=runs, gpu=0, parallel=parallel,
@@ -553,8 +558,8 @@ if __name__ == '__main__':
     mkdir('data')
     set_one_thread()
     # batch_ice_cliff()
-    # batch_atari()
-    tmp_batch()
+    batch_atari()
+    # tmp_batch()
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)
