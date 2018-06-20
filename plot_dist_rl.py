@@ -117,7 +117,12 @@ if __name__ == '__main__':
         'BattleZoneNoFrameskip-v4',
         'RobotankNoFrameskip-v4',
         'QbertNoFrameskip-v4',
-    ]
+        'AlienNoFrameskip-v4',
+        'AmidarNoFrameskip-v4',
+        'SeaquestNoFrameskip-v4',
+        'MsPacmanNoFrameskip-v4',
+        'EnduroNoFrameskip-v4',
+        ]
     # games = [
     #     'BreakoutNoFrameskip-v4',
     #     'AssaultNoFrameskip-v4',
@@ -152,6 +157,8 @@ if __name__ == '__main__':
         't001b001_s_le',
         # 't001b001_s_se',
         'n_step_qr_dqn',
+        'n_step_qr_le_dqn',
+        # 'n_step_dqn',
         # 'n_step_dqn',
     ]
 
