@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 import pickle
+from deep_rl.utils import random_seed
 
 class Chain:
     def __init__(self, num_states, up_std=0.1, left_std=1.0):
@@ -163,12 +164,13 @@ def check_optimality(q_values):
     return False
 
 def run_episodes(agent, max_steps=1e5):
+    random_seed()
     ep = 0
     while True:
         online_rewards, eval_rewards = agent.episode()
         ep += 1
         optimal = check_optimality(agent.q_values)
-        print('episode %d, return %f, optimal %s' % (ep, online_rewards, optimal))
+        # print('episode %d, return %f, optimal %s' % (ep, online_rewards, optimal))
         if optimal:
             break
         if agent.total_steps > max_steps:
@@ -178,20 +180,35 @@ def run_episodes(agent, max_steps=1e5):
     return agent.total_steps
 
 def upper_quantile_chain():
-    chain_fns = [lambda: Chain(l, up_std=0, left_std=1.0) for l in np.arange(2, 5)]
+    chain_states = np.arange(2, 7)
     agent_fns = [lambda chain_fn: QAgent(chain_fn),
                  lambda chain_fn: QuantileAgent(chain_fn, active_quantile=-1),
                  lambda chain_fn: QuantileAgent(chain_fn, mean_exploration=True)]
-    runs = 30
-    total_steps = np.zeros((len(agent_fns, len(chain_fns), runs)))
+    runs = 10
+    max_steps = 1e5
+    total_steps = np.zeros((len(agent_fns), len(chain_states), runs))
     for i, agent_fn in enumerate(agent_fns):
-        for j, chain_fn in enumerate(chain_fns):
+        for j, n_states in enumerate(chain_states):
+            print('configuration (%d, %d)' % (i, j))
             for r in range(runs):
-                agent = agent_fn(chain_fn)
-                steps = run_episodes(agent)
+                agent = agent_fn(lambda: Chain(n_states, up_std=0, left_std=1.0))
+                steps = run_episodes(agent, max_steps)
                 total_steps[i, j, r] = steps
     with open('data/%s.bin' % (upper_quantile_chain.__name__), 'wb') as f:
         pickle.dump(total_steps, f)
+
+def plot_upper():
+    from deep_rl.utils import Plotter
+    import matplotlib.pyplot as plt
+    import seaborn as sns; sns.set(color_codes=True)
+    with open('data/%s.bin' % (upper_quantile_chain.__name__), 'rb') as f:
+        steps = pickle.load(f)
+    agents = ['Q Learning', 'Quantile Option (largest quantile)', 'Quantile Regression']
+    for i, agent in enumerate(agents):
+        print(steps[i].mean(-1))
+        sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent, color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False)
+    plt.yscale('log')
+    plt.show()
 
 if __name__ == '__main__':
     agent = QAgent(lambda :Chain(5, up_std=0, left_std=1.0))
@@ -204,5 +221,8 @@ if __name__ == '__main__':
 
     # original quantile dqn
     # agent = QuantileAgent(lambda :Chain(8), mean_exploration=True)
-    run_episodes(agent)
+    # run_episodes(agent)
+
+    upper_quantile_chain()
+    # plot_upper()
 
