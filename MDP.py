@@ -166,7 +166,7 @@ class QuantileAgent(BaseAgent):
             quantiles = torch.tensor(quantiles.astype(np.float32), requires_grad=True)
             diff = quantiles_next - quantiles
             loss = self.huber(diff) * (self.cumulative_density.view(1, -1) - (diff.detach() < 0).float()).abs()
-            loss = loss.mean()
+            loss = loss.sum(0).mean()
             loss.backward()
 
             self.q_values[state, action] -= self.lr * quantiles.grad.numpy().flatten()
@@ -206,6 +206,7 @@ def run_episodes(agent, max_steps=1e5):
 def upper_quantile_chain():
     chain_states = np.arange(2, 7)
     agent_fns = [lambda chain_fn: QAgent(chain_fn),
+                 lambda chain_fn: QuantileAgent(chain_fn, active_quantile=0),
                  lambda chain_fn: QuantileAgent(chain_fn, active_quantile=-1),
                  lambda chain_fn: QuantileAgent(chain_fn, mean_exploration=True)]
     runs = 10
@@ -227,12 +228,13 @@ def plot_upper():
     import seaborn as sns; sns.set(color_codes=True)
     with open('data/%s.bin' % (upper_quantile_chain.__name__), 'rb') as f:
         steps = pickle.load(f)
-    agents = ['Q Learning', 'Quantile Option (largest quantile)', 'Quantile Regression']
+    agents = ['Q Learning','Quantile Option (smallest quantile)',
+              'Quantile Option (largest quantile)', 'Quantile Regression']
     for i, agent in enumerate(agents):
         print(steps[i].mean(-1))
         sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent, color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False)
     plt.yscale('log')
-    plt.xlabel('# of states in the chain')
+    plt.xlabel('# of non-terminal states in the chain')
     plt.ylabel('steps')
     plt.show()
 
@@ -240,6 +242,7 @@ def lower_quantile_chain():
     chain_states = np.arange(2, 7)
     agent_fns = [lambda chain_fn: QAgent(chain_fn),
                  lambda chain_fn: QuantileAgent(chain_fn, active_quantile=0),
+                 lambda chain_fn: QuantileAgent(chain_fn, active_quantile=-1),
                  lambda chain_fn: QuantileAgent(chain_fn, mean_exploration=True)]
     runs = 10
     max_steps = 1e4
@@ -248,7 +251,7 @@ def lower_quantile_chain():
         for j, n_states in enumerate(chain_states):
             print('configuration (%d, %d)' % (i, j))
             for r in range(runs):
-                agent = agent_fn(lambda: LowerChain(n_states, up_std=0.2, left_std=0.1))
+                agent = agent_fn(lambda: LowerChain(n_states, up_std=0.2))
                 steps = run_episodes(agent, max_steps)
                 total_steps[i, j, r] = steps
     with open('data/%s.bin' % (lower_quantile_chain.__name__), 'wb') as f:
@@ -260,12 +263,13 @@ def plot_lower():
     import seaborn as sns; sns.set(color_codes=True)
     with open('data/%s.bin' % (lower_quantile_chain.__name__), 'rb') as f:
         steps = pickle.load(f)
-    agents = ['Q Learning', 'Quantile Option (smallest quantile)', 'Quantile Regression']
+    agents = ['Q Learning','Quantile Option (smallest quantile)',
+              'Quantile Option (largest quantile)', 'Quantile Regression']
     for i, agent in enumerate(agents):
         print(steps[i].mean(-1))
         sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent, color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False)
-    # plt.yscale('log')
-    plt.xlabel('# of states in the chain')
+    plt.yscale('log')
+    plt.xlabel('# of non-terminal states in the chain')
     plt.ylabel('steps')
     plt.show()
 
@@ -283,8 +287,8 @@ if __name__ == '__main__':
     # run_episodes(agent)
 
     # upper_quantile_chain()
-    # plot_upper()
+    plot_upper()
 
-    lower_quantile_chain()
+    # lower_quantile_chain()
     plot_lower()
 
