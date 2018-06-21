@@ -27,7 +27,7 @@ def plot(**kwargs):
     plt.figure(figure)
     if kwargs['average']:
         x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
-        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color], ci='sd')
     else:
         for i, name in enumerate(names):
             x, y = data[i]
@@ -69,7 +69,7 @@ def ddpg_plot(**kwargs):
         # y = np.transpose(np.stack(y))
         y = np.stack(y)
         name = names[0].split('/')[-1]
-        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color])
+        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color], ci='sd')
         plt.title(names[0])
     else:
         for i, name in enumerate(names):
@@ -316,23 +316,23 @@ if __name__ == '__main__':
     #     'per_step_random'
     # ]
     games = [
-        # 'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
-        # 'RoboschoolHopper-v1',
-        # 'RoboschoolHalfCheetah-v1',
-        # 'RoboschoolReacher-v1',
-        # 'RoboschoolHumanoid-v1',
+        'RoboschoolAnt-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
         # 'RoboschoolPong-v1',
         # 'RoboschoolHumanoidFlagrun-v1',
         # 'RoboschoolHumanoidFlagrunHarder-v1',
         # 'RoboschoolInvertedPendulum-v1',
         # 'RoboschoolInvertedPendulumSwingup-v1',
-        'RoboschoolInvertedDoublePendulum-v1',
+        # 'RoboschoolInvertedDoublePendulum-v1',
     ]
     patterns = [
-        # 'd1m0',
-        # 'd2m0',
-        # 'shared',
+        'd1m0',
+        'd2m0',
+        'shared',
         'ddpg_continuous'
     ]
     for j, game in enumerate(games):
