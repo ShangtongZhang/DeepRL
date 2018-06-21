@@ -5,5 +5,5 @@ for i in $(seq 0 3); do
     sleep 4s
     id=$(($i + $1))
     echo $id
-    nohup py dist_rl.py $id >| ice_cliff_$id.txt &
+    nohup py dist_rl.py $id >| ice_cliff_$id.out &
 done
