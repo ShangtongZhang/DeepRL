@@ -232,7 +232,8 @@ def plot_upper():
               'Quantile Option (largest quantile)', 'Quantile Regression']
     for i, agent in enumerate(agents):
         print(steps[i].mean(-1))
-        sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent, color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False)
+        sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent,
+                   color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False, ci=95)
     plt.yscale('log')
     plt.xlabel('# of non-terminal states in the chain')
     plt.ylabel('steps')
@@ -267,7 +268,8 @@ def plot_lower():
               'Quantile Option (largest quantile)', 'Quantile Regression']
     for i, agent in enumerate(agents):
         print(steps[i].mean(-1))
-        sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent, color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False)
+        sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent, color=Plotter.COLORS[i],
+                   err_style="ci_bars", interpolate=False, ci=95)
     plt.yscale('log')
     plt.xlabel('# of non-terminal states in the chain')
     plt.ylabel('steps')
