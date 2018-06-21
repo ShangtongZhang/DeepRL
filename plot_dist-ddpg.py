@@ -27,7 +27,7 @@ def plot(**kwargs):
     plt.figure(figure)
     if kwargs['average']:
         x, y = plotter.average(data, 100, kwargs['max_timesteps'], top_k=kwargs['top_k'])
-        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color], ci='sd')
     else:
         for i, name in enumerate(names):
             x, y = data[i]
@@ -69,7 +69,7 @@ def ddpg_plot(**kwargs):
         # y = np.transpose(np.stack(y))
         y = np.stack(y)
         name = names[0].split('/')[-1]
-        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color])
+        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color], cd='sd')
         plt.title(names[0])
     else:
         for i, name in enumerate(names):
