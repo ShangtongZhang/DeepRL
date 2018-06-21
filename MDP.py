@@ -239,13 +239,13 @@ def plot_upper():
     plt.show()
 
 def lower_quantile_chain():
-    chain_states = np.arange(2, 7)
+    chain_states = np.arange(2, 9)
     agent_fns = [lambda chain_fn: QAgent(chain_fn),
                  lambda chain_fn: QuantileAgent(chain_fn, active_quantile=0),
                  lambda chain_fn: QuantileAgent(chain_fn, active_quantile=-1),
                  lambda chain_fn: QuantileAgent(chain_fn, mean_exploration=True)]
     runs = 10
-    max_steps = 1e4
+    max_steps = 1e5
     total_steps = np.zeros((len(agent_fns), len(chain_states), runs))
     for i, agent_fn in enumerate(agent_fns):
         for j, n_states in enumerate(chain_states):
@@ -287,8 +287,8 @@ if __name__ == '__main__':
     # run_episodes(agent)
 
     # upper_quantile_chain()
-    plot_upper()
+    # plot_upper()
 
-    # lower_quantile_chain()
-    plot_lower()
+    lower_quantile_chain()
+    # plot_lower()
 
