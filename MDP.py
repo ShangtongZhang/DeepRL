@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import pickle
 
 class Chain:
     def __init__(self, num_states, up_std=0.1, left_std=1.0):
@@ -45,6 +46,7 @@ class QAgent(BaseAgent):
         self.epsilon = epsilon
         self.discount = discount
         self.lr = lr
+        self.total_steps = 0
 
     def act(self, state, eval=False):
         if not eval and np.random.rand() < self.epsilon:
@@ -60,6 +62,7 @@ class QAgent(BaseAgent):
         while True:
             action = self.act(state)
             next_state, reward, done, _ = self.env.step(action)
+            self.total_steps += 1
             total_rewards += reward
 
             if done:
@@ -74,7 +77,8 @@ class QAgent(BaseAgent):
                 break
             state = next_state
 
-        return total_rewards, self.eval()
+        # return total_rewards, self.eval()
+        return total_rewards, None
 
 class QuantileAgent(BaseAgent):
     def __init__(self, env_fn, lr=0.1, epsilon=0.1, discount=1.0, num_quantiles=5, mean_exploration=False,
@@ -90,6 +94,7 @@ class QuantileAgent(BaseAgent):
         self.cumulative_density = torch.FloatTensor(self.cumulative_density)
         self.mean_exploration = mean_exploration
         self.active_quantile = active_quantile
+        self.total_steps = 0
 
     def act(self, state, eval=False):
         if not eval:
@@ -118,6 +123,7 @@ class QuantileAgent(BaseAgent):
         while True:
             action = self.act(state)
             next_state, reward, done, _ = self.env.step(action)
+            self.total_steps += 1
             total_rewards += reward
 
             if done:
@@ -144,18 +150,53 @@ class QuantileAgent(BaseAgent):
                 break
             state = next_state
 
-        return total_rewards, self.eval()
+        # return total_rewards, self.eval()
+        return total_rewards, None
 
-def run_episodes(agent):
+def check_optimality(q_values):
+    if len(q_values.shape) == 3:
+        q_values = q_values.mean(-1)
+    assert len(q_values.shape) == 2
+    optimal = (q_values[:, 0] - q_values[:, 1]) > 0
+    if np.sum(optimal) == len(optimal):
+        return True
+    return False
+
+def run_episodes(agent, max_steps=1e5):
     ep = 0
     while True:
         online_rewards, eval_rewards = agent.episode()
         ep += 1
-        print('episode %d, return %f, eval return %f' % (ep, online_rewards, eval_rewards))
+        optimal = check_optimality(agent.q_values)
+        print('episode %d, return %f, optimal %s' % (ep, online_rewards, optimal))
+        if optimal:
+            break
+        if agent.total_steps > max_steps:
+            agent.total_steps = max_steps
+            break
+    print(agent.total_steps)
+    return agent.total_steps
+
+def upper_quantile_chain():
+    chain_fns = [lambda: Chain(l, up_std=0, left_std=1.0) for l in np.arange(2, 5)]
+    agent_fns = [lambda chain_fn: QAgent(chain_fn),
+                 lambda chain_fn: QuantileAgent(chain_fn, active_quantile=-1),
+                 lambda chain_fn: QuantileAgent(chain_fn, mean_exploration=True)]
+    runs = 30
+    total_steps = np.zeros((len(agent_fns, len(chain_fns), runs)))
+    for i, agent_fn in enumerate(agent_fns):
+        for j, chain_fn in enumerate(chain_fns):
+            for r in range(runs):
+                agent = agent_fn(chain_fn)
+                steps = run_episodes(agent)
+                total_steps[i, j, r] = steps
+    with open('data/%s.bin' % (upper_quantile_chain.__name__), 'wb') as f:
+        pickle.dump(total_steps, f)
 
 if __name__ == '__main__':
-    agent = QAgent(lambda :Chain(25, up_std=0.1, left_std=0.2))
-    # agent = QuantileAgent(lambda :Chain(25, up_std=0.1, left_std=0.2), active_quantile=-1)
+    agent = QAgent(lambda :Chain(5, up_std=0, left_std=1.0))
+    # agent = QuantileAgent(lambda :Chain(5, up_std=0, left_std=1.0), active_quantile=-1)
+    # agent = QuantileAgent(lambda :Chain(5, up_std=0, left_std=1.0), mean_exploration=True)
     # agent = QuantileAgent(lambda :Chain(25, up_std=0.1, left_std=0.2), active_quantile=0)
 
     # agent = QAgent(lambda :Chain(25, up_std=0.2, left_std=0.1))
