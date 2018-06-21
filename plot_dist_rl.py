@@ -31,7 +31,7 @@ def plot(**kwargs):
             x = x[indices]
             y = y[:, indices]
         name = names[0].split('/')[-1]
-        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color])
+        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color], ci='sd')
         plt.title(names[0])
     else:
         for i, name in enumerate(names):
@@ -76,7 +76,7 @@ def deterministic_plot(**kwargs):
         x = data[0][0]
         y = [y for x, y in data]
         y = np.stack(y)
-        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color])
+        sns.tsplot(y, x, condition=names[0], color=Plotter.COLORS[color], ci='sd')
     else:
         for i, name in enumerate(names):
             x, y = data[i]
