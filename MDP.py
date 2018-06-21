@@ -208,10 +208,30 @@ def plot_upper():
         print(steps[i].mean(-1))
         sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent, color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False)
     plt.yscale('log')
+    plt.xlabel('# of states in the chain')
+    plt.ylabel('steps')
     plt.show()
 
+def lower_quantile_chain():
+    chain_states = np.arange(2, 7)
+    agent_fns = [lambda chain_fn: QAgent(chain_fn),
+                 lambda chain_fn: QuantileAgent(chain_fn, active_quantile=-1),
+                 lambda chain_fn: QuantileAgent(chain_fn, mean_exploration=True)]
+    runs = 10
+    max_steps = 1e5
+    total_steps = np.zeros((len(agent_fns), len(chain_states), runs))
+    for i, agent_fn in enumerate(agent_fns):
+        for j, n_states in enumerate(chain_states):
+            print('configuration (%d, %d)' % (i, j))
+            for r in range(runs):
+                agent = agent_fn(lambda: Chain(n_states, up_std=0, left_std=1.0))
+                steps = run_episodes(agent, max_steps)
+                total_steps[i, j, r] = steps
+    with open('data/%s.bin' % (lower_quantile_chain.__name__), 'wb') as f:
+        pickle.dump(total_steps, f)
+
 if __name__ == '__main__':
-    agent = QAgent(lambda :Chain(5, up_std=0, left_std=1.0))
+    # agent = QAgent(lambda :Chain(5, up_std=0, left_std=1.0))
     # agent = QuantileAgent(lambda :Chain(5, up_std=0, left_std=1.0), active_quantile=-1)
     # agent = QuantileAgent(lambda :Chain(5, up_std=0, left_std=1.0), mean_exploration=True)
     # agent = QuantileAgent(lambda :Chain(25, up_std=0.1, left_std=0.2), active_quantile=0)
@@ -223,6 +243,6 @@ if __name__ == '__main__':
     # agent = QuantileAgent(lambda :Chain(8), mean_exploration=True)
     # run_episodes(agent)
 
-    upper_quantile_chain()
-    # plot_upper()
+    # upper_quantile_chain()
+    plot_upper()
 
