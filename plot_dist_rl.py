@@ -1,5 +1,5 @@
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
@@ -199,9 +199,9 @@ if __name__ == '__main__':
         'original',
     ]
 
-    for i, p in enumerate(patterns):
-        plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
-        plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (tag))
+    # for i, p in enumerate(patterns):
+    #     plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
+    #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (tag))
     #     plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **train_kwargs)
     #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (tag))
     #     # deterministic_plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **test_kwargs)
@@ -229,4 +229,14 @@ if __name__ == '__main__':
     # for i, p in enumerate(patterns):
     #     plot(pattern='.*dist_rl-CliffWalking.*bootstrapped_qr_dqn_cliff.*%s.*train.*' % (p), figure=0, color=i, **train_kwargs)
     # plt.show()
+
+    patterns = [
+        'le',
+        'me',
+        'original',
+        'se',
+    ]
+    for i, p in enumerate(patterns):
+        plot(pattern='.*replay_qo.*%s.*' % (p), figure=0, color=i)
+    plt.show()
 

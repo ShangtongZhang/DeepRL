@@ -42,7 +42,8 @@ def quantile_option_replay_atari(game, **kwargs):
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
-    config.exploration_steps= 50000
+    # config.exploration_steps= 50000
+    config.exploration_steps= 100
     config.logger = get_logger(file_name=kwargs['tag'])
     config.double_q = False
     config.num_quantiles = 200
@@ -547,8 +548,8 @@ if __name__ == '__main__':
     # batch_atari()
     tmp_batch()
 
-    # game = 'FreewayNoFrameskip-v4'
-    # quantile_option_replay_atari(game, gpu=-1)
+    game = 'FreewayNoFrameskip-v4'
+    quantile_option_replay_atari(game, gpu=-1)
     # quantile_option_replay_atari(game, option_type='constant_beta', gpu=-1)
 
     # bootstrapped_qr_dqn_cliff()
