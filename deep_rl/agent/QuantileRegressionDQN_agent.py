@@ -85,7 +85,7 @@ class QuantileRegressionDQNAgent(BaseAgent):
                 loss = self.huber(diff) * (self.cumulative_density.view(1, -1) - (diff.detach() < 0).float()).abs()
 
                 self.optimizer.zero_grad()
-                loss.mean(1).sum().backward()
+                loss.mean(0).mean(1).sum().backward()
                 self.optimizer.step()
 
             self.evaluate()

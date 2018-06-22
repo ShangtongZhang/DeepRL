@@ -64,7 +64,7 @@ class OptionCriticAgent(BaseAgent):
             betas = betas_next
             log_pi = log_pi_next
 
-            self.policy.update_epsilon()
+            self.policy.update_epsilon(config.num_workers)
             self.total_steps += config.num_workers
             if self.total_steps / config.num_workers % config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())
