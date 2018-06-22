@@ -59,7 +59,8 @@ class CategoricalDQNAgent(BaseAgent):
             steps += 1
             state = next_state
 
-            if not deterministic and self.total_steps > self.config.exploration_steps:
+            if not deterministic and self.total_steps > self.config.exploration_steps \
+                    and self.total_steps % self.config.sgd_update_frequency == 0:
                 experiences = self.replay.sample()
                 states, actions, rewards, next_states, terminals = experiences
                 states = self.config.state_normalizer(states)
