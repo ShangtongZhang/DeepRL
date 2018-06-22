@@ -108,3 +108,13 @@ class Plotter:
                 print(dir)
 
         return sorted(names)
+
+def plot_standard_error(data, x=None, **kwargs):
+    import matplotlib.pyplot as plt
+    if x is None:
+        x = np.arange(data.shape[1])
+    e_x = np.std(data, axis=0) / np.sqrt(data.shape[0])
+    m_x = np.mean(data, axis=0)
+    plt.plot(x, m_x, **kwargs)
+    del kwargs['label']
+    plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
