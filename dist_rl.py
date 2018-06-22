@@ -16,6 +16,7 @@ def quantile_regression_dqn_cart_pole():
     config.num_quantiles = 20
     run_episodes(QuantileRegressionDQNAgent(config))
 
+@console
 def quantile_option_replay_atari(game, **kwargs):
     kwargs.setdefault('tag', quantile_option_replay_atari.__name__)
     kwargs.setdefault('gpu', 0)
@@ -524,13 +525,13 @@ def batch_ice_cliff():
                option_type=None, id=3)
 
 def tmp_batch():
-    cf = Config()
-    cf.add_argument('--ind1', type=int, default=0)
-    cf.add_argument('--ind2', type=int, default=3)
-    cf.merge()
+    # cf = Config()
+    # cf.add_argument('--ind1', type=int, default=0)
+    # cf.add_argument('--ind2', type=int, default=3)
+    # cf.merge()
 
     game = 'FreewayNoFrameskip-v4'
-    quantile_option_replay_atari(game, tag='original', option_type=0, id=0)
+    quantile_option_replay_atari(game, tag='original', option_type=None, id=0)
     quantile_option_replay_atari(game, tag='se', option_type='constant_beta',
                                  random_option_prob=LinearSchedule(1.0, 0.1, 1e6), id=1)
     quantile_option_replay_atari(game, tag='me', option_type='constant_beta',

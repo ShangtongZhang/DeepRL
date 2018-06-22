@@ -162,10 +162,10 @@ if __name__ == '__main__':
         # 'n_step_dqn',
     ]
 
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-            plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+    #         plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+    #         plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
             # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
             # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
@@ -175,8 +175,8 @@ if __name__ == '__main__':
     train_kwargs = {
         'episode_window': 5000,
         'top_k': 0,
-        # 'max_timesteps': int(4e7),
-        'max_timesteps': int(2e7),
+        'max_timesteps': int(4e7),
+        # 'max_timesteps': int(2e7),
         'average': True,
         'x_interval': 1000,
         # 'y_lim': [-2, 5],
@@ -191,38 +191,17 @@ if __name__ == '__main__':
         'y_lim': [-2, 5]
     }
 
-    tag='b0e03'
+    tag = 'le'
     patterns = [
-        'original',
-        't0b0e03',
-        't01b0e03',
-        't05b0e03',
-        't09b0e03',
-    ]
-
-    tag='b0e00'
-    patterns = [
-        'original',
-        't0b0e03',
-        't01b0e03',
-        't05b0e03',
-        't09b0e03',
-    ]
-
-    tag = 'on-termination'
-    patterns = [
-        't0b0_ns',
-        't001b001_ns',
-        't01b01_ns',
-        't0b0_s',
-        't001b001_s',
-        't01b01_s',
+        't0b0_s_le',
+        't001b001_s_le',
+        't01b01_s_le',
         'original',
     ]
 
-    # for i, p in enumerate(patterns):
-    #     plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
-    #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (tag))
+    for i, p in enumerate(patterns):
+        plot(pattern='.*dist_rl-IceCliff.*%s.*-train.*' %(p), figure=0, color=i, **train_kwargs)
+        plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-train.png' % (tag))
     #     plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **train_kwargs)
     #     plt.savefig('data/dist_rl_images/n-step-qr-dqn-IceCliff-%s-test.png' % (tag))
     #     # deterministic_plot(pattern='.*dist_rl-IceCliff.*%s.*-test.*' %(p), figure=1, color=i, **test_kwargs)
