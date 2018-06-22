@@ -41,8 +41,7 @@ def quantile_option_replay_atari(game, **kwargs):
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
-    # config.exploration_steps= 50000
-    config.exploration_steps= 100
+    config.exploration_steps= 50000
     config.logger = get_logger(file_name=kwargs['tag'])
     config.double_q = False
     config.num_quantiles = 200
@@ -530,19 +529,14 @@ def tmp_batch():
     cf.add_argument('--ind2', type=int, default=3)
     cf.merge()
 
-    games = ['FreewayNoFrameskip-v4',
-             'BeamRiderNoFrameskip-v4',
-             'RobotankNoFrameskip-v4',
-             'QbertNoFrameskip-v4',
-             'BattleZoneNoFrameskip-v4',
-             ]
-
-    game = games[cf.ind1]
-
-    parallel = True
-    runs = 3
-    multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='n_step_qr_le_dqn', runs=runs, gpu=0, parallel=parallel,
-               option_type=None, q_epsilon=LinearSchedule(1.0, 0, 4e7))
+    game = 'FreewayNoFrameskip-v4'
+    quantile_option_replay_atari(game, tag='original', option_type=0, id=0)
+    quantile_option_replay_atari(game, tag='se', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e6), id=1)
+    quantile_option_replay_atari(game, tag='me', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e7), id=2)
+    quantile_option_replay_atari(game, tag='le', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 4e7), id=3)
 
 if __name__ == '__main__':
     mkdir('log')
@@ -550,11 +544,11 @@ if __name__ == '__main__':
     set_one_thread()
     # batch_ice_cliff()
     # batch_atari()
-    # tmp_batch()
+    tmp_batch()
 
-    game = 'FreewayNoFrameskip-v4'
+    # game = 'FreewayNoFrameskip-v4'
     # quantile_option_replay_atari(game, gpu=-1)
-    quantile_option_replay_atari(game, option_type='constant_beta', gpu=-1)
+    # quantile_option_replay_atari(game, option_type='constant_beta', gpu=-1)
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)
