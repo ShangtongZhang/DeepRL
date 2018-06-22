@@ -16,30 +16,38 @@ def quantile_regression_dqn_cart_pole():
     config.num_quantiles = 20
     run_episodes(QuantileRegressionDQNAgent(config))
 
-def quantile_regression_dqn_pixel_atari(game, **kwargs):
-    config = Config()
-    kwargs.setdefault('tag', quantile_regression_dqn_pixel_atari.__name__)
+def quantile_option_replay_atari(game, **kwargs):
+    kwargs.setdefault('tag', quantile_option_replay_atari.__name__)
     kwargs.setdefault('gpu', 0)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('option_type', None)
+    kwargs.setdefault('beta', 0.01)
+    kwargs.setdefault('num_options', 10)
+    kwargs.setdefault('max_steps', int(4e7))
+    kwargs.setdefault('random_option_prob', LinearSchedule(1.0, 0.1, int(1e7)))
+
     config = Config()
+    config.merge(kwargs)
     config.history_length = 4
     config.task_fn = lambda: PixelAtari(game, frame_skip=4, history_length=config.history_length,
                                         log_dir=kwargs['log_dir'])
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=5e-4, eps=0.01 / 32)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=config.gpu)
-    config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=1000000, min_epsilon=0.01)
-    config.replay_fn = lambda: Replay(memory_size=100000, batch_size=32)
+        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options,
+                                   NatureConvBody(), gpu=config.gpu)
+    config.policy_fn = lambda: GreedyPolicy(LinearSchedule(1.0, 0.01, 1e6))
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
-    config.exploration_steps= 50000
+    # config.exploration_steps= 50000
+    config.exploration_steps= 100
     config.logger = get_logger(file_name=kwargs['tag'])
     config.double_q = False
     config.num_quantiles = 200
-    config.merge(kwargs)
-    run_episodes(QuantileRegressionDQNAgent(config))
+    config.sgd_update_frequency = 4
+    run_episodes(BootstrappedQRDQN(config))
 
 def qr_dqn_cart_pole():
     config = Config()
@@ -540,9 +548,13 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     set_one_thread()
-    batch_ice_cliff()
+    # batch_ice_cliff()
     # batch_atari()
     # tmp_batch()
+
+    game = 'FreewayNoFrameskip-v4'
+    # quantile_option_replay_atari(game, gpu=-1)
+    quantile_option_replay_atari(game, option_type='constant_beta', gpu=-1)
 
     # bootstrapped_qr_dqn_cliff()
     # bootstrapped_qr_dqn_cliff(option_type='constant_beta', target_beta=0, behavior_beta=0)

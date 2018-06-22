@@ -8,3 +8,4 @@ from .PPO_agent import *
 from .OptionCritic_agent import *
 from .NStepQRDQN_agent import *
 from .BootstrappedNStepQRDQN_agent import *
+from .BootstrappedQRDQN_agent import *
