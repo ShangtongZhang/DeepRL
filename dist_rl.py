@@ -42,8 +42,7 @@ def quantile_option_replay_atari(game, **kwargs):
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
-    # config.exploration_steps= 50000
-    config.exploration_steps= 100
+    config.exploration_steps= 50000
     config.logger = get_logger(file_name=kwargs['tag'])
     config.double_q = False
     config.num_quantiles = 200
@@ -531,14 +530,37 @@ def tmp_batch():
     # cf.add_argument('--ind2', type=int, default=3)
     # cf.merge()
 
-    game = 'FreewayNoFrameskip-v4'
+    game = 'BeamRiderNoFrameskip-v4'
     quantile_option_replay_atari(game, tag='original', option_type=None, id=0)
-    quantile_option_replay_atari(game, tag='se', option_type='constant_beta',
-                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e6), id=1)
-    quantile_option_replay_atari(game, tag='me', option_type='constant_beta',
-                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e7), id=2)
-    quantile_option_replay_atari(game, tag='le', option_type='constant_beta',
-                                 random_option_prob=LinearSchedule(1.0, 0.1, 4e7), id=3)
+    quantile_option_replay_atari(game, tag='b001_se', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e6),
+                                 beta=0.01, id=1)
+    quantile_option_replay_atari(game, tag='b001_me', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e7),
+                                 beta=0.01, id=2)
+    quantile_option_replay_atari(game, tag='b001_le', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 4e7),
+                                 beta=0.01, id=3)
+
+    quantile_option_replay_atari(game, tag='b0_se', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e6),
+                                 beta=0, id=4)
+    quantile_option_replay_atari(game, tag='b0_me', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e7),
+                                 beta=0, id=5)
+    quantile_option_replay_atari(game, tag='b0_le', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 4e7),
+                                 beta=0, id=6)
+
+    quantile_option_replay_atari(game, tag='b1_se', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e6),
+                                 beta=1, id=7)
+    quantile_option_replay_atari(game, tag='b1_me', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 1e7),
+                                 beta=1, id=8)
+    quantile_option_replay_atari(game, tag='b1_le', option_type='constant_beta',
+                                 random_option_prob=LinearSchedule(1.0, 0.1, 4e7),
+                                 beta=1, id=9)
 
 if __name__ == '__main__':
     mkdir('log')
@@ -548,8 +570,8 @@ if __name__ == '__main__':
     # batch_atari()
     tmp_batch()
 
-    game = 'FreewayNoFrameskip-v4'
-    quantile_option_replay_atari(game, gpu=-1)
+    # game = 'FreewayNoFrameskip-v4'
+    # quantile_option_replay_atari(game, gpu=-1)
     # quantile_option_replay_atari(game, option_type='constant_beta', gpu=-1)
 
     # bootstrapped_qr_dqn_cliff()
