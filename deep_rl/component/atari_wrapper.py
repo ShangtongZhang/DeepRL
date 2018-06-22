@@ -191,25 +191,18 @@ class LazyFrames(object):
 
         You'd not believe how complex the previous solution was."""
         self._frames = frames
-        self._out = None
-
-    def _force(self):
-        if self._out is None:
-            self._out = np.concatenate(self._frames, axis=0)
-            self._frames = None
-        return self._out
 
     def __array__(self, dtype=None):
-        out = self._force()
+        out = np.concatenate(self._frames, axis=0)
         if dtype is not None:
             out = out.astype(dtype)
         return out
 
     def __len__(self):
-        return len(self._force())
+        return len(self.__array__())
 
     def __getitem__(self, i):
-        return self._force()[i]
+        return self.__array__()[i]
 
 class StackFrame(gym.Wrapper):
     def __init__(self, env, k):
