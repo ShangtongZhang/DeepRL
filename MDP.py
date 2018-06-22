@@ -2,6 +2,9 @@ import numpy as np
 import torch
 import pickle
 from deep_rl.utils import random_seed
+import matplotlib.pyplot as plt
+import seaborn as sns;
+sns.set(color_codes=True)
 
 class Chain:
     def __init__(self, num_states, up_std=0.1, left_std=1.0):
@@ -223,9 +226,8 @@ def upper_quantile_chain():
         pickle.dump(total_steps, f)
 
 def plot_upper():
+    plt.figure(0)
     from deep_rl.utils import Plotter
-    import matplotlib.pyplot as plt
-    import seaborn as sns; sns.set(color_codes=True)
     with open('data/%s.bin' % (upper_quantile_chain.__name__), 'rb') as f:
         steps = pickle.load(f)
     agents = ['Q Learning','Quantile Option (smallest quantile)',
@@ -237,7 +239,6 @@ def plot_upper():
     plt.yscale('log')
     plt.xlabel('# of non-terminal states in the chain')
     plt.ylabel('steps')
-    plt.show()
 
 def lower_quantile_chain():
     chain_states = np.arange(2, 9)
@@ -259,9 +260,8 @@ def lower_quantile_chain():
         pickle.dump(total_steps, f)
 
 def plot_lower():
+    plt.figure(1)
     from deep_rl.utils import Plotter
-    import matplotlib.pyplot as plt
-    import seaborn as sns; sns.set(color_codes=True)
     with open('data/%s.bin' % (lower_quantile_chain.__name__), 'rb') as f:
         steps = pickle.load(f)
     agents = ['Q Learning','Quantile Option (smallest quantile)',
@@ -273,7 +273,6 @@ def plot_lower():
     plt.yscale('log')
     plt.xlabel('# of non-terminal states in the chain')
     plt.ylabel('steps')
-    plt.show()
 
 if __name__ == '__main__':
     # agent = QAgent(lambda :Chain(5, up_std=0, left_std=1.0))
@@ -289,8 +288,9 @@ if __name__ == '__main__':
     # run_episodes(agent)
 
     # upper_quantile_chain()
-    # plot_upper()
 
     # lower_quantile_chain()
+    plot_upper()
     plot_lower()
+    plt.show()
 
