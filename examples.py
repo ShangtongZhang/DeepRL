@@ -36,7 +36,7 @@ def a2c_cart_pole():
                                               log_dir=get_default_log_dir(a2c_cart_pole.__name__))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
-        state_dim, action_dim, FCBody(state_dim), gpu=-1)
+        state_dim, action_dim, FCBody(state_dim))
     config.policy_fn = SamplePolicy
     config.discount = 0.99
     config.logger = get_logger()
@@ -102,7 +102,7 @@ def ppo_cart_pole():
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
-        state_dim, action_dim, FCBody(state_dim), gpu=-1)
+        state_dim, action_dim, FCBody(state_dim))
     config.discount = 0.99
     config.logger = get_logger()
     config.use_gae = True
@@ -142,8 +142,8 @@ def dqn_pixel_atari(name):
     config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
                                         log_dir=get_default_log_dir(dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=0)
-    # config.network_fn = lambda state_dim, action_dim: DuelingNet(action_dim, NatureConvBody(), gpu=0)
+    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody())
+    # config.network_fn = lambda state_dim, action_dim: DuelingNet(action_dim, NatureConvBody())
     config.policy_fn = lambda: GreedyPolicy(LinearSchedule(1.0, 0.1, 1e6))
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
     config.state_normalizer = ImageNormalizer()
@@ -164,7 +164,7 @@ def a2c_pixel_atari(name):
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
     config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
-        state_dim, action_dim, NatureConvBody(), gpu=0)
+        state_dim, action_dim, NatureConvBody())
     config.policy_fn = SamplePolicy
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -184,7 +184,7 @@ def categorical_dqn_pixel_atari(name):
                                         log_dir=get_default_log_dir(categorical_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00025, eps=0.01 / 32)
     config.network_fn = lambda state_dim, action_dim: \
-        CategoricalNet(action_dim, config.categorical_n_atoms, NatureConvBody(), gpu=1)
+        CategoricalNet(action_dim, config.categorical_n_atoms, NatureConvBody())
     config.policy_fn = lambda: GreedyPolicy(LinearSchedule(0.1))
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
     config.discount = 0.99
@@ -206,7 +206,7 @@ def quantile_regression_dqn_pixel_atari(name):
                                         log_dir=get_default_log_dir(quantile_regression_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(), gpu=2)
+        QuantileNet(action_dim, config.num_quantiles, NatureConvBody())
     config.policy_fn = lambda: GreedyPolicy(LinearSchedule(1.0, 0.01, 1e6))
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
     config.state_normalizer = ImageNormalizer()
@@ -227,7 +227,7 @@ def n_step_dqn_pixel_atari(name):
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(n_step_dqn_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=3)
+    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody())
     config.policy_fn = lambda: GreedyPolicy(LinearSchedule(1.0, 0.05, 1e6))
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -247,7 +247,7 @@ def ppo_pixel_atari(name):
                                               log_dir=get_default_log_dir(ppo_pixel_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025)
     config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
-        state_dim, action_dim, NatureConvBody(), gpu=0)
+        state_dim, action_dim, NatureConvBody())
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
@@ -271,7 +271,7 @@ def option_ciritc_pixel_atari(name):
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(config.tag))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda state_dim, action_dim: OptionCriticNet(NatureConvBody(), action_dim, num_options=4, gpu=0)
+    config.network_fn = lambda state_dim, action_dim: OptionCriticNet(NatureConvBody(), action_dim, num_options=4)
     config.policy_fn = lambda: GreedyPolicy(LinearSchedule(0.1))
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -290,7 +290,7 @@ def dqn_ram_atari(name):
     config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4,
                                       log_dir=get_default_log_dir(dqn_ram_atari.__name__))
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, FCBody(state_dim), gpu=2)
+    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, FCBody(state_dim))
     config.policy_fn = lambda: GreedyPolicy(LinearSchedule(0.1))
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
     config.state_normalizer = RescaleNormalizer(1.0 / 128)
@@ -311,12 +311,12 @@ def ppo_continuous():
     config.num_workers = 1
     # task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
     # task_fn = lambda log_dir: Bullet('AntBulletEnv-v0', log_dir=log_dir)
-    task_fn = lambda log_dir: Roboschool('RoboschoolAnt-v1', log_dir=log_dir)
+    task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
 
     config.network_fn = lambda state_dim, action_dim: GaussianActorCriticNet(
         state_dim, action_dim, actor_body=FCBody(state_dim),
-        critic_body=FCBody(state_dim), gpu=-1)
+        critic_body=FCBody(state_dim))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     # config.state_normalizer = RunningStatsNormalizer()
     config.discount = 0.99
@@ -371,7 +371,7 @@ def ddpg_pixel():
         actor_body=FCBody(phi_body.feature_dim, (50, ), gate=F.tanh),
         critic_body=OneLayerFCBodyWithAction(phi_body.feature_dim, action_dim, 50, gate=F.tanh),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3), gpu=0)
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=16)
     config.discount = 0.99
@@ -418,6 +418,7 @@ if __name__ == '__main__':
     mkdir('dataset')
     mkdir('log')
     set_one_thread()
+    select_device(0)
 
     # dqn_cart_pole()
     # a2c_cart_pole()
@@ -438,7 +439,7 @@ if __name__ == '__main__':
 
     # ddpg_low_dim_state()
     # ddpg_pixel()
-    # ppo_continuous()
+    ppo_continuous()
 
     # action_conditional_video_prediction()
 

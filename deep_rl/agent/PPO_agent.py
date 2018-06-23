@@ -43,14 +43,14 @@ class PPOAgent(BaseAgent):
         rollout.append([states, pending_value, None, None, None, None])
 
         processed_rollout = [None] * (len(rollout) - 1)
-        advantages = self.network.tensor(np.zeros((config.num_workers, 1)))
+        advantages = tensor(np.zeros((config.num_workers, 1)))
         returns = pending_value.detach()
         for i in reversed(range(len(rollout) - 1)):
             states, value, actions, log_probs, rewards, terminals = rollout[i]
-            terminals = self.network.tensor(terminals).unsqueeze(1)
-            rewards = self.network.tensor(rewards).unsqueeze(1)
-            actions = self.network.tensor(actions)
-            states = self.network.tensor(states)
+            terminals = tensor(terminals).unsqueeze(1)
+            rewards = tensor(rewards).unsqueeze(1)
+            actions = tensor(actions)
+            states = tensor(states)
             next_value = rollout[i + 1][1]
             returns = rewards + config.discount * terminals * returns
             if not config.use_gae:
@@ -68,7 +68,7 @@ class PPOAgent(BaseAgent):
             batcher.shuffle()
             while not batcher.end():
                 batch_indices = batcher.next_batch()[0]
-                batch_indices = self.network.tensor(batch_indices).long()
+                batch_indices = tensor(batch_indices).long()
                 sampled_states = states[batch_indices]
                 sampled_actions = actions[batch_indices]
                 sampled_log_probs_old = log_probs_old[batch_indices]

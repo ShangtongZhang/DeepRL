@@ -23,7 +23,7 @@ class CategoricalDQNAgent(BaseAgent):
         self.replay = config.replay_fn()
         self.policy = config.policy_fn()
         self.total_steps = 0
-        self.atoms = self.network.tensor(
+        self.atoms = tensor(
             np.linspace(config.categorical_v_min,
                         config.categorical_v_max,
                         config.categorical_n_atoms))
@@ -73,8 +73,8 @@ class CategoricalDQNAgent(BaseAgent):
                 prob_next = prob_next.gather(1, a_next).squeeze(1)
                 # self.config.logger.histo_summary('prob next', prob_next.cpu().detach().numpy(), self.total_steps)
 
-                rewards = self.network.tensor(rewards)
-                terminals = self.network.tensor(terminals)
+                rewards = tensor(rewards)
+                terminals = tensor(terminals)
                 atoms_next = rewards.view(-1, 1) + self.config.discount * (1 - terminals.view(-1, 1)) * self.atoms.view(1, -1)
                 # epsilon = 1e-5
                 atoms_next.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
@@ -83,13 +83,13 @@ class CategoricalDQNAgent(BaseAgent):
                 u = b.ceil()
                 d_m_l = (u + (l == u).float() - b) * prob_next
                 d_m_u = (b - l) * prob_next
-                target_prob = self.network.tensor(np.zeros(prob_next.size()))
+                target_prob = tensor(np.zeros(prob_next.size()))
                 for i in range(target_prob.size(0)):
                     target_prob[i].index_add_(0, l[i].long(), d_m_l[i])
                     target_prob[i].index_add_(0, u[i].long(), d_m_u[i])
 
                 prob = self.network.predict(states)
-                actions = self.network.tensor(actions).long()
+                actions = tensor(actions).long()
                 actions = actions.view(-1, 1, 1).expand(-1, -1, prob.size(2))
                 prob = prob.gather(1, actions).squeeze(1)
                 loss = -(target_prob * prob.log()).sum(-1).mean()

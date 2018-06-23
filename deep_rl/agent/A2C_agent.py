@@ -42,12 +42,12 @@ class A2CAgent(BaseAgent):
         rollout.append([None, pending_value, None, None, None, None])
 
         processed_rollout = [None] * (len(rollout) - 1)
-        advantages = self.network.tensor(np.zeros((config.num_workers, 1)))
+        advantages = tensor(np.zeros((config.num_workers, 1)))
         returns = pending_value.detach()
         for i in reversed(range(len(rollout) - 1)):
             log_prob, value, actions, rewards, terminals, entropy = rollout[i]
-            terminals = self.network.tensor(terminals).unsqueeze(1)
-            rewards = self.network.tensor(rewards).unsqueeze(1)
+            terminals = tensor(terminals).unsqueeze(1)
+            rewards = tensor(rewards).unsqueeze(1)
             next_value = rollout[i + 1][1]
             returns = rewards + config.discount * terminals * returns
             if not config.use_gae:

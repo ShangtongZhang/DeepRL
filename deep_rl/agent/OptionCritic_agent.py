@@ -34,8 +34,8 @@ class OptionCriticAgent(BaseAgent):
 
         q_options, betas, options, log_pi = self.q_options, self.betas, self.options, self.log_pi
         for _ in range(config.rollout_length):
-            var_options = self.network.tensor(options).long()
-            worker_index = self.network.tensor(np.arange(config.num_workers)).long()
+            var_options = tensor(options).long()
+            worker_index = tensor(np.arange(config.num_workers)).long()
             intra_log_pi = log_pi[worker_index, var_options, :]
             dist = torch.distributions.Categorical(intra_log_pi.exp())
             actions = dist.sample()
@@ -75,7 +75,7 @@ class OptionCriticAgent(BaseAgent):
         self.log_pi = log_pi
 
         target_q_options, _, _ = self.target_network.predict(next_states)
-        prev_options = self.network.tensor(self.prev_options).long().unsqueeze(1)
+        prev_options = tensor(self.prev_options).long().unsqueeze(1)
         betas_prev_options = betas.gather(1, prev_options)
 
         returns = (1 - betas_prev_options) * target_q_options.gather(1, prev_options) +\
@@ -85,11 +85,11 @@ class OptionCriticAgent(BaseAgent):
         processed_rollout = [None] * (len(rollout))
         for i in reversed(range(len(rollout))):
             q_options, betas, options, prev_options, rewards, terminals, is_initial_betas, log_pi, actions = rollout[i]
-            options = self.network.tensor(options).unsqueeze(1).long()
-            prev_options = self.network.tensor(prev_options).unsqueeze(1).long()
-            terminals = self.network.tensor(terminals).unsqueeze(1)
-            rewards = self.network.tensor(rewards).unsqueeze(1)
-            is_initial_betas = self.network.tensor(is_initial_betas).unsqueeze(1)
+            options = tensor(options).unsqueeze(1).long()
+            prev_options = tensor(prev_options).unsqueeze(1).long()
+            terminals = tensor(terminals).unsqueeze(1)
+            rewards = tensor(rewards).unsqueeze(1)
+            is_initial_betas = tensor(is_initial_betas).unsqueeze(1)
             returns = rewards + config.discount * terminals * returns
 
             q_omg = q_options.gather(1, options)

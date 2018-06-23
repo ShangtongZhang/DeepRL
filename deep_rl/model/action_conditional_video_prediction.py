@@ -11,9 +11,9 @@ from skimage import io
 from collections import deque
 import gym
 import torch.optim
-from deep_rl.utils import *
+from ..utils import *
 from tqdm import tqdm
-from deep_rl.network import *
+from ..network import *
 
 class Network(nn.Module, BaseNet):
     def __init__(self, num_actions, gpu=0):
@@ -73,9 +73,9 @@ class Network(nn.Module, BaseNet):
         return x
 
     def fit(self, x, a, y):
-        x = self.tensor(x)
-        a = self.tensor(a)
-        y = self.tensor(y)
+        x = tensor(x)
+        a = tensor(a)
+        y = tensor(y)
         y_ = self.forward(x, a)
         loss = self.criterion(y_, y)
         self.opt.zero_grad()
@@ -86,16 +86,16 @@ class Network(nn.Module, BaseNet):
         return np.asscalar(loss.cpu().data.numpy())
 
     def evaluate(self, x, a, y):
-        x = self.tensor(x)
-        a = self.tensor(a)
-        y = self.tensor(y)
+        x = tensor(x)
+        a = tensor(a)
+        y = tensor(y)
         y_ = self.forward(x, a)
         loss = self.criterion(y_, y)
         return np.asscalar(loss.cpu().data.numpy())
 
     def predict(self, x, a):
-        x = self.tensor(x)
-        a = self.tensor(a)
+        x = tensor(x)
+        a = tensor(a)
         return self.forward(x, a).cpu().data.numpy()
 
 def load_episode(game, ep, num_actions, prefix):

@@ -24,7 +24,7 @@ class QuantileRegressionDQNAgent(BaseAgent):
         self.policy = config.policy_fn()
         self.total_steps = 0
         self.quantile_weight = 1.0 / self.config.num_quantiles
-        self.cumulative_density = self.network.tensor(
+        self.cumulative_density = tensor(
             (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles))
 
     def huber(self, x):
@@ -72,12 +72,12 @@ class QuantileRegressionDQNAgent(BaseAgent):
                 a_next = a_next.view(-1, 1, 1).expand(-1, -1, quantiles_next.size(2))
                 quantiles_next = quantiles_next.gather(1, a_next).squeeze(1)
 
-                rewards = self.network.tensor(rewards)
-                terminals = self.network.tensor(terminals)
+                rewards = tensor(rewards)
+                terminals = tensor(terminals)
                 quantiles_next = rewards.view(-1, 1) + self.config.discount * (1 - terminals.view(-1, 1)) * quantiles_next
 
                 quantiles = self.network.predict(states)
-                actions = self.network.tensor(actions).long()
+                actions = tensor(actions).long()
                 actions = actions.view(-1, 1, 1).expand(-1, -1, quantiles.size(2))
                 quantiles = quantiles.gather(1, actions).squeeze(1)
 

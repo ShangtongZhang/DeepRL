@@ -55,10 +55,10 @@ class NStepDQNAgent(BaseAgent):
         returns, _ = torch.max(returns, dim=1, keepdim=True)
         for i in reversed(range(len(rollout))):
             q, actions, rewards, terminals = rollout[i]
-            actions = self.network.tensor(actions).unsqueeze(1).long()
+            actions = tensor(actions).unsqueeze(1).long()
             q = q.gather(1, actions)
-            terminals = self.network.tensor(terminals).unsqueeze(1)
-            rewards = self.network.tensor(rewards).unsqueeze(1)
+            terminals = tensor(terminals).unsqueeze(1)
+            rewards = tensor(rewards).unsqueeze(1)
             returns = rewards + config.discount * terminals * returns
             processed_rollout[i] = [q, returns]
 

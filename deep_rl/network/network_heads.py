@@ -8,29 +8,29 @@ from .network_utils import *
 from .network_bodies import *
 
 class VanillaNet(nn.Module, BaseNet):
-    def __init__(self, output_dim, body, gpu=-1):
+    def __init__(self, output_dim, body):
         super(VanillaNet, self).__init__()
         self.fc_head = layer_init(nn.Linear(body.feature_dim, output_dim))
         self.body = body
-        self.set_gpu(gpu)
+        self.to(Config.DEVICE)
 
     def predict(self, x, to_numpy=False):
-        phi = self.body(self.tensor(x))
+        phi = self.body(tensor(x))
         y = self.fc_head(phi)
         if to_numpy:
             y = y.cpu().detach().numpy()
         return y
 
 class DuelingNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, body, gpu=-1):
+    def __init__(self, action_dim, body):
         super(DuelingNet, self).__init__()
         self.fc_value = layer_init(nn.Linear(body.feature_dim, 1))
         self.fc_advantage = layer_init(nn.Linear(body.feature_dim, action_dim))
         self.body = body
-        self.set_gpu(gpu)
+        self.to(Config.DEVICE)
 
     def predict(self, x, to_numpy=False):
-        phi = self.body(self.tensor(x))
+        phi = self.body(tensor(x))
         value = self.fc_value(phi)
         advantange = self.fc_advantage(phi)
         q = value.expand_as(advantange) + (advantange - advantange.mean(1, keepdim=True).expand_as(advantange))
@@ -39,16 +39,16 @@ class DuelingNet(nn.Module, BaseNet):
         return q
 
 class CategoricalNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, num_atoms, body, gpu=-1):
+    def __init__(self, action_dim, num_atoms, body):
         super(CategoricalNet, self).__init__()
         self.fc_categorical = layer_init(nn.Linear(body.feature_dim, action_dim * num_atoms))
         self.action_dim = action_dim
         self.num_atoms = num_atoms
         self.body = body
-        self.set_gpu(gpu)
+        self.to(Config.DEVICE)
 
     def predict(self, x, to_numpy=False):
-        phi = self.body(self.tensor(x))
+        phi = self.body(tensor(x))
         pre_prob = self.fc_categorical(phi).view((-1, self.action_dim, self.num_atoms))
         prob = F.softmax(pre_prob, dim=-1)
         if to_numpy:
@@ -56,16 +56,16 @@ class CategoricalNet(nn.Module, BaseNet):
         return prob
 
 class QuantileNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, num_quantiles, body, gpu=-1):
+    def __init__(self, action_dim, num_quantiles, body):
         super(QuantileNet, self).__init__()
         self.fc_quantiles = layer_init(nn.Linear(body.feature_dim, action_dim * num_quantiles))
         self.action_dim = action_dim
         self.num_quantiles = num_quantiles
         self.body = body
-        self.set_gpu(gpu)
+        self.to(Config.DEVICE)
 
     def predict(self, x, to_numpy=False):
-        phi = self.body(self.tensor(x))
+        phi = self.body(tensor(x))
         quantiles = self.fc_quantiles(phi)
         quantiles = quantiles.view((-1, self.action_dim, self.num_quantiles))
         if to_numpy:
@@ -73,7 +73,7 @@ class QuantileNet(nn.Module, BaseNet):
         return quantiles
 
 class OptionCriticNet(nn.Module, BaseNet):
-    def __init__(self, body, action_dim, num_options, gpu=-1):
+    def __init__(self, body, action_dim, num_options):
         super(OptionCriticNet, self).__init__()
         self.fc_q = layer_init(nn.Linear(body.feature_dim, num_options))
         self.fc_pi = layer_init(nn.Linear(body.feature_dim, num_options * action_dim))
@@ -81,10 +81,10 @@ class OptionCriticNet(nn.Module, BaseNet):
         self.num_options = num_options
         self.action_dim = action_dim
         self.body = body
-        self.set_gpu(gpu)
+        self.to(Config.DEVICE)
 
     def predict(self, x):
-        phi = self.body(self.tensor(x))
+        phi = self.body(tensor(x))
         q = self.fc_q(phi)
         beta = F.sigmoid(self.fc_beta(phi))
         pi = self.fc_pi(phi)
@@ -116,13 +116,12 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
                  critic_opt_fn,
                  phi_body=None,
                  actor_body=None,
-                 critic_body=None,
-                 gpu=-1):
+                 critic_body=None):
         super(DeterministicActorCriticNet, self).__init__()
         self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
         self.actor_opt = actor_opt_fn(self.network.actor_params + self.network.phi_params)
         self.critic_opt = critic_opt_fn(self.network.critic_params + self.network.phi_params)
-        self.set_gpu(gpu)
+        self.to(Config.DEVICE)
 
     def predict(self, obs, to_numpy=False):
         phi = self.feature(obs)
@@ -132,7 +131,7 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         return action
 
     def feature(self, obs):
-        obs = self.tensor(obs)
+        obs = tensor(obs)
         return self.network.phi_body(obs)
 
     def actor(self, phi):
@@ -147,15 +146,14 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
                  action_dim,
                  phi_body=None,
                  actor_body=None,
-                 critic_body=None,
-                 gpu=-1):
+                 critic_body=None):
         super(GaussianActorCriticNet, self).__init__()
         self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
         self.std = nn.Parameter(torch.ones(1, action_dim))
-        self.set_gpu(gpu)
+        self.to(Config.DEVICE)
 
     def predict(self, obs, action=None, to_numpy=False):
-        obs = self.tensor(obs)
+        obs = tensor(obs)
         phi = self.network.phi_body(obs)
         phi_a = self.network.actor_body(phi)
         phi_v = self.network.critic_body(phi)
@@ -168,7 +166,7 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
             action = dist.sample()
         log_prob = dist.log_prob(action)
         log_prob = torch.sum(log_prob, dim=1, keepdim=True)
-        return action, log_prob, self.tensor(np.zeros((log_prob.size(0), 1))), v
+        return action, log_prob, tensor(np.zeros((log_prob.size(0), 1))), v
 
 class CategoricalActorCriticNet(nn.Module, BaseNet):
     def __init__(self,
@@ -176,14 +174,13 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
                  action_dim,
                  phi_body=None,
                  actor_body=None,
-                 critic_body=None,
-                 gpu=-1):
+                 critic_body=None):
         super(CategoricalActorCriticNet, self).__init__()
         self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
-        self.set_gpu(gpu)
+        self.to(Config.DEVICE)
 
     def predict(self, obs, action=None):
-        obs = self.tensor(obs)
+        obs = tensor(obs)
         phi = self.network.phi_body(obs)
         phi_a = self.network.actor_body(phi)
         phi_v = self.network.critic_body(phi)
