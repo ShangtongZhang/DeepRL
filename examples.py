@@ -439,7 +439,7 @@ if __name__ == '__main__':
 
     # ddpg_low_dim_state()
     # ddpg_pixel()
-    ppo_continuous()
+    # ppo_continuous()
 
     # action_conditional_video_prediction()
 
