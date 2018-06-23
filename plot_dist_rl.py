@@ -231,10 +231,16 @@ if __name__ == '__main__':
     # plt.show()
 
     patterns = [
-        'le',
-        'me',
         'original',
-        'se',
+        'b001_se',
+        'b001_me',
+        'b001_le',
+        'b0_se',
+        'b0_me',
+        'b0_le',
+        'b1_se',
+        'b1_me',
+        'b1_le'
     ]
     for i, p in enumerate(patterns):
         plot(pattern='.*replay_qo.*%s.*' % (p), figure=0, color=i)
