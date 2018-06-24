@@ -11,6 +11,9 @@ from ..utils import *
 import uuid
 
 class BaseTask:
+    def __init__(self):
+        pass
+
     def set_monitor(self, env, log_dir):
         if log_dir is None:
             return env
