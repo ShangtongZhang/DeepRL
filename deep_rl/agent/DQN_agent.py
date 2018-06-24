@@ -14,13 +14,13 @@ class DQNAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
+        self.replay = config.replay_fn()
         self.task = config.task_fn()
         self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
         self.optimizer = config.optimizer_fn(self.network.parameters())
         self.criterion = nn.MSELoss()
         self.target_network.load_state_dict(self.network.state_dict())
-        self.replay = config.replay_fn()
         self.policy = config.policy_fn()
         self.total_steps = 0
 
@@ -81,6 +81,6 @@ class DQNAgent(BaseAgent):
                 break
 
         episode_time = time.time() - episode_start_time
-        self.config.logger.debug('episode steps %d, episode time %f, time per step %f' %
-                          (steps, episode_time, episode_time / float(steps)))
+        self.config.logger.info('episode time %f, fps %f' %
+                          (episode_time, float(steps) / episode_time))
         return total_reward, steps

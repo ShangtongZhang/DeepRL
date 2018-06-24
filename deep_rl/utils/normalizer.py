@@ -81,7 +81,7 @@ class RescaleNormalizer(BaseNormalizer):
         self.coef = coef
 
     def __call__(self, x):
-        if not np.isscalar(x):
+        if x.__class__.__name__ == 'LazyFrames':
             x = np.asarray(x)
         return self.coef * x
 

@@ -146,6 +146,7 @@ def dqn_pixel_atari(name):
     # config.network_fn = lambda state_dim, action_dim: DuelingNet(action_dim, NatureConvBody())
     config.policy_fn = lambda: GreedyPolicy(LinearSchedule(1.0, 0.1, 1e6))
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
+    # config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99

@@ -144,23 +144,23 @@ class PixelBullet(BaseTask):
 class ProcessTask:
     def __init__(self, task_fn, log_dir=None):
         self.pipe, worker_pipe = mp.Pipe()
-        self.worker = ProcessWrapper(worker_pipe, task_fn, log_dir)
+        self.worker = _ProcessWrapper(worker_pipe, task_fn, log_dir)
         self.worker.start()
-        self.pipe.send([ProcessWrapper.SPECS, None])
+        self.pipe.send([_ProcessWrapper.SPECS, None])
         self.state_dim, self.action_dim, self.name = self.pipe.recv()
 
     def step(self, action):
-        self.pipe.send([ProcessWrapper.STEP, action])
+        self.pipe.send([_ProcessWrapper.STEP, action])
         return self.pipe.recv()
 
     def reset(self):
-        self.pipe.send([ProcessWrapper.RESET, None])
+        self.pipe.send([_ProcessWrapper.RESET, None])
         return self.pipe.recv()
 
     def close(self):
-        self.pipe.send([ProcessWrapper.EXIT, None])
+        self.pipe.send([_ProcessWrapper.EXIT, None])
 
-class ProcessWrapper(mp.Process):
+class _ProcessWrapper(mp.Process):
     STEP = 0
     RESET = 1
     EXIT = 2
