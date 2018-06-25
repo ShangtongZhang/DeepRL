@@ -8,6 +8,7 @@ import torch
 import numpy as np
 import torch.multiprocessing as mp
 from collections import deque
+from ..utils import *
 
 class Replay:
     def __init__(self, memory_size, batch_size):
@@ -43,59 +44,52 @@ class Replay:
     def empty(self):
         return not len(self.data)
 
-class _ProcessWrapper(mp.Process):
+class AsyncReplay(mp.Process):
     FEED = 0
     SAMPLE = 1
     EXIT = 2
-    def __init__(self, pipe, memory_size, batch_size):
+    def __init__(self, memory_size, batch_size):
         mp.Process.__init__(self)
-        self.pipe = pipe
+        self.__pipe, self.__worker_pipe = mp.Pipe()
         self.memory_size = memory_size
         self.batch_size = batch_size
-        self.cache_len = 2
+        self.__cache_len = 2
+        self.start()
 
     def run(self):
         torch.cuda.is_available()
-        from ..utils.torch_utils import tensor
         replay = Replay(self.memory_size, self.batch_size)
-        cache = deque([], maxlen=self.cache_len)
+        cache = deque([], maxlen=self.__cache_len)
 
         def sample():
             batch_data = replay.sample()
             batch_data = [tensor(x) for x in batch_data]
-            # for x in batch_data:
-            #     x.share_memory_()
             cache.append(batch_data)
 
         while True:
-            op, data = self.pipe.recv()
+            op, data = self.__worker_pipe.recv()
             if op == self.FEED:
                 replay.feed(data)
             elif op == self.SAMPLE:
                 if len(cache) == 0:
                     sample()
-                self.pipe.send(cache.popleft())
-                while len(cache) < self.cache_len:
+                self.__worker_pipe.send(cache.popleft())
+                while len(cache) < self.__cache_len:
                     sample()
             elif op == self.EXIT:
-                self.pipe.close()
+                self.__worker_pipe.close()
                 return
             else:
                 raise Exception('Unknown command')
 
-
-class AsyncReplay:
-    def __init__(self, memory_size, batch_size):
-        self.pipe, worker_pipe = mp.Pipe()
-        self.worker = _ProcessWrapper(worker_pipe, memory_size, batch_size)
-        self.worker.start()
-
     def feed(self, exp):
-        self.pipe.send([_ProcessWrapper.FEED, exp])
+        self.__pipe.send([self.FEED, exp])
 
     def sample(self):
-        self.pipe.send([_ProcessWrapper.SAMPLE, None])
-        return self.pipe.recv()
+        self.__pipe.send([self.SAMPLE, None])
+        return self.__pipe.recv()
 
     def close(self):
-        self.pipe.send([_ProcessWrapper.EXIT, None])
+        self.__pipe.send([self.EXIT, None])
+        self.__pipe.close()
+

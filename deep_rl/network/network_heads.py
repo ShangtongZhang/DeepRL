@@ -14,11 +14,9 @@ class VanillaNet(nn.Module, BaseNet):
         self.body = body
         self.to(Config.DEVICE)
 
-    def predict(self, x, to_numpy=False):
+    def forward(self, x):
         phi = self.body(tensor(x))
         y = self.fc_head(phi)
-        if to_numpy:
-            y = y.cpu().detach().numpy()
         return y
 
 class DuelingNet(nn.Module, BaseNet):
