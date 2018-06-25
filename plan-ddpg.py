@@ -19,9 +19,48 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
         state_dim, action_dim,
-        actor_body=FCBody(state_dim, (300, 200), gate=config.gate),
+        actor_body=FCBody(state_dim, (400, 300), gate=config.gate),
         critic_body=TwoLayerFCBodyWithAction(
             state_dim, action_dim, (400, 300), gate=config.gate),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(
+            params, lr=1e-3, weight_decay=config.q_l2_weight)
+        )
+
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.discount = 0.99
+    config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.max_steps = 1e6
+    config.evaluation_episodes_interval = int(1e4)
+    config.evaluation_episodes = 20
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = get_logger()
+    run_episodes(DDPGAgent(config))
+
+def larger_ddpg_continuous(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('gate', F.tanh)
+    kwargs.setdefault('tag', larger_ddpg_continuous.__name__)
+    kwargs.setdefault('q_l2_weight', 0)
+    kwargs.setdefault('reward_scale', 1.0)
+    kwargs.setdefault('option_epsilon', LinearSchedule(0))
+    kwargs.setdefault('action_based_noise', True)
+    kwargs.setdefault('noise', OrnsteinUhlenbeckProcess)
+    kwargs.setdefault('std', LinearSchedule(0.2))
+    config.merge(kwargs)
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+
+    config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
+    config.evaluation_env = config.task_fn(log_dir=log_dir)
+
+    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
+        state_dim, action_dim,
+        actor_body=FCBody(state_dim, (800, 600), gate=config.gate),
+        critic_body=TwoLayerFCBodyWithAction(
+            state_dim, action_dim, (800, 600), gate=config.gate),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
             params, lr=1e-3, weight_decay=config.q_l2_weight)
@@ -166,12 +205,12 @@ def batch_job():
     # game = games[cf.ind1]
 
     games = [
-        # 'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
-        # 'RoboschoolHopper-v1',
-        # 'RoboschoolHalfCheetah-v1',
-        # 'RoboschoolReacher-v1',
-        # 'RoboschoolHumanoid-v1',
+        'RoboschoolAnt-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
         'RoboschoolPong-v1',
         'RoboschoolHumanoidFlagrun-v1',
         'RoboschoolHumanoidFlagrunHarder-v1',
@@ -223,20 +262,22 @@ if __name__ == '__main__':
     # ddpg_shared(game)
 
     games = [
-        # 'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
-        # 'RoboschoolHopper-v1',
-        # 'RoboschoolHalfCheetah-v1',
-        # 'RoboschoolReacher-v1',
-        # 'RoboschoolHumanoid-v1',
-        # 'RoboschoolPong-v1',
-        # 'RoboschoolHumanoidFlagrun-v1',
-        # 'RoboschoolHumanoidFlagrunHarder-v1',
-        # 'RoboschoolInvertedPendulum-v1',
+        'RoboschoolAnt-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
+        'RoboschoolPong-v1',
+        'RoboschoolHumanoidFlagrun-v1',
+        'RoboschoolHumanoidFlagrunHarder-v1',
+        'RoboschoolInvertedPendulum-v1',
         'RoboschoolInvertedPendulumSwingup-v1',
         'RoboschoolInvertedDoublePendulum-v1',
     ]
     for game in games:
-        multi_runs(game, ddpg_continuous, tag='original_ddpg', parallel=True)
+        multi_runs(game, ddpg_continuous, tag='baseline_ddpg', parallel=True)
+    for game in games:
+        multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=True)
 
 
