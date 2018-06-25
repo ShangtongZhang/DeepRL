@@ -50,6 +50,7 @@ def ddpg_plot(**kwargs):
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
     data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
     min_y = np.min([len(y) for y in data])
+    # print(min_y)
     data = [y[ :min_y] for y in data]
     new_data = []
     for y in data:
@@ -57,6 +58,8 @@ def ddpg_plot(**kwargs):
         x = np.arange(y.shape[0]) * kwargs['x_interval']
         new_data.append([x, y])
     data = new_data
+    peak = [np.max(y) for x, y in data]
+    print(peak)
 
     print('')
 
@@ -81,6 +84,7 @@ def ddpg_plot(**kwargs):
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
     # plt.show()
+    return peak
 
 if __name__ == '__main__':
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
@@ -322,12 +326,12 @@ if __name__ == '__main__':
         'RoboschoolHalfCheetah-v1',
         'RoboschoolReacher-v1',
         'RoboschoolHumanoid-v1',
-        # 'RoboschoolPong-v1',
-        # 'RoboschoolHumanoidFlagrun-v1',
-        # 'RoboschoolHumanoidFlagrunHarder-v1',
-        # 'RoboschoolInvertedPendulum-v1',
-        # 'RoboschoolInvertedPendulumSwingup-v1',
-        # 'RoboschoolInvertedDoublePendulum-v1',
+        'RoboschoolPong-v1',
+        'RoboschoolHumanoidFlagrun-v1',
+        'RoboschoolHumanoidFlagrunHarder-v1',
+        'RoboschoolInvertedPendulum-v1',
+        'RoboschoolInvertedPendulumSwingup-v1',
+        'RoboschoolInvertedDoublePendulum-v1',
     ]
     patterns = [
         'd1m0',
@@ -335,7 +339,10 @@ if __name__ == '__main__':
         'shared',
         'ddpg_continuous'
     ]
+    peaks = {}
     for j, game in enumerate(games):
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
-    plt.show()
+            peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
+
+        # plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
+    # plt.show()
