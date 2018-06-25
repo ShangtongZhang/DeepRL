@@ -262,9 +262,9 @@ if __name__ == '__main__':
     # ddpg_shared(game)
 
     games = [
+        'RoboschoolHopper-v1',
         'RoboschoolAnt-v1',
         'RoboschoolWalker2d-v1',
-        'RoboschoolHopper-v1',
         'RoboschoolHalfCheetah-v1',
         'RoboschoolReacher-v1',
         'RoboschoolHumanoid-v1',
@@ -277,7 +277,6 @@ if __name__ == '__main__':
     ]
     for game in games:
         multi_runs(game, ddpg_continuous, tag='baseline_ddpg', parallel=True)
-    for game in games:
         multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=True)
 
 
