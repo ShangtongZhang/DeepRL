@@ -69,7 +69,7 @@ def ddpg_plot(**kwargs):
         # y = np.transpose(np.stack(y))
         y = np.stack(y)
         name = names[0].split('/')[-1]
-        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color], cd='sd')
+        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color], ci='sd')
         plt.title(names[0])
     else:
         for i, name in enumerate(names):
@@ -96,11 +96,11 @@ if __name__ == '__main__':
     # ]
     games = [
         'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
-        # 'RoboschoolHopper-v1',
-        # 'RoboschoolHalfCheetah-v1',
-        # 'RoboschoolReacher-v1',
-        # 'RoboschoolHumanoid-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
     ]
     patterns = [
         'original',
