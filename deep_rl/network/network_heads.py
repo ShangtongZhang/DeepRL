@@ -27,13 +27,11 @@ class DuelingNet(nn.Module, BaseNet):
         self.body = body
         self.to(Config.DEVICE)
 
-    def predict(self, x, to_numpy=False):
+    def forward(self, x, to_numpy=False):
         phi = self.body(tensor(x))
         value = self.fc_value(phi)
         advantange = self.fc_advantage(phi)
         q = value.expand_as(advantange) + (advantange - advantange.mean(1, keepdim=True).expand_as(advantange))
-        if to_numpy:
-            return q.cpu().detach().numpy()
         return q
 
 class CategoricalNet(nn.Module, BaseNet):

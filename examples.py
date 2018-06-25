@@ -15,8 +15,8 @@ def dqn_cart_pole():
     config.eval_env = config.task_fn()
 
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda: VanillaNet(config.action_dim, FCBody(config.state_dim))
-    # config.network_fn = lambda state_dim, action_dim: DuelingNet(action_dim, FCBody(state_dim))
+    # config.network_fn = lambda: VanillaNet(config.action_dim, FCBody(config.state_dim))
+    config.network_fn = lambda: DuelingNet(config.action_dim, FCBody(config.state_dim))
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
     config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
     # config.replay_fn = lambda: AsyncReplay(memory_size=10000, batch_size=10)
@@ -151,7 +151,7 @@ def dqn_pixel_atari(name):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(
         params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
     config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
-    # config.network_fn = lambda state_dim, action_dim: DuelingNet(action_dim, NatureConvBody())
+    # config.network_fn = lambda: DuelingNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e6)
     # config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
     config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32)
@@ -429,9 +429,9 @@ if __name__ == '__main__':
     mkdir('dataset')
     mkdir('log')
     set_one_thread()
-    select_device(0)
+    select_device(-1)
 
-    # dqn_cart_pole()
+    dqn_cart_pole()
     # a2c_cart_pole()
     # categorical_dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
@@ -439,7 +439,7 @@ if __name__ == '__main__':
     # ppo_cart_pole()
     # option_critic_cart_pole()
 
-    dqn_pixel_atari('BreakoutNoFrameskip-v4')
+    # dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # a2c_pixel_atari('BreakoutNoFrameskip-v4')
     # categorical_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # quantile_regression_dqn_pixel_atari('BreakoutNoFrameskip-v4')
