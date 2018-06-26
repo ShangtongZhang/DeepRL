@@ -237,11 +237,11 @@ if __name__ == '__main__':
     multi_runs(game, option_ddpg_continuous, tag='b0e0', parallel=parallel,
                beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=0)
     multi_runs(game, option_ddpg_continuous, tag='b0e1', parallel=parallel,
-               beta=0, random_option_prob=LinearSchedule(1.0, 1.0, int(1e6)), id=1)
+               beta=0, random_option_prob=LinearSchedule(1.0, 1.0, int(1e6)), id=0)
     multi_runs(game, option_ddpg_continuous, tag='b01e0', parallel=parallel,
-               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=2)
+               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=1)
     multi_runs(game, option_ddpg_continuous, tag='b01e1', parallel=parallel,
-               beta=0, random_option_prob=LinearSchedule(1.0, 1.0, int(1e6)), id=3)
+               beta=0, random_option_prob=LinearSchedule(1.0, 1.0, int(1e6)), id=1)
 
     # multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel)
     # multi_runs(game, ucb_ddpg_continuous, tag='ucb_ddpg_c0', parallel=parallel)
