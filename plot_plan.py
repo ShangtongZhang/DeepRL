@@ -340,9 +340,9 @@ if __name__ == '__main__':
         'ddpg_continuous'
     ]
     peaks = {}
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+            # peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
 
         # plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
     # plt.show()
