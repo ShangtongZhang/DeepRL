@@ -89,7 +89,7 @@ class QuantileOptionDDPGAgent(BaseAgent):
 
                 phi_next = self.target_network.feature(next_states)
                 a_next, q_option_next = self.target_network.actor(phi_next)
-                q_next = self.target_network.critic(phi_next, a_next[np.arange(phi_next.size(0)), -1, :])
+                q_next = self.target_network.critic(phi_next, a_next[self.network.range(phi_next.size(0)), -1, :])
                 terminals = self.network.tensor(terminals).unsqueeze(1)
                 rewards = self.network.tensor(rewards).unsqueeze(1)
                 q_next = config.discount * q_next * (1 - terminals)

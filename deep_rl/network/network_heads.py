@@ -612,10 +612,10 @@ class QuantileOptionDDPGNet(nn.Module, BaseNet):
                  num_actors,
                  actor_opt_fn,
                  critic_opt_fn,
-                 detach=False,
                  phi_body=None,
                  actor_body=None,
                  critic_body=None,
+                 option_body=None,
                  gpu=-1):
         super(QuantileOptionDDPGNet, self).__init__()
         if phi_body is None: phi_body = DummyBody(state_dim)
@@ -624,20 +624,21 @@ class QuantileOptionDDPGNet(nn.Module, BaseNet):
         self.phi_body = phi_body
         self.actor_body = actor_body
         self.critic_body = critic_body
+        self.option_body = option_body
         self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim * num_actors), 1e-3)
         self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, num_quantiles), 1e-3)
-        self.fc_q_option = layer_init(nn.Linear(actor_body.feature_dim, num_actors), 1e-3)
+        self.fc_option = layer_init(nn.Linear(option_body.feature_dim, num_actors), 1e-3)
         self.num_quantiles = num_quantiles
         self.num_actors = num_actors
         self.action_dim = action_dim
-        self.detach = detach
 
         self.actor_params = list(self.actor_body.parameters()) + \
                             list(self.fc_action.parameters())
         self.critic_params = self.actor_params + \
                              list(self.critic_body.parameters()) + \
                              list(self.fc_critic.parameters()) + \
-                             list(self.fc_q_option.parameters())
+                             list(self.option_body.parameters()) + \
+                             list(self.fc_option.parameters())
         self.phi_params = list(self.phi_body.parameters())
 
         self.actor_opt = actor_opt_fn(self.actor_params + self.phi_params)
@@ -662,9 +663,8 @@ class QuantileOptionDDPGNet(nn.Module, BaseNet):
     def actor(self, phi):
         actor_phi = self.actor_body(phi)
         actions = F.tanh(self.fc_action(actor_phi)).view(-1, self.num_actors, self.action_dim)
-        if self.detach:
-            actor_phi = actor_phi.detach()
-        q_options = self.fc_q_option(actor_phi)
+        option_phi = self.option_body(phi)
+        q_options = self.fc_option(option_phi)
         return actions, q_options
 
     def critic(self, phi, a):

@@ -19,7 +19,7 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
         state_dim, action_dim,
-        actor_body=FCBody(state_dim, (300, 200), gate=config.gate),
+        actor_body=FCBody(state_dim, (400, 300), gate=config.gate),
         critic_body=TwoLayerFCBodyWithAction(
             state_dim, action_dim, (400, 300), gate=config.gate),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
@@ -59,7 +59,7 @@ def quantile_ddpg_continuous(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: QuantileDDPGNet(
         state_dim, action_dim, config.num_quantiles,
-        actor_body=FCBody(state_dim, (300, 200), gate=config.gate),
+        actor_body=FCBody(state_dim, (400, 300), gate=config.gate),
         critic_body=TwoLayerFCBodyWithAction(
             state_dim, action_dim, (400, 300), gate=config.gate),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
@@ -101,7 +101,7 @@ def ucb_ddpg_continuous(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: QuantileEnsembleDDPGNet(
         state_dim, action_dim, config.num_quantiles, config.num_actors,
-        actor_body=FCBody(state_dim, (300, 200), gate=config.gate),
+        actor_body=FCBody(state_dim, (400, 300), gate=config.gate),
         critic_body=TwoLayerFCBodyWithAction(
             state_dim, action_dim, (400, 300), gate=config.gate),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
@@ -145,13 +145,13 @@ def option_ddpg_continuous(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: QuantileOptionDDPGNet(
         state_dim, action_dim, config.num_quantiles, config.num_actors,
-        actor_body=FCBody(state_dim, (300, 200), gate=config.gate),
+        actor_body=FCBody(state_dim, (400, 300), gate=config.gate),
+        option_body=FCBody(state_dim, (400, 300), gate=config.gate),
         critic_body=TwoLayerFCBodyWithAction(
             state_dim, action_dim, (400, 300), gate=config.gate),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
-            params, lr=1e-3, weight_decay=config.q_l2_weight),
-        detach=config.detach
+            params, lr=1e-3, weight_decay=config.q_l2_weight)
         )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    batch_job()
+    # batch_job()
 
     game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
