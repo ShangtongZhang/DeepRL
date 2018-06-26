@@ -222,21 +222,21 @@ def batch_job():
     game = games[cf.ind1]
 
     parallel = True
-
-    def task1():
-        multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
-
-    def task2():
-        multi_runs(game, plan_ddpg, tag='d1m0', parallel=parallel,
-                   depth=1, mask=False)
-
-    def task3():
-        multi_runs(game, plan_ddpg, tag='d2m0', parallel=parallel,
-                   depth=2, mask=False)
-
-    task1()
-    task2()
-    task3()
+    multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=parallel)
+    # def task1():
+    #     multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
+    #
+    # def task2():
+    #     multi_runs(game, plan_ddpg, tag='d1m0', parallel=parallel,
+    #                depth=1, mask=False)
+    #
+    # def task3():
+    #     multi_runs(game, plan_ddpg, tag='d2m0', parallel=parallel,
+    #                depth=2, mask=False)
+    #
+    # task1()
+    # task2()
+    # task3()
     # tasks = [task1, task2, task3]
     # tasks[cf.ind2]()
 
@@ -248,7 +248,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    # batch_job()
+    batch_job()
 
     # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
@@ -276,8 +276,8 @@ if __name__ == '__main__':
         'RoboschoolInvertedPendulumSwingup-v1',
         'RoboschoolInvertedDoublePendulum-v1',
     ]
-    for game in games:
-        multi_runs(game, ddpg_continuous, tag='baseline_ddpg', parallel=True)
+    # for game in games:
+    #     multi_runs(game, ddpg_continuous, tag='baseline_ddpg', parallel=True)
         # multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=True)
 
 
