@@ -115,6 +115,10 @@ def sync_grad(target_network, src_network):
 def mkdir(path):
     Path(path).mkdir(parents=True, exist_ok=True)
 
+def close_obj(obj):
+    if hasattr(obj, 'close'):
+        obj.close()
+
 class Batcher:
     def __init__(self, batch_size, data):
         self.batch_size = batch_size

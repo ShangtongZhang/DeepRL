@@ -10,22 +10,58 @@ from ..utils import *
 import time
 from .BaseAgent import *
 
+class DQNActor(BaseActor):
+    def __init__(self, config):
+        BaseActor.__init__(self, config)
+        self.config = config
+        self.start()
+
+    def _transition(self):
+        if self._state is None:
+            self._state = self._task.reset()
+        config = self.config
+        with config.lock:
+            q_values = self._network(config.state_normalizer(np.stack([self._state])))
+        q_values = to_np(q_values).flatten()
+        if self._total_steps < config.exploration_steps \
+                or np.random.rand() < config.random_action_prob():
+            action = np.random.randint(0, len(q_values))
+        else:
+            action = np.argmax(q_values)
+        next_state, reward, done, info = self._task.step(action)
+        entry = [self._state, action, reward, next_state, int(done), info]
+        self._total_steps += 1
+        if done:
+            next_state = self._task.reset()
+        self._state = next_state
+        return entry
+
 class DQNAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
-        self.replay = config.replay_fn()
-        self.task = config.task_fn()
+        config.lock = mp.Lock()
+
+        self.replay = AsyncReplay(config)
+        self.actor = DQNActor(config)
+
         self.network = config.network_fn()
+        self.network.share_memory()
         self.target_network = config.network_fn()
-        self.optimizer = config.optimizer_fn(self.network.parameters())
         self.target_network.load_state_dict(self.network.state_dict())
-        self.total_steps = 0
+        self.optimizer = config.optimizer_fn(self.network.parameters())
+
+        self.actor.set_network(self.network)
+
         self.episode_reward = 0
         self.episode_rewards = []
-        self.state = self.task.reset()
 
+        self.total_steps = 0
         self.batch_indices = range_tensor(self.replay.batch_size)
+
+    def close(self):
+        close_obj(self.replay)
+        close_obj(self.actor)
 
     def eval_step(self, state):
         self.config.state_normalizer.set_read_only()
@@ -37,26 +73,19 @@ class DQNAgent(BaseAgent):
 
     def step(self):
         config = self.config
-        q_values = self.network(config.state_normalizer(np.stack([self.state])))
-        q_values = to_np(q_values).flatten()
-        if self.total_steps < config.exploration_steps \
-                or np.random.rand() < config.random_action_prob():
-            action = np.random.randint(0, config.action_dim)
-        else:
-            action = np.argmax(q_values)
-        next_state, reward, done, _ = self.task.step(action)
-        self.episode_reward += reward
-        self.total_steps += 1
-        if done:
-            self.episode_rewards.append(self.episode_reward)
-            self.episode_reward = 0
-            next_state = self.task.reset()
-        reward = config.reward_normalizer(reward)
-        self.replay.feed([self.state, action, reward, next_state, int(done)])
-        self.state = next_state
+        transitions = self.actor.step()
+        experiences = []
+        for state, action, reward, next_state, done, _ in transitions:
+            self.episode_reward += reward
+            self.total_steps += 1
+            reward = config.reward_normalizer(reward)
+            if done:
+                self.episode_rewards.append(self.episode_reward)
+                self.episode_reward = 0
+            experiences.append([state, action, reward, next_state, done])
+        self.replay.feed_batch(experiences)
 
-        if self.total_steps > self.config.exploration_steps \
-                and self.total_steps % self.config.sgd_update_frequency == 0:
+        if self.total_steps > self.config.exploration_steps:
             experiences = self.replay.sample()
             states, actions, rewards, next_states, terminals = experiences
             states = self.config.state_normalizer(states)
@@ -78,7 +107,9 @@ class DQNAgent(BaseAgent):
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
-            self.optimizer.step()
+            with config.lock:
+                self.optimizer.step()
 
-        if self.total_steps % self.config.target_network_update_freq == 0:
+        if self.total_steps / self.config.sgd_update_frequency % \
+                self.config.target_network_update_freq == 0:
             self.target_network.load_state_dict(self.network.state_dict())

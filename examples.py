@@ -18,15 +18,15 @@ def dqn_cart_pole():
     # config.network_fn = lambda: VanillaNet(config.action_dim, FCBody(config.state_dim))
     config.network_fn = lambda: DuelingNet(config.action_dim, FCBody(config.state_dim))
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
-    config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
-    # config.replay_fn = lambda: AsyncReplay(memory_size=10000, batch_size=10)
+    config.memory_size = int(1e4)
+    config.batch_size = 10
     config.discount = 0.99
     config.target_network_update_freq = 200
     config.exploration_steps = 1000
     # config.double_q = True
     config.double_q = False
     config.gradient_clip = 5
-    config.eval_interval = int(1e3)
+    config.eval_interval = 0
     config.logger = get_logger()
     run_steps(DQNAgent(config))
 
@@ -154,12 +154,15 @@ def dqn_pixel_atari(name):
     # config.network_fn = lambda: DuelingNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e6)
     # config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32)
+    # config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32)
+    config.memory_size = int(1e6)
+    config.batch_size = 32
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.exploration_steps= 50000
+    # config.exploration_steps= 100
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     # config.double_q = True
@@ -429,9 +432,10 @@ if __name__ == '__main__':
     mkdir('dataset')
     mkdir('log')
     set_one_thread()
-    select_device(-1)
+    # select_device(-1)
+    select_device(0)
 
-    dqn_cart_pole()
+    # dqn_cart_pole()
     # a2c_cart_pole()
     # categorical_dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
@@ -439,7 +443,7 @@ if __name__ == '__main__':
     # ppo_cart_pole()
     # option_critic_cart_pole()
 
-    # dqn_pixel_atari('BreakoutNoFrameskip-v4')
+    dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # a2c_pixel_atari('BreakoutNoFrameskip-v4')
     # categorical_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # quantile_regression_dqn_pixel_atari('BreakoutNoFrameskip-v4')
