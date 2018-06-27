@@ -43,12 +43,10 @@ class CategoricalNet(nn.Module, BaseNet):
         self.body = body
         self.to(Config.DEVICE)
 
-    def predict(self, x, to_numpy=False):
+    def forward(self, x):
         phi = self.body(tensor(x))
         pre_prob = self.fc_categorical(phi).view((-1, self.action_dim, self.num_atoms))
         prob = F.softmax(pre_prob, dim=-1)
-        if to_numpy:
-            return prob.cpu().detach().numpy()
         return prob
 
 class QuantileNet(nn.Module, BaseNet):

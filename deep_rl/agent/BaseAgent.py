@@ -67,6 +67,7 @@ class BaseActor(mp.Process):
         self.__cache_len = 2
 
     def run(self):
+        self._set_up()
         torch.cuda.is_available()
         config = self.config
         random_seed()
@@ -99,6 +100,9 @@ class BaseActor(mp.Process):
 
     def _transition(self):
         raise Exception('Not implemented')
+
+    def _set_up(self):
+        pass
 
     def step(self):
         self.__pipe.send([self.STEP, None])

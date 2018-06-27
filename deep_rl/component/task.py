@@ -45,6 +45,7 @@ class ClassicalControl(BaseTask):
 class PixelAtari(BaseTask):
     def __init__(self, name, seed=0, log_dir=None,
                  frame_skip=4, history_length=4, dataset=False, episode_life=True):
+        name += 'NoFrameskip-v4'
         BaseTask.__init__(self)
         env = make_atari(name, frame_skip)
         env.seed(seed)

@@ -41,7 +41,7 @@ class QuantileRegressionDQNAgent(BaseAgent):
         self.config = config
         config.lock = mp.Lock()
 
-        self.replay = AsyncReplay(config)
+        self.replay = config.replay_fn()
         self.actor = QuantileRegressionDQNActor(config)
 
         self.network = config.network_fn()
