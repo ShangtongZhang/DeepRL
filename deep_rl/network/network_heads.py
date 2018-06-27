@@ -171,7 +171,7 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
         self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
         self.to(Config.DEVICE)
 
-    def predict(self, obs, action=None):
+    def forward(self, obs, action=None):
         obs = tensor(obs)
         phi = self.network.phi_body(obs)
         phi_a = self.network.actor_body(phi)

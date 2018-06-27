@@ -13,32 +13,33 @@ class A2CAgent(BaseAgent):
         BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
-        self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
+        self.network = config.network_fn()
         self.optimizer = config.optimizer_fn(self.network.parameters())
         self.total_steps = 0
         self.states = self.task.reset()
-        self.episode_rewards = np.zeros(config.num_workers)
-        self.last_episode_rewards = np.zeros(config.num_workers)
 
-    def iteration(self):
+        self.episode_rewards = []
+        self.online_rewards = np.zeros(config.num_workers)
+
+    def step(self):
         config = self.config
         rollout = []
         states = self.states
         for _ in range(config.rollout_length):
-            actions, log_probs, entropy, values = self.network.predict(config.state_normalizer(states))
+            actions, log_probs, entropy, values = self.network(config.state_normalizer(states))
             next_states, rewards, terminals, _ = self.task.step(actions.detach().cpu().numpy())
-            self.episode_rewards += rewards
+            self.online_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
-                    self.last_episode_rewards[i] = self.episode_rewards[i]
-                    self.episode_rewards[i] = 0
+                    self.episode_rewards.append(self.online_rewards[i])
+                    self.online_rewards[i] = 0
 
             rollout.append([log_probs, values, actions, rewards, 1 - terminals, entropy])
             states = next_states
 
         self.states = states
-        pending_value = self.network.predict(config.state_normalizer(states))[-1]
+        pending_value = self.network(config.state_normalizer(states))[-1]
         rollout.append([None, pending_value, None, None, None, None])
 
         processed_rollout = [None] * (len(rollout) - 1)

@@ -90,16 +90,17 @@ def a2c_cart_pole():
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(a2c_cart_pole.__name__))
+    config.eval_env = task_fn(None)
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
-        state_dim, action_dim, FCBody(state_dim))
-    config.policy_fn = SamplePolicy
+    config.network_fn = lambda: CategoricalActorCriticNet(
+        config.state_dim, config.action_dim, FCBody(config.state_dim))
     config.discount = 0.99
     config.logger = get_logger()
-    config.gae_tau = 1.0
+    config.use_gae = False
     config.entropy_weight = 0.01
     config.rollout_length = 5
-    run_iterations(A2CAgent(config))
+    config.gradient_clip = 5
+    run_steps(A2CAgent(config))
 
 def n_step_dqn_cart_pole():
     config = Config()
@@ -246,20 +247,18 @@ def a2c_pixel_atari(name):
     config.num_workers = 16
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__))
+    config.eval_env = task_fn(None)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
-    config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
-        state_dim, action_dim, NatureConvBody())
-    config.policy_fn = SamplePolicy
+    config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.use_gae = False
-    config.gae_tau = 0.97
     config.entropy_weight = 0.01
     config.rollout_length = 5
-    config.gradient_clip = 0.5
-    config.logger = get_logger(file_name=a2c_pixel_atari.__name__, skip=True)
-    run_iterations(A2CAgent(config))
+    config.gradient_clip = 5
+    config.logger = get_logger(file_name=a2c_pixel_atari.__name__)
+    run_steps(A2CAgent(config))
 
 def n_step_dqn_pixel_atari(name):
     config = Config()
@@ -474,8 +473,8 @@ if __name__ == '__main__':
     game = 'Breakout'
     # dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
-    categorical_dqn_pixel_atari(game)
-    # a2c_pixel_atari('BreakoutNoFrameskip-v4')
+    # categorical_dqn_pixel_atari(game)
+    a2c_pixel_atari(game)
     # n_step_dqn_pixel_atari('BreakoutNoFrameskip-v4')
     # ppo_pixel_atari('BreakoutNoFrameskip-v4')
     # option_ciritc_pixel_atari('BreakoutNoFrameskip-v4')
