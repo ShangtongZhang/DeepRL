@@ -14,15 +14,15 @@ class Replay:
     def __init__(self, memory_size, batch_size):
         self.memory_size = memory_size
         self.batch_size = batch_size
-        self.data = []
-        self.pos = 0
+        self.__data = []
+        self.__pos = 0
 
     def feed(self, experience):
-        if self.pos >= len(self.data):
-            self.data.append(experience)
+        if self.__pos >= len(self.__data):
+            self.__data.append(experience)
         else:
-            self.data[self.pos] = experience
-        self.pos = (self.pos + 1) % self.memory_size
+            self.__data[self.__pos] = experience
+        self.__pos = (self.__pos + 1) % self.memory_size
 
     def feed_batch(self, experience):
         experience = zip(*experience)
@@ -33,16 +33,16 @@ class Replay:
         if batch_size is None:
             batch_size = self.batch_size
 
-        sampled_indices = [np.random.randint(0, len(self.data)) for _ in range(batch_size)]
-        sampled_data = [self.data[ind] for ind in sampled_indices]
+        sampled_indices = [np.random.randint(0, len(self.__data)) for _ in range(batch_size)]
+        sampled_data = [self.__data[ind] for ind in sampled_indices]
         batch_data = list(map(lambda x: np.asarray(x), zip(*sampled_data)))
         return batch_data
 
     def size(self):
-        return len(self.data)
+        return len(self.__data)
 
     def empty(self):
-        return not len(self.data)
+        return not len(self.__data)
 
 class AsyncReplay(mp.Process):
     FEED = 0

@@ -16,8 +16,7 @@ class BaseAgent:
         self.config = config
 
     def close(self):
-        if hasattr(self.task, 'close'):
-            self.task.close()
+        close_obj(self.task)
 
     def save(self, filename):
         torch.save(self.network.state_dict(), filename)
@@ -85,8 +84,6 @@ class BaseActor(mp.Process):
         while True:
             op, data = self.__worker_pipe.recv()
             if op == self.STEP:
-                if self._network is None:
-                    continue
                 if not len(cache):
                     sample()
                     sample()
@@ -101,7 +98,7 @@ class BaseActor(mp.Process):
                 raise Exception('Unknown command')
 
     def _transition(self):
-        pass
+        raise Exception('Not implemented')
 
     def step(self):
         self.__pipe.send([self.STEP, None])

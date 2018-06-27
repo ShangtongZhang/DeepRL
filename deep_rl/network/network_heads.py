@@ -60,12 +60,10 @@ class QuantileNet(nn.Module, BaseNet):
         self.body = body
         self.to(Config.DEVICE)
 
-    def predict(self, x, to_numpy=False):
+    def forward(self, x):
         phi = self.body(tensor(x))
         quantiles = self.fc_quantiles(phi)
         quantiles = quantiles.view((-1, self.action_dim, self.num_quantiles))
-        if to_numpy:
-            quantiles = quantiles.cpu().detach().numpy()
         return quantiles
 
 class OptionCriticNet(nn.Module, BaseNet):

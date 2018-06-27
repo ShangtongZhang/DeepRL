@@ -36,6 +36,8 @@ class Config:
         self.target_network_mix = 0.001
         self.state_normalizer = RescaleNormalizer()
         self.reward_normalizer = RescaleNormalizer()
+        self.memory_size = 0
+        self.batch_size = 0
         self.min_memory_size = 200
         self.max_steps = 0
         self.rollout_length = None

@@ -7,98 +7,115 @@
 from ..network import *
 from ..component import *
 from ..utils import *
-import time
 from .BaseAgent import *
+
+class QuantileRegressionDQNActor(BaseActor):
+    def __init__(self, config):
+        BaseActor.__init__(self, config)
+        self.config = config
+        self.start()
+
+    def _transition(self):
+        if self._state is None:
+            self._state = self._task.reset()
+        config = self.config
+        with config.lock:
+            q_values = self._network(config.state_normalizer(np.stack([self._state]))).mean(-1)
+        q_values = to_np(q_values).flatten()
+        if self._total_steps < config.exploration_steps \
+                or np.random.rand() < config.random_action_prob():
+            action = np.random.randint(0, len(q_values))
+        else:
+            action = np.argmax(q_values)
+        next_state, reward, done, info = self._task.step(action)
+        entry = [self._state, action, reward, next_state, int(done), info]
+        self._total_steps += 1
+        if done:
+            next_state = self._task.reset()
+        self._state = next_state
+        return entry
 
 class QuantileRegressionDQNAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
-        self.task = config.task_fn()
-        self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
-        self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
-        self.optimizer = config.optimizer_fn(self.network.parameters())
-        self.criterion = nn.MSELoss()
+        config.lock = mp.Lock()
+
+        self.replay = AsyncReplay(config)
+        self.actor = QuantileRegressionDQNActor(config)
+
+        self.network = config.network_fn()
+        self.network.share_memory()
+        self.target_network = config.network_fn()
         self.target_network.load_state_dict(self.network.state_dict())
-        self.replay = config.replay_fn()
-        self.policy = config.policy_fn()
+        self.optimizer = config.optimizer_fn(self.network.parameters())
+
+        self.actor.set_network(self.network)
+
+        self.episode_reward = 0
+        self.episode_rewards = []
+
         self.total_steps = 0
+        self.batch_indices = range_tensor(self.replay.batch_size)
+
         self.quantile_weight = 1.0 / self.config.num_quantiles
         self.cumulative_density = tensor(
-            (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles))
+            (2 * np.arange(self.config.num_quantiles) + 1) / (2.0 * self.config.num_quantiles)).view(1, -1)
 
-    def huber(self, x):
-        cond = (x.abs() < 1.0).float().detach()
-        return 0.5 * x.pow(2) * cond + (x.abs() - 0.5) * (1 - cond)
+    def close(self):
+        close_obj(self.replay)
+        close_obj(self.actor)
 
-    def evaluation_action(self, state):
-        value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).detach()
-        value = (value * self.quantile_weight).sum(-1).cpu().detach().numpy().flatten()
-        return np.argmax(value)
+    def eval_step(self, state):
+        self.config.state_normalizer.set_read_only()
+        state = self.config.state_normalizer(np.stack([state]))
+        q = self.network(state).mean(-1)
+        action = np.argmax(to_np(q).flatten())
+        self.config.state_normalizer.unset_read_only()
+        return action
 
-    def episode(self, deterministic=False):
-        episode_start_time = time.time()
-        state = self.task.reset()
-        total_reward = 0.0
-        steps = 0
-        while True:
-            value = self.network.predict(np.stack([self.config.state_normalizer(state)])).squeeze(0).detach()
-            value = (value * self.quantile_weight).sum(-1).cpu().detach().numpy().flatten()
-            if deterministic:
-                action = np.argmax(value)
-            elif self.total_steps < self.config.exploration_steps:
-                action = np.random.randint(0, len(value))
-            else:
-                action = self.policy.sample(value)
-            next_state, reward, done, _ = self.task.step(action)
-            total_reward += reward
-            reward = self.config.reward_normalizer(reward)
-            if not deterministic:
-                self.replay.feed([state, action, reward, next_state, int(done)])
-                self.total_steps += 1
-            steps += 1
-            state = next_state
+    def step(self):
+        config = self.config
+        transitions = self.actor.step()
+        experiences = []
+        for state, action, reward, next_state, done, _ in transitions:
+            self.episode_reward += reward
+            self.total_steps += 1
+            reward = config.reward_normalizer(reward)
+            if done:
+                self.episode_rewards.append(self.episode_reward)
+                self.episode_reward = 0
+            experiences.append([state, action, reward, next_state, done])
+        self.replay.feed_batch(experiences)
 
-            if not deterministic and self.total_steps > self.config.exploration_steps \
-                    and self.total_steps % self.config.sgd_update_frequency == 0:
-                experiences = self.replay.sample()
-                states, actions, rewards, next_states, terminals = experiences
-                states = self.config.state_normalizer(states)
-                next_states = self.config.state_normalizer(next_states)
+        if self.total_steps > self.config.exploration_steps:
+            experiences = self.replay.sample()
+            states, actions, rewards, next_states, terminals = experiences
+            states = self.config.state_normalizer(states)
+            next_states = self.config.state_normalizer(next_states)
 
-                quantiles_next = self.target_network.predict(next_states).detach()
-                q_next = (quantiles_next * self.quantile_weight).sum(-1)
-                _, a_next = torch.max(q_next, dim=1)
-                a_next = a_next.view(-1, 1, 1).expand(-1, -1, quantiles_next.size(2))
-                quantiles_next = quantiles_next.gather(1, a_next).squeeze(1)
+            quantiles_next = self.target_network(next_states).detach()
+            a_next = torch.argmax(quantiles_next.sum(-1), dim=-1)
+            quantiles_next = quantiles_next[self.batch_indices, a_next, :]
 
-                rewards = tensor(rewards)
-                terminals = tensor(terminals)
-                quantiles_next = rewards.view(-1, 1) + self.config.discount * (1 - terminals.view(-1, 1)) * quantiles_next
+            rewards = tensor(rewards).unsqueeze(-1)
+            terminals = tensor(terminals).unsqueeze(-1)
+            quantiles_next = rewards + self.config.discount * (1 - terminals) * quantiles_next
 
-                quantiles = self.network.predict(states)
-                actions = tensor(actions).long()
-                actions = actions.view(-1, 1, 1).expand(-1, -1, quantiles.size(2))
-                quantiles = quantiles.gather(1, actions).squeeze(1)
+            quantiles = self.network(states)
+            actions = tensor(actions).long()
+            quantiles = quantiles[self.batch_indices, actions, :]
 
-                quantiles_next = quantiles_next.t().unsqueeze(-1)
-                diff = quantiles_next - quantiles
-                loss = self.huber(diff) * (self.cumulative_density.view(1, -1) - (diff.detach() < 0).float()).abs()
+            quantiles_next = quantiles_next.t().unsqueeze(-1)
+            diff = quantiles_next - quantiles
+            loss = huber(diff) * (self.cumulative_density - (diff.detach() < 0).float()).abs()
 
-                self.optimizer.zero_grad()
-                loss.mean(0).mean(1).sum().backward()
+            self.optimizer.zero_grad()
+            loss.mean(0).mean(1).sum().backward()
+            nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
+            with config.lock:
                 self.optimizer.step()
 
-            self.evaluate()
-            if not deterministic and self.total_steps % self.config.target_network_update_freq == 0:
-                self.target_network.load_state_dict(self.network.state_dict())
-            if not deterministic and self.total_steps > self.config.exploration_steps:
-                self.policy.update_epsilon()
-
-            if done:
-                break
-
-        episode_time = time.time() - episode_start_time
-        self.config.logger.debug('episode steps %d, episode time %f, time per step %f' %
-                          (steps, episode_time, episode_time / float(steps)))
-        return total_reward, steps
+        if self.total_steps / self.config.sgd_update_frequency % \
+                self.config.target_network_update_freq == 0:
+            self.target_network.load_state_dict(self.network.state_dict())
