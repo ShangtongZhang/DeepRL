@@ -14,36 +14,40 @@ class NStepDQNAgent(BaseAgent):
         BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
-        self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
-        self.target_network = config.network_fn(self.task.state_dim, self.task.action_dim)
+        self.network = config.network_fn()
+        self.target_network = config.network_fn()
         self.optimizer = config.optimizer_fn(self.network.parameters())
         self.target_network.load_state_dict(self.network.state_dict())
-        self.policy = config.policy_fn()
 
         self.total_steps = 0
         self.states = self.task.reset()
-        self.episode_rewards = np.zeros(config.num_workers)
-        self.last_episode_rewards = np.zeros(config.num_workers)
+        self.online_rewards = np.zeros(config.num_workers)
+        self.episode_rewards = []
 
-    def iteration(self):
+    def step(self):
         config = self.config
         rollout = []
         states = self.states
         for _ in range(config.rollout_length):
-            q = self.network.predict(self.config.state_normalizer(states))
-            actions = [self.policy.sample(v) for v in q.cpu().detach().numpy()]
+            q = self.network(self.config.state_normalizer(states))
+
+            epsilon = config.random_action_prob(config.num_workers)
+            greedy_actions = to_np(torch.argmax(q, dim=-1))
+            random_actions = np.random.randint(config.action_dim, size=config.num_workers)
+            dice = np.random.rand(config.num_workers)
+            actions = np.where(dice < epsilon, random_actions, greedy_actions)
+
             next_states, rewards, terminals, _ = self.task.step(actions)
-            self.episode_rewards += rewards
+            self.online_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
-                    self.last_episode_rewards[i] = self.episode_rewards[i]
-                    self.episode_rewards[i] = 0
+                    self.episode_rewards.append(self.online_rewards[i])
+                    self.online_rewards[i] = 0
 
             rollout.append([q, actions, rewards, 1 - terminals])
             states = next_states
 
-            self.policy.update_epsilon(config.num_workers)
             self.total_steps += config.num_workers
             if self.total_steps / config.num_workers % config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())
@@ -51,7 +55,7 @@ class NStepDQNAgent(BaseAgent):
         self.states = states
 
         processed_rollout = [None] * (len(rollout))
-        returns = self.target_network.predict(config.state_normalizer(states)).detach()
+        returns = self.target_network(config.state_normalizer(states)).detach()
         returns, _ = torch.max(returns, dim=1, keepdim=True)
         for i in reversed(range(len(rollout))):
             q, actions, rewards, terminals = rollout[i]
@@ -68,5 +72,3 @@ class NStepDQNAgent(BaseAgent):
         loss.backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
-
-        self.evaluate(config.rollout_length)
