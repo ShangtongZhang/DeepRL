@@ -32,10 +32,7 @@ class NStepDQNAgent(BaseAgent):
             q = self.network(self.config.state_normalizer(states))
 
             epsilon = config.random_action_prob(config.num_workers)
-            greedy_actions = to_np(torch.argmax(q, dim=-1))
-            random_actions = np.random.randint(config.action_dim, size=config.num_workers)
-            dice = np.random.rand(config.num_workers)
-            actions = np.where(dice < epsilon, random_actions, greedy_actions)
+            actions = epsilon_greedy(epsilon, to_np(q))
 
             next_states, rewards, terminals, _ = self.task.step(actions)
             self.online_rewards += rewards

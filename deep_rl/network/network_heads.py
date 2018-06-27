@@ -75,7 +75,7 @@ class OptionCriticNet(nn.Module, BaseNet):
         self.body = body
         self.to(Config.DEVICE)
 
-    def predict(self, x):
+    def forward(self, x):
         phi = self.body(tensor(x))
         q = self.fc_q(phi)
         beta = F.sigmoid(self.fc_beta(phi))

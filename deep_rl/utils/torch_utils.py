@@ -38,3 +38,12 @@ def set_one_thread():
 
 def huber(x, k=1.0):
     return torch.where(x.abs() < k, 0.5 * x.pow(2), k * (x.abs() - 0.5 * k))
+
+def epsilon_greedy(epsilon, x):
+    if len(x.shape) == 1:
+        return np.random.randint(len(x)) if np.random.rand() < epsilon else np.argmax(x)
+    elif len(x.shape) == 2:
+        random_actions = np.random.randint(x.shape[1])
+        greedy_actions = np.argmax(x, axis=-1)
+        dice = np.random.rand(x.shape[0])
+        return np.where(dice < epsilon, random_actions, greedy_actions)
