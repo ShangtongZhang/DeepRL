@@ -96,11 +96,11 @@ if __name__ == '__main__':
     # ]
     games = [
         'RoboschoolAnt-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1',
+        # 'RoboschoolWalker2d-v1',
+        # 'RoboschoolHopper-v1',
+        # 'RoboschoolHalfCheetah-v1',
+        # 'RoboschoolReacher-v1',
+        # 'RoboschoolHumanoid-v1',
     ]
     patterns = [
         'original',
@@ -111,11 +111,11 @@ if __name__ == '__main__':
     ]
 
     patterns = [
-        'original',
-        'b0e0d0',
-        # 'b0e0d1',
-        # 'b0e1d0',
-        # 'b0e1d1',
+        # 'original',
+        'b0e0',
+        'b0e1',
+        'b01e0',
+        'b01e1',
         'q_ddpg',
     ]
     for j, game in enumerate(games):
