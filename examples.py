@@ -233,6 +233,29 @@ def a2c_pixel_atari(name):
     config.logger = get_logger(file_name=a2c_pixel_atari.__name__)
     run_steps(A2CAgent(config))
 
+def a2c_continuous():
+    config = Config()
+    config.history_length = 4
+    config.num_workers = 16
+    task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
+    config.task_fn = lambda: ParallelizedTask(
+        task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_continuous.__name__),
+        single_process=True)
+    config.eval_env = task_fn(None)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
+    config.network_fn = lambda: GaussianActorCriticNet(
+        config.state_dim, config.action_dim,
+        actor_body=FCBody(config.state_dim), critic_body=FCBody(config.state_dim))
+    config.discount = 0.99
+    config.use_gae = True
+    config.gae_tau = 1.0
+    config.entropy_weight = 0.01
+    config.rollout_length = 5
+    config.gradient_clip = 5
+    config.max_steps = int(2e7)
+    config.logger = get_logger(file_name=a2c_continuous.__name__)
+    run_steps(A2CAgent(config))
+
 # N-Step DQN
 def n_step_dqn_cart_pole():
     config = Config()
@@ -487,6 +510,7 @@ if __name__ == '__main__':
     # quantile_regression_dqn_cart_pole()
     # categorical_dqn_cart_pole()
     # a2c_cart_pole()
+    # a2c_continuous()
     # n_step_dqn_cart_pole()
     # option_critic_cart_pole()
     # ppo_cart_pole()
