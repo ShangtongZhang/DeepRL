@@ -336,13 +336,13 @@ if __name__ == '__main__':
     patterns = [
         'd1m0',
         'd2m0',
-        'shared',
-        'ddpg_continuous'
+        'shared'
     ]
     peaks = {}
-    # for j, game in enumerate(games):
-    #     for i, p in enumerate(patterns):
-            # peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
+    for j, game in enumerate(games):
+        for i, p in enumerate(patterns):
+            peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
+        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*baseline_ddpg.*' % (game), figure=j, color=i+1, **kwargs)
 
-        # plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
+        plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
     # plt.show()
