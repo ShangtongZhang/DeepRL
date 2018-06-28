@@ -100,6 +100,28 @@ class Box2DContinuous(BaseTask):
     def step(self, action):
         return BaseTask.step(self, np.clip(action, -1, 1))
 
+class CarRacing(BaseTask):
+    def __init__(self, history_len=4, frame_skip=4, log_dir=None):
+        BaseTask.__init__(self)
+        self.name = 'CarRacing-v0'
+        self.env = gym.make(self.name)
+        self.action_dim = self.env.action_space.shape[0]
+        self.state_dim = self.env.observation_space.shape
+        self.env = SkipEnv(self.env, frame_skip)
+        self.env = WarpFrame(self.env)
+        self.env = WrapPyTorch(self.env)
+        self.env = StackFrame(self.env, history_len)
+        self.set_monitor(self.env, log_dir)
+        self.action_scale = np.array([1.0, 0.5, 0.5])
+        self.action_bias = np.array([0, 1, 1])
+        self.action_clip_min = [-1, 0, 0]
+        self.action_clip_max = [1, 1, 1]
+
+    def step(self, action):
+        action = self.action_scale * action + self.action_bias
+        action = np.clip(action, self.action_clip_min, self.action_clip_max)
+        return self.env.step(action)
+
 class Roboschool(BaseTask):
     def __init__(self, name, log_dir=None):
         import roboschool

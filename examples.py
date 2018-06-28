@@ -422,20 +422,19 @@ def ddpg_low_dim_state():
 def ddpg_pixel():
     config = Config()
     log_dir = get_default_log_dir(ddpg_pixel.__name__)
-    config.task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=1,
-                                           history_length=4, **kwargs)
-    config.eval_env = config.task_fn(log_dir=log_dir)
+    config.task_fn = lambda **kwargs: CarRacing(**kwargs)
+    config.eval_env = config.task_fn(log_dir=None)
 
-    phi_body=DDPGConvBody()
+    phi_body = NatureConvBody()
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim, config.action_dim, phi_body=phi_body,
-        actor_body=FCBody(phi_body.feature_dim, (50, ), gate=F.tanh),
+        actor_body=FCBody(phi_body.feature_dim, (50, ), gate=F.relu),
         critic_body=OneLayerFCBodyWithAction(
-            phi_body.feature_dim, config.action_dim, 50, gate=F.tanh),
+            phi_body.feature_dim, config.action_dim, 50, gate=F.relu),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=16)
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
     config.discount = 0.99
     config.state_normalizer = ImageNormalizer()
     config.max_steps = 1e7
@@ -443,6 +442,7 @@ def ddpg_pixel():
         size=(config.action_dim, ), std=LinearSchedule(0.2))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
+    config.log_interval = 100
     config.logger = get_logger(file_name=ddpg_pixel.__name__)
     run_steps(DDPGAgent(config))
 
@@ -480,8 +480,8 @@ if __name__ == '__main__':
     mkdir('dataset')
     mkdir('log')
     set_one_thread()
-    select_device(-1)
-    # select_device(0)
+    # select_device(-1)
+    select_device(0)
 
     # dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
@@ -503,7 +503,7 @@ if __name__ == '__main__':
     # ppo_pixel_atari(game)
     # dqn_ram_atari(game)
 
-    # ddpg_pixel()
+    ddpg_pixel()
 
     # action_conditional_video_prediction()
 
