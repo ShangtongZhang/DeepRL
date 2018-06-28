@@ -115,11 +115,9 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         self.critic_opt = critic_opt_fn(self.network.critic_params + self.network.phi_params)
         self.to(Config.DEVICE)
 
-    def predict(self, obs, to_numpy=False):
+    def forward(self, obs):
         phi = self.feature(obs)
         action = self.actor(phi)
-        if to_numpy:
-            return action.cpu().detach().numpy()
         return action
 
     def feature(self, obs):

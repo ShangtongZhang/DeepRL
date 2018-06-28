@@ -47,3 +47,7 @@ def epsilon_greedy(epsilon, x):
         greedy_actions = np.argmax(x, axis=-1)
         dice = np.random.rand(x.shape[0])
         return np.where(dice < epsilon, random_actions, greedy_actions)
+
+def sync_grad(target_network, src_network):
+    for param, src_param in zip(target_network.parameters(), src_network.parameters()):
+        param._grad = src_param.grad.clone()

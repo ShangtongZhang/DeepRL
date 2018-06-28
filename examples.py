@@ -379,58 +379,61 @@ def ppo_continuous():
     config.log_interval = 2048
     run_steps(PPOAgent(config))
 
+# DDPG
 def ddpg_low_dim_state():
     config = Config()
     log_dir = get_default_log_dir(ddpg_low_dim_state.__name__)
     # config.task_fn = lambda **kwargs: Pendulum(log_dir=log_dir)
     # config.task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
     config.task_fn = lambda **kwargs: Roboschool('RoboschoolHopper-v1', **kwargs)
-    config.evaluation_env = config.task_fn(log_dir=log_dir)
+    config.eval_env = config.task_fn(log_dir=log_dir)
     config.max_steps = int(1e6)
-    config.evaluation_episodes_interval = int(1e4)
-    config.evaluation_episodes = 20
+    config.eval_interval = int(1e4)
+    config.eval_episodes = 20
 
-    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
-        state_dim, action_dim,
-        actor_body=FCBody(state_dim, (300, 200), gate=F.tanh),
-        critic_body=TwoLayerFCBodyWithAction(state_dim, action_dim, (400, 300), gate=F.tanh),
+    config.network_fn = lambda: DeterministicActorCriticNet(
+        config.state_dim, config.action_dim,
+        actor_body=FCBody(config.state_dim, (400, 300), gate=F.tanh),
+        critic_body=TwoLayerFCBodyWithAction(
+            config.state_dim, config.action_dim, (400, 300), gate=F.tanh),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
     config.discount = 0.99
-    config.random_process_fn = lambda action_dim: OrnsteinUhlenbeckProcess(
-        size=(action_dim, ), std=LinearSchedule(0.2))
+    config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
+        size=(config.action_dim, ), std=LinearSchedule(0.2))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
-    run_episodes(DDPGAgent(config))
+    run_steps(DDPGAgent(config))
 
 def ddpg_pixel():
     config = Config()
     log_dir = get_default_log_dir(ddpg_pixel.__name__)
     config.task_fn = lambda **kwargs: PixelBullet('AntBulletEnv-v0', frame_skip=1,
                                            history_length=4, **kwargs)
-    config.evaluation_env = config.task_fn(log_dir=log_dir)
+    config.eval_env = config.task_fn(log_dir=log_dir)
 
     phi_body=DDPGConvBody()
-    config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
-        state_dim, action_dim, phi_body=phi_body,
+    config.network_fn = lambda: DeterministicActorCriticNet(
+        config.state_dim, config.action_dim, phi_body=phi_body,
         actor_body=FCBody(phi_body.feature_dim, (50, ), gate=F.tanh),
-        critic_body=OneLayerFCBodyWithAction(phi_body.feature_dim, action_dim, 50, gate=F.tanh),
+        critic_body=OneLayerFCBodyWithAction(
+            phi_body.feature_dim, config.action_dim, 50, gate=F.tanh),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=16)
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=16)
     config.discount = 0.99
     config.state_normalizer = ImageNormalizer()
     config.max_steps = 1e7
-    config.random_process_fn = lambda action_dim: OrnsteinUhlenbeckProcess(
-        size=(action_dim, ), std=LinearSchedule(0.2))
+    config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
+        size=(config.action_dim, ), std=LinearSchedule(0.2))
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger(file_name=ddpg_pixel.__name__)
-    run_episodes(DDPGAgent(config))
+    run_steps(DDPGAgent(config))
 
 def plot():
     import matplotlib.pyplot as plt
@@ -450,15 +453,16 @@ def action_conditional_video_prediction():
     game = 'PongNoFrameskip-v4'
     prefix = '.'
 
-    # Train an agent to generate the dataset
+    # Train an agent for generating the dataset
+    # Make sure to set config.save_interval to non-zero value
     # a2c_pixel_atari(game)
 
     # Generate a dataset with the trained model
-    # a2c_model_file = './data/A2CAgent-vanilla-model-%s.bin' % (game)
+    # a2c_model_file = /path/to/the/saved/model
     # generate_dataset(game, a2c_model_file, prefix)
 
     # Train the action conditional video prediction model
-    acvp_train(game, prefix)
+    # acvp_train(game, prefix)
 
 if __name__ == '__main__':
     mkdir('data/video')

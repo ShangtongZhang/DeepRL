@@ -51,7 +51,7 @@ class Config:
         self.random_action_prob = None
         self.__eval_env = None
         self.log_interval = int(1e3)
-        self.save_interval = int(1e5)
+        self.save_interval = 0
         self.eval_interval = 0
         self.eval_episodes = 10
 

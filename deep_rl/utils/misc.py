@@ -18,75 +18,12 @@ except:
     # python == 2.7
     from pathlib2 import Path
 
-def run_episodes(agent):
-    random_seed()
-    config = agent.config
-    window_size = 100
-    ep = 0
-    rewards = []
-    steps = []
-    avg_test_rewards = []
-    agent_type = agent.__class__.__name__
-    while True:
-        ep += 1
-        reward, step = agent.episode()
-        rewards.append(reward)
-        steps.append(step)
-        avg_reward = np.mean(rewards[-window_size:])
-        config.logger.info('episode %d, reward %f, avg reward %f, total steps %d, episode step %d' % (
-            ep, reward, avg_reward, agent.total_steps, step))
-
-        if config.save_interval and ep % config.save_interval == 0:
-            with open('data/%s-%s-online-stats-%s.bin' % (
-                    agent_type, config.tag, agent.task.name), 'wb') as f:
-                pickle.dump([steps, rewards], f)
-            agent.save('data/%s-%s-model-%s.bin' % (agent_type, config.tag, agent.task.name))
-
-        if config.episode_limit and ep > config.episode_limit:
-            break
-
-        if config.max_steps and agent.total_steps > config.max_steps:
-            break
-
-    agent.close()
-    return steps, rewards, avg_test_rewards
-
-def run_iterations(agent):
-    random_seed()
-    config = agent.config
-    agent_name = agent.__class__.__name__
-    iteration = 0
-    steps = []
-    rewards = []
-    while True:
-        agent.iteration()
-        steps.append(agent.total_steps)
-        rewards.append(np.mean(agent.last_episode_rewards))
-        if iteration % config.iteration_log_interval == 0:
-            config.logger.info('total steps %d, mean/max/min reward %f/%f/%f' % (
-                agent.total_steps, np.mean(agent.last_episode_rewards),
-                np.max(agent.last_episode_rewards),
-                np.min(agent.last_episode_rewards)
-            ))
-        if iteration % (config.iteration_log_interval * 100) == 0:
-            with open('data/%s-%s-online-stats-%s.bin' % (agent_name, config.tag, agent.task.name), 'wb') as f:
-                pickle.dump({'rewards': rewards,
-                             'steps': steps}, f)
-            agent.save('data/%s-%s-model-%s.bin' % (agent_name, config.tag, agent.task.name))
-        iteration += 1
-        if config.max_steps and agent.total_steps >= config.max_steps:
-            agent.close()
-            break
-
-    return steps, rewards
-
 def run_steps(agent):
     random_seed()
     config = agent.config
     agent_name = agent.__class__.__name__
     t0 = time.time()
     while True:
-        agent.step()
         if config.save_interval and not agent.total_steps % config.save_interval:
             agent.save('data/model-%s-%s-%s.bin' % (agent_name, config.task_name, config.tag))
         if config.log_interval and not agent.total_steps % config.log_interval and len(agent.episode_rewards):
@@ -101,16 +38,13 @@ def run_steps(agent):
         if config.max_steps and agent.total_steps >= config.max_steps:
             agent.close()
             break
+        agent.step()
 
 def get_time_str():
     return datetime.datetime.now().strftime("%y%m%d-%H%M%S")
 
 def get_default_log_dir(name):
     return './log/%s-%s' % (name, get_time_str())
-
-def sync_grad(target_network, src_network):
-    for param, src_param in zip(target_network.parameters(), src_network.parameters()):
-        param._grad = src_param.grad.clone()
 
 def mkdir(path):
     Path(path).mkdir(parents=True, exist_ok=True)
