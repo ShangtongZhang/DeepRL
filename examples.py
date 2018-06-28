@@ -45,7 +45,7 @@ def dqn_pixel_atari(name):
         params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
     config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
     # config.network_fn = lambda: DuelingNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
-    config.random_action_prob = LinearSchedule(1.0, 0.1, 1e6)
+    config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
 
     # config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
     config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32)
@@ -60,7 +60,8 @@ def dqn_pixel_atari(name):
     config.gradient_clip = 5
     # config.double_q = True
     config.double_q = False
-    config.logger = get_logger()
+    config.max_steps = int(2e7)
+    config.logger = get_logger(file_name=dqn_pixel_atari.__name__)
     run_steps(DQNAgent(config))
 
 def dqn_ram_atari(name):
@@ -130,7 +131,8 @@ def quantile_regression_dqn_pixel_atari(name):
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     config.num_quantiles = 200
-    config.logger = get_logger()
+    config.max_steps = int(2e7)
+    config.logger = get_logger(file_name=quantile_regression_dqn_pixel_atari.__name__)
     run_steps(QuantileRegressionDQNAgent(config))
 
 # C51
@@ -184,7 +186,8 @@ def categorical_dqn_pixel_atari(name):
     config.categorical_n_atoms = 51
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
-    config.logger = get_logger()
+    config.max_steps = int(2e7)
+    config.logger = get_logger(categorical_dqn_pixel_atari.__name__)
     run_steps(CategoricalDQNAgent(config))
 
 # A2C
@@ -213,7 +216,9 @@ def a2c_pixel_atari(name):
     config.history_length = 4
     config.num_workers = 16
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__))
+    config.task_fn = lambda: ParallelizedTask(
+        task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__),
+        single_process=True)
     config.eval_env = task_fn(None)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
     config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
@@ -224,6 +229,7 @@ def a2c_pixel_atari(name):
     config.entropy_weight = 0.01
     config.rollout_length = 5
     config.gradient_clip = 5
+    config.max_steps = int(2e7)
     config.logger = get_logger(file_name=a2c_pixel_atari.__name__)
     run_steps(A2CAgent(config))
 
@@ -250,7 +256,8 @@ def n_step_dqn_pixel_atari(name):
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(n_step_dqn_pixel_atari.__name__))
+                                              log_dir=get_default_log_dir(n_step_dqn_pixel_atari.__name__),
+                                              single_process=True)
     config.eval_env = task_fn(None)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody())
@@ -261,7 +268,8 @@ def n_step_dqn_pixel_atari(name):
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
-    config.logger = get_logger()
+    config.max_steps = int(2e7)
+    config.logger = get_logger(n_step_dqn_pixel_atari.__name__)
     run_steps(NStepDQNAgent(config))
 
 # Option-Critic
@@ -290,7 +298,8 @@ def option_ciritc_pixel_atari(name):
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(config.tag))
+                                              log_dir=get_default_log_dir(config.tag),
+                                              single_process=True)
     config.eval_env = task_fn(None)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda: OptionCriticNet(NatureConvBody(), config.action_dim, num_options=4)
@@ -301,10 +310,10 @@ def option_ciritc_pixel_atari(name):
     config.target_network_update_freq = 10000
     config.rollout_length = 5
     config.gradient_clip = 5
-    config.max_steps = 1e8
+    config.max_steps = int(2e7)
     config.entropy_weight = 0.01
     config.termination_regularizer = 0.01
-    config.logger = get_logger()
+    config.logger = get_logger(file_name=option_ciritc_pixel_atari.__name__)
     run_steps(OptionCriticAgent(config))
 
 # PPO
@@ -335,7 +344,8 @@ def ppo_pixel_atari(name):
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(ppo_pixel_atari.__name__))
+                                              log_dir=get_default_log_dir(ppo_pixel_atari.__name__),
+                                              single_process=True)
     config.eval_env = PixelAtari(name, frame_skip=4, history_length=config.history_length, episode_life=False)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025)
     config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
@@ -351,7 +361,8 @@ def ppo_pixel_atari(name):
     config.num_mini_batches = 4
     config.ppo_ratio_clip = 0.1
     config.log_interval = 128 * 16
-    config.logger = get_logger()
+    config.max_steps = int(2e7)
+    config.logger = get_logger(file_name=ppo_pixel_atari.__name__)
     run_steps(PPOAgent(config))
 
 def ppo_continuous():
