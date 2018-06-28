@@ -298,7 +298,7 @@ def option_ciritc_pixel_atari(name):
     task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(config.tag),
+                                              log_dir=get_default_log_dir(option_ciritc_pixel_atari.__name__),
                                               single_process=True)
     config.eval_env = task_fn(None)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
