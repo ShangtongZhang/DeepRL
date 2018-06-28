@@ -60,13 +60,14 @@ class PixelAtari(BaseTask):
         self.name = name
 
 class RamAtari(BaseTask):
-    def __init__(self, name, no_op, frame_skip, log_dir=None):
+    def __init__(self, name, no_op, frame_skip, log_dir=None, episode_life=True):
         BaseTask.__init__(self)
+        name += '-ramNoFrameskip-v4'
         self.name = name
         env = gym.make(name)
-        assert 'NoFrameskip' in env.spec.id
         env = self.set_monitor(env, log_dir)
-        env = EpisodicLifeEnv(env)
+        if episode_life:
+            env = EpisodicLifeEnv(env)
         env = NoopResetEnv(env, noop_max=no_op)
         env = SkipEnv(env, skip=frame_skip)
         if 'FIRE' in env.unwrapped.get_action_meanings():

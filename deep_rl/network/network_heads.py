@@ -144,14 +144,12 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
         self.std = nn.Parameter(torch.ones(1, action_dim))
         self.to(Config.DEVICE)
 
-    def predict(self, obs, action=None, to_numpy=False):
+    def forward(self, obs, action=None):
         obs = tensor(obs)
         phi = self.network.phi_body(obs)
         phi_a = self.network.actor_body(phi)
         phi_v = self.network.critic_body(phi)
         mean = F.tanh(self.network.fc_action(phi_a))
-        if to_numpy:
-            return mean.cpu().detach().numpy()
         v = self.network.fc_critic(phi_v)
         dist = torch.distributions.Normal(mean, self.std)
         if action is None:

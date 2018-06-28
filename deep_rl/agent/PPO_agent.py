@@ -13,33 +13,33 @@ class PPOAgent(BaseAgent):
         BaseAgent.__init__(self, config)
         self.config = config
         self.task = config.task_fn()
-        self.network = config.network_fn(self.task.state_dim, self.task.action_dim)
+        self.network = config.network_fn()
         self.opt = config.optimizer_fn(self.network.parameters())
         self.total_steps = 0
-        self.episode_rewards = np.zeros(config.num_workers)
-        self.last_episode_rewards = np.zeros(config.num_workers)
+        self.online_rewards = np.zeros(config.num_workers)
+        self.episode_rewards = []
         self.states = self.task.reset()
         self.states = config.state_normalizer(self.states)
 
-    def iteration(self):
+    def step(self):
         config = self.config
         rollout = []
         states = self.states
         for _ in range(config.rollout_length):
-            actions, log_probs, _, values = self.network.predict(states)
+            actions, log_probs, _, values = self.network(states)
             next_states, rewards, terminals, _ = self.task.step(actions.cpu().detach().numpy())
-            self.episode_rewards += rewards
+            self.online_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
-                    self.last_episode_rewards[i] = self.episode_rewards[i]
-                    self.episode_rewards[i] = 0
+                    self.episode_rewards.append(self.online_rewards[i])
+                    self.online_rewards[i] = 0
             next_states = config.state_normalizer(next_states)
             rollout.append([states, values.detach(), actions.detach(), log_probs.detach(), rewards, 1 - terminals])
             states = next_states
 
         self.states = states
-        pending_value = self.network.predict(states)[-1]
+        pending_value = self.network(states)[-1]
         rollout.append([states, pending_value, None, None, None, None])
 
         processed_rollout = [None] * (len(rollout) - 1)
@@ -75,7 +75,7 @@ class PPOAgent(BaseAgent):
                 sampled_returns = returns[batch_indices]
                 sampled_advantages = advantages[batch_indices]
 
-                _, log_probs, entropy_loss, values = self.network.predict(sampled_states, sampled_actions)
+                _, log_probs, entropy_loss, values = self.network(sampled_states, sampled_actions)
                 ratio = (log_probs - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,

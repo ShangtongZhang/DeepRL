@@ -63,6 +63,27 @@ def dqn_pixel_atari(name):
     config.logger = get_logger()
     run_steps(DQNAgent(config))
 
+def dqn_ram_atari(name):
+    config = Config()
+    config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4,
+                                      log_dir=get_default_log_dir(dqn_ram_atari.__name__))
+    config.eval_env = RamAtari(name, no_op=30, frame_skip=4, episode_life=False)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
+    config.network_fn = lambda: VanillaNet(config.action_dim, FCBody(config.state_dim))
+    config.random_action_prob = LinearSchedule(0.1)
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
+    config.state_normalizer = RescaleNormalizer(1.0 / 128)
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.max_episode_length = 0
+    config.exploration_steps= 100
+    config.sgd_update_frequency = 4
+    config.gradient_clip = 5
+    config.double_q = True
+    config.logger = get_logger()
+    run_steps(DQNAgent(config))
+
 # QR DQN
 def quantile_regression_dqn_cart_pole():
     config = Config()
@@ -286,27 +307,27 @@ def option_ciritc_pixel_atari(name):
     config.logger = get_logger()
     run_steps(OptionCriticAgent(config))
 
-
+# PPO
 def ppo_cart_pole():
     config = Config()
     task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
     config.num_workers = 5
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
+    config.eval_env = task_fn(None)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
-        state_dim, action_dim, FCBody(state_dim))
+    config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, FCBody(config.state_dim))
     config.discount = 0.99
-    config.logger = get_logger()
     config.use_gae = True
     config.gae_tau = 0.95
     config.entropy_weight = 0.01
-    config.gradient_clip = 0.5
+    config.gradient_clip = 5
     config.rollout_length = 128
     config.optimization_epochs = 10
     config.num_mini_batches = 4
     config.ppo_ratio_clip = 0.2
-    config.iteration_log_interval = 1
-    run_iterations(PPOAgent(config))
+    config.log_interval = 128 * 5 * 10
+    config.logger = get_logger()
+    run_steps(PPOAgent(config))
 
 def ppo_pixel_atari(name):
     config = Config()
@@ -315,13 +336,12 @@ def ppo_pixel_atari(name):
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
                                               log_dir=get_default_log_dir(ppo_pixel_atari.__name__))
+    config.eval_env = PixelAtari(name, frame_skip=4, history_length=config.history_length, episode_life=False)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025)
-    config.network_fn = lambda state_dim, action_dim: CategoricalActorCriticNet(
-        state_dim, action_dim, NatureConvBody())
+    config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
-    config.logger = get_logger(file_name=ppo_pixel_atari.__name__)
     config.use_gae = True
     config.gae_tau = 0.95
     config.entropy_weight = 0.01
@@ -330,29 +350,9 @@ def ppo_pixel_atari(name):
     config.optimization_epochs = 4
     config.num_mini_batches = 4
     config.ppo_ratio_clip = 0.1
-    config.iteration_log_interval = 1
-    run_iterations(PPOAgent(config))
-
-def dqn_ram_atari(name):
-    config = Config()
-    config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4,
-                                      log_dir=get_default_log_dir(dqn_ram_atari.__name__))
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, FCBody(state_dim))
-    config.policy_fn = lambda: GreedyPolicy(LinearSchedule(0.1))
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
-    config.state_normalizer = RescaleNormalizer(1.0 / 128)
-    config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
-    config.target_network_update_freq = 10000
-    config.max_episode_length = 0
-    config.exploration_steps= 100
+    config.log_interval = 128 * 16
     config.logger = get_logger()
-    config.double_q = True
-    # config.double_q = False
-    run_episodes(DQNAgent(config))
-
-## continuous control
+    run_steps(PPOAgent(config))
 
 def ppo_continuous():
     config = Config()
@@ -361,23 +361,23 @@ def ppo_continuous():
     # task_fn = lambda log_dir: Bullet('AntBulletEnv-v0', log_dir=log_dir)
     task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
+    config.eval_env = task_fn(None)
 
-    config.network_fn = lambda state_dim, action_dim: GaussianActorCriticNet(
-        state_dim, action_dim, actor_body=FCBody(state_dim),
-        critic_body=FCBody(state_dim))
+    config.network_fn = lambda: GaussianActorCriticNet(
+        config.state_dim, config.action_dim, actor_body=FCBody(config.state_dim),
+        critic_body=FCBody(config.state_dim))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
-    # config.state_normalizer = RunningStatsNormalizer()
     config.discount = 0.99
     config.use_gae = True
     config.gae_tau = 0.95
-    config.gradient_clip = 0.5
+    config.gradient_clip = 5
     config.rollout_length = 2048
     config.optimization_epochs = 10
     config.num_mini_batches = 32
     config.ppo_ratio_clip = 0.2
-    config.iteration_log_interval = 1
     config.logger = get_logger()
-    run_iterations(PPOAgent(config))
+    config.log_interval = 2048
+    run_steps(PPOAgent(config))
 
 def ddpg_low_dim_state():
     config = Config()
@@ -475,6 +475,8 @@ if __name__ == '__main__':
     # n_step_dqn_cart_pole()
     # option_critic_cart_pole()
     # ppo_cart_pole()
+    # ppo_continuous()
+    # ddpg_low_dim_state()
 
     game = 'Breakout'
     # dqn_pixel_atari(game)
@@ -483,12 +485,10 @@ if __name__ == '__main__':
     # a2c_pixel_atari(game)
     # n_step_dqn_pixel_atari(game)
     # option_ciritc_pixel_atari(game)
-    # ppo_pixel_atari('BreakoutNoFrameskip-v4')
-    # dqn_ram_atari('Breakout-ramNoFrameskip-v4')
+    # ppo_pixel_atari(game)
+    # dqn_ram_atari(game)
 
-    # ddpg_low_dim_state()
     # ddpg_pixel()
-    # ppo_continuous()
 
     # action_conditional_video_prediction()
 
