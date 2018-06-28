@@ -187,7 +187,7 @@ def categorical_dqn_pixel_atari(name):
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     config.max_steps = int(2e7)
-    config.logger = get_logger(categorical_dqn_pixel_atari.__name__)
+    config.logger = get_logger(file_name=categorical_dqn_pixel_atari.__name__)
     run_steps(CategoricalDQNAgent(config))
 
 # A2C
@@ -269,7 +269,7 @@ def n_step_dqn_pixel_atari(name):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.max_steps = int(2e7)
-    config.logger = get_logger(n_step_dqn_pixel_atari.__name__)
+    config.logger = get_logger(file_name=n_step_dqn_pixel_atari.__name__)
     run_steps(NStepDQNAgent(config))
 
 # Option-Critic
