@@ -185,7 +185,7 @@ def categorical_dqn_pixel_atari(name):
     config.categorical_v_min = -10
     config.categorical_n_atoms = 51
     config.sgd_update_frequency = 4
-    config.gradient_clip = 5
+    config.gradient_clip = 0.5
     config.max_steps = int(2e7)
     config.logger = get_logger(file_name=categorical_dqn_pixel_atari.__name__)
     run_steps(CategoricalDQNAgent(config))
@@ -480,8 +480,8 @@ if __name__ == '__main__':
     mkdir('dataset')
     mkdir('log')
     set_one_thread()
-    # select_device(-1)
-    select_device(0)
+    select_device(-1)
+    # select_device(0)
 
     # dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
@@ -503,7 +503,7 @@ if __name__ == '__main__':
     # ppo_pixel_atari(game)
     # dqn_ram_atari(game)
 
-    ddpg_pixel()
+    # ddpg_pixel()
 
     # action_conditional_video_prediction()
 
