@@ -235,13 +235,13 @@ if __name__ == '__main__':
 
     parallel = True
     multi_runs(game, option_ddpg_continuous, tag='b0e0', parallel=parallel,
-               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=0)
+               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
     multi_runs(game, option_ddpg_continuous, tag='b001e0', parallel=parallel,
-               beta=0.01, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=1)
+               beta=0.01, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
     multi_runs(game, option_ddpg_continuous, tag='b01e0', parallel=parallel,
-               beta=0.1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=2)
+               beta=0.1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
     multi_runs(game, option_ddpg_continuous, tag='b1e0', parallel=parallel,
-               beta=1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=3)
+               beta=1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
 
     # multi_runs(game, option_ddpg_continuous, tag='b0e0', parallel=parallel,
     #            beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=0)
