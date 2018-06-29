@@ -47,7 +47,8 @@ class CategoricalNet(nn.Module, BaseNet):
         phi = self.body(tensor(x))
         pre_prob = self.fc_categorical(phi).view((-1, self.action_dim, self.num_atoms))
         prob = F.softmax(pre_prob, dim=-1)
-        return prob
+        log_prob = F.log_softmax(pre_prob, dim=-1)
+        return prob, log_prob
 
 class QuantileNet(nn.Module, BaseNet):
     def __init__(self, action_dim, num_quantiles, body):

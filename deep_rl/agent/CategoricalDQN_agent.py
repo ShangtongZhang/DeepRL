@@ -24,7 +24,7 @@ class CategoricalDQNActor(BaseActor):
             self._state = self._task.reset()
         config = self.config
         with config.lock:
-            probs = self._network(config.state_normalizer(np.stack([self._state])))
+            probs, _ = self._network(config.state_normalizer(np.stack([self._state])))
         q_values = (probs * self.config.atoms).sum(-1)
         q_values = to_np(q_values).flatten()
         if self._total_steps < config.exploration_steps \
@@ -74,7 +74,7 @@ class CategoricalDQNAgent(BaseAgent):
     def eval_step(self, state):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(np.stack([state]))
-        prob = self.network(state)
+        prob, _ = self.network(state)
         q = (prob * self.atoms).sum(-1)
         action = np.argmax(to_np(q).flatten())
         self.config.state_normalizer.unset_read_only()
@@ -100,7 +100,8 @@ class CategoricalDQNAgent(BaseAgent):
             states = self.config.state_normalizer(states)
             next_states = self.config.state_normalizer(next_states)
 
-            prob_next = self.target_network(next_states).detach()
+            prob_next, _ = self.target_network(next_states)
+            prob_next = prob_next.detach()
             q_next = (prob_next * self.atoms).sum(-1)
             a_next = torch.argmax(q_next, dim=-1)
             prob_next = prob_next[self.batch_indices, a_next, :]
@@ -120,10 +121,10 @@ class CategoricalDQNAgent(BaseAgent):
                 target_prob[i].index_add_(0, l[i].long(), d_m_l[i])
                 target_prob[i].index_add_(0, u[i].long(), d_m_u[i])
 
-            prob = self.network(states)
+            _, log_prob = self.network(states)
             actions = tensor(actions).long()
-            prob = prob[self.batch_indices, actions, :]
-            loss = -(target_prob * prob.log()).sum(-1).mean()
+            log_prob = log_prob[self.batch_indices, actions, :]
+            loss = -(target_prob * log_prob).sum(-1).mean()
 
             self.optimizer.zero_grad()
             loss.backward()
