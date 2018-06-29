@@ -13,7 +13,7 @@ draw_*
 log
 old_logs
 figure
-to_plot
+images_data
 
 # C extensions
 *.so

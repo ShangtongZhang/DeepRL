@@ -221,12 +221,13 @@ def a2c_pixel_atari(name):
         task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__),
         single_process=True)
     config.eval_env = task_fn(None)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
-    config.use_gae = False
+    config.use_gae = True
+    config.gae_tau = 1.0
     config.entropy_weight = 0.01
     config.rollout_length = 5
     config.gradient_clip = 5
@@ -473,15 +474,27 @@ def ddpg_pixel():
 def plot():
     import matplotlib.pyplot as plt
     plotter = Plotter()
-    names = plotter.load_log_dirs(pattern='.*')
-    data = plotter.load_results(names)
-
-    for i, name in enumerate(names):
-        x, y = data[i]
-        plt.plot(x, y, color=Plotter.COLORS[i], label=name)
+    dirs = [
+        'a2c_pixel_atari-180628-053519',
+        'dqn_pixel_atari-180628-052904',
+        'n_step_dqn_pixel_atari-180628-053553',
+        'option_ciritc_pixel_atari-180628-053626',
+        'ppo_pixel_atari-180628-053657',
+        'quantile_regression_dqn_pixel_atari-180628-053044',
+    ]
+    names = [
+        'A2C',
+        'DQN',
+        'NStepDQN',
+        'OC',
+        'PPO',
+        'QRDQN',
+    ]
+    for i, dir in enumerate(dirs):
+        data = plotter.load_results(['./images_data/%s' % (dir)], episode_window=100)
+        x, y = data[0]
+        plt.plot(x, y, color=Plotter.COLORS[i], label=names[i])
     plt.legend()
-    plt.xlabel('timesteps')
-    plt.ylabel('episode return')
     plt.show()
 
 def action_conditional_video_prediction():
@@ -504,8 +517,8 @@ if __name__ == '__main__':
     mkdir('dataset')
     mkdir('log')
     set_one_thread()
-    select_device(-1)
-    # select_device(0)
+    # select_device(-1)
+    select_device(0)
 
     # dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
@@ -522,7 +535,7 @@ if __name__ == '__main__':
     # dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
     # categorical_dqn_pixel_atari(game)
-    # a2c_pixel_atari(game)
+    a2c_pixel_atari(game)
     # n_step_dqn_pixel_atari(game)
     # option_ciritc_pixel_atari(game)
     # ppo_pixel_atari(game)
