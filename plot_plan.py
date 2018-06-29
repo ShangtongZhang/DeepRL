@@ -343,6 +343,7 @@ if __name__ == '__main__':
         for i, p in enumerate(patterns):
             peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
         ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*baseline_ddpg.*' % (game), figure=j, color=i+1, **kwargs)
+        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*larger_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
 
         plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
     # plt.show()
