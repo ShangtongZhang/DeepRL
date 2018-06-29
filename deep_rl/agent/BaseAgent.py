@@ -66,6 +66,22 @@ class BaseActor(mp.Process):
         self._total_steps = 0
         self.__cache_len = 2
 
+        if not config.async_actor:
+            self.start = lambda: None
+            self.step = self._sample
+            self.close = lambda: None
+            self._set_up()
+            random_seed()
+            seed = np.random.randint(0, sys.maxsize)
+            self._task = config.task_fn()
+            self._task.seed(seed)
+
+    def _sample(self):
+        transitions = []
+        for _ in range(self.config.sgd_update_frequency):
+            transitions.append(self._transition())
+        return transitions
+
     def run(self):
         self._set_up()
         torch.cuda.is_available()
@@ -76,20 +92,14 @@ class BaseActor(mp.Process):
         self._task.seed(seed)
 
         cache = deque([], maxlen=2)
-        def sample():
-            transitions = []
-            for _ in range(config.sgd_update_frequency):
-                transitions.append(self._transition())
-            cache.append(transitions)
-
         while True:
             op, data = self.__worker_pipe.recv()
             if op == self.STEP:
                 if not len(cache):
-                    sample()
-                    sample()
+                    cache.append(self._sample())
+                    cache.append(self._sample())
                 self.__worker_pipe.send(cache.popleft())
-                sample()
+                cache.append(self._sample())
             elif op == self.EXIT:
                 self.__worker_pipe.close()
                 return
@@ -113,4 +123,7 @@ class BaseActor(mp.Process):
         self.__pipe.close()
 
     def set_network(self, net):
-        self.__pipe.send([self.NETWORK, net])
+        if not self.config.async_actor:
+            self._network = net
+        else:
+            self.__pipe.send([self.NETWORK, net])

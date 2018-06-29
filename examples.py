@@ -30,6 +30,7 @@ def dqn_cart_pole():
     config.gradient_clip = 5
     config.eval_interval = int(5e3)
     config.max_steps = 1e5
+    # config.async_actor = False
     config.logger = get_logger()
     run_steps(DQNAgent(config))
 
