@@ -1,5 +1,5 @@
 # DeepRL
-Highly modularized implementation of popular deep RL algorithms by PyTorch, aimed to reuse as much components as possible through different algorithms and switch easily between classical control tasks like CartPole and Atari games with raw pixel inputs.
+Modularized implementation of popular deep RL algorithms by PyTorch. Easy switch between classical control tasks (e.g., CartPole) and Atari games with raw pixel inputs.
 
 Implemented algorithms:
 * (Double/Dueling) Deep Q-Learning (DQN)
@@ -59,13 +59,12 @@ Please use this bibtex if you want to cite this repo
 
 * The DDPG curve is the evaluation performance, rather than online.
 
-## Action Conditional Video Prediction
+## PongNoFrameskip-v4
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ACVP.png)
 
-**Left**: One-step prediction **Right**: Ground truth
-
-Prediction is sampled after 110K iterations, and I only implemented one-step training
+* *Left*: One-step prediction *Right*: Ground truth
+* Prediction images are sampled after 110K iterations, and I only implemented one-step training for action-conditional-video-prediction.
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)
