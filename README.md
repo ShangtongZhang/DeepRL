@@ -1,40 +1,36 @@
 # DeepRL
-Highly modularized implementation of popular deep RL algorithms by PyTorch. My principal here is to reuse as much components as possible through different algorithms and switch easily between classical control tasks like CartPole and Atari games with raw pixel inputs.
+Highly modularized implementation of popular deep RL algorithms by PyTorch, aimed to reuse as much components as possible through different algorithms and switch easily between classical control tasks like CartPole and Atari games with raw pixel inputs.
 
 Implemented algorithms:
 * (Double/Dueling) Deep Q-Learning (DQN)
 * Categorical DQN (C51, Distributional DQN with KL Distance)
-* Quantile Regression DQN (Distributional DQN with Wasserstein Distance)
-* Synchronous Advantage Actor Critic (A2C)
+* Quantile Regression DQN
+* (Continuous/Discrete) Synchronous Advantage Actor Critic (A2C)
 * Synchronous N-Step Q-Learning
 * Deep Deterministic Policy Gradient (DDPG, pixel & low-dim-state)
 * (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO, pixel & low-dim-state)
 * The Option-Critic Architecture (OC)
 * Action Conditional Video Prediction
 
-Asynchronous algorithms below are removed in current version but can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
-* Async Advantage Actor Critic (A3C)
-* Async One-Step Q-Learning
-* Async One-Step Sarsa 
-* Async N-Step Q-Learning
-* Continuous A3C
-* Distributed Deep Deterministic Policy Gradient (Distributed DDPG, aka D3PG)
-* Parallelized Proximal Policy Optimization (P3O, similar to DPPO)
-
-Support for PyTorch v0.3.x can be found in [v0.2](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.2). Note all the figures are generated via this version. After the upgrade to PyTorch v0.4.0, I have only tested the classical control tasks. 
+Asynchronous algorithms (e.g., A3C) are removed in the current version but can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
 
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
 * PyTorch v0.4.0
-* Python 3.6, 3.5 or 2.7 (deprecated)
+* Python 3.6, 3.5
 * Core dependencies: `pip install -e .`
 * Optional: [Roboschool](https://github.com/openai/roboschool), [PyBullet](https://pypi.org/project/pybullet/)
+
+# Remarks
+* There is a super fast DQN implementation with an async actor for data generation and an async replay buffer to transfer data to GPU. Enable this implementation by setting `config.async_actor = True` and using `AsyncReplay`. However, with atari games this fast implementation may not work in macOS. Use Ubuntu or Docker instead.
+* Python 2 is not officially supported after [v0.3](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.3). However, I do expect most of the code will still work well in Python 2.
+* Although there is a `setup.py`, which means you can install the repo as a library, this repo is **never** designed to be a high-level library like Keras. Use it as your codebase instead.
 
 # Usage
 
 ```examples.py``` contains examples for all the implemented algorithms
 
-```Dockerfile``` contains an example environment (w/ pybullet, w/o roboschool, w/o GPU)
+```Dockerfile``` contains an example environment (w/ pybullet, w/ roboschool, w/o GPU)
 
 Please use this bibtex if you want to cite this repo
 ```
@@ -49,36 +45,16 @@ Please use this bibtex if you want to cite this repo
 ```
 
 # Curves
-> Curves for CartPole are trivial so I didn't place it here, and there isn't any fixed random seed. The curves are generated in the same manner as OpenAI baselines (one run and smoothed by recent 100 episodes)
-## DQN
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/dqn_pixel_atari-180407-01414.png)
 
-## Categorical DQN
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/categorical_dqn_pixel_atari-180407-094006.png)
+## Aatari Game Breakout
 
-## Quantile Regression DQN
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/quantile_regression_dqn_pixel_atari-180407-01604.png)
+* This is my synchronous option-critic implementation, not the original one.
+* The curves are not directly comparable, as many hyper-parameters are different.
 
-## A2C 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/a2c_pixel_atari-180407-92711.png)
-
-## N-Step Q-Learning
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/n_step_dqn_pixel_atari-180408-001104.png)
-
-## DDPG 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ddpg_continuous-180407-234141.png)
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ddpg-pixel.png)
-
-## PPO 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ppo_continuous-180408-002056.png)
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ppo_pixel_atari-180410-235529.png)
-
-## OC
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/option_critic_pixel_atari-180417-092617.png)
-
-This is my synchronous option-critic implementation, not the original one.
+## DDPG
 
 ## Action Conditional Video Prediction
+
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ACVP.png)
 
 **Left**: One-step prediction **Right**: Ground truth
