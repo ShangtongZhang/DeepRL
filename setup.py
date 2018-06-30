@@ -28,4 +28,4 @@ setup(name='deep_rl',
       author="Shangtong Zhang",
       url='https://github.com/ShangtongZhang/DeepRL',
       author_email="zhangshangtong.cpp@gmail.com",
-      version="0.3")
+      version="0.4")

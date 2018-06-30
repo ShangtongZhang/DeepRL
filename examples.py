@@ -411,8 +411,9 @@ def ppo_continuous():
     config.optimization_epochs = 10
     config.num_mini_batches = 32
     config.ppo_ratio_clip = 0.2
-    config.logger = get_logger()
     config.log_interval = 2048
+    config.max_steps = 2e7
+    config.logger = get_logger()
     run_steps(PPOAgent(config))
 
 # DDPG
@@ -545,10 +546,9 @@ if __name__ == '__main__':
     # option_ciritc_pixel_atari(game)
     # ppo_pixel_atari(game)
     # dqn_ram_atari(game)
-
     # ddpg_pixel()
 
     # action_conditional_video_prediction()
 
-    plot()
+    # plot()
 
