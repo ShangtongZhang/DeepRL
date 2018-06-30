@@ -46,12 +46,18 @@ Please use this bibtex if you want to cite this repo
 
 # Curves
 
-## Aatari Game Breakout
+## BreakoutNoFrameskip-v4
+
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/breakout.png)
 
 * This is my synchronous option-critic implementation, not the original one.
 * The curves are not directly comparable, as many hyper-parameters are different.
 
-## DDPG
+## RoboschoolHopper-v1
+
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/hopper.png)
+
+* The DDPG curve is the evaluation performance, rather than online.
 
 ## Action Conditional Video Prediction
 
