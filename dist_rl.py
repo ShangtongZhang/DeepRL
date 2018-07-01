@@ -477,31 +477,78 @@ def batch_atari():
              'EnduroNoFrameskip-v4',
              ]
 
+    games = ['Assault',
+             'Asterix',
+             'Asteroids',
+             'Atlantis',
+             'BankHeist',
+             'Bowling',
+             'Boxing',
+             'Breakout',
+             'Centipede',
+             'ChopperCommand',
+             'CrazyClimber',
+             'DemonAttack',
+             'DoubleDunk',
+             'FishingDerby',
+             'Frostbite',
+             'Gopher',
+             'Gravitar',
+             'IceHockey',
+             'Jamesbond',
+             'Kangaroo',
+             'Krull',
+             'KungFuMaster',
+             'MontezumaRevenge',
+             'NameThisGame',
+             'Pitfall',
+             'Pong',
+             'PrivateEye',
+             'Riverraid',
+             'RoadRunner',
+             'SpaceInvaders',
+             'StarGunner',
+             'Tennis',
+             'TimePilot',
+             'Tutankham',
+             'UpNDown',
+             'Venture',
+             'VideoPinball',
+             'WizardOfWor',
+             'Zaxxon']
+
     game = games[cf.ind1]
 
     parallel = True
     runs = 3
 
-    def task0():
+    def task0(game):
         multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='t001b001_s_le', runs=runs, gpu=0, parallel=parallel,
                    target_beta=0.01, behavior_beta=0.01, option_type='constant_beta',
                    random_option_prob=LinearSchedule(1.0, 0, 4e7),
                    smoothed_quantiles=True)
 
-    def task1():
+    def task1(game):
         multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='n_step_qr_le_dqn', runs=runs, gpu=0, parallel=parallel,
                    option_type=None, q_epsilon=LinearSchedule(1.0, 0, 4e7))
 
-    def task2():
+    def task2(game):
         multi_runs(game, bootstrapped_qr_dqn_pixel_atari, tag='n_step_qr_dqn', runs=runs, gpu=0, parallel=parallel,
                    option_type=None)
 
-    def task3():
-        multi_runs(game, n_step_dqn_pixel_atari, tag='n_step_dqn', runs=runs, gpu=0, parallel=parallel,
-                   option_type=None)
+    # def task3():
+    #     multi_runs(game, n_step_dqn_pixel_atari, tag='n_step_dqn', runs=runs, gpu=0, parallel=parallel,
+    #                option_type=None)
 
-    tasks = [task0, task1, task2, task3]
-    tasks[cf.ind2]()
+    # tasks = [task0, task1, task2, task3]
+    # tasks = [task0, task1, task2]
+    # tasks[cf.ind2]()
+    # print(len(games))
+    for game in games:
+        game += 'NoFrameskip-v4'
+        # task0(game)
+        # task1(game)
+        task2(game)
 
 def batch_ice_cliff():
     parallel = True
@@ -567,8 +614,8 @@ if __name__ == '__main__':
     mkdir('data')
     set_one_thread()
     # batch_ice_cliff()
-    # batch_atari()
-    tmp_batch()
+    batch_atari()
+    # tmp_batch()
 
     # game = 'FreewayNoFrameskip-v4'
     # quantile_option_replay_atari(game, gpu=-1)
