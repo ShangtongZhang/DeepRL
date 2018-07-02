@@ -543,12 +543,12 @@ def batch_atari():
     # tasks = [task0, task1, task2, task3]
     # tasks = [task0, task1, task2]
     # tasks[cf.ind2]()
-    # print(len(games))
-    for game in games:
+    print(len(games))
+    for game in reversed(games):
         game += 'NoFrameskip-v4'
         # task0(game)
         # task1(game)
-        task2(game)
+        # task2(game)
 
 def batch_ice_cliff():
     parallel = True
