@@ -113,12 +113,13 @@ if __name__ == '__main__':
     patterns = [
         # 'original',
         'b0e0',
-        'b0e1',
+        'b1e0',
         'b01e0',
-        'b01e1',
+        'b001e0',
         'q_ddpg',
     ]
     for j, game in enumerate(games):
         for i, p in enumerate(patterns):
             ddpg_plot(pattern='.*log/option-ddpg/option-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
+        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s/ddpg_continuous.*' % (game), figure=j, color=i+1, **kwargs)
     plt.show()
