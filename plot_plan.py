@@ -19,7 +19,7 @@ def plot(**kwargs):
     kwargs.setdefault('max_timesteps', 1e8)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=50, max_timesteps=kwargs['max_timesteps'])
+    data = plotter.load_results(names, episode_window=1000, max_timesteps=kwargs['max_timesteps'])
     print('')
 
     figure = kwargs['figure']
@@ -339,11 +339,14 @@ if __name__ == '__main__':
         'shared'
     ]
     peaks = {}
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
-        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*baseline_ddpg.*' % (game), figure=j, color=i+1, **kwargs)
-        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*larger_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+    #         peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
+    #     ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*baseline_ddpg.*' % (game), figure=j, color=i+1, **kwargs)
+    #     ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*larger_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
+    #     plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
 
-        plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
-    # plt.show()
+    plot(pattern='.*d4pg_body-180629-143907.*', figure=0, color=0)
+    # plot(pattern='.*dqn_body-180629-143923.*', figure=0, color=1)
+    plt.show()
+
