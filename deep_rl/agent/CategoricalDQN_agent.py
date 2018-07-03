@@ -14,7 +14,8 @@ class CategoricalDQNActor(BaseActor):
     def __init__(self, config):
         BaseActor.__init__(self, config)
         self.config = config
-        self.start()
+        if config.async_actor:
+             self.start()
 
     def _set_up(self):
         self.config.atoms = tensor(self.config.atoms)

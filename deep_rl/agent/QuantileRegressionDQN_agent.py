@@ -13,7 +13,8 @@ class QuantileRegressionDQNActor(BaseActor):
     def __init__(self, config):
         BaseActor.__init__(self, config)
         self.config = config
-        self.start()
+        if config.async_actor:
+             self.start()
 
     def _transition(self):
         if self._state is None:
