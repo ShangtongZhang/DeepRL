@@ -204,8 +204,8 @@ def batch_job():
 
     for game in games:
         parallel = True
-        multi_runs(game, option_ddpg_continuous, tag='b0e0d0', parallel=parallel,
-                   beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), detach=False)
+        # multi_runs(game, option_ddpg_continuous, tag='b1e0', parallel=parallel,
+        #            beta=1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
         multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel)
 
 if __name__ == '__main__':
@@ -216,7 +216,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    # batch_job()
+    batch_job()
 
     game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
@@ -233,15 +233,15 @@ if __name__ == '__main__':
     # ucb_ddpg_continuous(game)
     # ucb_ddpg_continuous(game, ucb_constant=50)
 
-    parallel = True
-    multi_runs(game, option_ddpg_continuous, tag='b0e0', parallel=parallel,
-               beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
-    multi_runs(game, option_ddpg_continuous, tag='b001e0', parallel=parallel,
-               beta=0.01, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
-    multi_runs(game, option_ddpg_continuous, tag='b01e0', parallel=parallel,
-               beta=0.1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
-    multi_runs(game, option_ddpg_continuous, tag='b1e0', parallel=parallel,
-               beta=1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
+    # parallel = True
+    # multi_runs(game, option_ddpg_continuous, tag='b0e0', parallel=parallel,
+    #            beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
+    # multi_runs(game, option_ddpg_continuous, tag='b001e0', parallel=parallel,
+    #            beta=0.01, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
+    # multi_runs(game, option_ddpg_continuous, tag='b01e0', parallel=parallel,
+    #            beta=0.1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
+    # multi_runs(game, option_ddpg_continuous, tag='b1e0', parallel=parallel,
+    #            beta=1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
 
     # multi_runs(game, option_ddpg_continuous, tag='b0e0', parallel=parallel,
     #            beta=0, random_option_prob=LinearSchedule(1.0, 0, int(1e6)), id=0)
