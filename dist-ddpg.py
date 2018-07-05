@@ -210,9 +210,9 @@ def batch_job():
 
     for game in games:
         parallel = True
-        multi_runs(game, option_ddpg_continuous, tag='b1e0', parallel=parallel,
-                   beta=1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
-        # multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel)
+        # multi_runs(game, option_ddpg_continuous, tag='b1e0', parallel=parallel,
+        #            beta=1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
+        multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel)
 
 if __name__ == '__main__':
     mkdir('data')
