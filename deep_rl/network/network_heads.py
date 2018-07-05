@@ -398,11 +398,11 @@ class EnvModel(nn.Module):
         self.fc_t2 = layer_init(nn.Linear(phi_dim + action_dim, phi_dim))
 
     def forward(self, phi_s, action):
-        phi = torch.cat([phi_s, action], dim=1)
+        phi = torch.cat([phi_s, action], dim=-1)
         r = self.fc_r2(F.tanh(self.fc_r1(phi)))
 
         phi_s_prime = phi_s + F.tanh(self.fc_t1(phi_s))
-        phi_sa_prime = torch.cat([phi_s_prime, action], dim=1)
+        phi_sa_prime = torch.cat([phi_s_prime, action], dim=-1)
         phi_s_prime = phi_s_prime + F.tanh(self.fc_t2(phi_sa_prime))
 
         return phi_s_prime, r
