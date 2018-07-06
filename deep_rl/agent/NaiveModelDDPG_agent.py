@@ -80,8 +80,14 @@ class NaiveModelDDPGAgent(BaseAgent):
                                            depth=1, immediate_reward=False)
                 q_loss = (q - q_next).pow(2).mul(0.5).mean()
 
+                phi_next, r = self.network.env_model(phi, self.network.tensor(actions))
+                target_phi_next = self.target_network.feature(next_states).detach()
+
+                phi_loss = (phi_next - target_phi_next).pow(2).mul(0.5).mean()
+                r_loss = (r - rewards).pow(2).mul(0.5).mean()
+
                 self.opt.zero_grad()
-                q_loss.mul(config.critic_loss_weight).backward()
+                (q_loss + phi_loss + r_loss).mul(config.critic_loss_weight).backward()
                 self.opt.step()
 
                 phi = self.network.feature(states)
