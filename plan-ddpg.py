@@ -298,9 +298,11 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    naive_model_ddpg(game, depth=2)
+    # naive_model_ddpg(game, depth=2)
     # plan_ddpg(game, depth=3)
     # ddpg_shared(game)
+
+    # multi_runs(game, naive_model_ddpg, tag='naive_model', parallel=True)
 
     games = [
         # 'RoboschoolHopper-v1',
