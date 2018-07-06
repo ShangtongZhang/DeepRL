@@ -502,3 +502,71 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
         phi = self.compute_phi(obs)
         actions = self.compute_a(phi, detach=False)
         return actions
+
+class NaiveModelDDPGNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 phi_body,
+                 num_actors,
+                 discount,
+                 detach_action,
+                 gpu=-1):
+        super(NaiveModelDDPGNet, self).__init__()
+        self.phi_body = phi_body
+        phi_dim = phi_body.feature_dim
+        self.critic_model = CriticModel(phi_dim, action_dim)
+        self.actor_models = nn.ModuleList([ActorModel(phi_dim, action_dim) for _ in range(num_actors)])
+        self.env_model = EnvModel(phi_dim, action_dim)
+
+        self.discount = discount
+        self.detach_action = detach_action
+        self.num_actors = num_actors
+        self.set_gpu(gpu)
+
+    def predict(self, obs, depth, to_numpy=False):
+        phi = self.feature(obs)
+        actions = self.compute_a(phi)
+        q_values = [self.compute_q(phi, action, depth) for action in actions]
+        q_values = torch.stack(q_values).squeeze(-1).t()
+        actions = torch.stack(actions).t()
+        if to_numpy:
+            best = q_values.max(1)[1]
+            actions = actions[self.range(actions.size(0)), best, :]
+            return actions.detach().cpu().numpy()
+        return q_values.max(1)[0].unsqueeze(-1)
+
+    def feature(self, obs):
+        obs = self.tensor(obs)
+        return self.phi_body(obs)
+
+    def compute_a(self, phi, detach=True):
+        actions = [actor_model(phi) for actor_model in self.actor_models]
+        if detach:
+            for action in actions: action.detach_()
+        return actions
+
+    def compute_q(self, phi, action, depth=1, immediate_reward=False):
+        if depth == 1:
+            q = self.critic_model(phi, action)
+            if immediate_reward:
+                return q, 0
+            return q
+        else:
+            phi_prime, r = self.env_model(phi, action)
+            a_prime = self.compute_a(phi_prime)
+            a_prime = torch.stack(a_prime)
+            phi_prime = phi_prime.unsqueeze(0).expand(
+                (self.num_actors, ) + (-1, ) * len(phi_prime.size())
+            )
+            q_prime = self.compute_q(phi_prime, a_prime, depth - 1)
+            q_prime = q_prime.max(0)[0]
+            q = r + self.discount * q_prime
+            if immediate_reward:
+                return q, r
+            return q
+
+    def actor(self, obs):
+        phi = self.compute_phi(obs)
+        actions = self.compute_a(phi, detach=False)
+        return actions
