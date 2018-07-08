@@ -195,8 +195,8 @@ def naive_model_ddpg(game, log_dir=None, **kwargs):
 
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
-    # log_dir = './log/plan-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
-    log_dir = './log/baseline-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
+    log_dir = './log/plan-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
+    # log_dir = './log/baseline-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game, log_dir, tag=tag, **kwargs)
 
 def multi_runs(game, fn, tag, **kwargs):
