@@ -321,32 +321,33 @@ if __name__ == '__main__':
     # ]
     games = [
         'RoboschoolAnt-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1',
-        'RoboschoolPong-v1',
-        'RoboschoolHumanoidFlagrun-v1',
-        'RoboschoolHumanoidFlagrunHarder-v1',
-        'RoboschoolInvertedPendulum-v1',
-        'RoboschoolInvertedPendulumSwingup-v1',
-        'RoboschoolInvertedDoublePendulum-v1',
+        # 'RoboschoolWalker2d-v1',
+        # 'RoboschoolHopper-v1',
+        # 'RoboschoolHalfCheetah-v1',
+        # 'RoboschoolReacher-v1',
+        # 'RoboschoolHumanoid-v1',
+        # 'RoboschoolPong-v1',
+        # 'RoboschoolHumanoidFlagrun-v1',
+        # 'RoboschoolHumanoidFlagrunHarder-v1',
+        # 'RoboschoolInvertedPendulum-v1',
+        # 'RoboschoolInvertedPendulumSwingup-v1',
+        # 'RoboschoolInvertedDoublePendulum-v1',
     ]
     patterns = [
         'd1m0',
         'd2m0',
-        'shared'
+        'shared',
+        'naive',
     ]
     peaks = {}
-    # for j, game in enumerate(games):
-    #     for i, p in enumerate(patterns):
-    #         peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
-    #     ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*baseline_ddpg.*' % (game), figure=j, color=i+1, **kwargs)
-    #     ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*larger_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
-    #     plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
+    for j, game in enumerate(games):
+        for i, p in enumerate(patterns):
+            peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
+        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*baseline_ddpg.*' % (game), figure=j, color=i+1, **kwargs)
+        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*larger_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
+        plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
 
-    plot(pattern='.*d4pg_body-180629-143907.*', figure=0, color=0)
+    # plot(pattern='.*d4pg_body-180629-143907.*', figure=0, color=0)
     # plot(pattern='.*dqn_body-180629-143923.*', figure=0, color=1)
-    plt.show()
+    # plt.show()
 
