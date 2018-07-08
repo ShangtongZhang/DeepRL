@@ -95,12 +95,18 @@ if __name__ == '__main__':
     #     'per_step_random'
     # ]
     games = [
-        'RoboschoolAnt-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1',
+        # 'RoboschoolAnt-v1',
+        # 'RoboschoolWalker2d-v1',
+        # 'RoboschoolHopper-v1',
+        # 'RoboschoolHalfCheetah-v1',
+        # 'RoboschoolReacher-v1',
+        # 'RoboschoolHumanoid-v1',
+        'RoboschoolPong-v1',
+        'RoboschoolHumanoidFlagrun-v1',
+        'RoboschoolHumanoidFlagrunHarder-v1',
+        'RoboschoolInvertedPendulum-v1',
+        # 'RoboschoolInvertedPendulumSwingup-v1',
+        # 'RoboschoolInvertedDoublePendulum-v1',
     ]
     patterns = [
         'original',
