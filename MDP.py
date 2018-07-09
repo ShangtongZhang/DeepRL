@@ -381,10 +381,10 @@ if __name__ == '__main__':
     # agent = QuantileOptionAgent(lambda :Chain(10, up_std=0, left_std=1.0))
     # run_episodes(agent)
 
-    upper_quantile_chain()
+    # upper_quantile_chain()
 
     # lower_quantile_chain()
     # plot_upper()
     # plot_lower()
-    # plt.show()
+    plt.show()
 
