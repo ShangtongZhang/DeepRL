@@ -203,8 +203,8 @@ def batch_job():
         # 'RoboschoolHumanoidFlagrun-v1',
         # 'RoboschoolHumanoidFlagrunHarder-v1',
         # 'RoboschoolInvertedPendulum-v1',
-        'RoboschoolInvertedPendulumSwingup-v1',
         'RoboschoolInvertedDoublePendulum-v1',
+        'RoboschoolInvertedPendulumSwingup-v1',
     ]
     # game = games[cf.ind1]
 
