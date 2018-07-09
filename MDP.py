@@ -332,6 +332,9 @@ def plot_upper():
     plt.yscale('log')
     plt.xlabel('# of non-terminal states in the chain')
     plt.ylabel('steps')
+    # steps = steps.mean(-1)
+    # plt.hist(np.arange(2, 7))
+
 
 def lower_quantile_chain():
     chain_states = np.arange(2, 9)
@@ -384,7 +387,7 @@ if __name__ == '__main__':
     # upper_quantile_chain()
 
     # lower_quantile_chain()
-    # plot_upper()
-    # plot_lower()
+    plot_upper()
+    plot_lower()
     plt.show()
 
