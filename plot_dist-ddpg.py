@@ -95,18 +95,18 @@ if __name__ == '__main__':
     #     'per_step_random'
     # ]
     games = [
-        # 'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
-        # 'RoboschoolHopper-v1',
-        # 'RoboschoolHalfCheetah-v1',
-        # 'RoboschoolReacher-v1',
-        # 'RoboschoolHumanoid-v1',
+        'RoboschoolAnt-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
         'RoboschoolPong-v1',
         'RoboschoolHumanoidFlagrun-v1',
         'RoboschoolHumanoidFlagrunHarder-v1',
         'RoboschoolInvertedPendulum-v1',
         # 'RoboschoolInvertedPendulumSwingup-v1',
-        # 'RoboschoolInvertedDoublePendulum-v1',
+        'RoboschoolInvertedDoublePendulum-v1',
     ]
     patterns = [
         'original',
@@ -129,4 +129,5 @@ if __name__ == '__main__':
             ddpg_plot(pattern='.*log/option-ddpg/option-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
         ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s/ddpg_continuous.*' % (game), figure=j, color=i+1, **kwargs)
         ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s/.*q_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
-    plt.show()
+        plt.savefig('/home/shangtong/Documents/option-ddpg/%s.png' % (game))
+    # plt.show()
