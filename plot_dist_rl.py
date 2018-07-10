@@ -1,5 +1,5 @@
 import matplotlib
-# matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
@@ -123,6 +123,48 @@ if __name__ == '__main__':
         'MsPacmanNoFrameskip-v4',
         'EnduroNoFrameskip-v4',
         ]
+
+    games = ['Assault',
+             'Asterix',
+             'Asteroids',
+             'Atlantis',
+             'BankHeist',
+             'Bowling',
+             'Boxing',
+             'Breakout',
+             'Centipede',
+             'ChopperCommand',
+             'CrazyClimber',
+             'DemonAttack',
+             'DoubleDunk',
+             'FishingDerby',
+             'Frostbite',
+             'Gopher',
+             'Gravitar',
+             'IceHockey',
+             'Jamesbond',
+             'Kangaroo',
+             'Krull',
+             'KungFuMaster',
+             'MontezumaRevenge',
+             'NameThisGame',
+             'Pitfall',
+             'Pong',
+             'PrivateEye',
+             'Riverraid',
+             'RoadRunner',
+             'SpaceInvaders',
+             'StarGunner',
+             'Tennis',
+             'TimePilot',
+             'Tutankham',
+             'UpNDown',
+             'Venture',
+             'VideoPinball',
+             'WizardOfWor',
+             'Zaxxon'
+             ]
+
     # games = [
     #     'BreakoutNoFrameskip-v4',
     #     'AssaultNoFrameskip-v4',
@@ -162,10 +204,13 @@ if __name__ == '__main__':
         # 'n_step_dqn',
     ]
 
-    # for j, game in enumerate(games):
-    #     for i, p in enumerate(patterns):
-    #         plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-    #         plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+    for j, game in enumerate(games):
+        for i, p in enumerate(patterns):
+            try:
+                plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+                plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+            except:
+                continue
             # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
             # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
@@ -242,7 +287,7 @@ if __name__ == '__main__':
         'b1_me',
         'b1_le'
     ]
-    for i, p in enumerate(patterns):
-        plot(pattern='.*replay_qo.*%s.*' % (p), figure=0, color=i)
-    plt.show()
+    # for i, p in enumerate(patterns):
+    #     plot(pattern='.*replay_qo.*%s.*' % (p), figure=0, color=i)
+    # plt.show()
 
