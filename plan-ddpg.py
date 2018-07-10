@@ -245,12 +245,12 @@ def batch_job():
     # game = games[cf.ind1]
 
     games = [
-        'RoboschoolAnt-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1',
+        # 'RoboschoolAnt-v1',
+        # 'RoboschoolWalker2d-v1',
+        # 'RoboschoolHopper-v1',
+        # 'RoboschoolHalfCheetah-v1',
+        # 'RoboschoolReacher-v1',
+        # 'RoboschoolHumanoid-v1',
         'RoboschoolPong-v1',
         'RoboschoolHumanoidFlagrun-v1',
         'RoboschoolHumanoidFlagrunHarder-v1',
