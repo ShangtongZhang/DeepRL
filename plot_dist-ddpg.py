@@ -105,7 +105,7 @@ if __name__ == '__main__':
         'RoboschoolHumanoidFlagrun-v1',
         'RoboschoolHumanoidFlagrunHarder-v1',
         'RoboschoolInvertedPendulum-v1',
-        # 'RoboschoolInvertedPendulumSwingup-v1',
+        'RoboschoolInvertedPendulumSwingup-v1',
         'RoboschoolInvertedDoublePendulum-v1',
     ]
     patterns = [
