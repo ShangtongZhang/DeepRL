@@ -3,8 +3,8 @@ import torch
 import pickle
 from deep_rl.utils import random_seed
 import matplotlib.pyplot as plt
-import seaborn as sns;
-sns.set(color_codes=True)
+# import seaborn as sns
+# sns.set(color_codes=True)
 
 NUM_QUANTILES = 3
 
@@ -324,13 +324,17 @@ def plot_upper():
         steps = pickle.load(f)
     agents = ['Q-learning','Pessimistic-QR',
               'Optimistic-QR', 'QR', 'Quantile Option']
+    markers = ['o', 'v', '^', 's', 'D']
     for i, agent in enumerate(agents):
-        print(steps[i].mean(-1))
-        sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent,
-                   color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False, ci=95)
+        m_y = steps[i].mean(-1)
+        err_y = steps[i].std(-1) / np.sqrt(steps.shape[-1])
+        x = np.arange(2, 7)
+        plt.errorbar(x, m_y, err_y, label=agent, fmt=markers[i])
     plt.yscale('log')
     plt.xlabel('# of non-terminal states in Chain 1')
     plt.ylabel('steps')
+    plt.xticks(x, x)
+    plt.legend()
     # steps = steps.mean(-1)
     # plt.hist(np.arange(2, 7))
 
@@ -360,13 +364,17 @@ def plot_lower():
         steps = pickle.load(f)
     agents = ['Q-learning','Pessimistic-QR',
               'Optimistic-QR', 'QR', 'Quantile Option']
+    markers = ['o', 'v', '^', 's', 'D']
     for i, agent in enumerate(agents):
-        print(steps[i].mean(-1))
-        sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 9), condition=agent, color=Plotter.COLORS[i],
-                   err_style="ci_bars", interpolate=False, ci=95)
+        m_y = steps[i].mean(-1)
+        err_y = steps[i].std(-1) / np.sqrt(steps.shape[-1])
+        x = np.arange(2, 9)
+        plt.errorbar(x, m_y, err_y, label=agent, fmt=markers[i])
     plt.yscale('log')
     plt.xlabel('# of non-terminal states in Chain 2')
+    plt.xticks(x, x)
     plt.ylabel('steps')
+    plt.legend()
 
 def plot():
     plt.figure(0)
