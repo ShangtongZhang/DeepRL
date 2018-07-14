@@ -319,22 +319,20 @@ def upper_quantile_chain():
         pickle.dump(total_steps, f)
 
 def plot_upper():
-    plt.figure(0)
     from deep_rl.utils import Plotter
     with open('data/%s.bin' % (upper_quantile_chain.__name__), 'rb') as f:
         steps = pickle.load(f)
-    agents = ['Q Learning','Quantile Option (smallest quantile)',
-              'Quantile Option (largest quantile)', 'Quantile Regression', 'Quantile Option']
+    agents = ['Q-learning','Pessimistic-QR',
+              'Optimistic-QR', 'QR', 'Quantile Option']
     for i, agent in enumerate(agents):
         print(steps[i].mean(-1))
         sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 7), condition=agent,
                    color=Plotter.COLORS[i], err_style="ci_bars", interpolate=False, ci=95)
     plt.yscale('log')
-    plt.xlabel('# of non-terminal states in the chain')
+    plt.xlabel('# of non-terminal states in Chain 1')
     plt.ylabel('steps')
     # steps = steps.mean(-1)
     # plt.hist(np.arange(2, 7))
-
 
 def lower_quantile_chain():
     chain_states = np.arange(2, 9)
@@ -357,19 +355,28 @@ def lower_quantile_chain():
         pickle.dump(total_steps, f)
 
 def plot_lower():
-    plt.figure(1)
     from deep_rl.utils import Plotter
     with open('data/%s.bin' % (lower_quantile_chain.__name__), 'rb') as f:
         steps = pickle.load(f)
-    agents = ['Q Learning','Quantile Option (smallest quantile)',
-              'Quantile Option (largest quantile)', 'Quantile Regression', 'Quantile Option']
+    agents = ['Q-learning','Pessimistic-QR',
+              'Optimistic-QR', 'QR', 'Quantile Option']
     for i, agent in enumerate(agents):
         print(steps[i].mean(-1))
         sns.tsplot(np.transpose(steps[i]), time=np.arange(2, 9), condition=agent, color=Plotter.COLORS[i],
                    err_style="ci_bars", interpolate=False, ci=95)
     plt.yscale('log')
-    plt.xlabel('# of non-terminal states in the chain')
+    plt.xlabel('# of non-terminal states in Chain 2')
     plt.ylabel('steps')
+
+def plot():
+    plt.figure(0)
+    plot_upper()
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/chain1.png')
+    plt.close()
+    plt.figure(1)
+    plot_lower()
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/chain2.png')
+    plt.close()
 
 if __name__ == '__main__':
     # agent = QAgent(lambda :Chain(5, up_std=0, left_std=1.0))
@@ -387,7 +394,5 @@ if __name__ == '__main__':
     # upper_quantile_chain()
 
     # lower_quantile_chain()
-    plot_upper()
-    plot_lower()
-    plt.show()
+    plot()
 
