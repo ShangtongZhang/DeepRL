@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
 
 def compute_stats(**kwargs):
@@ -82,6 +81,42 @@ def ddpg_plot(**kwargs):
     plt.ylabel('episode return')
     # plt.show()
 
+def plot_sub(**kwargs):
+    import matplotlib.pyplot as plt
+    kwargs.setdefault('average', False)
+    kwargs.setdefault('color', 0)
+    kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('max_timesteps', 1e8)
+    plotter = Plotter()
+    names = plotter.load_log_dirs(**kwargs)
+    data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
+    min_y = np.min([len(y) for y in data])
+    data = [y[ :min_y] for y in data]
+    new_data = []
+    for y in data:
+        y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
+        x = np.arange(y.shape[0]) * kwargs['x_interval']
+        new_data.append([x, y])
+    data = new_data
+
+    print('')
+
+    color = kwargs['color']
+    x = data[0][0]
+    y = [entry[1] for entry in data]
+    y = np.stack(y)
+    plotter.plot_standard_error(y, x, label=kwargs['name'], color=Plotter.COLORS[color])
+    plt.title(kwargs['name'])
+    plt.xticks([])
+    # plt.legend()
+
+    # plt.ylim([-200, 1400])
+    # plt.ylim([-200, 2500])
+    # plt.xlabel('timesteps')
+    # plt.ylabel('episode return')
+    # plt.show()
+
 if __name__ == '__main__':
     kwargs = {
         'x_interval': int(1e4),
@@ -94,19 +129,33 @@ if __name__ == '__main__':
     #     'per_step_decay',
     #     'per_step_random'
     # ]
+    # games = [
+    #     'RoboschoolAnt-v1',
+    #     'RoboschoolWalker2d-v1',
+    #     'RoboschoolHopper-v1',
+    #     'RoboschoolHalfCheetah-v1',
+    #     'RoboschoolReacher-v1',
+    #     'RoboschoolHumanoid-v1',
+    #     'RoboschoolPong-v1',
+    #     'RoboschoolHumanoidFlagrun-v1',
+    #     'RoboschoolHumanoidFlagrunHarder-v1',
+    #     'RoboschoolInvertedPendulum-v1',
+    #     'RoboschoolInvertedPendulumSwingup-v1',
+    #     'RoboschoolInvertedDoublePendulum-v1',
+    # ]
     games = [
-        'RoboschoolAnt-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1',
-        'RoboschoolPong-v1',
-        'RoboschoolHumanoidFlagrun-v1',
-        'RoboschoolHumanoidFlagrunHarder-v1',
-        'RoboschoolInvertedPendulum-v1',
-        'RoboschoolInvertedPendulumSwingup-v1',
-        'RoboschoolInvertedDoublePendulum-v1',
+        'Ant',
+        'Walker2d',
+        'Hopper',
+        'HalfCheetah',
+        'Reacher',
+        'Pong',
+        'Humanoid',
+        'HumanoidFlagrun',
+        'HumanoidFlagrunHarder',
+        'InvertedPendulum',
+        'InvertedPendulumSwingup',
+        'InvertedDoublePendulum',
     ]
     patterns = [
         'original',
@@ -124,10 +173,13 @@ if __name__ == '__main__':
         # 'b001e0',
         # 'q_ddpg',
     ]
+    plt.figure(figsize=(40, 15))
     for j, game in enumerate(games):
+        plt.subplot(3, 4, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*log/option-ddpg/option-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
-        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s/ddpg_continuous.*' % (game), figure=j, color=i+1, **kwargs)
-        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s/.*q_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
-        plt.savefig('/home/shangtong/Documents/option-ddpg/%s.png' % (game))
+            plot_sub(pattern='.*log/option-ddpg/option-Roboschool%s-v1.*%s.*' % (game, p), figure=j, color=i, name=game, **kwargs)
+        plot_sub(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game), figure=j, color=i+1, name=game, **kwargs)
+        plot_sub(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/.*q_ddpg.*' % (game), figure=j, color=i+2, name=game, **kwargs)
+        # plt.savefig('/home/shangtong/Documents/option-ddpg/%s.png' % (game))
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/roboschool.png', )
     # plt.show()
