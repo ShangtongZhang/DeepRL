@@ -150,12 +150,12 @@ if __name__ == '__main__':
         'HalfCheetah',
         'Reacher',
         'Pong',
-        'Humanoid',
-        'HumanoidFlagrun',
-        'HumanoidFlagrunHarder',
-        'InvertedPendulum',
-        'InvertedPendulumSwingup',
-        'InvertedDoublePendulum',
+        # 'Humanoid',
+        # 'HumanoidFlagrun',
+        # 'HumanoidFlagrunHarder',
+        # 'InvertedPendulum',
+        # 'InvertedPendulumSwingup',
+        # 'InvertedDoublePendulum',
     ]
     patterns = [
         'original',
@@ -173,13 +173,12 @@ if __name__ == '__main__':
         # 'b001e0',
         # 'q_ddpg',
     ]
-    plt.figure(figsize=(40, 15))
+    plt.figure(figsize=(30, 4))
     for j, game in enumerate(games):
-        plt.subplot(3, 4, j+1)
+        plt.subplot(1, 6, j+1)
         for i, p in enumerate(patterns):
             plot_sub(pattern='.*log/option-ddpg/option-Roboschool%s-v1.*%s.*' % (game, p), figure=j, color=i, name=game, **kwargs)
         plot_sub(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game), figure=j, color=i+1, name=game, **kwargs)
         plot_sub(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/.*q_ddpg.*' % (game), figure=j, color=i+2, name=game, **kwargs)
-        # plt.savefig('/home/shangtong/Documents/option-ddpg/%s.png' % (game))
-    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/roboschool.png', )
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/roboschool.png', bbox_inches='tight')
     # plt.show()
