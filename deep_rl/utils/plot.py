@@ -17,17 +17,17 @@ class Plotter:
     def __init__(self):
         pass
 
-    def rolling_window(self, a, window):
+    def _rolling_window(self, a, window):
         shape = a.shape[:-1] + (a.shape[-1] - window + 1, window)
         strides = a.strides + (a.strides[-1],)
         return np.lib.stride_tricks.as_strided(a, shape=shape, strides=strides)
 
-    def window_func(self, x, y, window, func):
-        yw = self.rolling_window(y, window)
+    def _window_func(self, x, y, window, func):
+        yw = self._rolling_window(y, window)
         yw_func = func(yw, axis=-1)
         return x[window - 1:], yw_func
 
-    def ts2xy(self, ts, xaxis):
+    def _ts2xy(self, ts, xaxis):
         if xaxis == Plotter.X_TIMESTEPS:
             x = np.cumsum(ts.l.values)
             y = ts.r.values
@@ -47,9 +47,9 @@ class Plotter:
             ts = load_monitor_log(dir)
             ts = ts[ts.l.cumsum() <= max_timesteps]
             tslist.append(ts)
-        xy_list = [self.ts2xy(ts, x_axis) for ts in tslist]
+        xy_list = [self._ts2xy(ts, x_axis) for ts in tslist]
         if episode_window:
-            xy_list = [self.window_func(x, y, episode_window, np.mean) for x, y in xy_list]
+            xy_list = [self._window_func(x, y, episode_window, np.mean) for x, y in xy_list]
         return xy_list
 
     def load_evaluation_episodes_results(self,
@@ -65,9 +65,9 @@ class Plotter:
             ys.append(y)
         return x, np.stack(ys)
 
-    def average(self, xy_list, bin, max_timesteps, top_k=0, top_k_perf=lambda x: np.max(x)):
+    def average(self, xy_list, bin, max_timesteps, top_k=0):
         if top_k:
-            perf = [top_k_perf(y) for _, y in xy_list]
+            perf = [np.max(y) for _, y in xy_list]
             top_k_runs = np.argsort(perf)[-top_k:]
             new_xy_list = []
             for r, (x, y) in enumerate(xy_list):
@@ -79,18 +79,6 @@ class Plotter:
         for x, y in xy_list:
             new_y.append(np.interp(new_x, x, y))
         return new_x, np.asarray(new_y)
-
-    def plot_results(self, dirs, max_timesteps=1e8, x_axis=X_TIMESTEPS, episode_window=100, title=None):
-        import matplotlib.pyplot as plt
-        plt.ticklabel_format(axis='x', style='sci', scilimits=(1, 1))
-        xy_list = self.load_results(dirs, max_timesteps, x_axis, episode_window)
-        for (i, (x, y)) in enumerate(xy_list):
-            color = Plotter.COLORS[i]
-            plt.plot(x, y, color=color)
-        plt.xlabel(x_axis)
-        plt.ylabel("Episode Rewards")
-        if title is not None:
-            plt.title(title)
 
     def load_log_dirs(self, pattern, negative_pattern=' ', root='./log', **kwargs):
         dirs = [item[0] for item in os.walk(root)]
@@ -108,3 +96,13 @@ class Plotter:
                 print(dir)
 
         return sorted(names)
+
+    def plot_standard_error(self, data, x=None, **kwargs):
+        import matplotlib.pyplot as plt
+        if x is None:
+            x = np.arange(data.shape[1])
+        e_x = np.std(data, axis=0) / np.sqrt(data.shape[0])
+        m_x = np.mean(data, axis=0)
+        plt.plot(x, m_x, **kwargs)
+        del kwargs['label']
+        plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)

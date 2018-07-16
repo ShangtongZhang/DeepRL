@@ -1,7 +1,6 @@
 import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
 
 def plot(**kwargs):
@@ -9,7 +8,7 @@ def plot(**kwargs):
     kwargs.setdefault('average', False)
     # kwargs.setdefault('color', 0)
     kwargs.setdefault('top_k', 0)
-    kwargs.setdefault('top_k_perf', lambda x: np.mean(x[-20:]))
+    # kwargs.setdefault('top_k_perf', lambda x: np.mean(x[-20:]))
     kwargs.setdefault('max_timesteps', 1e8)
     kwargs.setdefault('episode_window', 100)
     kwargs.setdefault('x_interval', 1000)
@@ -23,15 +22,15 @@ def plot(**kwargs):
     plt.figure(figure)
     if kwargs['average']:
         color = kwargs['color']
-        x, y = plotter.average(data, kwargs['x_interval'], kwargs['max_timesteps'], top_k=kwargs['top_k'],
-                               top_k_perf=kwargs['top_k_perf'])
+        x, y = plotter.average(data, kwargs['x_interval'], kwargs['max_timesteps'], top_k=kwargs['top_k'])
         print(y.shape)
         if kwargs['down_sample']:
             indices = np.linspace(0, len(x) - 1, 500).astype(np.int)
             x = x[indices]
             y = y[:, indices]
         name = names[0].split('/')[-1]
-        sns.tsplot(y, x, condition=name, color=Plotter.COLORS[color], ci='sd')
+        plotter.plot_standard_error(y, x, label=name, color=Plotter.COLORS[color])
+        # sns.tsplot(y, x, condition=name, , ci='sd')
         plt.title(names[0])
     else:
         for i, name in enumerate(names):
@@ -208,7 +207,7 @@ def plot_improvement():
 
 
 if __name__ == '__main__':
-    plot_improvement()
+    # plot_improvement()
     games = [
         'FreewayNoFrameskip-v4',
         'BeamRiderNoFrameskip-v4',
@@ -302,13 +301,14 @@ if __name__ == '__main__':
         # 'n_step_dqn',
     ]
 
-    # for j, game in enumerate(games):
-    #     for i, p in enumerate(patterns):
-    #         try:
-    #             plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-    #             plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
-    #         except:
-    #             continue
+    for j, game in enumerate(games):
+        for i, p in enumerate(patterns):
+            try:
+                plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+                plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+            except Exception as e:
+                print(e)
+                continue
             # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
             # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
