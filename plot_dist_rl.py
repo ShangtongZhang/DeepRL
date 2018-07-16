@@ -1,7 +1,7 @@
 import matplotlib
-matplotlib.use('Agg')
+# matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import seaborn as sns; sns.set(color_codes=True)
+# import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
 
 def plot(**kwargs):
@@ -92,25 +92,123 @@ def deterministic_plot(**kwargs):
     plt.ylabel('episode return')
     # plt.show()
 
+def plot_improvement():
+    games = [
+        'Freeway',
+        'BeamRider',
+        'BattleZone',
+        'Robotank',
+        'Qbert',
+        'Alien',
+        'Amidar',
+        'Seaquest',
+        'MsPacman',
+        'Enduro',
+        'Assault',
+        'Asterix',
+        'Asteroids',
+        'Atlantis',
+        'BankHeist',
+        'Bowling',
+        'Boxing',
+        'Breakout',
+        'Centipede',
+        'ChopperCommand',
+        'CrazyClimber',
+        'DemonAttack',
+        'DoubleDunk',
+        'FishingDerby',
+        'Frostbite',
+        'Gopher',
+        'Gravitar',
+        'IceHockey',
+        'Jamesbond',
+        'Kangaroo',
+        'Krull',
+        'KungFuMaster',
+        'MontezumaRevenge',
+        'NameThisGame',
+        'Pitfall',
+        'Pong',
+        'PrivateEye',
+        'Riverraid',
+        'RoadRunner',
+        'SpaceInvaders',
+        'StarGunner',
+        'Tennis',
+        'TimePilot',
+        'Tutankham',
+        'UpNDown',
+        'Venture',
+        'VideoPinball',
+        'WizardOfWor',
+        'Zaxxon'
+    ]
+
+    patterns = [
+        't001b001_s_le',
+        'n_step_qr_dqn',
+        'n_step_qr_le_dqn',
+    ]
+
+    cum_rewards = {}
+
+    plotter = Plotter()
+    for game in games:
+        for p in patterns:
+            names = plotter.load_log_dirs(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p))
+            if len(names) == 0:
+                print('data not found: %s, %s' % (game, p))
+                continue
+            data = plotter.load_results(names, episode_window=0, max_timesteps=int(4e7))
+            cum_y = [np.sum(y) for x, y in data]
+            final_y = [np.sum(y[-1000: ]) for x, y in data]
+            if game not in cum_rewards.keys():
+                cum_rewards[game] = []
+            cum_rewards[game].extend([np.mean(cum_y), np.mean(final_y)])
+
+    improvements = [[], [], [], []]
+    for game in cum_rewards.keys():
+        stats = cum_rewards[game]
+        print(game, len(stats))
+        new_cum = stats[0]
+        new_final = stats[1]
+        base1_cum = stats[2]
+        base1_final = stats[3]
+        base2_cum = stats[4]
+        base2_final = stats[5]
+        improvements[0].append([game, (new_cum - base1_cum) / base1_cum])
+        improvements[1].append([game, (new_final - base1_final) / base1_final])
+        improvements[2].append([game, (new_cum - base2_cum) / base2_cum])
+        improvements[3].append([game, (new_final - base2_final) / base2_final])
+    data = [zip(*sorted(ratio, key=lambda x: x[1])) for ratio in improvements]
+    import matplotlib.pyplot as plt
+    for i, (x, y) in enumerate(data):
+        plt.figure(i)
+        plt.figure(figsize=(30, 5))
+        plt.tight_layout()
+        bar = plt.bar(x, y)
+        plt.xticks(rotation='vertical')
+        # plt.ylabel('improvement')
+        plt.subplots_adjust(bottom=0.25)
+
+        for spine in plt.gca().spines.values():
+            spine.set_visible(False)
+        plt.tick_params(top='off', bottom='off', left='off', right='off', labelleft='off', labelbottom='on')
+        for j, bari in enumerate(bar):
+            if y[j] >= 0:
+                va = 'bottom'
+            else:
+                va = 'top'
+            v = '%.1f' % (y[j] * 100)
+            plt.text(bari.get_x() + bari.get_width() / 2, bari.get_height(), v, va=va,
+                           ha='center', color='black', fontsize=15)
+        plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-%d.png' % (i), bbox_inches='tight')
+        # plt.show()
+
 
 if __name__ == '__main__':
-    # game = 'Freeway'
-    # game = 'Seaquest'
-    # game = 'MsPacman'
-    # game = 'Frostbite'
-    # game = 'Enduro'
-    # game = 'JourneyEscape'
-    # game = 'Tennis'
-    # game = 'Pong'
-    # game = 'Boxing'
-    # game = 'IceHockey'
-    # game = 'Skiing'
-    # game = 'SpaceInvaders'
-    # game = 'UpNDown'
-    # game = 'BeamRider'
-    # game = 'Robotank'
-    # game = 'BankHeist'
-    # game = 'BattleZone'
+    plot_improvement()
     games = [
         'FreewayNoFrameskip-v4',
         'BeamRiderNoFrameskip-v4',
@@ -204,13 +302,13 @@ if __name__ == '__main__':
         # 'n_step_dqn',
     ]
 
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            try:
-                plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-                plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
-            except:
-                continue
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+    #         try:
+    #             plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+    #             plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+    #         except:
+    #             continue
             # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
             # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
@@ -290,4 +388,6 @@ if __name__ == '__main__':
     # for i, p in enumerate(patterns):
     #     plot(pattern='.*replay_qo.*%s.*' % (p), figure=0, color=i)
     # plt.show()
+
+
 
