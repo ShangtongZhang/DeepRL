@@ -184,7 +184,7 @@ def plot_improvement():
     import matplotlib.pyplot as plt
     for i, (x, y) in enumerate(data):
         plt.figure(i)
-        plt.figure(figsize=(30, 5))
+        plt.figure(figsize=(30, 4))
         plt.tight_layout()
         bar = plt.bar(x, y)
         plt.xticks(rotation='vertical')
@@ -196,18 +196,21 @@ def plot_improvement():
         plt.tick_params(top='off', bottom='off', left='off', right='off', labelleft='off', labelbottom='on')
         for j, bari in enumerate(bar):
             if y[j] >= 0:
+                h = bari.get_height()
                 va = 'bottom'
             else:
-                va = 'top'
-            v = '%.1f' % (y[j] * 100)
-            plt.text(bari.get_x() + bari.get_width() / 2, bari.get_height(), v, va=va,
-                           ha='center', color='black', fontsize=15)
+                h = 0
+                # va = 'top'
+                va = 'bottom'
+            v = '%.1f%%' % (y[j] * 100)
+            plt.text(bari.get_x() + bari.get_width() / 2, h, v, va=va,
+                           ha='center', color='black', fontsize=15, rotation='vertical')
         plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-%d.png' % (i), bbox_inches='tight')
         # plt.show()
 
 
 if __name__ == '__main__':
-    # plot_improvement()
+    plot_improvement()
     games = [
         'FreewayNoFrameskip-v4',
         'BeamRiderNoFrameskip-v4',
@@ -301,14 +304,14 @@ if __name__ == '__main__':
         # 'n_step_dqn',
     ]
 
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            try:
-                plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-                plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
-            except Exception as e:
-                print(e)
-                continue
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+    #         try:
+    #             plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+    #             plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+    #         except Exception as e:
+    #             print(e)
+    #             continue
             # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
             # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
