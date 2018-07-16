@@ -463,61 +463,27 @@ def batch_atari():
     cf.add_argument('--ind2', type=int, default=3)
     cf.merge()
 
-    # games = ['FreewayNoFrameskip-v4',
-    #          'BeamRiderNoFrameskip-v4',
-    #          'RobotankNoFrameskip-v4',
-    #          'QbertNoFrameskip-v4',
-    #          'BattleZoneNoFrameskip-v4',
-    #          ]
-
-    games = ['AlienNoFrameskip-v4',
-             'AmidarNoFrameskip-v4',
-             'SeaquestNoFrameskip-v4',
-             'MsPacmanNoFrameskip-v4',
-             'EnduroNoFrameskip-v4',
-             ]
-
-    games = ['Assault',
-             'Asterix',
-             'Asteroids',
-             'Atlantis',
-             'BankHeist',
-             'Bowling',
-             'Boxing',
-             'Breakout',
-             'Centipede',
-             'ChopperCommand',
-             'CrazyClimber',
-             'DemonAttack',
-             'DoubleDunk',
-             'FishingDerby',
-             'Frostbite',
-             'Gopher',
-             'Gravitar',
-             'IceHockey',
-             'Jamesbond',
-             'Kangaroo',
-             'Krull',
-             'KungFuMaster',
-             'MontezumaRevenge',
-             'NameThisGame',
-             'Pitfall',
-             'Pong',
-             'PrivateEye',
-             'Riverraid',
-             'RoadRunner',
-             'SpaceInvaders',
-             'StarGunner',
-             'Tennis',
-             'TimePilot',
-             'Tutankham',
-             'UpNDown',
-             'Venture',
-             'VideoPinball',
-             'WizardOfWor',
-             'Zaxxon']
-
-    game = games[cf.ind1]
+    # games = [
+    #     'DoubleDunk',
+    #     'FishingDerby',
+    #     'Frostbite',
+    #     'Gopher',
+    #     'Gravitar',
+    #     'IceHockey',
+    #     'Jamesbond',
+    #     'Kangaroo',
+    # ]
+    games = [
+        'Krull',
+        'KungFuMaster',
+        'MontezumaRevenge',
+        'NameThisGame',
+        'Pitfall',
+        'Pong',
+        'PrivateEye',
+        'Riverraid',
+        'RoadRunner'
+    ]
 
     parallel = True
     runs = 3
@@ -544,7 +510,7 @@ def batch_atari():
     # tasks = [task0, task1, task2]
     # tasks[cf.ind2]()
     print(len(games))
-    for game in reversed(games):
+    for game in games:
         game += 'NoFrameskip-v4'
         # task0(game)
         # task1(game)
