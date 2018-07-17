@@ -463,27 +463,31 @@ def batch_atari():
     cf.add_argument('--ind2', type=int, default=3)
     cf.merge()
 
-    # games = [
-    #     'DoubleDunk',
-    #     'FishingDerby',
-    #     'Frostbite',
-    #     'Gopher',
-    #     'Gravitar',
-    #     'IceHockey',
-    #     'Jamesbond',
-    #     'Kangaroo',
-    # ]
-    games = [
+    g1 = [
+        'DoubleDunk',
+        'FishingDerby',
+        'Frostbite',
+        'Gopher',
+        'Gravitar',
+        'IceHockey',
+    ]
+    g2 = [
+        'Jamesbond',
+        'Kangaroo',
         'Krull',
         'KungFuMaster',
         'MontezumaRevenge',
         'NameThisGame',
+    ]
+    g3 = [
         'Pitfall',
         'Pong',
         'PrivateEye',
         'Riverraid',
         'RoadRunner'
     ]
+    gs = [g1, g2, g3]
+    games = gs[cf.ind1]
 
     parallel = True
     runs = 3
@@ -506,15 +510,11 @@ def batch_atari():
     #     multi_runs(game, n_step_dqn_pixel_atari, tag='n_step_dqn', runs=runs, gpu=0, parallel=parallel,
     #                option_type=None)
 
-    # tasks = [task0, task1, task2, task3]
-    # tasks = [task0, task1, task2]
-    # tasks[cf.ind2]()
+    tasks = [task0, task1, task2]
     print(len(games))
     for game in games:
         game += 'NoFrameskip-v4'
-        # task0(game)
-        # task1(game)
-        # task2(game)
+        tasks[cf.ind2](game)
 
 def batch_ice_cliff():
     parallel = True
