@@ -161,7 +161,7 @@ def plot_improvement():
                 continue
             data = plotter.load_results(names, episode_window=0, max_timesteps=int(4e7))
             cum_y = [np.sum(y) for x, y in data]
-            final_y = [np.sum(y[-1000: ]) for x, y in data]
+            final_y = [np.mean(y[-1000: ]) for x, y in data]
             if game not in cum_rewards.keys():
                 cum_rewards[game] = []
             cum_rewards[game].extend([np.mean(cum_y), np.mean(final_y)])
@@ -209,6 +209,101 @@ def plot_improvement():
         print(i, np.mean(y))
         # plt.show()
 
+def plot_table():
+    games = [
+        'Freeway',
+        'BeamRider',
+        'BattleZone',
+        'Robotank',
+        'Qbert',
+        'Alien',
+        'Amidar',
+        'Seaquest',
+        'MsPacman',
+        'Enduro',
+        'Assault',
+        'Asterix',
+        'Asteroids',
+        'Atlantis',
+        'BankHeist',
+        'Bowling',
+        'Boxing',
+        'Breakout',
+        'Centipede',
+        'ChopperCommand',
+        'CrazyClimber',
+        'DemonAttack',
+        'DoubleDunk',
+        'FishingDerby',
+        'Frostbite',
+        'Gopher',
+        'Gravitar',
+        'IceHockey',
+        'Jamesbond',
+        'Kangaroo',
+        'Krull',
+        'KungFuMaster',
+        'MontezumaRevenge',
+        'NameThisGame',
+        'Pitfall',
+        'Pong',
+        'PrivateEye',
+        'Riverraid',
+        'RoadRunner',
+        'SpaceInvaders',
+        'StarGunner',
+        'Tennis',
+        'TimePilot',
+        'Tutankham',
+        'UpNDown',
+        'Venture',
+        'VideoPinball',
+        'WizardOfWor',
+        'Zaxxon'
+    ]
+
+    patterns = [
+        't001b001_s_le',
+        'n_step_qr_dqn',
+        'n_step_qr_le_dqn',
+    ]
+
+    cum_rewards = {}
+
+    plotter = Plotter()
+    for game in games:
+        for p in patterns:
+            names = plotter.load_log_dirs(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p))
+            if len(names) == 0:
+                print('data not found: %s, %s' % (game, p))
+                continue
+            data = plotter.load_results(names, episode_window=0, max_timesteps=int(4e7))
+            cum_y = [np.sum(y) for x, y in data]
+            final_y = [np.mean(y[-1000: ]) for x, y in data]
+            if game not in cum_rewards.keys():
+                cum_rewards[game] = []
+            cum_rewards[game].extend([np.mean(cum_y), np.mean(final_y)])
+
+    entries = []
+    for game in cum_rewards.keys():
+        stats = cum_rewards[game]
+        entry = [game, stats[1], stats[3], stats[5]]
+        entries.append(entry)
+
+    def to_str(scores):
+        p = np.argmax(scores)
+        strs = []
+        for i, score in enumerate(scores):
+            str = '%.2f' % (score)
+            if i == p:
+                str = '\\textbf{%s}' % (str)
+            strs.append(str)
+        return strs
+
+    entries = sorted(entries, key=lambda x: x[0])
+    for entry in entries:
+        print('%s & %s & %s & %s \\\\' % (entry[0], *to_str(entry[1:])))
+
 def plot_sub(**kwargs):
     import matplotlib.pyplot as plt
     kwargs.setdefault('average', False)
@@ -255,8 +350,9 @@ def plot_heatmap():
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/heatmap.png', bbox_inches='tight')
 
 if __name__ == '__main__':
-    # plot_improvement()
-    plot_heatmap()
+    plot_improvement()
+    # plot_heatmap()
+    # plot_table()
 
     games = [
         'Freeway',
