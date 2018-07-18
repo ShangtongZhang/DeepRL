@@ -240,8 +240,24 @@ def plot_sub(**kwargs):
     # plt.xlabel(kwargs['xlabel'])
     # plt.ylabel(kwargs['ylabel'])
 
+def plot_heatmap():
+    import seaborn as sns
+    names = ['Ant', 'Hopper', 'Venture', 'VideoPinball']
+    with open('data/heatmap.bin', 'rb') as f:
+        data = pickle.load(f)
+    plt.figure(figsize=(60, 10))
+    for i, (freq, ylabel) in enumerate(data):
+        print(names[i])
+        plt.subplot(1, 4, i+1)
+        sns.heatmap(freq, cmap='YlGnBu', xticklabels=[], yticklabels=ylabel)
+        plt.xlabel('training steps')
+        plt.title(names[i])
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/heatmap.png', bbox_inches='tight')
+
 if __name__ == '__main__':
     # plot_improvement()
+    plot_heatmap()
+
     games = [
         'Freeway',
         'BeamRider',
@@ -339,23 +355,23 @@ if __name__ == '__main__':
         'QR-DQN-Alt'
     ]
 
-    plt.figure(figsize=(30, 45))
-    for j, game in enumerate(sorted(games)):
-        plt.subplot(9, 6, j+1)
-        for i, p in enumerate(patterns):
-            try:
-                # plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-                plot_sub(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, name=names[i], title=game, **train_kwargs)
-                # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
-            except Exception as e:
-                print(e)
-                continue
-            # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
-            # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
-            # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
-            # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
-    # plt.show()
-    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-all.png', bbox_inches='tight')
+    # plt.figure(figsize=(30, 45))
+    # for j, game in enumerate(sorted(games)):
+    #     plt.subplot(9, 6, j+1)
+    #     for i, p in enumerate(patterns):
+    #         try:
+    #             # plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+    #             plot_sub(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, name=names[i], title=game, **train_kwargs)
+    #             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+    #         except Exception as e:
+    #             print(e)
+    #             continue
+    #         # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
+    #         # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
+    #         # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
+    #         # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
+    # # plt.show()
+    # plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-all.png', bbox_inches='tight')
 
     # plt.show()
 
