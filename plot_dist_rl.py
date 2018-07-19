@@ -169,17 +169,17 @@ def plot_improvement():
     improvements = [[], [], [], []]
     for game in cum_rewards.keys():
         stats = cum_rewards[game]
-        print(game, len(stats))
+        print(game, stats)
         new_cum = stats[0]
         new_final = stats[1]
         base1_cum = stats[2]
         base1_final = stats[3]
         base2_cum = stats[4]
         base2_final = stats[5]
-        improvements[0].append([game, (new_cum - base1_cum) / base1_cum])
-        improvements[1].append([game, (new_final - base1_final) / base1_final])
-        improvements[2].append([game, (new_cum - base2_cum) / base2_cum])
-        improvements[3].append([game, (new_final - base2_final) / base2_final])
+        improvements[0].append([game, (new_cum - base1_cum) / abs(base1_cum)])
+        improvements[1].append([game, (new_final - base1_final) / abs(base1_final)])
+        improvements[2].append([game, (new_cum - base2_cum) / abs(base2_cum)])
+        improvements[3].append([game, (new_final - base2_final) / abs(base2_final)])
     data = [zip(*sorted(ratio, key=lambda x: x[1])) for ratio in improvements]
     import matplotlib.pyplot as plt
     for i, (x, y) in enumerate(data):
@@ -414,7 +414,7 @@ if __name__ == '__main__':
     # ]
 
     train_kwargs = {
-        'episode_window': 100,
+        'episode_window': 1000,
         'top_k': 0,
         'max_timesteps': int(4e7),
         # 'max_timesteps': int(3e7),
@@ -462,11 +462,11 @@ if __name__ == '__main__':
     #         except Exception as e:
     #             print(e)
     #             continue
-    #         # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
-    #         # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
-    #         # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
-    #         # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
-    # # plt.show()
+            # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
+            # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
+            # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
+            # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
+    # plt.show()
     # plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-all.png', bbox_inches='tight')
 
     # plt.show()
