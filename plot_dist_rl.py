@@ -195,16 +195,20 @@ def plot_improvement():
             spine.set_visible(False)
         plt.tick_params(top='off', bottom='off', left='off', right='off', labelleft='off', labelbottom='on')
         for j, bari in enumerate(bar):
+            color = 'black'
             if y[j] >= 0:
                 h = bari.get_height()
                 va = 'bottom'
+                if y[j] > 0.05:
+                    color = 'blue'
             else:
                 h = 0
-                # va = 'top'
                 va = 'bottom'
+                if y[j] < -0.05:
+                    color = 'green'
             v = '%.1f%%' % (y[j] * 100)
             plt.text(bari.get_x() + bari.get_width() / 2, h, v, va=va,
-                           ha='center', color='black', fontsize=15, rotation='vertical')
+                           ha='center', color=color, fontsize=15, rotation='vertical')
         plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-%d.png' % (i), bbox_inches='tight')
         print(i, np.mean(y))
         # plt.show()
@@ -350,7 +354,7 @@ def plot_heatmap():
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/heatmap.png', bbox_inches='tight')
 
 if __name__ == '__main__':
-    plot_improvement()
+    # plot_improvement()
     # plot_heatmap()
     # plot_table()
 
