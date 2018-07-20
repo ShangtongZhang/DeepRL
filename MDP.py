@@ -323,7 +323,7 @@ def plot_upper():
     with open('data/%s.bin' % (upper_quantile_chain.__name__), 'rb') as f:
         steps = pickle.load(f)
     agents = ['Q-learning','Pessimistic-QR',
-              'Optimistic-QR', 'QR', 'Quantile Option']
+              'Optimistic-QR', 'QR', 'QUOTA']
     markers = ['o', 'v', '^', 's', 'D']
     for i, agent in enumerate(agents):
         m_y = steps[i].mean(-1)
@@ -363,7 +363,7 @@ def plot_lower():
     with open('data/%s.bin' % (lower_quantile_chain.__name__), 'rb') as f:
         steps = pickle.load(f)
     agents = ['Q-learning','Pessimistic-QR',
-              'Optimistic-QR', 'QR', 'Quantile Option']
+              'Optimistic-QR', 'QR', 'QUOTA']
     markers = ['o', 'v', '^', 's', 'D']
     for i, agent in enumerate(agents):
         m_y = steps[i].mean(-1)
