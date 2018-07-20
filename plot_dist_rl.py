@@ -349,13 +349,13 @@ def plot_heatmap():
         print(names[i])
         plt.subplot(1, 4, i+1)
         sns.heatmap(freq, cmap='YlGnBu', xticklabels=[], yticklabels=ylabel)
-        plt.xlabel('training steps')
-        plt.title(names[i])
+        plt.xlabel('training steps', fontsize=30)
+        plt.title(names[i], fontsize=30)
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/heatmap.png', bbox_inches='tight')
 
 if __name__ == '__main__':
     # plot_improvement()
-    # plot_heatmap()
+    plot_heatmap()
     # plot_table()
 
     games = [
