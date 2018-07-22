@@ -199,18 +199,18 @@ def plot_improvement():
             if y[j] >= 0:
                 h = bari.get_height()
                 va = 'bottom'
-                if y[j] > 0.05:
+                if y[j] > 0:
                     color = 'blue'
             else:
                 h = 0
                 va = 'bottom'
-                if y[j] < -0.05:
+                if y[j] < 0:
                     color = 'green'
             v = '%.1f%%' % (y[j] * 100)
             plt.text(bari.get_x() + bari.get_width() / 2, h, v, va=va,
                            ha='center', color=color, fontsize=15, rotation='vertical')
         plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-%d.png' % (i), bbox_inches='tight')
-        print(i, np.mean(y))
+        print(i, np.mean(y), np.median(y))
         # plt.show()
 
 def plot_table():
@@ -354,8 +354,8 @@ def plot_heatmap():
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/heatmap.png', bbox_inches='tight')
 
 if __name__ == '__main__':
-    # plot_improvement()
-    plot_heatmap()
+    plot_improvement()
+    # plot_heatmap()
     # plot_table()
 
     games = [
