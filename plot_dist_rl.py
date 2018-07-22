@@ -162,9 +162,13 @@ def plot_improvement():
             data = plotter.load_results(names, episode_window=0, max_timesteps=int(4e7))
             cum_y = [np.sum(y) for x, y in data]
             final_y = [np.mean(y[-1000: ]) for x, y in data]
+            random_final = [np.mean(y[:1000]) for x, y in data]
+            random_cum = [4e7 / x[1000] * np.sum(y[:1000]) for x, y in data]
             if game not in cum_rewards.keys():
                 cum_rewards[game] = []
             cum_rewards[game].extend([np.mean(cum_y), np.mean(final_y)])
+        if game in cum_rewards.keys():
+            cum_rewards[game].extend([np.mean(random_final), np.mean(random_cum)])
 
     improvements = [[], [], [], []]
     for game in cum_rewards.keys():
@@ -176,10 +180,16 @@ def plot_improvement():
         base1_final = stats[3]
         base2_cum = stats[4]
         base2_final = stats[5]
-        improvements[0].append([game, (new_cum - base1_cum) / abs(base1_cum)])
-        improvements[1].append([game, (new_final - base1_final) / abs(base1_final)])
-        improvements[2].append([game, (new_cum - base2_cum) / abs(base2_cum)])
-        improvements[3].append([game, (new_final - base2_final) / abs(base2_final)])
+        random_final = stats[6]
+        random_cum = stats[7]
+        # improvements[0].append([game, (new_cum - base1_cum) / abs(base1_cum)])
+        improvements[0].append([game, (new_cum - random_cum) / (base1_cum - random_cum)])
+        # improvements[1].append([game, (new_final - base1_final) / abs(base1_final)])
+        improvements[1].append([game, (new_final - random_final) / (base1_final - random_final)])
+        # improvements[2].append([game, (new_cum - base2_cum) / abs(base2_cum)])
+        improvements[2].append([game, (new_cum - random_cum) / (base2_cum - random_cum)])
+        # improvements[3].append([game, (new_final - base2_final) / abs(base2_final)])
+        improvements[3].append([game, (new_final - random_final) / (base2_final - random_final)])
     data = [zip(*sorted(ratio, key=lambda x: x[1])) for ratio in improvements]
     import matplotlib.pyplot as plt
     for i, (x, y) in enumerate(data):
