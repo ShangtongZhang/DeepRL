@@ -167,6 +167,7 @@ def plot_improvement():
             if game not in cum_rewards.keys():
                 cum_rewards[game] = []
             cum_rewards[game].extend([np.mean(cum_y), np.mean(final_y)])
+        # print('game', cum_rewards[game])
         if game in cum_rewards.keys():
             cum_rewards[game].extend([np.mean(random_final), np.mean(random_cum)])
 
@@ -182,14 +183,14 @@ def plot_improvement():
         base2_final = stats[5]
         random_final = stats[6]
         random_cum = stats[7]
-        # improvements[0].append([game, (new_cum - base1_cum) / abs(base1_cum)])
-        improvements[0].append([game, (new_cum - random_cum) / (base1_cum - random_cum)])
-        # improvements[1].append([game, (new_final - base1_final) / abs(base1_final)])
-        improvements[1].append([game, (new_final - random_final) / (base1_final - random_final)])
-        # improvements[2].append([game, (new_cum - base2_cum) / abs(base2_cum)])
-        improvements[2].append([game, (new_cum - random_cum) / (base2_cum - random_cum)])
-        # improvements[3].append([game, (new_final - base2_final) / abs(base2_final)])
-        improvements[3].append([game, (new_final - random_final) / (base2_final - random_final)])
+        improvements[0].append([game, (new_cum - base1_cum) / abs(base1_cum)])
+        # improvements[0].append([game, (new_cum - random_cum) / (base1_cum - random_cum)])
+        improvements[1].append([game, (new_final - base1_final) / abs(base1_final) if base1_final != 0 else 0])
+        # improvements[1].append([game, (new_final - random_final) / (base1_final - random_final)])
+        improvements[2].append([game, (new_cum - base2_cum) / abs(base2_cum)])
+        # improvements[2].append([game, (new_cum - random_cum) / (base2_cum - random_cum)])
+        improvements[3].append([game, (new_final - base2_final) / abs(base2_final) if base2_final != 0 else 0])
+        # improvements[3].append([game, (new_final - random_final) / (base2_final - random_final)])
     data = [zip(*sorted(ratio, key=lambda x: x[1])) for ratio in improvements]
     import matplotlib.pyplot as plt
     for i, (x, y) in enumerate(data):
@@ -204,23 +205,27 @@ def plot_improvement():
         for spine in plt.gca().spines.values():
             spine.set_visible(False)
         plt.tick_params(top='off', bottom='off', left='off', right='off', labelleft='off', labelbottom='on')
+        pos_y = 0
+        neg_y = 0
         for j, bari in enumerate(bar):
             color = 'black'
             if y[j] >= 0:
                 h = bari.get_height()
                 va = 'bottom'
-                if y[j] > 0:
+                if y[j] > 0.03:
                     color = 'blue'
+                    pos_y += 1
             else:
                 h = 0
                 va = 'bottom'
-                if y[j] < 0:
+                if y[j] < -0.03:
                     color = 'green'
+                    neg_y += 1
             v = '%.1f%%' % (y[j] * 100)
             plt.text(bari.get_x() + bari.get_width() / 2, h, v, va=va,
                            ha='center', color=color, fontsize=15, rotation='vertical')
         plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-%d.png' % (i), bbox_inches='tight')
-        print(i, np.mean(y), np.median(y))
+        print(i, np.mean(y), np.median(y), pos_y, neg_y)
         # plt.show()
 
 def plot_table():
@@ -302,6 +307,7 @@ def plot_table():
     for game in cum_rewards.keys():
         stats = cum_rewards[game]
         entry = [game, stats[1], stats[3], stats[5]]
+        # entry = [game, stats[1], stats[3]]
         entries.append(entry)
 
     def to_str(scores):
@@ -317,6 +323,7 @@ def plot_table():
     entries = sorted(entries, key=lambda x: x[0])
     for entry in entries:
         print('%s & %s & %s & %s \\\\' % (entry[0], *to_str(entry[1:])))
+        # print('%s & %s & %s \\\\' % (entry[0], *to_str(entry[1:])))
 
 def plot_sub(**kwargs):
     import matplotlib.pyplot as plt
@@ -343,7 +350,7 @@ def plot_sub(**kwargs):
     plotter.plot_standard_error(y, x, label=kwargs['name'], color=Plotter.COLORS[color])
     plt.title(kwargs['title'], fontsize=8)
     plt.xticks([])
-    plt.yticks([])
+    # plt.yticks([])
 
     # plt.legend()
     # plt.xlabel(kwargs['xlabel'])
@@ -364,7 +371,7 @@ def plot_heatmap():
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/heatmap.png', bbox_inches='tight')
 
 if __name__ == '__main__':
-    plot_improvement()
+    # plot_improvement()
     # plot_heatmap()
     # plot_table()
 
@@ -465,23 +472,23 @@ if __name__ == '__main__':
         'QR-DQN-Alt'
     ]
 
-    # plt.figure(figsize=(30, 45))
-    # for j, game in enumerate(sorted(games)):
-    #     plt.subplot(9, 6, j+1)
-    #     for i, p in enumerate(patterns):
-    #         try:
-    #             # plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-    #             plot_sub(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, name=names[i], title=game, **train_kwargs)
-    #             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
-    #         except Exception as e:
-    #             print(e)
-    #             continue
+    plt.figure(figsize=(30, 45))
+    for j, game in enumerate(sorted(games)):
+        plt.subplot(9, 6, j+1)
+        for i, p in enumerate(patterns):
+            try:
+                # plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
+                plot_sub(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, name=names[i], title=game, **train_kwargs)
+                # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
+            except Exception as e:
+                print(e)
+                continue
             # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
             # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
     # plt.show()
-    # plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-all.png', bbox_inches='tight')
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-all.png', bbox_inches='tight')
 
     # plt.show()
 
