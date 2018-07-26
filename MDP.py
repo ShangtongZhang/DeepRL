@@ -318,6 +318,7 @@ def upper_quantile_chain():
     with open('data/%s.bin' % (upper_quantile_chain.__name__), 'wb') as f:
         pickle.dump(total_steps, f)
 
+font_size = 20
 def plot_upper():
     from deep_rl.utils import Plotter
     with open('data/%s.bin' % (upper_quantile_chain.__name__), 'rb') as f:
@@ -331,8 +332,8 @@ def plot_upper():
         x = np.arange(2, 7)
         plt.errorbar(x, m_y, err_y, label=agent, fmt=markers[i])
     plt.yscale('log')
-    plt.xlabel('# of non-terminal states in Chain 1')
-    plt.ylabel('steps')
+    plt.xlabel('# of non-terminal states in Chain 1', fontsize=font_size)
+    plt.ylabel('steps', fontsize=font_size)
     plt.xticks(x, x)
     plt.legend()
     # steps = steps.mean(-1)
@@ -371,9 +372,9 @@ def plot_lower():
         x = np.arange(2, 9)
         plt.errorbar(x, m_y, err_y, label=agent, fmt=markers[i])
     plt.yscale('log')
-    plt.xlabel('# of non-terminal states in Chain 2')
+    plt.xlabel('# of non-terminal states in Chain 2', fontsize=font_size)
     plt.xticks(x, x)
-    plt.ylabel('steps')
+    plt.ylabel('steps', fontsize=font_size)
     plt.legend()
 
 def plot():
