@@ -245,25 +245,27 @@ def batch_job():
     # game = games[cf.ind1]
 
     games = [
-        # 'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
-        # 'RoboschoolHopper-v1',
-        # 'RoboschoolHalfCheetah-v1',
-        # 'RoboschoolReacher-v1',
-        # 'RoboschoolHumanoid-v1',
-        'RoboschoolPong-v1',
-        'RoboschoolHumanoidFlagrun-v1',
-        'RoboschoolHumanoidFlagrunHarder-v1',
-        'RoboschoolInvertedPendulum-v1',
-        'RoboschoolInvertedPendulumSwingup-v1',
-        'RoboschoolInvertedDoublePendulum-v1',
+        'RoboschoolAnt-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
+        # 'RoboschoolPong-v1',
+        # 'RoboschoolHumanoidFlagrun-v1',
+        # 'RoboschoolHumanoidFlagrunHarder-v1',
+        # 'RoboschoolInvertedPendulum-v1',
+        # 'RoboschoolInvertedPendulumSwingup-v1',
+        # 'RoboschoolInvertedDoublePendulum-v1',
     ]
     game = games[cf.ind1]
 
     parallel = True
     # multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=parallel)
-    multi_runs(game, naive_model_ddpg, tag='naive_model',
-               depth=2, parallel=parallel)
+    # multi_runs(game, naive_model_ddpg, tag='naive_model',
+    #            depth=2, parallel=parallel)
+    multi_runs(game, plan_ddpg, tag='single_actor', parallel=parallel,
+               depth=2, mask=False, num_actors=1)
     # def task1():
     #     multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
     #
