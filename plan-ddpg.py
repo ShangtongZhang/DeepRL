@@ -291,7 +291,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    batch_job()
+    # batch_job()
 
     game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
@@ -310,11 +310,11 @@ if __name__ == '__main__':
 
     games = [
         # 'RoboschoolHopper-v1',
-        'RoboschoolAnt-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1',
+        # 'RoboschoolAnt-v1',
+        # 'RoboschoolWalker2d-v1',
+        # 'RoboschoolHalfCheetah-v1',
+        # 'RoboschoolReacher-v1',
+        # 'RoboschoolHumanoid-v1',
         'RoboschoolPong-v1',
         'RoboschoolHumanoidFlagrun-v1',
         'RoboschoolHumanoidFlagrunHarder-v1',
@@ -322,7 +322,9 @@ if __name__ == '__main__':
         'RoboschoolInvertedPendulumSwingup-v1',
         'RoboschoolInvertedDoublePendulum-v1',
     ]
-    # for game in games:
+    for game in games:
+        multi_runs(game, plan_ddpg, tag='single_actor', parallel=True,
+                   depth=2, mask=False, num_actors=1)
     #     multi_runs(game, ddpg_continuous, tag='baseline_ddpg', parallel=True)
         # multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=True)
 
