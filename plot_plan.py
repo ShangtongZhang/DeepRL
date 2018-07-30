@@ -326,18 +326,19 @@ if __name__ == '__main__':
         'RoboschoolHalfCheetah-v1',
         'RoboschoolReacher-v1',
         'RoboschoolHumanoid-v1',
-        'RoboschoolPong-v1',
-        'RoboschoolHumanoidFlagrun-v1',
-        'RoboschoolHumanoidFlagrunHarder-v1',
-        'RoboschoolInvertedPendulum-v1',
-        'RoboschoolInvertedPendulumSwingup-v1',
-        'RoboschoolInvertedDoublePendulum-v1',
+        # 'RoboschoolPong-v1',
+        # 'RoboschoolHumanoidFlagrun-v1',
+        # 'RoboschoolHumanoidFlagrunHarder-v1',
+        # 'RoboschoolInvertedPendulum-v1',
+        # 'RoboschoolInvertedPendulumSwingup-v1',
+        # 'RoboschoolInvertedDoublePendulum-v1',
     ]
     patterns = [
         'd1m0',
         'd2m0',
         'shared',
         'naive',
+        'single_actor'
     ]
     peaks = {}
     for j, game in enumerate(games):
