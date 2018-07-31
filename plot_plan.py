@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import seaborn as sns; sns.set(color_codes=True)
 from deep_rl import *
 
 def compute_stats(**kwargs):
@@ -86,7 +85,88 @@ def ddpg_plot(**kwargs):
     # plt.show()
     return peak
 
+def plot_sub_impl(**kwargs):
+    import matplotlib.pyplot as plt
+    kwargs.setdefault('average', False)
+    kwargs.setdefault('color', 0)
+    kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('max_timesteps', 1e8)
+    plotter = Plotter()
+    names = plotter.load_log_dirs(**kwargs)
+    data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
+    min_y = np.min([len(y) for y in data])
+    data = [y[ :min_y] for y in data]
+    new_data = []
+    for y in data:
+        y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
+        x = np.arange(y.shape[0]) * kwargs['x_interval']
+        new_data.append([x, y])
+    data = new_data
+
+    print('')
+
+    color = kwargs['color']
+    x = data[0][0]
+    y = [entry[1] for entry in data]
+    y = np.stack(y)
+    plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+    plt.title(kwargs['name'])
+    plt.xticks([])
+
+def plot_sub():
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True
+    }
+    games = [
+        'Ant',
+        'Walker2d',
+        'Hopper',
+        'HalfCheetah',
+        'Reacher',
+        'Humanoid',
+        'Pong',
+        'HumanoidFlagrun',
+        'HumanoidFlagrunHarder',
+        'InvertedPendulum',
+        'InvertedPendulumSwingup',
+        'InvertedDoublePendulum',
+    ]
+    patterns = [
+        'd2m0',
+        'naive',
+        'd1m0',
+        'shared',
+    ]
+
+    labels = [
+        'ACE',
+        'Naive-Model-ACE',
+        'Ensemble-DDPG',
+        'Shared-DDPG',
+        'Large-DDPG',
+        'DDPG',
+    ]
+
+    plt.figure(figsize=(30, 10))
+    for j, game in enumerate(sorted(games)):
+        plt.subplot(2, 6, j+1)
+        for i, p in enumerate(patterns):
+            plot_sub_impl(pattern='.*log/DTreePG/plan-Roboschool%s-v1.*%s.*' % (game, p),
+                          figure=j, color=i, name=game, label=labels[i], **kwargs)
+        plot_sub_impl(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/larger_ddpg.*' % (game),
+                      figure=j, color=i+1, name=game, label=labels[i+1], **kwargs)
+        plot_sub_impl(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game),
+                      figure=j, color=i+2, name=game, label=labels[i+2], **kwargs)
+    plt.subplot(2, 6, 1)
+    plt.legend()
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/tree_dpg/img/curves.png', bbox_inches='tight')
+
 if __name__ == '__main__':
+    plot_sub()
+
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
 
@@ -308,45 +388,45 @@ if __name__ == '__main__':
     # plt.show()
 
 
-    kwargs = {
-        'x_interval': int(1e4),
-        'rep': 20,
-        'average': True
-    }
-    # patterns = [
-    #     'per_episode_decay',
-    #     'per_episode_random',
-    #     'per_step_decay',
-    #     'per_step_random'
+    # kwargs = {
+    #     'x_interval': int(1e4),
+    #     'rep': 20,
+    #     'average': True
+    # }
+    # # patterns = [
+    # #     'per_episode_decay',
+    # #     'per_episode_random',
+    # #     'per_step_decay',
+    # #     'per_step_random'
+    # # ]
+    # games = [
+    #     'RoboschoolAnt-v1',
+    #     'RoboschoolWalker2d-v1',
+    #     'RoboschoolHopper-v1',
+    #     'RoboschoolHalfCheetah-v1',
+    #     'RoboschoolReacher-v1',
+    #     'RoboschoolHumanoid-v1',
+    #     'RoboschoolPong-v1',
+    #     'RoboschoolHumanoidFlagrun-v1',
+    #     'RoboschoolHumanoidFlagrunHarder-v1',
+    #     'RoboschoolInvertedPendulum-v1',
+    #     'RoboschoolInvertedPendulumSwingup-v1',
+    #     'RoboschoolInvertedDoublePendulum-v1',
     # ]
-    games = [
-        'RoboschoolAnt-v1',
-        'RoboschoolWalker2d-v1',
-        'RoboschoolHopper-v1',
-        'RoboschoolHalfCheetah-v1',
-        'RoboschoolReacher-v1',
-        'RoboschoolHumanoid-v1',
-        'RoboschoolPong-v1',
-        'RoboschoolHumanoidFlagrun-v1',
-        'RoboschoolHumanoidFlagrunHarder-v1',
-        'RoboschoolInvertedPendulum-v1',
-        'RoboschoolInvertedPendulumSwingup-v1',
-        'RoboschoolInvertedDoublePendulum-v1',
-    ]
-    patterns = [
-        'd1m0',
-        'd2m0',
-        'shared',
-        'naive',
-        'single_actor'
-    ]
-    peaks = {}
-    for j, game in enumerate(games):
-        for i, p in enumerate(patterns):
-            peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
-        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*baseline_ddpg.*' % (game), figure=j, color=i+1, **kwargs)
-        ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*larger_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
-        plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
+    # patterns = [
+    #     'd1m0',
+    #     'd2m0',
+    #     'shared',
+    #     'naive',
+    #     'single_actor'
+    # ]
+    # peaks = {}
+    # for j, game in enumerate(games):
+    #     for i, p in enumerate(patterns):
+    #         peak = ddpg_plot(pattern='.*DTreePG/plan-%s.*%s.*' % (game, p), figure=j, color=i, **kwargs)
+    #     ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*baseline_ddpg.*' % (game), figure=j, color=i+1, **kwargs)
+    #     ddpg_plot(pattern='.*log/baseline-ddpg/baseline-%s.*larger_ddpg.*' % (game), figure=j, color=i+2, **kwargs)
+    #     plt.savefig('/home/shangtong/Documents/DTreePG/%s.png' % (game))
 
     # plot(pattern='.*d4pg_body-180629-143907.*', figure=0, color=0)
     # plot(pattern='.*dqn_body-180629-143923.*', figure=0, color=1)
