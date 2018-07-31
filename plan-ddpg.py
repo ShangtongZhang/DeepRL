@@ -291,11 +291,11 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    batch_job()
+    # batch_job()
 
-    game = 'RoboschoolAnt-v1'
+    # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
-    # game = 'RoboschoolHalfCheetah-v1'
+    game = 'RoboschoolHalfCheetah-v1'
     # game = 'RoboschoolHopper-v1'
     # game = 'RoboschoolHumanoid-v1'
     # game = 'RoboschoolHumanoidFlagrun-v1'
@@ -305,6 +305,12 @@ if __name__ == '__main__':
     # naive_model_ddpg(game, depth=2)
     # plan_ddpg(game, depth=3)
     # ddpg_shared(game)
+
+    parallel = True
+    # multi_runs(game, plan_ddpg, tag='d3n5', parallel=parallel,
+    #            depth=3, mask=False, num_actors=5)
+    # multi_runs(game, plan_ddpg, tag='d2n10', parallel=parallel,
+    #            depth=2, mask=False, num_actors=10)
 
     # multi_runs(game, naive_model_ddpg, tag='naive_model', parallel=True)
 
