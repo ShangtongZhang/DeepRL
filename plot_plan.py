@@ -143,7 +143,7 @@ def plot_sub():
 
     labels = [
         'ACE',
-        'Naive-Model-ACE',
+        'Fitted-ACE',
         'Ensemble-DDPG',
         'Shared-DDPG',
         'Large-DDPG',
@@ -164,8 +164,97 @@ def plot_sub():
     plt.legend()
     plt.savefig('/Users/Shangtong/Dropbox/Paper/tree_dpg/img/curves.png', bbox_inches='tight')
 
+def read_data(**kwargs):
+    kwargs.setdefault('average', False)
+    kwargs.setdefault('color', 0)
+    kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('max_timesteps', 1e8)
+    plotter = Plotter()
+    names = plotter.load_log_dirs(**kwargs)
+    data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
+    min_y = np.min([len(y) for y in data])
+    data = [y[ :min_y] for y in data]
+    peaks = []
+    for y in data:
+        y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
+        peaks.append(np.max(y))
+    return np.mean(peaks), np.std(peaks) / np.sqrt(len(peaks))
+
+def plot_table():
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True
+    }
+    games = [
+        'Ant',
+        'Walker2d',
+        'Hopper',
+        'HalfCheetah',
+        'Reacher',
+        'Humanoid',
+        'Pong',
+        'HumanoidFlagrun',
+        'HumanoidFlagrunHarder',
+        'InvertedPendulum',
+        'InvertedPendulumSwingup',
+        'InvertedDoublePendulum',
+    ]
+    patterns = [
+        'd2m0',
+        'naive',
+        'd1m0',
+        'shared',
+    ]
+
+    labels = [
+        'ACE',
+        'Fitted-ACE',
+        'Ensemble-DDPG',
+        'Shared-DDPG',
+        'Large-DDPG',
+        'DDPG',
+    ]
+
+    games = sorted(games)
+
+    plt.figure(figsize=(30, 10))
+    stats = {}
+    for j, game in enumerate(sorted(games)):
+        plt.subplot(2, 6, j+1)
+        stats[game] = []
+        for i, p in enumerate(patterns):
+            m, se = read_data(pattern='.*log/DTreePG/plan-Roboschool%s-v1.*%s.*' % (game, p),
+                          figure=j, color=i, name=game, label=labels[i], **kwargs)
+            stats[game].append([m, se])
+        m, se = read_data(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/larger_ddpg.*' % (game),
+                      figure=j, color=i+1, name=game, label=labels[i+1], **kwargs)
+        stats[game].append([m, se])
+        m, se = read_data(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game),
+                      figure=j, color=i+2, name=game, label=labels[i+2], **kwargs)
+        stats[game].append([m, se])
+
+    print('\\hline\n&')
+    for game in games:
+        data = np.asarray(stats[game])
+        best_algo = np.argmax(data[:, 0])
+        lower = data[best_algo][0] - data[best_algo][1]
+        str = '%s &' % (game)
+        for m, se in data:
+            if m + se >= lower:
+                str += '\\textbf{%d}(%.01f) &' % (m, se)
+                # str += '\\textbf{%d} &' % (m)
+            else:
+                str += '%d(%.01f) &' % (m, se)
+                # str += '%d &' % (m)
+        str = str[:-1] + '\\\\'
+        print(str)
+
+
 if __name__ == '__main__':
     plot_sub()
+    # plot_table()
 
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
     # plt.show()
