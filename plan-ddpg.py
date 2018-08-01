@@ -199,6 +199,7 @@ def single_run(run, game, fn, tag, **kwargs):
     # log_dir = './log/baseline-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game, log_dir, tag=tag, **kwargs)
 
+@console
 def multi_runs(game, fn, tag, **kwargs):
     kwargs.setdefault('parallel', False)
     kwargs.setdefault('runs', 5)
@@ -307,10 +308,10 @@ if __name__ == '__main__':
     # ddpg_shared(game)
 
     parallel = True
-    # multi_runs(game, plan_ddpg, tag='d3n5', parallel=parallel,
-    #            depth=3, mask=False, num_actors=5)
-    # multi_runs(game, plan_ddpg, tag='d2n10', parallel=parallel,
-    #            depth=2, mask=False, num_actors=10)
+    multi_runs(game, plan_ddpg, tag='d3n5', parallel=parallel,
+               depth=3, mask=False, num_actors=5, id=0)
+    multi_runs(game, plan_ddpg, tag='d2n10', parallel=parallel,
+               depth=2, mask=False, num_actors=10, id=1)
 
     # multi_runs(game, naive_model_ddpg, tag='naive_model', parallel=True)
 
