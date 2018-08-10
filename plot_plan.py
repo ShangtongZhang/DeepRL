@@ -259,11 +259,15 @@ def plot_single():
     }
     patterns = [
         'd2m0',
-        'single_actor'
+        'single_actor',
+        'd2n10',
+        'd3n5',
     ]
     labels = [
         'N=5 d=1',
-        'N=1 d=1'
+        'N=1 d=1',
+        'N=10 d=1',
+        'N=5 d=2'
     ]
     game = 'HalfCheetah'
     plt.figure(0)
