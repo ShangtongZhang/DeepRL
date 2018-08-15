@@ -5,7 +5,7 @@ RUN apt update && apt install -y --allow-unauthenticated --no-install-recommends
     libjpeg-dev libpng-dev python3.5 python3-pip python3-setuptools \
     libgtk3.0 libsm6 python3-venv cmake ffmpeg pkg-config \
     qtbase5-dev libqt5opengl5-dev libassimp-dev libpython3.5-dev \
-    libboost-python-dev libtinyxml-dev bash
+    libboost-python-dev libtinyxml-dev bash python3-tk
 WORKDIR /opt
 SHELL ["/bin/bash", "-c"]
 RUN pip3 install pip --upgrade
