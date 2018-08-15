@@ -461,7 +461,7 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
         actions = self.compute_a(phi)
         q_values = [self.compute_q(phi, action, depth) for action in actions]
         q_values = torch.stack(q_values).squeeze(-1).t()
-        actions = torch.stack(actions).t()
+        actions = torch.stack(actions).transpose(0, 1)
         if to_numpy:
             best = q_values.max(1)[1]
             actions = actions[self.range(actions.size(0)), best, :]

@@ -31,9 +31,9 @@ class PlanDDPGAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = np.stack([self.config.state_normalizer(state)])
-        action = self.network.predict(state, depth=self.config.depth, to_numpy=True).flatten()
+        action, _ = self.network.predict(state, depth=self.config.depth, to_numpy=True)
         self.config.state_normalizer.unset_read_only()
-        return action
+        return action.flatten()
 
     def episode(self, deterministic=False):
         self.random_process.reset_states()
@@ -48,7 +48,8 @@ class PlanDDPGAgent(BaseAgent):
             self.evaluate()
             self.evaluation_episodes()
 
-            action, option = self.network.predict(np.stack([state]), depth=config.depth, to_numpy=True).flatten()
+            action, option = self.network.predict(np.stack([state]), depth=config.depth, to_numpy=True)
+            action = action.flatten()
             action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
             next_state = self.config.state_normalizer(next_state)
@@ -57,7 +58,7 @@ class PlanDDPGAgent(BaseAgent):
 
             if not deterministic:
                 mask = np.random.binomial(n=1, p=0.5, size=config.num_actors)
-                self.replay.feed([state, action, reward, next_state, int(done), mask, option])
+                self.replay.feed([state, action, reward, next_state, int(done), mask, np.asscalar(option)])
                 self.total_steps += 1
 
             steps += 1
@@ -65,7 +66,7 @@ class PlanDDPGAgent(BaseAgent):
 
             if not deterministic and self.replay.size() >= config.min_memory_size:
                 experiences = self.replay.sample()
-                states, actions, rewards, next_states, terminals, masks = experiences
+                states, actions, rewards, next_states, terminals, masks, options = experiences
                 masks = self.network.tensor(masks)
 
                 q_next = self.target_network.predict(next_states, depth=config.depth, to_numpy=False)
@@ -107,7 +108,9 @@ class PlanDDPGAgent(BaseAgent):
                 if config.mask:
                     action_grads = action_grads * masks.t().unsqueeze(-1)
                 if config.on_policy:
-                    actions = 0
+                    options = self.network.tensor(options).long()
+                    actions = actions[options, self.network.range(actions.size(1)), :]
+                    action_grads = action_grads[options, self.network.range(action_grads.size(1)), :]
                 self.opt.zero_grad()
                 actions.backward(action_grads)
                 self.opt.step()

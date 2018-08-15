@@ -305,7 +305,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
     # naive_model_ddpg(game, depth=2)
-    plan_ddpg(game, depth=2)
+    plan_ddpg(game, depth=2, on_policy=True)
     # ddpg_shared(game)
 
     # parallel = True
