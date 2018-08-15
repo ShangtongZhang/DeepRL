@@ -247,27 +247,29 @@ def batch_job():
     # game = games[cf.ind1]
 
     games = [
-        # 'RoboschoolAnt-v1',
-        # 'RoboschoolWalker2d-v1',
-        # 'RoboschoolHopper-v1',
-        # 'RoboschoolHalfCheetah-v1',
-        # 'RoboschoolReacher-v1',
-        # 'RoboschoolHumanoid-v1',
-        'RoboschoolPong-v1',
-        'RoboschoolHumanoidFlagrun-v1',
-        'RoboschoolHumanoidFlagrunHarder-v1',
-        'RoboschoolInvertedPendulum-v1',
-        'RoboschoolInvertedPendulumSwingup-v1',
-        'RoboschoolInvertedDoublePendulum-v1',
+        'RoboschoolAnt-v1',
+        'RoboschoolWalker2d-v1',
+        'RoboschoolHopper-v1',
+        'RoboschoolHalfCheetah-v1',
+        'RoboschoolReacher-v1',
+        'RoboschoolHumanoid-v1',
+        # 'RoboschoolPong-v1',
+        # 'RoboschoolHumanoidFlagrun-v1',
+        # 'RoboschoolHumanoidFlagrunHarder-v1',
+        # 'RoboschoolInvertedPendulum-v1',
+        # 'RoboschoolInvertedPendulumSwingup-v1',
+        # 'RoboschoolInvertedDoublePendulum-v1',
     ]
     game = games[cf.ind1]
 
     parallel = True
+    multi_runs(game, plan_ddpg, tag='on_policy', parallel=parallel,
+               depth=2, on_policy=True)
     # multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=parallel)
     # multi_runs(game, naive_model_ddpg, tag='naive_model',
     #            depth=2, parallel=parallel)
-    multi_runs(game, plan_ddpg, tag='single_actor', parallel=parallel,
-               depth=2, mask=False, num_actors=1)
+    # multi_runs(game, plan_ddpg, tag='single_actor', parallel=parallel,
+    #            depth=2, mask=False, num_actors=1)
     # def task1():
     #     multi_runs(game, ddpg_shared, tag='ddpg_shared', parallel=parallel)
     #
@@ -293,7 +295,7 @@ if __name__ == '__main__':
     os.system('export OMP_NUM_THREADS=1')
     os.system('export MKL_NUM_THREADS=1')
     torch.set_num_threads(1)
-    # batch_job()
+    batch_job()
 
     # game = 'RoboschoolAnt-v1'
     # game = 'RoboschoolWalker2d-v1'
@@ -305,7 +307,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
     # naive_model_ddpg(game, depth=2)
-    plan_ddpg(game, depth=2, on_policy=True)
+    # plan_ddpg(game, depth=2, on_policy=True)
     # ddpg_shared(game)
 
     # parallel = True
