@@ -48,7 +48,7 @@ class PlanDDPGAgent(BaseAgent):
             self.evaluate()
             self.evaluation_episodes()
 
-            action = self.network.predict(np.stack([state]), depth=config.depth, to_numpy=True).flatten()
+            action, option = self.network.predict(np.stack([state]), depth=config.depth, to_numpy=True).flatten()
             action += self.random_process.sample()
             next_state, reward, done, info = self.task.step(action)
             next_state = self.config.state_normalizer(next_state)
@@ -57,7 +57,7 @@ class PlanDDPGAgent(BaseAgent):
 
             if not deterministic:
                 mask = np.random.binomial(n=1, p=0.5, size=config.num_actors)
-                self.replay.feed([state, action, reward, next_state, int(done), mask])
+                self.replay.feed([state, action, reward, next_state, int(done), mask, option])
                 self.total_steps += 1
 
             steps += 1
@@ -106,6 +106,8 @@ class PlanDDPGAgent(BaseAgent):
                                             for dead_action in dead_actions])
                 if config.mask:
                     action_grads = action_grads * masks.t().unsqueeze(-1)
+                if config.on_policy:
+                    actions = 0
                 self.opt.zero_grad()
                 actions.backward(action_grads)
                 self.opt.step()

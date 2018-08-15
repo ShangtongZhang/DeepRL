@@ -127,6 +127,7 @@ def plan_ddpg(game, log_dir=None, **kwargs):
     kwargs.setdefault('num_actors', 5)
     kwargs.setdefault('detach_action', True)
     kwargs.setdefault('mask', False)
+    kwargs.setdefault('on_policy', False)
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -304,14 +305,14 @@ if __name__ == '__main__':
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
     # naive_model_ddpg(game, depth=2)
-    # plan_ddpg(game, depth=3)
+    plan_ddpg(game, depth=2)
     # ddpg_shared(game)
 
-    parallel = True
-    multi_runs(game, plan_ddpg, tag='d3n5', parallel=parallel,
-               depth=3, mask=False, num_actors=5, id=0)
-    multi_runs(game, plan_ddpg, tag='d2n10', parallel=parallel,
-               depth=2, mask=False, num_actors=10, id=1)
+    # parallel = True
+    # multi_runs(game, plan_ddpg, tag='d3n5', parallel=parallel,
+    #            depth=3, mask=False, num_actors=5, id=0)
+    # multi_runs(game, plan_ddpg, tag='d2n10', parallel=parallel,
+    #            depth=2, mask=False, num_actors=10, id=1)
 
     # multi_runs(game, naive_model_ddpg, tag='naive_model', parallel=True)
 

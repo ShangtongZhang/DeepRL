@@ -465,7 +465,7 @@ class PlanEnsembleDeterministicNet(nn.Module, BaseNet):
         if to_numpy:
             best = q_values.max(1)[1]
             actions = actions[self.range(actions.size(0)), best, :]
-            return actions.detach().cpu().numpy()
+            return actions.detach().cpu().numpy(), best.detach().cpu().numpy()
         return q_values.max(1)[0].unsqueeze(-1)
 
     def feature(self, obs):
