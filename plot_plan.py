@@ -145,7 +145,7 @@ def plot_sub():
 
     labels = [
         'ACE',
-        'Fitted-ACE',
+        'TM-ACE',
         'Ensemble-DDPG',
         'Shared-DDPG',
         'Large-DDPG',
@@ -162,6 +162,7 @@ def plot_sub():
                       figure=j, color=i+1, name=game, label=labels[i+1], **kwargs)
         plot_sub_impl(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game),
                       figure=j, color=i+2, name=game, label=labels[i+2], **kwargs)
+        plt.xticks([0, 1000000], ['0', '1M'])
     plt.subplot(2, 6, 1)
     plt.legend()
     plt.savefig('/Users/Shangtong/Dropbox/Paper/tree_dpg/img/curves.png', bbox_inches='tight')
@@ -276,13 +277,16 @@ def plot_single():
     for i, (label, pattern) in enumerate(zip(labels, patterns)):
         plot_sub_impl(pattern='.*log/DTreePG/plan-Roboschool%s-v1/plan_ddpg.*%s.*' % (game, pattern),
                       figure=0, color=i, name=game, label=label, **kwargs)
+    plt.xticks([0, 1000000], ['0', '100K'])
+    plt.xlabel('steps')
+    plt.ylabel('score')
     plt.legend()
     plt.savefig('/Users/Shangtong/Dropbox/Paper/tree_dpg/img/half_cheetah.png', bbox_inches='tight')
 
 
 if __name__ == '__main__':
-    plot_single()
-    # plot_sub()
+    # plot_single()
+    plot_sub()
     # plot_table()
 
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
