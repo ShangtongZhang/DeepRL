@@ -113,7 +113,7 @@ def plot_sub_impl(**kwargs):
     y = [entry[1] for entry in data]
     y = np.stack(y)
     plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
-    plt.title(kwargs['name'])
+    plt.title(kwargs['title'])
     plt.xticks([])
 
 def plot_sub():
@@ -136,8 +136,23 @@ def plot_sub():
         'InvertedPendulumSwingup',
         'InvertedDoublePendulum',
     ]
+    titles = [
+        'Ant',
+        'Walker2d',
+        'Hopper',
+        'HalfCheetah',
+        'Reacher',
+        'Humanoid',
+        'Pong',
+        'HumanoidFlagrun (HF)',
+        'HumanoidFlagrunHarder (HFH)',
+        'InvertedPendulum (IP)',
+        'InvertedPendulumSwingup (IPS)',
+        'InvertedDoublePendulum (IDP)',
+    ]
     patterns = [
         'd2m0',
+        'on_policy',
         'naive',
         'd1m0',
         'shared',
@@ -145,6 +160,7 @@ def plot_sub():
 
     labels = [
         'ACE',
+        'ACE-Alt',
         'TM-ACE',
         'Ensemble-DDPG',
         'Shared-DDPG',
@@ -157,11 +173,11 @@ def plot_sub():
         plt.subplot(2, 6, j+1)
         for i, p in enumerate(patterns):
             plot_sub_impl(pattern='.*log/DTreePG/plan-Roboschool%s-v1.*%s.*' % (game, p),
-                          figure=j, color=i, name=game, label=labels[i], **kwargs)
+                          figure=j, color=i, name=game, label=labels[i], title=titles[j], **kwargs)
         plot_sub_impl(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/larger_ddpg.*' % (game),
-                      figure=j, color=i+1, name=game, label=labels[i+1], **kwargs)
+                      figure=j, color=i+1, name=game, label=labels[i+1], title=titles[j], **kwargs)
         plot_sub_impl(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game),
-                      figure=j, color=i+2, name=game, label=labels[i+2], **kwargs)
+                      figure=j, color=i+2, name=game, label=labels[i+2], title=titles[j], **kwargs)
         plt.xticks([0, 1000000], ['0', '1M'])
     plt.subplot(2, 6, 1)
     plt.legend()
@@ -206,6 +222,7 @@ def plot_table():
     ]
     patterns = [
         'd2m0',
+        'on_policy',
         'naive',
         'd1m0',
         'shared',
@@ -213,6 +230,7 @@ def plot_table():
 
     labels = [
         'ACE',
+        'ACE-Alt',
         'Fitted-ACE',
         'Ensemble-DDPG',
         'Shared-DDPG',
@@ -285,8 +303,8 @@ def plot_single():
 
 
 if __name__ == '__main__':
-    plot_single()
-    # plot_sub()
+    # plot_single()
+    plot_sub()
     # plot_table()
 
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
