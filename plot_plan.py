@@ -277,7 +277,7 @@ def plot_single():
     for i, (label, pattern) in enumerate(zip(labels, patterns)):
         plot_sub_impl(pattern='.*log/DTreePG/plan-Roboschool%s-v1/plan_ddpg.*%s.*' % (game, pattern),
                       figure=0, color=i, name=game, label=label, **kwargs)
-    plt.xticks([0, 1000000], ['0', '100K'])
+    plt.xticks([0, 1000000], ['0', '1M'])
     plt.xlabel('steps')
     plt.ylabel('score')
     plt.legend()
@@ -285,8 +285,8 @@ def plot_single():
 
 
 if __name__ == '__main__':
-    # plot_single()
-    plot_sub()
+    plot_single()
+    # plot_sub()
     # plot_table()
 
     # plot(pattern='.*plan_ensemble_ddpg.*', figure=0)
