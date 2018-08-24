@@ -365,8 +365,19 @@ def plot_heatmap():
     for i, (freq, ylabel) in enumerate(data):
         print(names[i])
         plt.subplot(1, 4, i+1)
-        sns.heatmap(freq, cmap='YlGnBu', xticklabels=[], yticklabels=ylabel)
+        ax = sns.heatmap(freq, cmap='YlGnBu', xticklabels=[], yticklabels=ylabel)
+        if i < 2:
+            ax.set_xticks([0, 10])
+            ax.set_xticklabels(['0', '1M'], fontsize=20)
+            ax.set_yticks(np.arange(0, 6) + 0.5)
+            ax.set_yticklabels(np.arange(0, 6), fontsize=20)
+        else:
+            ax.set_xticks([0, 100])
+            ax.set_xticklabels(['0', '40M'], fontsize=20)
+            ax.set_yticks(np.arange(0, 10) + 0.5)
+            ax.set_yticklabels(np.arange(0, 10) + 1, fontsize=20)
         plt.xlabel('training steps', fontsize=60)
+        plt.ylabel('option', fontsize=60)
         plt.title(names[i], fontsize=60)
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/heatmap.png', bbox_inches='tight')
 
