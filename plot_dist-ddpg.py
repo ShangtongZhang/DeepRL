@@ -108,7 +108,7 @@ def plot_sub(**kwargs):
     y = np.stack(y)
     plotter.plot_standard_error(y, x, label=kwargs['name'], color=Plotter.COLORS[color])
     plt.title(kwargs['name'], fontsize=30)
-    plt.xticks([])
+    plt.xticks([0, int(1e6)], ['0', '1M'])
     # plt.legend()
 
     # plt.ylim([-200, 1400])
