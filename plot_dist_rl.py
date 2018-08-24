@@ -349,7 +349,7 @@ def plot_sub(**kwargs):
         y = y[:, indices]
     plotter.plot_standard_error(y, x, label=kwargs['name'], color=Plotter.COLORS[color])
     plt.title(kwargs['title'], fontsize=8)
-    plt.xticks([])
+    plt.xticks([0, int(40e6)], ['0', '40M'])
     # plt.yticks([])
 
     # plt.legend()
@@ -381,10 +381,98 @@ def plot_heatmap():
         plt.title(names[i], fontsize=60)
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/heatmap.png', bbox_inches='tight')
 
+def plot_all():
+    games = [
+        'Freeway',
+        'BeamRider',
+        'BattleZone',
+        'Robotank',
+        'Qbert',
+        'Alien',
+        'Amidar',
+        'Seaquest',
+        'MsPacman',
+        'Enduro',
+        'Assault',
+        'Asterix',
+        'Asteroids',
+        'Atlantis',
+        'BankHeist',
+        'Bowling',
+        'Boxing',
+        'Breakout',
+        'Centipede',
+        'ChopperCommand',
+        'CrazyClimber',
+        'DemonAttack',
+        'DoubleDunk',
+        'FishingDerby',
+        'Frostbite',
+        'Gopher',
+        'Gravitar',
+        'IceHockey',
+        'Jamesbond',
+        'Kangaroo',
+        'Krull',
+        'KungFuMaster',
+        'MontezumaRevenge',
+        'NameThisGame',
+        'Pitfall',
+        'Pong',
+        'PrivateEye',
+        'Riverraid',
+        'RoadRunner',
+        'SpaceInvaders',
+        'StarGunner',
+        'Tennis',
+        'TimePilot',
+        'Tutankham',
+        'UpNDown',
+        'Venture',
+        'VideoPinball',
+        'WizardOfWor',
+        'Zaxxon',
+    ]
+
+    train_kwargs = {
+        'episode_window': 1000,
+        'top_k': 0,
+        'max_timesteps': int(4e7),
+        # 'max_timesteps': int(3e7),
+        'average': True,
+        'x_interval': 1000
+    }
+
+    patterns = [
+        't001b001_s_le',
+        'n_step_qr_dqn',
+        'n_step_qr_le_dqn',
+        # 'n_step_dqn',
+        # 'n_step_dqn',
+    ]
+
+    names = [
+        'QO',
+        'QR-DQN',
+        'QR-DQN-Alt'
+    ]
+
+    plt.figure(figsize=(30, 45))
+    for j, game in enumerate(sorted(games)):
+        plt.subplot(9, 6, j+1)
+        for i, p in enumerate(patterns):
+            try:
+                plot_sub(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, name=names[i], title=game, **train_kwargs)
+            except Exception as e:
+                print(e)
+                continue
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-all.png', bbox_inches='tight')
+
 if __name__ == '__main__':
     # plot_improvement()
-    plot_heatmap()
+    # plot_heatmap()
     # plot_table()
+    # plot_all()
 
     games = [
         'Freeway',
@@ -483,23 +571,7 @@ if __name__ == '__main__':
         'QR-DQN-Alt'
     ]
 
-    # plt.figure(figsize=(30, 45))
-    # for j, game in enumerate(sorted(games)):
-    #     plt.subplot(9, 6, j+1)
-    #     for i, p in enumerate(patterns):
-    #         try:
-    #             # plot(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, **train_kwargs)
-    #             plot_sub(pattern='.*dist_rl.*%s.*%s.*train.*' % (game, p), figure=j, color=i, name=names[i], title=game, **train_kwargs)
-    #             # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-train.png' % (game))
-    #         except Exception as e:
-    #             print(e)
-    #             continue
-            # plot(pattern='.*dist_rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **train_kwargs)
-            # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
-            # deterministic_plot(pattern='.*dist-rl.*%s.*%s.*test.*' % (game, p), figure=j, color=i, **test_kwargs)
-            # plt.savefig('data/dist_rl_images/n-step-qr-dqn-%s-test.png' % (game))
-    # plt.show()
-    # plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-all.png', bbox_inches='tight')
+
 
     # plt.show()
 
