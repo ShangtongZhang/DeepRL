@@ -144,11 +144,11 @@ def plot_sub():
         'Reacher',
         'Humanoid',
         'Pong',
-        'HumanoidFlagrun (HF)',
-        'HumanoidFlagrunHarder (HFH)',
-        'InvertedPendulum (IP)',
-        'InvertedPendulumSwingup (IPS)',
-        'InvertedDoublePendulum (IDP)',
+        'HumanoidFlagrun',
+        'HumanoidFlagrunHarder',
+        'InvertedPendulum',
+        'InvertedPendulumSwingup',
+        'InvertedDoublePendulum',
     ]
     patterns = [
         'd2m0',
@@ -164,13 +164,13 @@ def plot_sub():
         'TM-ACE',
         'Ensemble-DDPG',
         'Shared-DDPG',
-        'Large-DDPG',
+        'Wide-DDPG',
         'DDPG',
     ]
 
-    plt.figure(figsize=(30, 10))
+    plt.figure(figsize=(20, 15))
     for j, game in enumerate(sorted(games)):
-        plt.subplot(2, 6, j+1)
+        plt.subplot(3, 4, j+1)
         for i, p in enumerate(patterns):
             plot_sub_impl(pattern='.*log/DTreePG/plan-Roboschool%s-v1.*%s.*' % (game, p),
                           figure=j, color=i, name=game, label=labels[i], title=titles[j], **kwargs)
@@ -179,7 +179,7 @@ def plot_sub():
         plot_sub_impl(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game),
                       figure=j, color=i+2, name=game, label=labels[i+2], title=titles[j], **kwargs)
         plt.xticks([0, 1000000], ['0', '1M'])
-    plt.subplot(2, 6, 1)
+    plt.subplot(3, 4, 1)
     plt.legend()
     plt.savefig('/Users/Shangtong/Dropbox/Paper/tree_dpg/img/curves.png', bbox_inches='tight')
 
