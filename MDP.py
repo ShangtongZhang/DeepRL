@@ -319,6 +319,7 @@ def upper_quantile_chain():
         pickle.dump(total_steps, f)
 
 font_size = 20
+marker_size = 10
 def plot_upper():
     from deep_rl.utils import Plotter
     with open('data/%s.bin' % (upper_quantile_chain.__name__), 'rb') as f:
@@ -330,9 +331,9 @@ def plot_upper():
         m_y = steps[i].mean(-1)
         err_y = steps[i].std(-1) / np.sqrt(steps.shape[-1])
         x = np.arange(2, 7)
-        plt.errorbar(x, m_y, err_y, label=agent, fmt=markers[i])
+        plt.errorbar(x, m_y, err_y, label=agent, fmt=markers[i], ms=marker_size)
     plt.yscale('log')
-    plt.xlabel('# of non-terminal states in Chain 1', fontsize=font_size)
+    plt.xlabel('# of non-terminal states', fontsize=font_size)
     plt.ylabel('steps', fontsize=font_size)
     plt.xticks(x, x)
     plt.legend()
@@ -370,9 +371,9 @@ def plot_lower():
         m_y = steps[i].mean(-1)
         err_y = steps[i].std(-1) / np.sqrt(steps.shape[-1])
         x = np.arange(2, 9)
-        plt.errorbar(x, m_y, err_y, label=agent, fmt=markers[i])
+        plt.errorbar(x, m_y, err_y, label=agent, fmt=markers[i], ms=marker_size)
     plt.yscale('log')
-    plt.xlabel('# of non-terminal states in Chain 2', fontsize=font_size)
+    plt.xlabel('# of non-terminal states', fontsize=font_size)
     plt.xticks(x, x)
     plt.ylabel('steps', fontsize=font_size)
     plt.legend()
