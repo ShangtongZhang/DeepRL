@@ -35,7 +35,7 @@ class UpdatedAtariEnv(AtariEnv):
         self.ale.setFloat('repeat_action_probability'.encode('utf-8'), repeat_action_probability)
 
         self.seed()
-        
+
         # Set mode and difficulty
         self.ale.setMode(mode)
         self.ale.setDifficulty(difficulty)
@@ -50,7 +50,7 @@ class UpdatedAtariEnv(AtariEnv):
             self.observation_space = spaces.Box(low=0, high=255, shape=(screen_height, screen_width, 3))
         else:
             raise error.Error('Unrecognized observation type: {}'.format(self._obs_type))
-            
+
     def seed(self, seed=None):
         self.np_random, seed1 = seeding.np_random(seed)
         # Derive a random seed. This gets passed as a uint, but gets
@@ -60,12 +60,12 @@ class UpdatedAtariEnv(AtariEnv):
         # Empirically, we need to seed before loading the ROM.
         self.ale.setInt(b'random_seed', seed2)
         # Load game from ROM instead of game path
-        self.ale.loadROM(self.rom_path)
+        self.ale.loadROM(str.encode(self.rom_path))
         return [seed1, seed2]
-            
+
     def _get_image(self):
         return self.ale.getScreenRGB()
-    
+
 ACTION_MEANING = {
     0 : "NOOP",
     1 : "FIRE",
