@@ -23,6 +23,9 @@ def run_steps(agent):
     config = agent.config
     agent_name = agent.__class__.__name__
     t0 = time.time()
+    if config.load_model is not None:
+        print("INFO: Loading model {}".format(config.load_model))
+        agent.load(config.load_model)
     while True:
         if config.save_interval and not agent.total_steps % config.save_interval:
             agent.save('data/model-%s-%s-%s.bin' % (agent_name, config.task_name, config.tag))

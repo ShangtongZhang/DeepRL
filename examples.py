@@ -37,6 +37,7 @@ def dqn_cart_pole():
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
+    config.async_actor = False
     config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
                                         log_dir=get_default_log_dir(dqn_pixel_atari.__name__))
     config.eval_env = PixelAtari(name, frame_skip=4, history_length=config.history_length,
@@ -60,6 +61,12 @@ def dqn_pixel_atari(name):
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     # config.double_q = True
+
+    # Specify intervals for saving..
+    config.save_interval = 1000
+
+    config.load_model = "data/model-DQNAgent-PongNoFrameskip-v4-vanilla.bin"
+    
     config.double_q = False
     config.max_steps = int(2e7)
     config.logger = get_logger(file_name=dqn_pixel_atari.__name__)
@@ -556,8 +563,8 @@ if __name__ == '__main__':
     # ppo_continuous()
     # ddpg_low_dim_state()
 
-    game = 'Breakout'
-    # dqn_pixel_atari(game)
+    game = 'Pong'
+    dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
     # categorical_dqn_pixel_atari(game)
     # a2c_pixel_atari(game)
