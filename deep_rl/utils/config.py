@@ -55,6 +55,10 @@ class Config:
         self.eval_interval = 0
         self.eval_episodes = 10
         self.async_actor = True
+        self.use_new_atari_env = False
+        self.mode = 0
+        self.difficulty = 0
+
 
     @property
     def eval_env(self):

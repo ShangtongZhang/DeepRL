@@ -37,10 +37,18 @@ def dqn_cart_pole():
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
-    config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                        log_dir=get_default_log_dir(dqn_pixel_atari.__name__))
-    config.eval_env = PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                 episode_life=False)
+    config.use_new_atari_env = False
+    config.env_mode = 0
+    config.env_difficulty = 0
+    config.task_fn = lambda: PixelAtari(
+        name, frame_skip=4, history_length=config.history_length,
+        log_dir=get_default_log_dir(dqn_pixel_atari.__name__),
+        use_new_atari_env=config.use_new_atari_env, env_mode=config.env_mode,
+        env_difficulty=config.env_difficulty)
+    config.eval_env = PixelAtari(
+        name, frame_skip=4, history_length=config.history_length,
+        episode_life=False, use_new_atari_env=config.use_new_atari_env,
+        env_mode=config.env_mode, env_difficulty=config.env_difficulty)
 
     config.optimizer_fn = lambda params: torch.optim.RMSprop(
         params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
@@ -556,8 +564,8 @@ if __name__ == '__main__':
     # ppo_continuous()
     # ddpg_low_dim_state()
 
-    game = 'Breakout'
-    # dqn_pixel_atari(game)
+    game = 'Pong'
+    dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
     # categorical_dqn_pixel_atari(game)
     # a2c_pixel_atari(game)
