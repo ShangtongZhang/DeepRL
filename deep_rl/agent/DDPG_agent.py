@@ -48,9 +48,9 @@ class DDPGAgent(BaseAgent):
         action += self.random_process.sample()
         next_state, reward, done, _ = self.task.step(action)
         next_state = self.config.state_normalizer(next_state)
-        self.episode_reward += reward
+        self.episode_reward += reward[0]
         reward = self.config.reward_normalizer(reward)
-        self.replay.feed([self.state, action, reward, next_state, np.asarray(done, dtype=np.uint8)])
+        self.replay.feed([self.state, action, reward, next_state, done.astype(np.uint8)])
         if done[0]:
             self.episode_rewards.append(self.episode_reward)
             self.episode_reward = 0

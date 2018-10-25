@@ -155,7 +155,8 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
             action = dist.sample()
         log_prob = dist.log_prob(action)
         log_prob = torch.sum(log_prob, dim=1, keepdim=True)
-        return action, log_prob, tensor(np.zeros((log_prob.size(0), 1))), v
+        entropy = torch.sum(dist.entropy(), dim=1, keepdim=True)
+        return action, log_prob, entropy, v
 
 class CategoricalActorCriticNet(nn.Module, BaseNet):
     def __init__(self,

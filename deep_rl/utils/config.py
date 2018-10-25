@@ -29,7 +29,7 @@ class Config:
         self.tag = 'vanilla'
         self.num_workers = 1
         self.gradient_clip = None
-        self.entropy_weight = 0.01
+        self.entropy_weight = 0
         self.use_gae = False
         self.gae_tau = 1.0
         self.target_network_mix = 0.001

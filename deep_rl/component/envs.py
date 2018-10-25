@@ -99,7 +99,7 @@ class Task:
 class VecTask(Task):
     def __init__(self,
                  name,
-                 num_envs,
+                 num_envs=1,
                  single_process=True,
                  log_dir=None,
                  seed=np.random.randint(int(1e5))):

@@ -27,7 +27,7 @@ class PPOAgent(BaseAgent):
         states = self.states
         for _ in range(config.rollout_length):
             actions, log_probs, _, values = self.network(states)
-            next_states, rewards, terminals, _ = self.task.step(actions.cpu().detach().numpy())
+            next_states, rewards, terminals, _ = self.task.step(to_np(actions))
             self.online_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):

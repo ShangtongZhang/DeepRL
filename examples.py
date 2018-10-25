@@ -369,18 +369,15 @@ def ppo_pixel_atari(name):
     config.logger = get_logger(file_name=ppo_pixel_atari.__name__)
     run_steps(PPOAgent(config))
 
-def ppo_continuous():
+def ppo_continuous(name):
     config = Config()
-    config.num_workers = 1
-    # task_fn = lambda log_dir: Pendulum(log_dir=log_dir)
-    # task_fn = lambda log_dir: Bullet('AntBulletEnv-v0', log_dir=log_dir)
-    task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=get_default_log_dir(ppo_continuous.__name__))
-    config.eval_env = task_fn(None)
+    log_dir = get_default_log_dir(ppo_continuous.__name__)
+    config.task_fn = lambda: VecTask(name)
+    config.eval_env = VecTask(name, log_dir=log_dir)
 
     config.network_fn = lambda: GaussianActorCriticNet(
-        config.state_dim, config.action_dim, actor_body=FCBody(config.state_dim),
-        critic_body=FCBody(config.state_dim))
+        config.state_dim, config.action_dim, actor_body=FCBody(config.state_dim, gate=F.tanh),
+        critic_body=FCBody(config.state_dim, gate=F.tanh))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99
     config.use_gae = True
@@ -392,15 +389,16 @@ def ppo_continuous():
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
     config.max_steps = 2e7
+    config.state_normalizer = MeanStdNormalizer()
     config.logger = get_logger()
     run_steps(PPOAgent(config))
 
 # DDPG
-def ddpg_continuous():
+def ddpg_continuous(name):
     config = Config()
     log_dir = get_default_log_dir(ddpg_continuous.__name__)
-    config.task_fn = lambda: VecTask('Hopper-v2', num_envs=1)
-    config.eval_env = VecTask('Hopper-v2', num_envs=1, log_dir=log_dir)
+    config.task_fn = lambda: VecTask(name)
+    config.eval_env = VecTask(name, log_dir=log_dir)
     config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
@@ -487,8 +485,10 @@ if __name__ == '__main__':
     # n_step_dqn_cart_pole()
     # option_critic_cart_pole()
     # ppo_cart_pole()
-    # ppo_continuous()
-    ddpg_continuous()
+    # ppo_continuous('Walker2d-v2')
+    # ppo_continuous('Hopper-v2')
+    ppo_continuous('HalfCheetah-v2')
+    # ddpg_continuous('Hopper-v2')
 
     # game = 'Breakout'
     # dqn_pixel_atari(game)
