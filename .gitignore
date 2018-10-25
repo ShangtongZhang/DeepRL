@@ -3,18 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-.idea
-exp_*
-upload.py
-*.sh
-data
-dataset
-draw_*
-log
-old_logs
-figure
-images_data
-
 # C extensions
 *.so
 
@@ -99,3 +87,13 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+.idea
+data
+dataset
+log
+old_logs
+figure
+images_data
+mjkey.txt
+.DS_Store

@@ -65,27 +65,6 @@ def dqn_pixel_atari(name):
     config.logger = get_logger(file_name=dqn_pixel_atari.__name__)
     run_steps(DQNAgent(config))
 
-def dqn_ram_atari(name):
-    config = Config()
-    config.task_fn = lambda: RamAtari(name, no_op=30, frame_skip=4,
-                                      log_dir=get_default_log_dir(dqn_ram_atari.__name__))
-    config.eval_env = RamAtari(name, no_op=30, frame_skip=4, episode_life=False)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.95, eps=0.01)
-    config.network_fn = lambda: VanillaNet(config.action_dim, FCBody(config.state_dim))
-    config.random_action_prob = LinearSchedule(0.1)
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
-    config.state_normalizer = RescaleNormalizer(1.0 / 128)
-    config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
-    config.target_network_update_freq = 10000
-    config.max_episode_length = 0
-    config.exploration_steps= 100
-    config.sgd_update_frequency = 4
-    config.gradient_clip = 5
-    config.double_q = True
-    config.logger = get_logger()
-    run_steps(DQNAgent(config))
-
 # QR DQN
 def quantile_regression_dqn_cart_pole():
     config = Config()
@@ -417,16 +396,15 @@ def ppo_continuous():
     run_steps(PPOAgent(config))
 
 # DDPG
-def ddpg_low_dim_state():
+def ddpg_continuous():
     config = Config()
-    log_dir = get_default_log_dir(ddpg_low_dim_state.__name__)
-    # config.task_fn = lambda **kwargs: Pendulum(log_dir=log_dir)
-    # config.task_fn = lambda **kwargs: Bullet('AntBulletEnv-v0', **kwargs)
-    config.task_fn = lambda **kwargs: Roboschool('RoboschoolHopper-v1', **kwargs)
-    config.eval_env = config.task_fn(log_dir=log_dir)
+    log_dir = get_default_log_dir(ddpg_continuous.__name__)
+    config.task_fn = lambda: VecTask('Hopper-v2', num_envs=1)
+    config.eval_env = VecTask('Hopper-v2', num_envs=1, log_dir=log_dir)
     config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
+    config.state_normalizer = MeanStdNormalizer()
 
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim, config.action_dim,
@@ -443,33 +421,6 @@ def ddpg_low_dim_state():
     config.min_memory_size = 64
     config.target_network_mix = 1e-3
     config.logger = get_logger()
-    run_steps(DDPGAgent(config))
-
-def ddpg_pixel():
-    config = Config()
-    log_dir = get_default_log_dir(ddpg_pixel.__name__)
-    config.task_fn = lambda **kwargs: CarRacing(**kwargs)
-    config.eval_env = config.task_fn(log_dir=None)
-
-    phi_body = NatureConvBody()
-    config.network_fn = lambda: DeterministicActorCriticNet(
-        config.state_dim, config.action_dim, phi_body=phi_body,
-        actor_body=FCBody(phi_body.feature_dim, (50, ), gate=F.relu),
-        critic_body=OneLayerFCBodyWithAction(
-            phi_body.feature_dim, config.action_dim, 50, gate=F.relu),
-        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
-
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
-    config.discount = 0.99
-    config.state_normalizer = ImageNormalizer()
-    config.max_steps = 1e7
-    config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
-        size=(config.action_dim, ), std=LinearSchedule(0.2))
-    config.min_memory_size = 64
-    config.target_network_mix = 1e-3
-    config.log_interval = 100
-    config.logger = get_logger(file_name=ddpg_pixel.__name__)
     run_steps(DDPGAgent(config))
 
 def plot():
@@ -522,24 +473,7 @@ def plot():
 
     plt.show()
 
-def action_conditional_video_prediction():
-    game = 'PongNoFrameskip-v4'
-    prefix = '.'
-
-    # Train an agent for generating the dataset
-    # Make sure to set config.save_interval to non-zero value
-    # a2c_pixel_atari(game)
-
-    # Generate a dataset with the trained model
-    # a2c_model_file = /path/to/the/saved/model
-    # generate_dataset(game, a2c_model_file, prefix)
-
-    # Train the action conditional video prediction model
-    # acvp_train(game, prefix)
-
 if __name__ == '__main__':
-    mkdir('data/video')
-    mkdir('dataset')
     mkdir('log')
     set_one_thread()
     select_device(-1)
@@ -554,9 +488,9 @@ if __name__ == '__main__':
     # option_critic_cart_pole()
     # ppo_cart_pole()
     # ppo_continuous()
-    # ddpg_low_dim_state()
+    ddpg_continuous()
 
-    game = 'Breakout'
+    # game = 'Breakout'
     # dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
     # categorical_dqn_pixel_atari(game)
@@ -566,8 +500,6 @@ if __name__ == '__main__':
     # ppo_pixel_atari(game)
     # dqn_ram_atari(game)
     # ddpg_pixel()
-
-    # action_conditional_video_prediction()
 
     # plot()
 

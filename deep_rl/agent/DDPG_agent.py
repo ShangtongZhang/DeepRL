@@ -32,10 +32,10 @@ class DDPGAgent(BaseAgent):
 
     def eval_step(self, state):
         self.config.state_normalizer.set_read_only()
-        state = np.stack([self.config.state_normalizer(state)])
+        state = self.config.state_normalizer(state)
         action = self.network(state)
         self.config.state_normalizer.unset_read_only()
-        return to_np(action).flatten()
+        return to_np(action)
 
     def step(self):
         config = self.config
@@ -43,30 +43,33 @@ class DDPGAgent(BaseAgent):
             self.random_process.reset_states()
             self.state = self.task.reset()
             self.state = config.state_normalizer(self.state)
-        action = self.network(np.stack([self.state]))
-        action = to_np(action).flatten()
+        action = self.network(self.state)
+        action = to_np(action)
         action += self.random_process.sample()
-        next_state, reward, done, info = self.task.step(action)
+        next_state, reward, done, _ = self.task.step(action)
         next_state = self.config.state_normalizer(next_state)
         self.episode_reward += reward
         reward = self.config.reward_normalizer(reward)
-        self.replay.feed([self.state, action, reward, next_state, int(done)])
-        if done:
-            next_state = None
+        self.replay.feed([self.state, action, reward, next_state, np.asarray(done, dtype=np.uint8)])
+        if done[0]:
             self.episode_rewards.append(self.episode_reward)
             self.episode_reward = 0
+            self.random_process.reset_states()
         self.state = next_state
         self.total_steps += 1
 
         if self.replay.size() >= config.min_memory_size:
             experiences = self.replay.sample()
             states, actions, rewards, next_states, terminals = experiences
+            states = states.squeeze(1)
+            actions = actions.squeeze(1)
+            rewards = tensor(rewards)
+            next_states = next_states.squeeze(1)
+            terminals = tensor(terminals)
 
             phi_next = self.target_network.feature(next_states)
             a_next = self.target_network.actor(phi_next)
             q_next = self.target_network.critic(phi_next, a_next)
-            terminals = tensor(terminals).unsqueeze(1)
-            rewards = tensor(rewards).unsqueeze(1)
             q_next = config.discount * q_next * (1 - terminals)
             q_next.add_(rewards)
             q_next = q_next.detach()
