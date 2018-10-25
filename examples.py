@@ -382,13 +382,13 @@ def ppo_continuous(name):
     config.discount = 0.99
     config.use_gae = True
     config.gae_tau = 0.95
-    config.gradient_clip = 5
+    config.gradient_clip = 0.5
     config.rollout_length = 2048
     config.optimization_epochs = 10
     config.num_mini_batches = 32
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
-    config.max_steps = 2e7
+    config.max_steps = 1e6
     config.state_normalizer = MeanStdNormalizer()
     config.logger = get_logger()
     run_steps(PPOAgent(config))
@@ -485,9 +485,9 @@ if __name__ == '__main__':
     # n_step_dqn_cart_pole()
     # option_critic_cart_pole()
     # ppo_cart_pole()
-    # ppo_continuous('Walker2d-v2')
+    ppo_continuous('Walker2d-v2')
     # ppo_continuous('Hopper-v2')
-    ppo_continuous('HalfCheetah-v2')
+    # ppo_continuous('HalfCheetah-v2')
     # ddpg_continuous('Hopper-v2')
 
     # game = 'Breakout'
