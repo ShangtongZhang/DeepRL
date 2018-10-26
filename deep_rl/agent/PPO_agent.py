@@ -63,12 +63,9 @@ class PPOAgent(BaseAgent):
         states, actions, log_probs_old, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
         advantages = (advantages - advantages.mean()) / advantages.std()
 
-        batcher = Batcher(states.size(0) // config.num_mini_batches, [np.arange(states.size(0))])
         for _ in range(config.optimization_epochs):
-            batcher.reset()
-            batcher.shuffle()
-            while not batcher.end():
-                batch_indices = batcher.next_batch()[0]
+            sampler = random_sample(np.arange(states.size(0)), config.mini_batch_size)
+            for batch_indices in sampler:
                 batch_indices = tensor(batch_indices).long()
                 sampled_states = states[batch_indices]
                 sampled_actions = actions[batch_indices]

@@ -27,8 +27,8 @@ def range_tensor(end):
 def to_np(t):
     return t.cpu().detach().numpy()
 
-def random_seed():
-    np.random.seed()
+def random_seed(seed=None):
+    np.random.seed(seed)
     torch.manual_seed(np.random.randint(int(1e6)))
 
 def set_one_thread():

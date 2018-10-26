@@ -45,7 +45,7 @@ class Config:
         self.categorical_n_atoms = 51
         self.num_quantiles = None
         self.optimization_epochs = 4
-        self.num_mini_batches = 32
+        self.mini_batch_size = 64
         self.termination_regularizer = 0
         self.sgd_update_frequency = None
         self.random_action_prob = None

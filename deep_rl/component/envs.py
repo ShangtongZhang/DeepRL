@@ -27,6 +27,7 @@ except ImportError:
 
 def make_env(env_id, seed, rank, log_dir):
     def _thunk():
+        random_seed(seed)
         if env_id.startswith("dm"):
             _, domain, task = env_id.split('.')
             env = dm_control2gym.make(domain_name=domain, task_name=task)
@@ -66,6 +67,7 @@ class TransposeImage(gym.ObservationWrapper):
     def observation(self, observation):
         return observation.transpose(2, 0, 1)
 
+
 # Fix a bug in baselines, where the env cannot reset automatically
 class DummyVecEnv(DummyVecEnv_):
     def __init__(self, env_fns):
@@ -87,6 +89,7 @@ class DummyVecEnv(DummyVecEnv_):
         obs = DummyVecEnv_.reset(self)
         return obs[0]
 
+
 class Task:
     def __getattr__(self, name):
         return getattr(self.env, name)
@@ -97,6 +100,26 @@ class Task:
 
 
 class VecTask(Task):
+    def __init__(self,
+                 name,
+                 num_envs=1,
+                 single_process=True,
+                 log_dir=None,
+                 seed=np.random.randint(int(1e5))):
+        if log_dir is not None:
+            mkdir(log_dir)
+        envs = [make_env(name, seed, i, log_dir) for i in range(num_envs)]
+        if single_process:
+            Wrapper = DummyVecEnv
+        else:
+            Wrapper = SubprocVecEnv
+        self.env = Wrapper(envs)
+        self.env.name = name
+        self.env.state_dim = self.env.observation_space.shape[0]
+        self.env.action_dim = self.env.action_space.shape[0]
+
+
+class AtariTask(Task):
     def __init__(self,
                  name,
                  num_envs=1,

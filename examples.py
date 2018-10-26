@@ -385,7 +385,7 @@ def ppo_continuous(name):
     config.gradient_clip = 0.5
     config.rollout_length = 2048
     config.optimization_epochs = 10
-    config.num_mini_batches = 32
+    config.mini_batch_size = 64
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
     config.max_steps = 1e6
@@ -474,6 +474,7 @@ def plot():
 if __name__ == '__main__':
     mkdir('log')
     set_one_thread()
+    random_seed()
     select_device(-1)
     # select_device(0)
 
@@ -485,9 +486,7 @@ if __name__ == '__main__':
     # n_step_dqn_cart_pole()
     # option_critic_cart_pole()
     # ppo_cart_pole()
-    ppo_continuous('Walker2d-v2')
-    # ppo_continuous('Hopper-v2')
-    # ppo_continuous('HalfCheetah-v2')
+    ppo_continuous('HalfCheetah-v2')
     # ddpg_continuous('Hopper-v2')
 
     # game = 'Breakout'
