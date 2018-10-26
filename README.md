@@ -1,5 +1,5 @@
 # DeepRL
-Modularized implementation of popular deep RL algorithms by PyTorch. Easy switch between classical control tasks (e.g., CartPole) and Atari games with raw pixel inputs.
+Modularized implementation of popular deep RL algorithms by PyTorch. Easy switch between toy tasks and challenging games.
 
 Implemented algorithms:
 * (Double/Dueling) Deep Q-Learning (DQN)
@@ -12,7 +12,7 @@ Implemented algorithms:
 * The Option-Critic Architecture (OC)
 
 Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
-Action Conditional Video Prediction can be found in [v0.4] 
+Action Conditional Video Prediction can be found in [v0.4](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.4).
 
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
@@ -30,7 +30,7 @@ Action Conditional Video Prediction can be found in [v0.4]
 
 ```examples.py``` contains examples for all the implemented algorithms
 
-```Dockerfile``` contains a perfect environment 
+```Dockerfile``` contains a perfect environment, highly recommended 
 
 Please use this bibtex if you want to cite this repo
 ```
@@ -58,13 +58,6 @@ Please use this bibtex if you want to cite this repo
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/hopper.png)
 
 * The DDPG curve is the evaluation performance, rather than online.
-
-## PongNoFrameskip-v4
-
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/ACVP.png)
-
-* *Left*: One-step prediction *Right*: Ground truth
-* Prediction images are sampled after 110K iterations, and I only implemented one-step training for action-conditional-video-prediction.
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)
