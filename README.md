@@ -10,16 +10,16 @@ Implemented algorithms:
 * Deep Deterministic Policy Gradient (DDPG, pixel & low-dim-state)
 * (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO, pixel & low-dim-state)
 * The Option-Critic Architecture (OC)
-* Action Conditional Video Prediction
 
-Asynchronous algorithms (e.g., A3C) are removed in the current version but can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
+Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
+Action Conditional Video Prediction can be found in [v0.3] 
 
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
 * PyTorch v0.4.0
 * Python 3.6, 3.5
+* OpenAI Baselines
 * Core dependencies: `pip install -e .`
-* Optional: [Roboschool](https://github.com/openai/roboschool), [PyBullet](https://pypi.org/project/pybullet/)
 
 # Remarks
 * There is a super fast DQN implementation with an async actor for data generation and an async replay buffer to transfer data to GPU. Enable this implementation by setting `config.async_actor = True` and using `AsyncReplay`. However, with atari games this fast implementation may not work in macOS. Use Ubuntu or Docker instead.
@@ -30,7 +30,7 @@ Asynchronous algorithms (e.g., A3C) are removed in the current version but can b
 
 ```examples.py``` contains examples for all the implemented algorithms
 
-```Dockerfile``` contains an example environment (w/ pybullet, w/ roboschool, w/o GPU)
+```Dockerfile``` contains a perfect environment 
 
 Please use this bibtex if you want to cite this repo
 ```

@@ -1,6 +1,6 @@
 # Adapted from  https://github.com/openai/baselines/blob/master/baselines/results_plotter.py
 
-from ..component.bench import load_monitor_log
+from baselines.bench.monitor import load_results
 import numpy as np
 import os
 import re
@@ -44,7 +44,7 @@ class Plotter:
     def load_results(self, dirs, max_timesteps=1e8, x_axis=X_TIMESTEPS, episode_window=100):
         tslist = []
         for dir in dirs:
-            ts = load_monitor_log(dir)
+            ts = load_results(dir)
             ts = ts[ts.l.cumsum() <= max_timesteps]
             tslist.append(ts)
         xy_list = [self._ts2xy(ts, x_axis) for ts in tslist]

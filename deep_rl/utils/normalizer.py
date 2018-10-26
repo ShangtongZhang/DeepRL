@@ -31,6 +31,7 @@ class MeanStdNormalizer(BaseNormalizer):
         self.epsilon = epsilon
 
     def __call__(self, x):
+        x = np.asarray(x)
         if self.rms is None:
             self.rms = RunningMeanStd(shape=(1, ) + x.shape[1:])
         if not self.read_only:
@@ -44,8 +45,7 @@ class RescaleNormalizer(BaseNormalizer):
         self.coef = coef
 
     def __call__(self, x):
-        if x.__class__.__name__ == 'LazyFrames':
-            x = np.asarray(x)
+        x = np.asarray(x)
         return self.coef * x
 
 class ImageNormalizer(RescaleNormalizer):

@@ -21,18 +21,16 @@ class DQNActor(BaseActor):
             self._state = self._task.reset()
         config = self.config
         with config.lock:
-            q_values = self._network(config.state_normalizer(np.stack([self._state])))
+            q_values = self._network(config.state_normalizer(self._state))
         q_values = to_np(q_values).flatten()
         if self._total_steps < config.exploration_steps \
                 or np.random.rand() < config.random_action_prob():
             action = np.random.randint(0, len(q_values))
         else:
             action = np.argmax(q_values)
-        next_state, reward, done, info = self._task.step(action)
-        entry = [self._state, action, reward, next_state, int(done), info]
+        next_state, reward, done, info = self._task.step([action])
+        entry = [self._state[0], action, reward[0], next_state[0], int(done[0]), info]
         self._total_steps += 1
-        if done:
-            next_state = self._task.reset()
         self._state = next_state
         return entry
 
@@ -65,9 +63,9 @@ class DQNAgent(BaseAgent):
 
     def eval_step(self, state):
         self.config.state_normalizer.set_read_only()
-        state = self.config.state_normalizer(np.stack([state]))
+        state = self.config.state_normalizer(state)
         q = self.network(state)
-        action = np.argmax(to_np(q).flatten())
+        action = np.argmax(to_np(q))
         self.config.state_normalizer.unset_read_only()
         return action
 

@@ -10,7 +10,7 @@ from deep_rl import *
 def dqn_cart_pole():
     game = 'CartPole-v0'
     config = Config()
-    config.task_fn = lambda: ClassicalControl(game, max_steps=200)
+    config.task_fn = lambda: Task(game)
     config.eval_env = config.task_fn()
 
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
@@ -37,10 +37,9 @@ def dqn_cart_pole():
 def dqn_pixel_atari(name):
     config = Config()
     config.history_length = 4
-    config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                        log_dir=get_default_log_dir(dqn_pixel_atari.__name__))
-    config.eval_env = PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                 episode_life=False)
+    log_dir = get_default_log_dir(dqn_pixel_atari.__name__)
+    config.task_fn = lambda: Task(name, log_dir=log_dir)
+    config.eval_env = Task(name, episode_life=False)
 
     config.optimizer_fn = lambda params: torch.optim.RMSprop(
         params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
@@ -67,8 +66,9 @@ def dqn_pixel_atari(name):
 
 # QR DQN
 def quantile_regression_dqn_cart_pole():
+    game = 'CartPole-v0'
     config = Config()
-    config.task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
+    config.task_fn = lambda: Task(game)
     config.eval_env = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: QuantileNet(config.action_dim, config.num_quantiles, FCBody(config.state_dim))
@@ -90,11 +90,9 @@ def quantile_regression_dqn_cart_pole():
 
 def quantile_regression_dqn_pixel_atari(name):
     config = Config()
-    config.history_length = 4
-    config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                        log_dir=get_default_log_dir(quantile_regression_dqn_pixel_atari.__name__))
-    config.eval_env = PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                 episode_life=False)
+    log_dir = get_default_log_dir(quantile_regression_dqn_pixel_atari.__name__)
+    config.task_fn = lambda: Task(name, log_dir=log_dir)
+    config.eval_env = Task(name, episode_life=False)
 
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00005, eps=0.01 / 32)
     config.network_fn = lambda: QuantileNet(config.action_dim, config.num_quantiles, NatureConvBody())
@@ -119,7 +117,7 @@ def quantile_regression_dqn_pixel_atari(name):
 def categorical_dqn_cart_pole():
     game = 'CartPole-v0'
     config = Config()
-    config.task_fn = lambda: ClassicalControl(game, max_steps=200)
+    config.task_fn = lambda: Task(game)
     config.eval_env = config.task_fn()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: CategoricalNet(config.action_dim, config.categorical_n_atoms, FCBody(config.state_dim))
@@ -144,11 +142,9 @@ def categorical_dqn_cart_pole():
 
 def categorical_dqn_pixel_atari(name):
     config = Config()
-    config.history_length = 4
-    config.task_fn = lambda: PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                        log_dir=get_default_log_dir(categorical_dqn_pixel_atari.__name__))
-    config.eval_env = PixelAtari(name, frame_skip=4, history_length=config.history_length,
-                                 episode_life=False)
+    log_dir = get_default_log_dir(categorical_dqn_pixel_atari.__name__)
+    config.task_fn = lambda: Task(name, log_dir=log_dir)
+    config.eval_env = Task(name, episode_life=False)
     config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=0.00025, eps=0.01 / 32)
     config.network_fn = lambda: CategoricalNet(config.action_dim, config.categorical_n_atoms, NatureConvBody())
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
@@ -173,13 +169,10 @@ def categorical_dqn_pixel_atari(name):
 # A2C
 def a2c_cart_pole():
     config = Config()
-    name = 'CartPole-v0'
-    # name = 'MountainCar-v0'
-    task_fn = lambda log_dir: ClassicalControl(name, max_steps=200, log_dir=log_dir)
+    game = 'CartPole-v0'
     config.num_workers = 5
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(a2c_cart_pole.__name__))
-    config.eval_env = task_fn(None)
+    config.task_fn = lambda: Task(game, num_envs=config.num_workers)
+    config.eval_env = Task(game)
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.network_fn = lambda: CategoricalActorCriticNet(
         config.state_dim, config.action_dim, FCBody(config.state_dim))
@@ -188,18 +181,16 @@ def a2c_cart_pole():
     config.use_gae = False
     config.entropy_weight = 0.01
     config.rollout_length = 5
-    config.gradient_clip = 5
+    config.gradient_clip = 0.5
     run_steps(A2CAgent(config))
 
 def a2c_pixel_atari(name):
     config = Config()
     config.history_length = 4
     config.num_workers = 16
-    task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
-    config.task_fn = lambda: ParallelizedTask(
-        task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_pixel_atari.__name__),
-        single_process=True)
-    config.eval_env = task_fn(None)
+    log_dir = log_dir=get_default_log_dir(a2c_pixel_atari.__name__)
+    config.task_fn = lambda: Task(name, num_envs=config.num_workers, log_dir=log_dir)
+    config.eval_env = Task(name, episode_life=False)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
     config.state_normalizer = ImageNormalizer()
@@ -214,15 +205,14 @@ def a2c_pixel_atari(name):
     config.logger = get_logger(file_name=a2c_pixel_atari.__name__)
     run_steps(A2CAgent(config))
 
-def a2c_continuous():
+def a2c_continuous(game):
     config = Config()
     config.history_length = 4
     config.num_workers = 16
-    task_fn = lambda log_dir: Roboschool('RoboschoolHopper-v1', log_dir=log_dir)
-    config.task_fn = lambda: ParallelizedTask(
-        task_fn, config.num_workers, log_dir=get_default_log_dir(a2c_continuous.__name__),
+    config.task_fn = lambda: Task(game, num_envs=config.num_workers,
+        log_dir=get_default_log_dir(a2c_continuous.__name__),
         single_process=True)
-    config.eval_env = task_fn(None)
+    config.eval_env = Task(game)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.0007)
     config.network_fn = lambda: GaussianActorCriticNet(
         config.state_dim, config.action_dim,
@@ -239,11 +229,11 @@ def a2c_continuous():
 
 # N-Step DQN
 def n_step_dqn_cart_pole():
+    game = 'CartPole-v0'
     config = Config()
-    task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
-    config.eval_env = task_fn(None)
+    config.task_fn = lambda: Task(game, num_envs=config.num_workers)
+    config.eval_env = Task(game)
     config.num_workers = 5
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: VanillaNet(config.action_dim, FCBody(config.state_dim))
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
@@ -256,13 +246,11 @@ def n_step_dqn_cart_pole():
 
 def n_step_dqn_pixel_atari(name):
     config = Config()
-    config.history_length = 4
-    task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
+    log_dir = get_default_log_dir(n_step_dqn_pixel_atari.__name__)
+    config.task_fn = lambda: Task(name, num_envs=config.num_workers, log_dir=log_dir, single_process=True)
+    config.eval_env = Task(name, episode_life=False)
     config.num_workers = 16
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(n_step_dqn_pixel_atari.__name__),
-                                              single_process=True)
-    config.eval_env = task_fn(None)
+    config.eval_env = Task(name, episode_life=False)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody())
     config.random_action_prob = LinearSchedule(1.0, 0.05, 1e6)
@@ -280,10 +268,9 @@ def n_step_dqn_pixel_atari(name):
 def option_critic_cart_pole():
     config = Config()
     game = 'CartPole-v0'
-    task_fn = lambda log_dir: ClassicalControl(game, max_steps=200, log_dir=log_dir)
     config.num_workers = 5
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
-    config.eval_env = task_fn(None)
+    config.task_fn = lambda: Task(game, num_envs=config.num_workers)
+    config.eval_env = Task(game)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: OptionCriticNet(FCBody(config.state_dim), config.action_dim, num_options=2)
     config.random_option_prob = LinearSchedule(1.0, 0.1, 1e4)
@@ -298,13 +285,10 @@ def option_critic_cart_pole():
 
 def option_ciritc_pixel_atari(name):
     config = Config()
-    config.history_length = 4
-    task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
+    log_dir = get_default_log_dir(option_ciritc_pixel_atari.__name__)
+    config.task_fn = lambda: Task(name, log_dir=log_dir, num_envs=config.num_workers)
+    config.eval_env = Task(name, episode_life=False)
     config.num_workers = 16
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(option_ciritc_pixel_atari.__name__),
-                                              single_process=True)
-    config.eval_env = task_fn(None)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda: OptionCriticNet(NatureConvBody(), config.action_dim, num_options=4)
     config.random_option_prob = LinearSchedule(0.1)
@@ -322,11 +306,11 @@ def option_ciritc_pixel_atari(name):
 
 # PPO
 def ppo_cart_pole():
+    game = 'CartPole-v0'
     config = Config()
-    task_fn = lambda log_dir: ClassicalControl('CartPole-v0', max_steps=200, log_dir=log_dir)
     config.num_workers = 5
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers)
-    config.eval_env = task_fn(None)
+    config.task_fn = lambda: Task(game, num_envs=config.num_workers)
+    config.eval_env = Task(game)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, FCBody(config.state_dim))
     config.discount = 0.99
@@ -344,14 +328,11 @@ def ppo_cart_pole():
 
 def ppo_pixel_atari(name):
     config = Config()
-    config.history_length = 4
-    task_fn = lambda log_dir: PixelAtari(name, frame_skip=4, history_length=config.history_length, log_dir=log_dir)
+    log_dir = get_default_log_dir(ppo_pixel_atari.__name__)
+    config.task_fn = lambda: Task(name, log_dir=log_dir, num_envs=config.num_workers)
+    config.eval_env = Task(name, episode_life=False)
     config.num_workers = 16
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=get_default_log_dir(ppo_pixel_atari.__name__),
-                                              single_process=True)
-    config.eval_env = PixelAtari(name, frame_skip=4, history_length=config.history_length, episode_life=False)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.99, eps=1e-5)
     config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -372,8 +353,8 @@ def ppo_pixel_atari(name):
 def ppo_continuous(name):
     config = Config()
     log_dir = get_default_log_dir(ppo_continuous.__name__)
-    config.task_fn = lambda: VecTask(name)
-    config.eval_env = VecTask(name, log_dir=log_dir)
+    config.task_fn = lambda: Task(name)
+    config.eval_env = Task(name, log_dir=log_dir)
 
     config.network_fn = lambda: GaussianActorCriticNet(
         config.state_dim, config.action_dim, actor_body=FCBody(config.state_dim, gate=F.tanh),
@@ -397,8 +378,8 @@ def ppo_continuous(name):
 def ddpg_continuous(name):
     config = Config()
     log_dir = get_default_log_dir(ddpg_continuous.__name__)
-    config.task_fn = lambda: VecTask(name)
-    config.eval_env = VecTask(name, log_dir=log_dir)
+    config.task_fn = lambda: Task(name)
+    config.eval_env = Task(name, log_dir=log_dir)
     config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
@@ -482,15 +463,15 @@ if __name__ == '__main__':
     # quantile_regression_dqn_cart_pole()
     # categorical_dqn_cart_pole()
     # a2c_cart_pole()
-    # a2c_continuous()
+    # a2c_continuous('HalfCheetah-v2')
     # n_step_dqn_cart_pole()
     # option_critic_cart_pole()
     # ppo_cart_pole()
-    ppo_continuous('HalfCheetah-v2')
-    # ddpg_continuous('Hopper-v2')
+    # ppo_continuous('HalfCheetah-v2')
+    # ddpg_continuous('HalfCheetah-v2')
 
-    # game = 'Breakout'
-    # dqn_pixel_atari(game)
+    game = 'BreakoutNoFrameskip-v4'
+    dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
     # categorical_dqn_pixel_atari(game)
     # a2c_pixel_atari(game)

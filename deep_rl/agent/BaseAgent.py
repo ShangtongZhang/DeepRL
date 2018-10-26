@@ -34,9 +34,9 @@ class BaseAgent:
         total_rewards = 0
         while True:
             action = self.eval_step(state)
-            state, reward, done, _ = env.step(action)
-            total_rewards += reward
-            if done:
+            state, reward, done, _ = env.step([action])
+            total_rewards += reward[0]
+            if done[0]:
                 break
         return total_rewards
 
@@ -71,10 +71,7 @@ class BaseActor(mp.Process):
             self.step = self._sample
             self.close = lambda: None
             self._set_up()
-            random_seed()
-            seed = np.random.randint(0, sys.maxsize)
             self._task = config.task_fn()
-            self._task.seed(seed)
 
     def _sample(self):
         transitions = []
@@ -86,10 +83,7 @@ class BaseActor(mp.Process):
         self._set_up()
         torch.cuda.is_available()
         config = self.config
-        random_seed()
-        seed = np.random.randint(0, sys.maxsize)
         self._task = config.task_fn()
-        self._task.seed(seed)
 
         cache = deque([], maxlen=2)
         while True:
