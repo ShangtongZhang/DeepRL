@@ -1,4 +1,3 @@
-# adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
 
 import os
 
@@ -17,19 +16,16 @@ from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv, VecEnv
 from ..utils import *
 
 try:
-    import dm_control2gym
-except ImportError:
-    pass
-
-try:
     import roboschool
 except ImportError:
     pass
 
+# adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
 def make_env(env_id, seed, rank, log_dir, episode_life=True):
     def _thunk():
         random_seed(seed)
         if env_id.startswith("dm"):
+            import dm_control2gym
             _, domain, task = env_id.split('.')
             env = dm_control2gym.make(domain_name=domain, task_name=task)
         else:

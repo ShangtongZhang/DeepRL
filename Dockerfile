@@ -47,7 +47,6 @@ WORKDIR /opt/bullet3/build
 RUN cmake -DBUILD_SHARED_LIBS=ON -DUSE_DOUBLE_PRECISION=1 -DCMAKE_INSTALL_PREFIX:PATH=$ROBOSCHOOL_PATH/roboschool/cpp-household/bullet_local_install -DBUILD_CPU_DEMOS=OFF -DBUILD_BULLET2_DEMOS=OFF -DBUILD_EXTRAS=OFF  -DBUILD_UNIT_TESTS=OFF -DBUILD_CLSOCKET=OFF -DBUILD_ENET=OFF -DBUILD_OPENGL3_DEMOS=OFF ..
 RUN make -j4
 RUN make install
-WORKDIR /workspace
 RUN pip3 install -e $ROBOSCHOOL_PATH
 
 # install other requirements
@@ -55,6 +54,5 @@ COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 RUN pip3 install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines
 
+WORKDIR /workspace/DeepRL
 RUN rm -rf /var/lib/apt/lists/*
-RUN rm -f /usr/bin/python && ln -s /usr/bin/python3 /usr/bin/python
-RUN rm -f /usr/bin/pip && ln -s /usr/bin/pip3 /usr/bin/pip

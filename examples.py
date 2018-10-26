@@ -456,8 +456,8 @@ if __name__ == '__main__':
     mkdir('log')
     set_one_thread()
     random_seed()
-    select_device(-1)
-    # select_device(0)
+    # select_device(-1)
+    select_device(0)
 
     # dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
@@ -471,15 +471,13 @@ if __name__ == '__main__':
     # ddpg_continuous('HalfCheetah-v2')
 
     game = 'BreakoutNoFrameskip-v4'
-    dqn_pixel_atari(game)
+    # dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
     # categorical_dqn_pixel_atari(game)
     # a2c_pixel_atari(game)
     # n_step_dqn_pixel_atari(game)
     # option_ciritc_pixel_atari(game)
     # ppo_pixel_atari(game)
-    # dqn_ram_atari(game)
-    # ddpg_pixel()
 
     # plot()
 
