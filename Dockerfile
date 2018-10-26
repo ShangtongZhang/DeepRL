@@ -15,7 +15,8 @@ RUN apt update && apt install -y --allow-unauthenticated --no-install-recommends
     libgtk3.0 libsm6 python3-venv cmake ffmpeg pkg-config \
     qtbase5-dev libqt5opengl5-dev libassimp-dev libpython3.5-dev \
     libboost-python-dev libtinyxml-dev bash python3-tk libcudnn6=$CUDNN_VERSION-1+cuda8.0 \
-    libcudnn6-dev=$CUDNN_VERSION-1+cuda8.0 wget unzip libosmesa6-dev software-properties-common
+    libcudnn6-dev=$CUDNN_VERSION-1+cuda8.0 wget unzip libosmesa6-dev software-properties-common \
+    libopenmpi-dev
 WORKDIR /opt
 RUN pip3 install pip --upgrade
 
@@ -52,6 +53,7 @@ RUN pip3 install -e $ROBOSCHOOL_PATH
 # install other requirements
 COPY requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
+RUN pip3 install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines
 
 RUN rm -rf /var/lib/apt/lists/*
 RUN rm -f /usr/bin/python && ln -s /usr/bin/python3 /usr/bin/python

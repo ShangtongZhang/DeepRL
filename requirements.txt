@@ -1,15 +1,14 @@
 torch==0.4.0
 gym==0.10.8
-git+git://github.com/openai/baselines.git@8e56ddeac296deab3cc0adc79c84a5abb59d7a3a#egg=baselines
+tensorflow>=1.4
 git+git://github.com/deepmind/dm_control.git
 git+https://github.com/ShangtongZhang/dm_control2gym.git@scalar_fix
 torchvision>=0.2.1
 atari-py>=0.1.1
 opencv-python>=3.4.0.12
-tensorboardX==1.1
+tensorboardX==1.4
 scikit-image>=0.13.1
 tqdm>=4.23.0
 pandas>=0.22.0
-pathlib2>=1.0.1;python_version <= '2.7'
-pathlib>=1.0.1;python_version >= '3.5'
+pathlib>=1.0.1
 seaborn>=0.8.1

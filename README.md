@@ -12,13 +12,13 @@ Implemented algorithms:
 * The Option-Critic Architecture (OC)
 
 Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
-Action Conditional Video Prediction can be found in [v0.3] 
+Action Conditional Video Prediction can be found in [v0.4] 
 
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
 * PyTorch v0.4.0
 * Python 3.6, 3.5
-* OpenAI Baselines
+* OpenAI Baselines (commit 8e56dd)
 * Core dependencies: `pip install -e .`
 
 # Remarks
