@@ -320,7 +320,7 @@ def ppo_cart_pole():
     config.gradient_clip = 5
     config.rollout_length = 128
     config.optimization_epochs = 10
-    config.num_mini_batches = 4
+    config.mini_batch_size = 32 * 5
     config.ppo_ratio_clip = 0.2
     config.log_interval = 128 * 5 * 10
     config.logger = get_logger()
@@ -343,7 +343,7 @@ def ppo_pixel_atari(name):
     config.gradient_clip = 0.5
     config.rollout_length = 128
     config.optimization_epochs = 4
-    config.num_mini_batches = 4
+    config.mini_batch_size = 32 * 16
     config.ppo_ratio_clip = 0.1
     config.log_interval = 128 * 16
     config.max_steps = int(2e7)
@@ -406,13 +406,13 @@ def plot():
     import matplotlib.pyplot as plt
     plotter = Plotter()
     dirs = [
-        'a2c_pixel_atari-180629-211609',
-        'dqn_pixel_atari-180628-052904',
-        'n_step_dqn_pixel_atari-180628-053553',
-        'option_ciritc_pixel_atari-180628-053626',
-        'ppo_pixel_atari-180628-053657',
-        'quantile_regression_dqn_pixel_atari-180628-053044',
-        'categorical_dqn_pixel_atari-180629-040601'
+        'a2c_pixel_atari-181026-160814',
+        'dqn_pixel_atari-181026-160501',
+        'n_step_dqn_pixel_atari-181026-160906',
+        'option_ciritc_pixel_atari-181026-160931',
+        'ppo_pixel_atari-181026-161013',
+        'quantile_regression_dqn_pixel_atari-181026-160630',
+        'categorical_dqn_pixel_atari-181026-160743',
     ]
     names = [
         'A2C',
@@ -426,29 +426,29 @@ def plot():
 
     plt.figure(0)
     for i, dir in enumerate(dirs):
-        data = plotter.load_results(['./images_data/%s' % (dir)], episode_window=100)
+        data = plotter.load_results(['./data/benchmark/%s' % (dir)], episode_window=100)
         x, y = data[0]
         plt.plot(x, y, label=names[i])
     plt.xlabel('steps')
     plt.ylabel('episode return')
     plt.legend()
 
-    plt.figure(1)
-    plt.subplot(1, 2, 1)
-    x, y = plotter.load_evaluation_episodes_results(['./images_data/ddpg_low_dim_state-180628-110025'],
-                                                    int(1e4), 20)
-    plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
-    plt.plot(x, y.mean(0), label='DDPG')
-    plt.xlabel('steps')
-    plt.ylabel('episode return')
-    plt.legend()
-
-    plt.subplot(1, 2, 2)
-    data = plotter.load_results(['./images_data/ppo_continuous-180630-035604'], episode_window=100)
-    x, y = data[0]
-    plt.plot(x, y, label='PPO')
-    plt.xlabel('steps')
-    plt.legend()
+    # plt.figure(1)
+    # plt.subplot(1, 2, 1)
+    # x, y = plotter.load_evaluation_episodes_results(['./images_data/ddpg_low_dim_state-180628-110025'],
+    #                                                 int(1e4), 20)
+    # plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
+    # plt.plot(x, y.mean(0), label='DDPG')
+    # plt.xlabel('steps')
+    # plt.ylabel('episode return')
+    # plt.legend()
+    #
+    # plt.subplot(1, 2, 2)
+    # data = plotter.load_results(['./images_data/ppo_continuous-180630-035604'], episode_window=100)
+    # x, y = data[0]
+    # plt.plot(x, y, label='PPO')
+    # plt.xlabel('steps')
+    # plt.legend()
 
     plt.show()
 
@@ -456,8 +456,8 @@ if __name__ == '__main__':
     mkdir('log')
     set_one_thread()
     random_seed()
-    # select_device(-1)
-    select_device(0)
+    select_device(-1)
+    # select_device(0)
 
     # dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
@@ -477,7 +477,6 @@ if __name__ == '__main__':
     # a2c_pixel_atari(game)
     # n_step_dqn_pixel_atari(game)
     # option_ciritc_pixel_atari(game)
-    # ppo_pixel_atari(game)
+    ppo_pixel_atari(game)
 
     # plot()
-
