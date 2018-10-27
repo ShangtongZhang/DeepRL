@@ -61,7 +61,7 @@ def dqn_pixel_atari(name):
     # config.double_q = True
     config.double_q = False
     config.max_steps = int(2e7)
-    config.logger = get_logger(file_name=dqn_pixel_atari.__name__)
+    config.logger = get_logger(tag=dqn_pixel_atari.__name__)
     run_steps(DQNAgent(config))
 
 # QR DQN
@@ -110,7 +110,7 @@ def quantile_regression_dqn_pixel_atari(name):
     config.gradient_clip = 5
     config.num_quantiles = 200
     config.max_steps = int(2e7)
-    config.logger = get_logger(file_name=quantile_regression_dqn_pixel_atari.__name__)
+    config.logger = get_logger(tag=quantile_regression_dqn_pixel_atari.__name__)
     run_steps(QuantileRegressionDQNAgent(config))
 
 # C51
@@ -163,7 +163,7 @@ def categorical_dqn_pixel_atari(name):
     config.sgd_update_frequency = 4
     config.gradient_clip = 0.5
     config.max_steps = int(2e7)
-    config.logger = get_logger(file_name=categorical_dqn_pixel_atari.__name__)
+    config.logger = get_logger(tag=categorical_dqn_pixel_atari.__name__)
     run_steps(CategoricalDQNAgent(config))
 
 # A2C
@@ -202,7 +202,7 @@ def a2c_pixel_atari(name):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.max_steps = int(2e7)
-    config.logger = get_logger(file_name=a2c_pixel_atari.__name__)
+    config.logger = get_logger(tag=a2c_pixel_atari.__name__)
     run_steps(A2CAgent(config))
 
 def a2c_continuous(game):
@@ -224,7 +224,7 @@ def a2c_continuous(game):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.max_steps = int(2e7)
-    config.logger = get_logger(file_name=a2c_continuous.__name__)
+    config.logger = get_logger(tag=a2c_continuous.__name__)
     run_steps(A2CAgent(config))
 
 # N-Step DQN
@@ -261,7 +261,7 @@ def n_step_dqn_pixel_atari(name):
     config.rollout_length = 5
     config.gradient_clip = 5
     config.max_steps = int(2e7)
-    config.logger = get_logger(file_name=n_step_dqn_pixel_atari.__name__)
+    config.logger = get_logger(tag=n_step_dqn_pixel_atari.__name__)
     run_steps(NStepDQNAgent(config))
 
 # Option-Critic
@@ -301,7 +301,7 @@ def option_ciritc_pixel_atari(name):
     config.max_steps = int(2e7)
     config.entropy_weight = 0.01
     config.termination_regularizer = 0.01
-    config.logger = get_logger(file_name=option_ciritc_pixel_atari.__name__)
+    config.logger = get_logger(tag=option_ciritc_pixel_atari.__name__)
     run_steps(OptionCriticAgent(config))
 
 # PPO
@@ -323,7 +323,7 @@ def ppo_cart_pole():
     config.mini_batch_size = 32 * 5
     config.ppo_ratio_clip = 0.2
     config.log_interval = 128 * 5 * 10
-    config.logger = get_logger()
+    config.logger = get_logger(ppo_cart_pole.__name__)
     run_steps(PPOAgent(config))
 
 def ppo_pixel_atari(name):
@@ -347,7 +347,7 @@ def ppo_pixel_atari(name):
     config.ppo_ratio_clip = 0.1
     config.log_interval = 128 * 16
     config.max_steps = int(2e7)
-    config.logger = get_logger(file_name=ppo_pixel_atari.__name__)
+    config.logger = get_logger(tag=ppo_pixel_atari.__name__)
     run_steps(PPOAgent(config))
 
 def ppo_continuous(name):
@@ -454,6 +454,7 @@ def plot():
 
 if __name__ == '__main__':
     mkdir('log')
+    mkdir('tf_log')
     set_one_thread()
     random_seed()
     select_device(-1)
@@ -466,17 +467,17 @@ if __name__ == '__main__':
     # a2c_continuous('HalfCheetah-v2')
     # n_step_dqn_cart_pole()
     # option_critic_cart_pole()
-    # ppo_cart_pole()
+    ppo_cart_pole()
     # ppo_continuous('HalfCheetah-v2')
     # ddpg_continuous('HalfCheetah-v2')
 
-    game = 'BreakoutNoFrameskip-v4'
+    # game = 'BreakoutNoFrameskip-v4'
     # dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
     # categorical_dqn_pixel_atari(game)
     # a2c_pixel_atari(game)
     # n_step_dqn_pixel_atari(game)
     # option_ciritc_pixel_atari(game)
-    ppo_pixel_atari(game)
+    # ppo_pixel_atari(game)
 
     # plot()
