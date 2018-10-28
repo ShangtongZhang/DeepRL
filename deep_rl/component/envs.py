@@ -37,7 +37,8 @@ def make_env(env_id, seed, rank, log_dir, episode_life=True):
         env.seed(seed + rank)
 
         if log_dir is not None:
-            env = Monitor(env=env, filename=os.path.join(log_dir, str(rank)), allow_early_resets=True)
+            # env = Monitor(env=env, filename=os.path.join(log_dir, str(rank)), allow_early_resets=True)
+            env = bench.Monitor(env=env, filename=os.path.join(log_dir, str(rank)), allow_early_resets=True)
         if is_atari:
             env = wrap_deepmind(env,
                                 episode_life=episode_life,

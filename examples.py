@@ -331,7 +331,7 @@ def ppo_pixel_atari(name):
     log_dir = get_default_log_dir(ppo_pixel_atari.__name__)
     config.task_fn = lambda: Task(name, log_dir=log_dir, num_envs=config.num_workers)
     config.eval_env = Task(name, episode_life=False)
-    config.num_workers = 16
+    config.num_workers = 8
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.99, eps=1e-5)
     config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
     config.state_normalizer = ImageNormalizer()
@@ -342,10 +342,10 @@ def ppo_pixel_atari(name):
     config.entropy_weight = 0.01
     config.gradient_clip = 0.5
     config.rollout_length = 128
-    config.optimization_epochs = 4
-    config.mini_batch_size = 32 * 16
+    config.optimization_epochs = 3
+    config.mini_batch_size = 32 * 8
     config.ppo_ratio_clip = 0.1
-    config.log_interval = 128 * 16
+    config.log_interval = 128 * 8
     config.max_steps = int(2e7)
     config.logger = get_logger(tag=ppo_pixel_atari.__name__)
     run_steps(PPOAgent(config))
@@ -410,7 +410,7 @@ def plot():
         'dqn_pixel_atari-181026-160501',
         'n_step_dqn_pixel_atari-181026-160906',
         'option_ciritc_pixel_atari-181026-160931',
-        'ppo_pixel_atari-181026-161013',
+        'ppo_pixel_atari-181027-204532',
         'quantile_regression_dqn_pixel_atari-181026-160630',
         'categorical_dqn_pixel_atari-181026-160743',
     ]
@@ -480,4 +480,4 @@ if __name__ == '__main__':
     # option_ciritc_pixel_atari(game)
     # ppo_pixel_atari(game)
 
-    # plot()
+    plot()
