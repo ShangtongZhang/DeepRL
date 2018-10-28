@@ -410,7 +410,7 @@ def plot():
         'dqn_pixel_atari-181026-160501',
         'n_step_dqn_pixel_atari-181026-160906',
         'option_ciritc_pixel_atari-181026-160931',
-        'ppo_pixel_atari-181027-204532',
+        'ppo_pixel_atari-181028-092202',
         'quantile_regression_dqn_pixel_atari-181026-160630',
         'categorical_dqn_pixel_atari-181026-160743',
     ]
