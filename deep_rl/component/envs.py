@@ -37,7 +37,7 @@ def make_env(env_id, seed, rank, log_dir, episode_life=True):
         env.seed(seed + rank)
 
         if log_dir is not None:
-            env = bench.Monitor(env, os.path.join(log_dir, str(rank)), allow_early_resets=True)
+            env = Monitor(env=env, filename=os.path.join(log_dir, str(rank)), allow_early_resets=True)
         if is_atari:
             env = wrap_deepmind(env,
                                 episode_life=episode_life,
@@ -66,6 +66,40 @@ class TransposeImage(gym.ObservationWrapper):
 
     def observation(self, observation):
         return observation.transpose(2, 0, 1)
+
+# Allow tensorboard to record original episode return
+class Monitor(bench.Monitor):
+    def __init__(self, **kwargs):
+        super(Monitor, self).__init__(**kwargs)
+        log_dir = kwargs['filename'].replace('./log', './tf_log')
+        log_dir = '/'.join(log_dir.split('/')[:-1])
+        self.tf_logger = Logger(None, log_dir)
+        self.tf_step = 0
+
+    def step(self, action):
+        if self.needs_reset:
+            raise RuntimeError("Tried to step environment that needs reset")
+        ob, rew, done, info = self.env.step(action)
+        self.rewards.append(rew)
+        if done:
+            self.needs_reset = True
+            eprew = sum(self.rewards)
+            eplen = len(self.rewards)
+            epinfo = {"r": round(eprew, 6), "l": eplen, "t": round(time.time() - self.tstart, 6)}
+            self.tf_step += eplen
+            self.tf_logger.add_scalar('return', eprew)
+            for k in self.info_keywords:
+                epinfo[k] = info[k]
+            self.episode_rewards.append(eprew)
+            self.episode_lengths.append(eplen)
+            self.episode_times.append(time.time() - self.tstart)
+            epinfo.update(self.current_reset_info)
+            if self.logger:
+                self.logger.writerow(epinfo)
+                self.f.flush()
+            info['episode'] = epinfo
+        self.total_steps += 1
+        return (ob, rew, done, info)
 
 
 # The original LayzeFrames doesn't work well
