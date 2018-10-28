@@ -43,9 +43,13 @@ class DDPGAgent(BaseAgent):
             self.random_process.reset_states()
             self.state = self.task.reset()
             self.state = config.state_normalizer(self.state)
-        action = self.network(self.state)
-        action = to_np(action)
-        action += self.random_process.sample()
+        if self.total_steps < config.min_memory_size:
+            action = [self.task.action_space.sample()]
+        else:
+            action = self.network(self.state)
+            action = to_np(action)
+            action += self.random_process.sample()
+        action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
         next_state, reward, done, _ = self.task.step(action)
         next_state = self.config.state_normalizer(next_state)
         self.episode_reward += reward[0]
