@@ -43,7 +43,7 @@ def plot(**kwargs):
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
 
-if __name__ == '__main__':
+def plot_atari():
     train_kwargs = {
         'episode_window': 100,
         'top_k': 0,
@@ -68,3 +68,75 @@ if __name__ == '__main__':
         for i, p in enumerate(patterns):
             plot(pattern='.*rmix/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
     plt.show()
+
+def ddpg_plot(**kwargs):
+    kwargs.setdefault('average', True)
+    kwargs.setdefault('color', 0)
+    kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('max_timesteps', 1e8)
+    plotter = Plotter()
+    names = plotter.load_log_dirs(**kwargs)
+    data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
+    min_y = np.min([len(y) for y in data])
+    data = [y[ :min_y] for y in data]
+    new_data = []
+    for y in data:
+        y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
+        x = np.arange(y.shape[0]) * kwargs['x_interval']
+        new_data.append([x, y])
+    data = new_data
+
+    print('')
+
+    color = kwargs['color']
+    if kwargs['average']:
+        x = data[0][0]
+        y = [entry[1] for entry in data]
+        y = np.stack(y)
+        name = names[0].split('/')[-1]
+        plotter.plot_standard_error(y, x, label=name, color=Plotter.COLORS[color])
+        plt.title(names[0])
+    else:
+        for i, name in enumerate(names):
+            x, y = data[i]
+            plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
+    plt.legend()
+    # plt.ylim([-200, 1400])
+    # plt.ylim([-200, 2500])
+    plt.xlabel('timesteps')
+    plt.ylabel('episode return')
+
+def plot_mujoco():
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True
+    }
+    games = [
+        'Walker2d-v2',
+        'Hopper-v2',
+        'HalfCheetah-v2',
+        'Reacher-v2',
+        'Swimmer-v2',
+    ]
+
+    patterns = [
+        # 'relu_norm_0_l2',
+        'relu_norm_0_nl2',
+        # 'relu_norm_1_l2',
+        # 'relu_norm_1_nl2',
+        # 'tanh_norm_0',
+        # 'tanh_norm_1',
+    ]
+
+    l = len(games)
+    plt.figure(figsize=(l * 10, 10))
+    for j, game in enumerate(games):
+        plt.subplot(1, l, j+1)
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*mujoco-ddpg/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
+    plt.show()
+
+if __name__ == '__main__':
+    plot_mujoco()
