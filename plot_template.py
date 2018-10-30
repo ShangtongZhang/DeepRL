@@ -89,6 +89,7 @@ def ddpg_plot(**kwargs):
 
     print('')
 
+    game = kwargs['name']
     color = kwargs['color']
     if kwargs['average']:
         x = data[0][0]
@@ -96,7 +97,7 @@ def ddpg_plot(**kwargs):
         y = np.stack(y)
         name = names[0].split('/')[-1]
         plotter.plot_standard_error(y, x, label=name, color=Plotter.COLORS[color])
-        plt.title(names[0])
+        plt.title(game)
     else:
         for i, name in enumerate(names):
             x, y = data[i]
