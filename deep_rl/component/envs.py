@@ -182,7 +182,7 @@ class Task:
         self.env = Wrapper(envs)
         self.name = name
         self.observation_space = self.env.observation_space
-        self.state_dim = np.prod(self.env.observation_space.shape)
+        self.state_dim = int(np.prod(self.env.observation_space.shape))
 
         self.action_space = self.env.action_space
         if isinstance(self.action_space, Discrete):
