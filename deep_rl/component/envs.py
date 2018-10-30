@@ -180,17 +180,25 @@ class Task:
         else:
             Wrapper = SubprocVecEnv
         self.env = Wrapper(envs)
-        self.env.name = name
-        self.env.state_dim = np.prod(self.env.observation_space.shape)
-        if isinstance(self.env.action_space, Discrete):
-            self.env.action_dim = self.env.action_space.n
-        elif isinstance(self.env.action_space, Box):
-            self.env.action_dim = self.env.action_space.shape[0]
+        self.name = name
+        self.observation_space = self.env.observation_space
+        self.state_dim = np.prod(self.env.observation_space.shape)
+
+        self.action_space = self.env.action_space
+        if isinstance(self.action_space, Discrete):
+            self.action_dim = self.action_space.n
+        elif isinstance(self.action_space, Box):
+            self.action_dim = self.action_space.shape[0]
         else:
             assert 'unknown action space'
 
-    def __getattr__(self, name):
-        return getattr(self.env, name)
+    def reset(self):
+        return self.env.reset()
+
+    def step(self, actions):
+        if isinstance(self.action_space, Box):
+            actions = np.clip(actions, self.action_space.low, self.action_space.high)
+        return self.env.step(actions)
 
 if __name__ == '__main__':
     task = Task('Hopper-v2', 5, single_process=False)
