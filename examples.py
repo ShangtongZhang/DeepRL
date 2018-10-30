@@ -383,13 +383,12 @@ def ddpg_continuous(name):
     config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
-    config.state_normalizer = MeanStdNormalizer()
 
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim, config.action_dim,
-        actor_body=FCBody(config.state_dim, (400, 300), gate=F.tanh),
+        actor_body=FCBody(config.state_dim, (400, 300), gate=F.relu),
         critic_body=TwoLayerFCBodyWithAction(
-            config.state_dim, config.action_dim, (400, 300), gate=F.tanh),
+            config.state_dim, config.action_dim, (400, 300), gate=F.relu),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
@@ -432,6 +431,7 @@ def plot():
     plt.xlabel('steps')
     plt.ylabel('episode return')
     plt.legend()
+    plt.savefig('./images/breakout.png')
 
     # plt.figure(1)
     # plt.subplot(1, 2, 1)
@@ -449,8 +449,6 @@ def plot():
     # plt.plot(x, y, label='PPO')
     # plt.xlabel('steps')
     # plt.legend()
-
-    plt.show()
 
 if __name__ == '__main__':
     mkdir('log')
