@@ -433,23 +433,6 @@ def plot():
     plt.legend()
     plt.savefig('./images/breakout.png')
 
-    # plt.figure(1)
-    # plt.subplot(1, 2, 1)
-    # x, y = plotter.load_evaluation_episodes_results(['./images_data/ddpg_low_dim_state-180628-110025'],
-    #                                                 int(1e4), 20)
-    # plt.ticklabel_format(style='sci', axis='x', scilimits=(0, 0))
-    # plt.plot(x, y.mean(0), label='DDPG')
-    # plt.xlabel('steps')
-    # plt.ylabel('episode return')
-    # plt.legend()
-    #
-    # plt.subplot(1, 2, 2)
-    # data = plotter.load_results(['./images_data/ppo_continuous-180630-035604'], episode_window=100)
-    # x, y = data[0]
-    # plt.plot(x, y, label='PPO')
-    # plt.xlabel('steps')
-    # plt.legend()
-
 if __name__ == '__main__':
     mkdir('log')
     mkdir('tf_log')
