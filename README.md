@@ -53,11 +53,15 @@ Please use this bibtex if you want to cite this repo
 * This is my synchronous option-critic implementation, not the original one.
 * The curves are not directly comparable, as many hyper-parameters are different.
 
-## RoboschoolHopper-v1
+## Mujoco 
 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/hopper.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG.png)
 
-* The DDPG curve is the evaluation performance, rather than online.
+* DDPG evaluation performance.
+
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/PPO.png)
+
+* PPO online performance. 
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)
