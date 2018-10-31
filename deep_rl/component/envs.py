@@ -26,7 +26,7 @@ def make_env(env_id, seed, rank, log_dir, episode_life=True):
         random_seed(seed)
         if env_id.startswith("dm"):
             import dm_control2gym
-            _, domain, task = env_id.split('.')
+            _, domain, task = env_id.split('-')
             env = dm_control2gym.make(domain_name=domain, task_name=task)
         else:
             env = gym.make(env_id)
