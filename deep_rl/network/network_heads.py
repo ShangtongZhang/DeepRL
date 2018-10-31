@@ -150,7 +150,7 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
         phi_v = self.network.critic_body(phi)
         mean = F.tanh(self.network.fc_action(phi_a))
         v = self.network.fc_critic(phi_v)
-        dist = torch.distributions.Normal(mean, self.std.exp())
+        dist = torch.distributions.Normal(mean, F.softplus(self.std))
         if action is None:
             action = dist.sample()
         log_prob = dist.log_prob(action)
