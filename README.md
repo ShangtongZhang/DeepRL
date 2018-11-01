@@ -55,13 +55,13 @@ Please use this bibtex if you want to cite this repo
 
 ## Mujoco 
 
+* DDPG evaluation performance.
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG.png)
 
-* DDPG evaluation performance.
-
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/PPO.png)
 
 * PPO online performance. 
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/PPO.png)
+
 
 # References
 * [Human Level Control through Deep Reinforcement Learning](https://www.nature.com/nature/journal/v518/n7540/full/nature14236.html)
