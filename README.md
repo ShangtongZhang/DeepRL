@@ -7,12 +7,14 @@ Implemented algorithms:
 * Quantile Regression DQN
 * (Continuous/Discrete) Synchronous Advantage Actor Critic (A2C)
 * Synchronous N-Step Q-Learning
-* Deep Deterministic Policy Gradient (DDPG, pixel & low-dim-state)
+* Deep Deterministic Policy Gradient (DDPG, low-dim-state)
 * (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO, pixel & low-dim-state)
 * The Option-Critic Architecture (OC)
 
 Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
 Action Conditional Video Prediction can be found in [v0.4](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.4).
+
+Code for my papers can be found in corresponding branches, which may be good examples for extending this codebase.
 
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
