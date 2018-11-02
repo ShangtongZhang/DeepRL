@@ -223,7 +223,7 @@ def plot_improvement():
                     neg_y += 1
             v = '%.1f%%' % (y[j] * 100)
             plt.text(bari.get_x() + bari.get_width() / 2, h, v, va=va,
-                           ha='center', color=color, fontsize=15, rotation='vertical')
+                           ha='center', color=color, fontsize=20, rotation='vertical')
         plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-%d.png' % (i), bbox_inches='tight')
         print(i, np.mean(y), np.median(y), pos_y, neg_y)
         # plt.show()
@@ -469,7 +469,7 @@ def plot_all():
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/atari-all.png', bbox_inches='tight')
 
 if __name__ == '__main__':
-    # plot_improvement()
+    plot_improvement()
     # plot_heatmap()
     # plot_table()
     # plot_all()
