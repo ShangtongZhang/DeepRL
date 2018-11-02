@@ -11,4 +11,4 @@ Particularly, the function ```bootstrapped_qr_dqn_pixel_atari``` is the entrance
 
 There is also an ice-cliff-world environment, which is not reported in the paper due to the page limit.
 
-> Disclaimer: This branch is based on the DeepRL codebase and is left unchanged after I completed the QUOTA paper. Algorithms other than QUOTA and its baselines are heavily outdated and should never be used.
+Disclaimer: This branch is based on the DeepRL codebase and is left unchanged after I completed the QUOTA paper. Algorithms other than QUOTA and its baselines are heavily outdated and should never be used.
