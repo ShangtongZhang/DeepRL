@@ -20,25 +20,25 @@ RUN apt update && apt install -y --allow-unauthenticated --no-install-recommends
 WORKDIR /opt
 RUN pip3 install pip --upgrade
 
-RUN add-apt-repository ppa:jamesh/snap-support && apt-get update && apt install -y patchelf
-RUN mkdir -p /root/.mujoco \
-    && wget https://www.roboti.us/download/mjpro150_linux.zip -O mujoco.zip \
-    && unzip mujoco.zip -d /root/.mujoco \
-    && rm mujoco.zip
-RUN wget https://www.roboti.us/download/mujoco200_linux.zip -O mujoco.zip \
-    && unzip mujoco.zip -d /root/.mujoco \
-    && rm mujoco.zip
+#RUN add-apt-repository ppa:jamesh/snap-support && apt-get update && apt install -y patchelf
+#RUN mkdir -p /root/.mujoco \
+#    && wget https://www.roboti.us/download/mjpro150_linux.zip -O mujoco.zip \
+#    && unzip mujoco.zip -d /root/.mujoco \
+#    && rm mujoco.zip
+#RUN wget https://www.roboti.us/download/mujoco200_linux.zip -O mujoco.zip \
+#    && unzip mujoco.zip -d /root/.mujoco \
+#    && rm mujoco.zip
 
-RUN export PATH=$PATH:$HOME/.local/bin
-# Make sure you have the license
-COPY ./mjkey.txt /root/.mujoco/mjkey.txt
-ENV LD_LIBRARY_PATH /root/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
-ENV LD_LIBRARY_PATH /root/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
-
-RUN pip3 install gym[mujoco] --upgrade
-RUN pip3 install mujoco-py
-RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mjpro150/bin" >> ~/.bashrc
-RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mjpro200_linux/bin" >> ~/.bashrc
+#RUN export PATH=$PATH:$HOME/.local/bin
+## Make sure you have the license
+#COPY ./mjkey.txt /root/.mujoco/mjkey.txt
+#ENV LD_LIBRARY_PATH /root/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
+#ENV LD_LIBRARY_PATH /root/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
+#
+#RUN pip3 install gym[mujoco] --upgrade
+#RUN pip3 install mujoco-py
+#RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mjpro150/bin" >> ~/.bashrc
+#RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mjpro200_linux/bin" >> ~/.bashrc
 
 RUN git clone https://github.com/openai/roboschool.git
 ENV ROBOSCHOOL_PATH=/opt/roboschool
