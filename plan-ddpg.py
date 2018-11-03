@@ -195,6 +195,53 @@ def naive_model_ddpg(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(NaiveModelDDPGAgent(config))
 
+def visualize_diversity(game, log_dir=None, **kwargs):
+    config = Config()
+    kwargs.setdefault('gate', F.tanh)
+    kwargs.setdefault('tag', plan_ddpg.__name__)
+    kwargs.setdefault('reward_scale', 1.0)
+    kwargs.setdefault('noise', OrnsteinUhlenbeckProcess)
+    kwargs.setdefault('std', LinearSchedule(0.2))
+    kwargs.setdefault('depth', 2)
+    kwargs.setdefault('critic_loss_weight', 10)
+    kwargs.setdefault('num_actors', 5)
+    kwargs.setdefault('detach_action', True)
+    kwargs.setdefault('mask', False)
+    kwargs.setdefault('on_policy', False)
+    kwargs.setdefault('save_interval', 0)
+    config.merge(kwargs)
+    if log_dir is None:
+        log_dir = get_default_log_dir(kwargs['tag'])
+
+    config.task_fn = lambda **kwargs: Roboschool(game, **kwargs)
+    config.evaluation_env = config.task_fn(log_dir=log_dir)
+
+    config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
+        state_dim, action_dim,
+        phi_body=FCBody(state_dim, (400, ), gate=F.tanh),
+        num_actors=config.num_actors,
+        discount=config.discount,
+        detach_action=config.detach_action)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=1e-4)
+
+    config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
+    config.discount = 0.99
+    config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.max_steps = 1e6
+    config.evaluation_episodes_interval = int(1e4)
+    config.evaluation_episodes = 20
+    config.min_memory_size = 64
+    config.target_network_mix = 1e-3
+    config.logger = get_logger()
+    agent = VisPlanDDPGAgent(config)
+    agent.load(kwargs['saved_model'])
+
+    for i in range(config.num_actors):
+        agent.set_actor_index(i)
+        agent.evaluation_episodes()
+
+
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
     log_dir = './log/plan-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
@@ -307,8 +354,8 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    # plan_ddpg(game, tag='ACE', on_policy=False, save_interval=10)
-    plan_ddpg(game, tag='ACE-Alt', on_policy=True, save_interval=10)
+    # plan_ddpg(game, tag='ACE', on_policy=False, save_interval=1000)
+    plan_ddpg(game, tag='ACE-Alt', on_policy=True, save_interval=1000)
     # plan_ddpg(game, on_policy=False, save_interval=0,
     #           num_actors=5, depth=2)
 
