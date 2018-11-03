@@ -307,8 +307,8 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    plan_ddpg(game, tag='ACE', on_policy=False, save_interval=10)
-    # plan_ddpg(game, tag='ACE-Alt', on_policy=True, save_interval=10)
+    # plan_ddpg(game, tag='ACE', on_policy=False, save_interval=10)
+    plan_ddpg(game, tag='ACE-Alt', on_policy=True, save_interval=10)
     # plan_ddpg(game, on_policy=False, save_interval=0,
     #           num_actors=5, depth=2)
 

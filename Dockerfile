@@ -56,3 +56,6 @@ RUN pip3 install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines
 
 WORKDIR /workspace/DeepRL
 RUN rm -rf /var/lib/apt/lists/*
+
+RUN useradd -d /opt/DeepRL -u 13071 shaang
+USER shaang
