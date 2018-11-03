@@ -128,6 +128,7 @@ def plan_ddpg(game, log_dir=None, **kwargs):
     kwargs.setdefault('detach_action', True)
     kwargs.setdefault('mask', False)
     kwargs.setdefault('on_policy', False)
+    kwargs.setdefault('save_interval', 0)
     config.merge(kwargs)
     if log_dir is None:
         log_dir = get_default_log_dir(kwargs['tag'])
@@ -306,9 +307,15 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
+    plan_ddpg(game, tag='ACE', on_policy=False, save_interval=10)
+    # plan_ddpg(game, tag='ACE-Alt', on_policy=True, save_interval=10)
+    # plan_ddpg(game, on_policy=False, save_interval=0,
+    #           num_actors=5, depth=2)
+
     # naive_model_ddpg(game, depth=2)
     # plan_ddpg(game, depth=2, on_policy=True)
     # ddpg_shared(game)
+    # ddpg_continuous(game)
 
     # parallel = True
     # multi_runs(game, plan_ddpg, tag='d3n5', parallel=parallel,
@@ -332,9 +339,9 @@ if __name__ == '__main__':
         'RoboschoolInvertedPendulumSwingup-v1',
         'RoboschoolInvertedDoublePendulum-v1',
     ]
-    for game in games:
-        multi_runs(game, plan_ddpg, tag='on_policy', parallel=True,
-                   depth=2, on_policy=True)
+    # for game in games:
+    #     multi_runs(game, plan_ddpg, tag='on_policy', parallel=True,
+    #                depth=2, on_policy=True)
         # multi_runs(game, plan_ddpg, tag='single_actor', parallel=True,
     #                depth=2, mask=False, num_actors=1)
     #     multi_runs(game, ddpg_continuous, tag='baseline_ddpg', parallel=True)
