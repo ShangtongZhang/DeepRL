@@ -235,11 +235,18 @@ def visualize_diversity(game, log_dir=None, **kwargs):
     config.target_network_mix = 1e-3
     config.logger = get_logger()
     agent = VisPlanDDPGAgent(config)
-    agent.load(kwargs['saved_model'])
 
-    for i in range(config.num_actors):
-        agent.set_actor_index(i)
-        agent.evaluation_episodes()
+    episodes = [1000]
+    tags = ['ACE', 'ACE-Alt']
+    for ep in episodes:
+        for tag in tags:
+            saved_model = '%s-%s-model-%s-%d' % (
+                PlanDDPGAgent.__name__, tag, game, ep)
+            print(saved_model)
+            agent.load('./data/%s.bin' % (saved_model))
+            for i in range(config.num_actors):
+                agent.set_actor_index(i)
+                agent.evaluation_episodes()
 
 
 def single_run(run, game, fn, tag, **kwargs):
@@ -354,8 +361,10 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    # plan_ddpg(game, tag='ACE', on_policy=False, save_interval=1000)
-    plan_ddpg(game, tag='ACE-Alt', on_policy=True, save_interval=1000)
+    # visualize_diversity(game)
+
+    # plan_ddpg(game, tag='ACE', on_policy=False, save_interval=10)
+    plan_ddpg(game, tag='ACE-Alt', on_policy=True, save_interval=10)
     # plan_ddpg(game, on_policy=False, save_interval=0,
     #           num_actors=5, depth=2)
 
