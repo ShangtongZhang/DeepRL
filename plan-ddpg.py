@@ -236,14 +236,17 @@ def visualize_diversity(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     agent = VisPlanDDPGAgent(config)
 
-    episodes = np.arange(1, 11) * 100
+    episodes = [1600, 2000]
     tags = ['ACE', 'ACE-Alt']
     for ep in episodes:
         for tag in tags:
             saved_model = '%s-%s-model-%s-%d' % (
                 PlanDDPGAgent.__name__, tag, game, ep)
+            try:
+                agent.load('./data/%s.bin' % (saved_model))
+            except:
+                continue
             config.logger.info(saved_model)
-            agent.load('./data/%s.bin' % (saved_model))
             for i in range(config.num_actors):
                 agent.set_actor_index(i)
                 agent.evaluation_episodes()
@@ -361,7 +364,7 @@ if __name__ == '__main__':
     # game = 'RoboschoolReacher-v1'
     # game = 'RoboschoolHumanoidFlagrunHarder-v1'
 
-    visualize_diversity(game)
+    # visualize_diversity(game)
 
     # plan_ddpg(game, tag='ACE', on_policy=False, save_interval=10)
     # plan_ddpg(game, tag='ACE-Alt', on_policy=True, save_interval=10)
