@@ -1,6 +1,6 @@
 This branch is the code for **QUOTA with continuous action** in the paper
 
-[QUOTA: The Quantile Option Architecture for Reinforcement Learning]()
+[QUOTA: The Quantile Option Architecture for Reinforcement Learning](https://arxiv.org/abs/1811.02073)
 
 See ```requirements.txt``` and ```Dockerfile``` for dependencies.
 
