@@ -1,6 +1,6 @@
 This branch is the code for **ACE** in the paper
 
-[ACE: An Actor Ensemble Algorithm for Continuous Control with Tree Search]()
+[ACE: An Actor Ensemble Algorithm for Continuous Control with Tree Search](https://arxiv.org/abs/1811.02696)
 
 See ```requirements.txt``` and ```Dockerfile``` for dependencies.
 
