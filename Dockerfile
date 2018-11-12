@@ -16,46 +16,53 @@ RUN apt update && apt install -y --allow-unauthenticated --no-install-recommends
     qtbase5-dev libqt5opengl5-dev libassimp-dev libpython3.5-dev \
     libboost-python-dev libtinyxml-dev bash python3-tk libcudnn6=$CUDNN_VERSION-1+cuda8.0 \
     libcudnn6-dev=$CUDNN_VERSION-1+cuda8.0 wget unzip libosmesa6-dev software-properties-common \
-    libopenmpi-dev
+    libopenmpi-dev libglew-dev
 WORKDIR /opt
 RUN pip3 install pip --upgrade
 
 RUN add-apt-repository ppa:jamesh/snap-support && apt-get update && apt install -y patchelf
-RUN mkdir -p /root/.mujoco \
+RUN rm -rf /var/lib/apt/lists/*
+
+WORKDIR /shaang
+RUN chmod -R 777 /shaang
+RUN useradd -d /shaang -u 13071 shaang
+USER shaang
+
+RUN mkdir -p /shaang/.mujoco \
     && wget https://www.roboti.us/download/mjpro150_linux.zip -O mujoco.zip \
-    && unzip mujoco.zip -d /root/.mujoco \
+    && unzip mujoco.zip -d /shaang/.mujoco \
     && rm mujoco.zip
 RUN wget https://www.roboti.us/download/mujoco200_linux.zip -O mujoco.zip \
-    && unzip mujoco.zip -d /root/.mujoco \
+    && unzip mujoco.zip -d /shaang/.mujoco \
     && rm mujoco.zip
 
 RUN export PATH=$PATH:$HOME/.local/bin
 # Make sure you have the license
-COPY ./mjkey.txt /root/.mujoco/mjkey.txt
-ENV LD_LIBRARY_PATH /root/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
-ENV LD_LIBRARY_PATH /root/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
+COPY ./mjkey.txt /shaang/.mujoco/mjkey.txt
+ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
 
-RUN pip3 install gym[mujoco] --upgrade
-RUN pip3 install mujoco-py
-RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mjpro150/bin" >> ~/.bashrc
-RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/root/.mujoco/mjpro200_linux/bin" >> ~/.bashrc
-
-RUN git clone https://github.com/openai/roboschool.git
-ENV ROBOSCHOOL_PATH=/opt/roboschool
-RUN git clone https://github.com/olegklimov/bullet3 -b roboschool_self_collision
-WORKDIR /opt/bullet3/build
-RUN cmake -DBUILD_SHARED_LIBS=ON -DUSE_DOUBLE_PRECISION=1 -DCMAKE_INSTALL_PREFIX:PATH=$ROBOSCHOOL_PATH/roboschool/cpp-household/bullet_local_install -DBUILD_CPU_DEMOS=OFF -DBUILD_BULLET2_DEMOS=OFF -DBUILD_EXTRAS=OFF  -DBUILD_UNIT_TESTS=OFF -DBUILD_CLSOCKET=OFF -DBUILD_ENET=OFF -DBUILD_OPENGL3_DEMOS=OFF ..
-RUN make -j4
-RUN make install
-RUN pip3 install -e $ROBOSCHOOL_PATH
+RUN python3 -m venv py3.5
+RUN echo "source /shaang/py3.5/bin/activate" >> /shaang/.bashrc
+RUN . py3.5/bin/activate && pip install pip --upgrade
+RUN . py3.5/bin/activate && pip install wheel numpy cffi cython lockfile glfw imageio absl-py pyparsing
+RUN . py3.5/bin/activate && pip install gym[mujoco] --upgrade
+RUN . py3.5/bin/activate && pip install mujoco-py
+RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/shaang/.mujoco/mjpro150/bin" >> /shaang/.bashrc
+RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/shaang/.mujoco/mjpro200_linux/bin" >> /shaang/.bashrc
 
 # install other requirements
 COPY requirements.txt requirements.txt
-RUN pip3 install -r requirements.txt
-RUN pip3 install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines
+RUN . py3.5/bin/activate && pip install -r requirements.txt
+RUN . py3.5/bin/activate && pip install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines
 
-WORKDIR /workspace/DeepRL
-RUN rm -rf /var/lib/apt/lists/*
+#RUN git clone https://github.com/openai/roboschool.git
+#ENV ROBOSCHOOL_PATH=/shaang/roboschool
+#RUN git clone https://github.com/olegklimov/bullet3 -b roboschool_self_collision
+#WORKDIR /shaang/bullet3/build
+#RUN cmake -DBUILD_SHARED_LIBS=ON -DUSE_DOUBLE_PRECISION=1 -DCMAKE_INSTALL_PREFIX:PATH=$ROBOSCHOOL_PATH/roboschool/cpp-household/bullet_local_install -DBUILD_CPU_DEMOS=OFF -DBUILD_BULLET2_DEMOS=OFF -DBUILD_EXTRAS=OFF  -DBUILD_UNIT_TESTS=OFF -DBUILD_CLSOCKET=OFF -DBUILD_ENET=OFF -DBUILD_OPENGL3_DEMOS=OFF ..
+#RUN make -j4
+#RUN make install
+#RUN . py3.5/bin/activate && pip install -e $ROBOSCHOOL_PATH
 
-RUN useradd -d /opt/DeepRL -u 13071 shaang
-USER shaang
+WORKDIR /shaang/DeepRL

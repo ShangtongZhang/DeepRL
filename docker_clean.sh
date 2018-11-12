@@ -6,4 +6,4 @@ else
   cmd=docker
 fi
 
-${cmd} run --rm -v `pwd`:/workspace/DeepRL --entrypoint '/bin/sh' deeprl -c "rm -rf log tf_log *.out"
+${cmd} run --rm -v `pwd`:/shaang/DeepRL --entrypoint '/bin/sh' deeprl -c "rm -rf log tf_log *.out"
