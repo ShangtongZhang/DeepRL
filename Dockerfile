@@ -17,7 +17,6 @@ RUN apt update && apt install -y --allow-unauthenticated --no-install-recommends
     libboost-python-dev libtinyxml-dev bash python3-tk libcudnn6=$CUDNN_VERSION-1+cuda8.0 \
     libcudnn6-dev=$CUDNN_VERSION-1+cuda8.0 wget unzip libosmesa6-dev software-properties-common \
     libopenmpi-dev libglew-dev
-WORKDIR /opt
 RUN pip3 install pip --upgrade
 
 RUN add-apt-repository ppa:jamesh/snap-support && apt-get update && apt install -y patchelf
