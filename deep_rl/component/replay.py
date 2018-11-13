@@ -164,7 +164,8 @@ class Storage:
             keys = []
         keys = keys + ['s', 'a', 'r', 'm',
                        'v', 'q', 'pi', 'log_pi', 'ent',
-                       'adv', 'ret', 'q_a', 'log_pi_a']
+                       'adv', 'ret', 'q_a', 'log_pi_a',
+                       'mean']
         self.keys = keys
         self.size = size
         self.reset()

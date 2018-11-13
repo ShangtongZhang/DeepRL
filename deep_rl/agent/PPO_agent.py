@@ -23,11 +23,11 @@ class PPOAgent(BaseAgent):
 
     def step(self):
         config = self.config
-        rollout = []
+        storage = Storage(config.rollout_length)
         states = self.states
         for _ in range(config.rollout_length):
-            actions, log_probs, _, values = self.network(states)
-            next_states, rewards, terminals, _ = self.task.step(to_np(actions))
+            prediction = self.network(states)
+            next_states, rewards, terminals, _ = self.task.step(to_np(prediction['a']))
             self.online_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
@@ -35,32 +35,32 @@ class PPOAgent(BaseAgent):
                     self.episode_rewards.append(self.online_rewards[i])
                     self.online_rewards[i] = 0
             next_states = config.state_normalizer(next_states)
-            rollout.append([states, values.detach(), actions.detach(), log_probs.detach(), rewards, 1 - terminals])
+            storage.add(prediction)
+            storage.add({'r': tensor(rewards).unsqueeze(-1),
+                         'm': tensor(1 - terminals).unsqueeze(-1),
+                         's': tensor(states)})
             states = next_states
 
         self.states = states
-        pending_value = self.network(states)[-1]
-        rollout.append([states, pending_value, None, None, None, None])
+        prediction = self.network(states)
+        storage.add(prediction)
+        storage.placeholder()
 
-        processed_rollout = [None] * (len(rollout) - 1)
         advantages = tensor(np.zeros((config.num_workers, 1)))
-        returns = pending_value.detach()
-        for i in reversed(range(len(rollout) - 1)):
-            states, value, actions, log_probs, rewards, terminals = rollout[i]
-            terminals = tensor(terminals).unsqueeze(1)
-            rewards = tensor(rewards).unsqueeze(1)
-            actions = tensor(actions)
-            states = tensor(states)
-            next_value = rollout[i + 1][1]
-            returns = rewards + config.discount * terminals * returns
+        returns = prediction['v'].detach()
+        for i in reversed(range(config.rollout_length)):
+            returns = storage.r[i] + config.discount * storage.m[i] * returns
             if not config.use_gae:
-                advantages = returns - value.detach()
+                advantages = returns - storage.v[i].detach()
             else:
-                td_error = rewards + config.discount * terminals * next_value.detach() - value.detach()
-                advantages = advantages * config.gae_tau * config.discount * terminals + td_error
-            processed_rollout[i] = [states, actions, log_probs, returns, advantages]
+                td_error = storage.r[i] + config.discount * storage.m[i] * storage.v[i + 1] - storage.v[i]
+                advantages = advantages * config.gae_tau * config.discount * storage.m[i] + td_error
+            storage.adv[i] = advantages.detach()
+            storage.ret[i] = returns.detach()
 
-        states, actions, log_probs_old, returns, advantages = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
+        states, actions, log_probs_old, returns, advantages = storage.cat(['s', 'a', 'log_pi_a', 'ret', 'adv'])
+        actions = actions.detach()
+        log_probs_old = log_probs_old.detach()
         advantages = (advantages - advantages.mean()) / advantages.std()
 
         for _ in range(config.optimization_epochs):
@@ -73,14 +73,14 @@ class PPOAgent(BaseAgent):
                 sampled_returns = returns[batch_indices]
                 sampled_advantages = advantages[batch_indices]
 
-                _, log_probs, entropy_loss, values = self.network(sampled_states, sampled_actions)
-                ratio = (log_probs - sampled_log_probs_old).exp()
+                prediction = self.network(sampled_states, sampled_actions)
+                ratio = (prediction['log_pi_a'] - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean(0) - config.entropy_weight * entropy_loss.mean()
+                policy_loss = -torch.min(obj, obj_clipped).mean() - config.entropy_weight * prediction['ent'].mean()
 
-                value_loss = 0.5 * (sampled_returns - values).pow(2).mean()
+                value_loss = 0.5 * (sampled_returns - prediction['v']).pow(2).mean()
 
                 self.opt.zero_grad()
                 (policy_loss + value_loss).backward()

@@ -23,53 +23,48 @@ class A2CAgent(BaseAgent):
 
     def step(self):
         config = self.config
-        rollout = []
+        storage = Storage(config.rollout_length)
         states = self.states
         for _ in range(config.rollout_length):
-            actions, log_probs, entropy, values = self.network(config.state_normalizer(states))
-            next_states, rewards, terminals, _ = self.task.step(actions.detach().cpu().numpy())
+            prediction = self.network(config.state_normalizer(states))
+            next_states, rewards, terminals, _ = self.task.step(to_np(prediction['a']))
             self.online_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             for i, terminal in enumerate(terminals):
                 if terminals[i]:
                     self.episode_rewards.append(self.online_rewards[i])
                     self.online_rewards[i] = 0
+            storage.add(prediction)
+            storage.add({'r': tensor(rewards).unsqueeze(-1),
+                         'm': tensor(1 - terminals).unsqueeze(-1)})
 
-            rollout.append([log_probs, values, actions, rewards, 1 - terminals, entropy])
             states = next_states
 
         self.states = states
-        pending_value = self.network(config.state_normalizer(states))[-1]
-        rollout.append([None, pending_value, None, None, None, None])
+        prediction = self.network(config.state_normalizer(states))
+        storage.add(prediction)
+        storage.placeholder()
 
-        processed_rollout = [None] * (len(rollout) - 1)
         advantages = tensor(np.zeros((config.num_workers, 1)))
-        returns = pending_value.detach()
-        for i in reversed(range(len(rollout) - 1)):
-            log_prob, value, actions, rewards, terminals, entropy = rollout[i]
-            terminals = tensor(terminals).unsqueeze(1)
-            rewards = tensor(rewards).unsqueeze(1)
-            next_value = rollout[i + 1][1]
-            returns = rewards + config.discount * terminals * returns
+        returns = prediction['v'].detach()
+        for i in reversed(range(config.rollout_length)):
+            returns = storage.r[i] + config.discount * storage.m[i] * returns
             if not config.use_gae:
-                advantages = returns - value.detach()
+                advantages = returns - storage.v[i].detach()
             else:
-                td_error = rewards + config.discount * terminals * next_value.detach() - value.detach()
-                advantages = advantages * config.gae_tau * config.discount * terminals + td_error
-            processed_rollout[i] = [log_prob, value, returns, advantages, entropy]
+                td_error = storage.r[i] + config.discount * storage.m[i] * storage.v[i + 1] - storage.v[i]
+                advantages = advantages * config.gae_tau * config.discount * storage.m[i] + td_error
+            storage.adv[i] = advantages.detach()
+            storage.ret[i] = returns.detach()
 
-        log_prob, value, returns, advantages, entropy = map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
-        policy_loss = -log_prob * advantages
-        value_loss = 0.5 * (returns - value).pow(2)
+        log_prob, value, returns, advantages, entropy = storage.cat(['log_pi_a', 'v', 'ret', 'adv', 'ent'])
+        policy_loss = -(log_prob * advantages).mean()
+        value_loss = 0.5 * (returns - value).pow(2).mean()
         entropy_loss = entropy.mean()
-
-        self.policy_loss = np.mean(policy_loss.cpu().detach().numpy())
-        self.entropy_loss = np.mean(entropy_loss.cpu().detach().numpy())
-        self.value_loss = np.mean(value_loss.cpu().detach().numpy())
 
         self.optimizer.zero_grad()
         (policy_loss - config.entropy_weight * entropy_loss +
-         config.value_loss_weight * value_loss).mean().backward()
+         config.value_loss_weight * value_loss).backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
 

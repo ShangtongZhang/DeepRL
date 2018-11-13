@@ -140,7 +140,7 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
                  critic_body=None):
         super(GaussianActorCriticNet, self).__init__()
         self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
-        self.std = nn.Parameter(torch.zeros(1, action_dim))
+        self.std = nn.Parameter(torch.zeros(action_dim))
         self.to(Config.DEVICE)
 
     def forward(self, obs, action=None):
@@ -150,13 +150,16 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
         phi_v = self.network.critic_body(phi)
         mean = F.tanh(self.network.fc_action(phi_a))
         v = self.network.fc_critic(phi_v)
-        dist = torch.distributions.Normal(mean, F.softplus(self.std))
+        dist = torch.distributions.MultivariateNormal(mean, torch.diag(F.softplus(self.std)))
         if action is None:
             action = dist.sample()
-        log_prob = dist.log_prob(action)
-        log_prob = torch.sum(log_prob, dim=1, keepdim=True)
-        entropy = torch.sum(dist.entropy(), dim=1, keepdim=True)
-        return action, log_prob, entropy, v
+        log_prob = dist.log_prob(action).unsqueeze(-1)
+        entropy = dist.entropy().unsqueeze(-1)
+        return {'a': action,
+                'log_pi_a': log_prob,
+                'ent': entropy,
+                'mean': mean,
+                'v': v}
 
 class CategoricalActorCriticNet(nn.Module, BaseNet):
     def __init__(self,
@@ -180,4 +183,8 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
         if action is None:
             action = dist.sample()
         log_prob = dist.log_prob(action).unsqueeze(-1)
-        return action, log_prob, dist.entropy().unsqueeze(-1), v
+        entropy = dist.entropy().unsqueeze(-1)
+        return {'a': action,
+                'log_pi_a': log_prob,
+                'ent': entropy,
+                'v': v}

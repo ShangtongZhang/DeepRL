@@ -178,7 +178,8 @@ def a2c_cart_pole():
         config.state_dim, config.action_dim, FCBody(config.state_dim))
     config.discount = 0.99
     config.logger = get_logger()
-    config.use_gae = False
+    config.use_gae = True
+    config.gae_tau = 0.95
     config.entropy_weight = 0.01
     config.rollout_length = 5
     config.gradient_clip = 0.5
@@ -207,7 +208,6 @@ def a2c_pixel_atari(name):
 
 def a2c_continuous(game):
     config = Config()
-    config.history_length = 4
     config.num_workers = 16
     config.task_fn = lambda: Task(game, num_envs=config.num_workers,
         log_dir=get_default_log_dir(a2c_continuous.__name__),
@@ -461,4 +461,4 @@ if __name__ == '__main__':
     # option_ciritc_pixel_atari(game)
     # ppo_pixel_atari(game)
 
-    plot()
+    # plot()
