@@ -106,10 +106,9 @@ def plot_sub(**kwargs):
     x = data[0][0]
     y = [entry[1] for entry in data]
     y = np.stack(y)
-    plotter.plot_standard_error(y, x, label=kwargs['name'], color=Plotter.COLORS[color])
+    plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
     plt.title(kwargs['name'], fontsize=30)
     plt.xticks([0, int(1e6)], ['0', '1M'])
-    # plt.legend()
 
     # plt.ylim([-200, 1400])
     # plt.ylim([-200, 2500])
@@ -146,10 +145,15 @@ def plot_half():
     for j, game in enumerate(games):
         plt.subplot(1, 6, j+1)
         for i, p in enumerate(patterns):
-            plot_sub(pattern='.*log/option-ddpg/option-Roboschool%s-v1.*%s.*' % (game, p), figure=j, color=i, name=game, **kwargs)
-        plot_sub(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game), figure=j, color=i+1, name=game, **kwargs)
-        plot_sub(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/.*q_ddpg.*' % (game), figure=j, color=i+2, name=game, **kwargs)
-    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/roboschool.png', bbox_inches='tight')
+            plot_sub(pattern='.*log/option-ddpg/option-Roboschool%s-v1.*%s.*' % (game, p),
+                     figure=j, color=i, name=game, label='QUOTA', **kwargs)
+        plot_sub(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/ddpg_continuous.*' % (game),
+                 figure=j, color=i+1, name=game, label='DDPG', **kwargs)
+        plot_sub(pattern='.*log/baseline-ddpg/baseline-Roboschool%s-v1/.*q_ddpg.*' % (game),
+                 figure=j, color=i+2, name=game, label='QR-DDPG', **kwargs)
+    plt.subplot(1, 6, 1)
+    plt.legend()
+    plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/aaai19_crc/roboschool.png', bbox_inches='tight')
 
 
 def plot_all():
@@ -190,5 +194,5 @@ def plot_all():
     plt.savefig('/Users/Shangtong/Dropbox/Paper/quantile_option/img/roboschool_all.png', bbox_inches='tight')
 
 if __name__ == '__main__':
-    # plot_half()
-    plot_all()
+    plot_half()
+    # plot_all()
