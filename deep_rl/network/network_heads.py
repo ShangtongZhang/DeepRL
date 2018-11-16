@@ -150,11 +150,11 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
         phi_v = self.network.critic_body(phi)
         mean = F.tanh(self.network.fc_action(phi_a))
         v = self.network.fc_critic(phi_v)
-        dist = torch.distributions.MultivariateNormal(mean, torch.diag(F.softplus(self.std)))
+        dist = torch.distributions.Normal(mean, F.softplus(self.std))
         if action is None:
             action = dist.sample()
-        log_prob = dist.log_prob(action).unsqueeze(-1)
-        entropy = dist.entropy().unsqueeze(-1)
+        log_prob = dist.log_prob(action).sum(-1).unsqueeze(-1)
+        entropy = dist.entropy().sum(-1).unsqueeze(-1)
         return {'a': action,
                 'log_pi_a': log_prob,
                 'ent': entropy,
