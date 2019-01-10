@@ -106,3 +106,13 @@ class Plotter:
         plt.plot(x, m_x, **kwargs)
         del kwargs['label']
         plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
+
+    def plot_median_std(self, data, x=None, **kwargs):
+        import matplotlib.pyplot as plt
+        if x is None:
+            x = np.arange(data.shape[1])
+        e_x = np.std(data, axis=0)
+        m_x = np.median(data, axis=0)
+        plt.plot(x, m_x, **kwargs)
+        del kwargs['label']
+        plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)

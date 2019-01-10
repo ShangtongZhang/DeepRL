@@ -60,3 +60,17 @@ def random_sample(indices, batch_size):
     r = len(indices) % batch_size
     if r:
         yield indices[-r:]
+
+def set_tag(params):
+    if 'tag' in params.keys():
+        return
+    game = params['game']
+    params.setdefault('run', 0)
+    run = params['run']
+    del params['game']
+    del params['run']
+    str = ['%s_%s' % (k, v) for k, v in sorted(params.items())]
+    tag = '%s-%s-run-%d' % (game, '-'.join(str), run)
+    params['tag'] = tag
+    params['game'] = game
+    params['run'] = run
