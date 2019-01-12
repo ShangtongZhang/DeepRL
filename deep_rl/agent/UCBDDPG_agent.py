@@ -100,6 +100,7 @@ class UCBDDPGAgent(BaseAgent):
             q = self.network.critic(phi, tensor(actions))
             critic_loss = (q - q_next).mul(b_mask).pow(2).mul(0.5).sum(-1).mean()
             config.logger.add_scalar('q_std', q.std(-1).mean())
+            config.logger.add_scalar('q_std_prop', (q.std(1) / q.mean(1)).mean())
             config.logger.add_scalar('q_loss', critic_loss)
 
             self.network.zero_grad()

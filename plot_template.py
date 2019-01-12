@@ -101,7 +101,7 @@ def ddpg_plot(**kwargs):
     else:
         for i, name in enumerate(names):
             x, y = data[i]
-            plt.plot(x, y, color=Plotter.COLORS[i], label=name if i==0 else '')
+            plt.plot(x, y, color=Plotter.COLORS[color], label=name if i==0 else '')
     plt.legend()
     # plt.ylim([-200, 1400])
     # plt.ylim([-200, 2500])
@@ -112,23 +112,19 @@ def plot_mujoco():
     kwargs = {
         'x_interval': int(1e4),
         'rep': 20,
-        'average': True
+        'average': False
     }
     games = [
         'Walker2d-v2',
         'Hopper-v2',
         'HalfCheetah-v2',
-        'Reacher-v2',
+        # 'Reacher-v2',
         'Swimmer-v2',
     ]
 
     patterns = [
-        # 'relu_norm_0_l2',
-        'relu_norm_0_nl2',
-        # 'relu_norm_1_l2',
-        # 'relu_norm_1_nl2',
-        # 'tanh_norm_0',
-        # 'tanh_norm_1',
+        '-run',
+        'remark_ucb-run',
     ]
 
     l = len(games)
@@ -136,7 +132,7 @@ def plot_mujoco():
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*mujoco-ddpg/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
     plt.show()
 
 if __name__ == '__main__':

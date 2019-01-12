@@ -12,13 +12,12 @@ def batch():
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    games = ['HalfCheetah-v2', 'Swimmer-v2', 'Hopper-v2', 'Walker2d-v2']
-    game = games[cf.i1 % 4]
-    algo = cf.i1 // 4
-    if algo == 0:
-        ucb_ddpg_continuous(game=game, run=cf.i2, remark='ucb')
-    elif algo == 1:
-        ddpg_continuous(game=game, run=cf.i2)
+    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
+    game = games[cf.i1]
+    # algo = cf.i1 // 4
+    # if algo == 0:
+    ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
+    ucb_ddpg_continuous(game=game, run=cf.i2, remark='ucb')
 
     exit()
 
@@ -50,6 +49,7 @@ def ddpg_continuous(**kwargs):
     kwargs.setdefault('gate', F.relu)
     kwargs.setdefault('weight_decay', 0)
     kwargs.setdefault('state_norm', False)
+    kwargs.setdefault('skip', True)
     config = Config()
     config.merge(kwargs)
 
@@ -90,7 +90,7 @@ def ucb_ddpg_continuous(**kwargs):
     kwargs.setdefault('num_critics', 10)
     kwargs.setdefault('bootstrap_prob', 0.5)
     kwargs.setdefault('std_weight', [1, 0.8, 0.6, 0.4, 0.2, 0])
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('skip', True)
     config = Config()
     config.merge(kwargs)
 
@@ -133,5 +133,5 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'HalfCheetah-v2'
-    # ucb_ddpg_continuous(game=game)
+    ucb_ddpg_continuous(game=game)
     # ddpg_continuous(game=game)
