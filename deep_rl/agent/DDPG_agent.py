@@ -56,6 +56,7 @@ class DDPGAgent(BaseAgent):
         reward = self.config.reward_normalizer(reward)
         self.replay.feed([self.state, action, reward, next_state, done.astype(np.uint8)])
         if done[0]:
+            config.logger.add_scalar('train_episode_return', self.episode_reward)
             self.episode_rewards.append(self.episode_reward)
             self.episode_reward = 0
             self.random_process.reset_states()
@@ -80,6 +81,7 @@ class DDPGAgent(BaseAgent):
             phi = self.network.feature(states)
             q = self.network.critic(phi, tensor(actions))
             critic_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean()
+            config.logger.add_scalar('q_loss', critic_loss)
 
             self.network.zero_grad()
             critic_loss.backward()
@@ -88,6 +90,7 @@ class DDPGAgent(BaseAgent):
             phi = self.network.feature(states)
             action = self.network.actor(phi)
             policy_loss = -self.network.critic(phi.detach(), action).mean()
+            config.logger.add_scalar('pi_loss', policy_loss)
 
             self.network.zero_grad()
             policy_loss.backward()

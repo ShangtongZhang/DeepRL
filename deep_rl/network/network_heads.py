@@ -188,3 +188,55 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
                 'log_pi_a': log_prob,
                 'ent': entropy,
                 'v': v}
+
+class EnsembleDeterministicActorCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 actor_opt_fn,
+                 critic_opt_fn,
+                 num_actors,
+                 num_critics,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None):
+        super(EnsembleDeterministicActorCriticNet, self).__init__()
+        # self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim * num_actors), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, num_critics), 1e-3)
+
+        self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
+        self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
+        self.phi_params = list(self.phi_body.parameters())
+
+        self.actor_opt = actor_opt_fn(self.actor_params + self.phi_params)
+        self.critic_opt = critic_opt_fn(self.critic_params + self.phi_params)
+        self.to(Config.DEVICE)
+
+        self.action_dim = action_dim
+        self.num_actors = num_actors
+        self.num_critics = num_critics
+
+    def forward(self, obs):
+        phi = self.feature(obs)
+        action = self.actor(phi)
+        return action
+
+    def feature(self, obs):
+        obs = tensor(obs)
+        return self.phi_body(obs)
+
+    def actor(self, phi):
+        actions = F.tanh(self.fc_action(self.actor_body(phi)))
+        actions = actions.view(-1, self.num_actors, self.action_dim)
+        return actions
+
+    def critic(self, phi, a):
+        q = self.fc_critic(self.critic_body(phi, a))
+        return q

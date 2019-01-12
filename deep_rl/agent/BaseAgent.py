@@ -44,6 +44,7 @@ class BaseAgent:
         rewards = []
         for ep in range(self.config.eval_episodes):
             rewards.append(self.eval_episode())
+        self.config.logger.add_scalar('test_episode_return', np.mean(rewards))
         self.config.logger.info('evaluation episode return: %f(%f)' % (
             np.mean(rewards), np.std(rewards) / np.sqrt(len(rewards))))
 
