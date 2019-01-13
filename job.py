@@ -13,11 +13,12 @@ def batch():
     cf.merge()
 
     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
-    game = games[cf.i1]
+    # game = games[cf.i1]
+    game = games[0]
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    ucb_ddpg_continuous(game=game, run=cf.i2, remark='ucb')
+    ucb_ddpg_continuous(game=game, run=cf.i2, remark='ucb', std_weight=[4, 2, 0.5, 0.125][cf.i1])
 
     exit()
 
@@ -89,10 +90,11 @@ def ucb_ddpg_continuous(**kwargs):
     kwargs.setdefault('num_actors', 2)
     kwargs.setdefault('num_critics', 10)
     kwargs.setdefault('bootstrap_prob', 0.5)
-    kwargs.setdefault('std_weight', [1, 0])
+    kwargs.setdefault('std_weight', 1)
     kwargs.setdefault('skip', True)
     config = Config()
     config.merge(kwargs)
+    config.std_weight = [config.std_weight, 0]
 
     config.task_fn = lambda: Task(kwargs['game'])
     config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
@@ -133,5 +135,5 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'HalfCheetah-v2'
-    ucb_ddpg_continuous(game=game)
+    ucb_ddpg_continuous(game=game, skip=True)
     # ddpg_continuous(game=game)

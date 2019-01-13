@@ -123,7 +123,7 @@ def plot_mujoco():
     ]
 
     patterns = [
-        '-run',
+        'remark_ddpg-run',
         'remark_ucb-run',
     ]
 

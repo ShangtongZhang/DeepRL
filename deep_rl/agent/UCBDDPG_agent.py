@@ -42,12 +42,6 @@ class UCBDDPGAgent(BaseAgent):
         self.config.state_normalizer.unset_read_only()
         return to_np(action)
 
-    def get_active_actor(self):
-        config = self.config
-        n = len(config.std_weight)
-        seg = config.max_steps // (n - 1)
-        return self.total_steps // seg
-
     def step(self):
         config = self.config
         if self.state is None:
@@ -58,9 +52,7 @@ class UCBDDPGAgent(BaseAgent):
             action = [self.task.action_space.sample()]
         else:
             action = self.network(self.state)
-            active_actor = self.get_active_actor()
-            config.logger.add_scalar('active_actor', active_actor)
-            action = action[:, active_actor, :]
+            action = action[:, self.exploration_actor, :]
             action = to_np(action)
             action += self.random_process.sample()
         action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
@@ -101,6 +93,7 @@ class UCBDDPGAgent(BaseAgent):
             q = self.network.critic(phi, tensor(actions))
             critic_loss = (q - q_next).mul(b_mask).pow(2).mul(0.5).sum(-1).mean()
             config.logger.add_scalar('q_std', q.std(-1).mean())
+            config.logger.add_histogram('q_std_dist', q[0])
             config.logger.add_scalar('q_std_prop', (q.std(1) / q.mean(1)).mean())
             config.logger.add_scalar('q_loss', critic_loss)
 
