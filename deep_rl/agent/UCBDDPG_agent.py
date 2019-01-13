@@ -24,7 +24,8 @@ class UCBDDPGAgent(BaseAgent):
         self.episode_reward = 0
         self.episode_rewards = []
 
-        self.original_actor = -1
+        self.exploitation_actor = -1
+        self.exploration_actor = 0
         # self.std_weight = tensor(config.std_weight).unsqueeze(1)
 
     def soft_update(self, target, src):
@@ -37,7 +38,7 @@ class UCBDDPGAgent(BaseAgent):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(state)
         action = self.network(state)
-        action = action[:, self.original_actor, :]
+        action = action[:, self.exploitation_actor, :]
         self.config.state_normalizer.unset_read_only()
         return to_np(action)
 
@@ -90,7 +91,7 @@ class UCBDDPGAgent(BaseAgent):
 
             phi_next = self.target_network.feature(next_states)
             a_next = self.target_network.actor(phi_next)
-            a_next = a_next[:, self.original_actor, :]
+            a_next = a_next[:, self.exploitation_actor, :]
             q_next = self.target_network.critic(phi_next, a_next)
             q_next = config.discount * q_next * (1 - mask)
             q_next.add_(rewards)

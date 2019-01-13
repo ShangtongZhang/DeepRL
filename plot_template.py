@@ -112,7 +112,7 @@ def plot_mujoco():
     kwargs = {
         'x_interval': int(1e4),
         'rep': 20,
-        'average': False
+        'average': True
     }
     games = [
         'Walker2d-v2',

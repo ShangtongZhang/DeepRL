@@ -16,7 +16,7 @@ def batch():
     game = games[cf.i1]
     # algo = cf.i1 // 4
     # if algo == 0:
-    ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
+    # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
     ucb_ddpg_continuous(game=game, run=cf.i2, remark='ucb')
 
     exit()
@@ -86,10 +86,10 @@ def ucb_ddpg_continuous(**kwargs):
     kwargs.setdefault('gate', F.relu)
     kwargs.setdefault('weight_decay', 0)
     kwargs.setdefault('state_norm', False)
-    kwargs.setdefault('num_actors', 6)
+    kwargs.setdefault('num_actors', 2)
     kwargs.setdefault('num_critics', 10)
     kwargs.setdefault('bootstrap_prob', 0.5)
-    kwargs.setdefault('std_weight', [1, 0.8, 0.6, 0.4, 0.2, 0])
+    kwargs.setdefault('std_weight', [1, 0])
     kwargs.setdefault('skip', True)
     config = Config()
     config.merge(kwargs)
