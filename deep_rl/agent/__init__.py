@@ -8,3 +8,4 @@ from .PPO_agent import *
 from .OptionCritic_agent import *
 from .UCBDDPG_agent import *
 from .ModelDDPG_agent import *
+from .MatrixDDPG_agent import *
