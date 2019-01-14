@@ -18,7 +18,7 @@ def batch():
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    ucb_ddpg_continuous(game=game, run=cf.i2, remark='ucb', std_weight=[4, 2, 0.5, 0.125][cf.i1])
+    matrix_ddpg_continuous(game=game, run=cf.i2, remark='ucb', std_weight=[4, 2, 0.5, 0.125][cf.i1])
 
     exit()
 
@@ -81,14 +81,15 @@ def ddpg_continuous(**kwargs):
     run_steps(DDPGAgent(config))
 
 
-def ucb_ddpg_continuous(**kwargs):
+def matrix_ddpg_continuous(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('gate', F.relu)
     kwargs.setdefault('weight_decay', 0)
     kwargs.setdefault('state_norm', False)
     kwargs.setdefault('num_actors', 2)
-    kwargs.setdefault('num_critics', 10)
+    kwargs.setdefault('row', 5)
+    kwargs.setdefault('column', 2)
     kwargs.setdefault('bootstrap_prob', 0.5)
     kwargs.setdefault('std_weight', 1)
     kwargs.setdefault('skip', True)
@@ -108,7 +109,7 @@ def ucb_ddpg_continuous(**kwargs):
     config.network_fn = lambda: EnsembleDeterministicActorCriticNet(
         config.state_dim, config.action_dim,
         num_actors=config.num_actors,
-        num_critics=config.num_critics,
+        num_critics=config.row * config.column,
         actor_body=FCBody(config.state_dim, (400, 300), gate=kwargs['gate']),
         critic_body=TwoLayerFCBodyWithAction(
             config.state_dim, config.action_dim, (400, 300), gate=kwargs['gate']),
@@ -122,7 +123,7 @@ def ucb_ddpg_continuous(**kwargs):
     config.min_memory_size = int(1e4)
     config.target_network_mix = 1e-3
     config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
-    run_steps(UCBDDPGAgent(config))
+    run_steps(MatrixDDPGAgent(config))
 
 
 def model_ddpg_continuous(**kwargs):
@@ -185,8 +186,9 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'HalfCheetah-v2'
-    # ucb_ddpg_continuous(game=game, skip=True)
+    game = 'Walker2d-v2'
+    matrix_ddpg_continuous(game=game, skip=False)
     # ddpg_continuous(game=game)
-    model_ddpg_continuous(game=game,
-                          skip=False,
-                          model_type='P')
+    # model_ddpg_continuous(game=game,
+    #                       skip=False,
+    #                       model_type='P')

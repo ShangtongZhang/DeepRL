@@ -9,7 +9,7 @@ from ..component import *
 from .BaseAgent import *
 import torchvision
 
-class MatrixDDPGAgent(BaseAgent):
+class DoubleDDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -61,7 +61,7 @@ class MatrixDDPGAgent(BaseAgent):
         self.episode_reward += reward[0]
         reward = self.config.reward_normalizer(reward)
 
-        bootstrap_mask = np.random.rand(config.row) < config.bootstrap_prob
+        bootstrap_mask = np.random.rand(config.num_critics) < config.bootstrap_prob
         self.replay.feed([self.state, action, reward, next_state, done.astype(np.uint8), bootstrap_mask.astype(np.uint8)])
         if done[0]:
             config.logger.add_scalar('train_episode_return', self.episode_reward)
@@ -85,23 +85,16 @@ class MatrixDDPGAgent(BaseAgent):
             a_next = self.target_network.actor(phi_next)
             a_next = a_next[:, self.exploitation_actor, :]
             q_next = self.target_network.critic(phi_next, a_next)
-            q_next = q_next.view(-1, config.row, config.column)
-            q_next = q_next.min(-1)[0]
             q_next = config.discount * q_next * (1 - mask)
-            q_next = q_next + rewards
-            q_next = q_next.unsqueeze(-1)
+            q_next.add_(rewards)
             q_next = q_next.detach()
 
             phi = self.network.feature(states)
             q = self.network.critic(phi, tensor(actions))
-            q = q.view(-1, config.row, config.column)
-            b_mask = b_mask.unsqueeze(-1)
-            critic_loss = (q - q_next).mul(b_mask).pow(2).mul(0.5).mean(1).sum()
-
-            diff = (q[:, :, 0] - q[:, :, 1]).abs()
-            config.logger.add_scalar('q_diff_column', diff.mean())
-            config.logger.add_histogram('q_diff_column_dist', diff)
-            config.logger.add_scalar('q_std_row', q.min(-1)[0].std(-1).mean())
+            critic_loss = (q - q_next).mul(b_mask).pow(2).mul(0.5).sum(-1).mean()
+            config.logger.add_scalar('q_std', q.std(-1).mean())
+            config.logger.add_histogram('q_std_dist', q[0])
+            config.logger.add_scalar('q_std_prop', (q.std(1) / q.mean(1)).mean())
             config.logger.add_scalar('q_loss', critic_loss)
 
             self.network.zero_grad()
@@ -114,7 +107,6 @@ class MatrixDDPGAgent(BaseAgent):
             policy_loss = 0
             for i in range(config.num_actors):
                 q = self.network.critic(phi.detach(), action[:, i, :])
-                q = q.view(-1, config.row, config.column).min(-1)[0]
                 q = q.mean(-1) + config.std_weight[i] * q.std(-1)
                 policy_loss = policy_loss - q.mean()
             config.logger.add_scalar('pi_loss', policy_loss)

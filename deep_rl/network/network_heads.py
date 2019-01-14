@@ -209,7 +209,7 @@ class EnsembleDeterministicActorCriticNet(nn.Module, BaseNet):
         self.actor_body = actor_body
         self.critic_body = critic_body
         self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim * num_actors), 1e-3)
-        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, num_critics), 1e-3)
+        self.fc_critic = nn.Linear(critic_body.feature_dim, num_critics)
 
         self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
         self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
