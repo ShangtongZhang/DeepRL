@@ -240,3 +240,85 @@ class EnsembleDeterministicActorCriticNet(nn.Module, BaseNet):
     def critic(self, phi, a):
         q = self.fc_critic(self.critic_body(phi, a))
         return q
+
+class Model(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 hidden_units,
+                 ensemble_size,
+                 type):
+        super(Model, self).__init__()
+        assert type in ['D', 'P']
+
+        self.fc_p = nn.Sequential(
+            layer_init(nn.Linear(state_dim + action_dim, hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(hidden_units, hidden_units)),
+            nn.ReLU(),
+        )
+
+        self.fc_p_mean = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size), 1e-3)
+        if type == 'P':
+            self.fc_p_std = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size), 1e-3)
+
+        self.fc_r = nn.Sequential(
+            layer_init(nn.Linear(state_dim + action_dim, hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(hidden_units, hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(hidden_units, ensemble_size), 1e-3)
+        )
+
+        self.state_dim = state_dim
+        self.action_dim = action_dim
+        self.ensemble_size = ensemble_size
+        self.type = type
+        self.to(Config.DEVICE)
+
+    def transition(self, s_a):
+        phi = self.fc_p(s_a)
+        mean = self.fc_p_mean(phi)
+        mean = mean.view(-1, self.ensemble_size, self.state_dim)
+        if self.type == 'P':
+            std = F.softplus(self.fc_p_std(phi))
+            std = std.view(-1, self.ensemble_size, self.state_dim)
+        else:
+            std = None
+        return mean, std
+
+    def reward(self, s_a):
+        return self.fc_r(s_a)
+
+    def loss(self, s, a, r, next_s):
+        s_a = torch.cat([s, a], dim=-1)
+        r_hat = self.reward(s_a)
+        r_loss = (r - r_hat).pow(2).mul(0.5)
+        mean, std = self.transition(s_a)
+        next_s = next_s.unsqueeze(1)
+        if self.type == 'P':
+            dist = DiagonalNormal(mean, std)
+            log_prob = dist.log_prob(next_s).squeeze(-1)
+            p_loss = -log_prob
+        elif self.type == 'D':
+            s = s.unsqueeze(1)
+            delta_s = next_s - s
+            p_loss = (mean - delta_s).pow(2).mul(0.5).sum(-1)
+        else:
+            raise NotImplementedError
+        return p_loss, r_loss
+
+    def forward(self, s, a):
+        s = tensor(s)
+        a = tensor(a)
+        s_a = torch.cat([s, a], dim=-1)
+        r = self.reward(s_a)
+        mean, std = self.transition(s_a)
+        if self.type == 'P':
+            next_s = mean
+        elif self.type == 'D':
+            next_s = s.unsqueeze(1) + mean
+        else:
+            raise NotImplementedError
+        return r, next_s
+

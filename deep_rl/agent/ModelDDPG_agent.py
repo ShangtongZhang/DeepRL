@@ -24,6 +24,9 @@ class ModelDDPGAgent(BaseAgent):
         self.episode_reward = 0
         self.episode_rewards = []
 
+        self.model = config.model_fn()
+        self.model_opt = config.model_opt_fn(self.model.parameters())
+
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.detach_()
@@ -36,6 +39,27 @@ class ModelDDPGAgent(BaseAgent):
         action = self.network(state)
         self.config.state_normalizer.unset_read_only()
         return to_np(action)
+
+    def train_model(self):
+        config = self.config
+        for i in range(config.model_opt_epochs):
+            s, a, r, next_s, _, b_mask = self.replay.sample(config.model_opt_batch_size)
+            s = tensor(s).squeeze(1)
+            a = tensor(a).squeeze(1)
+            r = tensor(r)
+            next_s = tensor(next_s).squeeze(1)
+            b_mask = tensor(b_mask)
+
+            p_loss, r_loss = self.model.loss(s, a, r, next_s)
+            config.logger.add_scalar('tran_loss', p_loss.mean())
+            config.logger.add_scalar('r_loss', r_loss.mean())
+
+            loss = (p_loss * b_mask).sum(-1).mean() + (r_loss * b_mask).sum(-1).mean()
+
+            self.model_opt.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), 0.5)
+            self.model_opt.step()
 
     def step(self):
         config = self.config
@@ -54,7 +78,9 @@ class ModelDDPGAgent(BaseAgent):
         next_state = self.config.state_normalizer(next_state)
         self.episode_reward += reward[0]
         reward = self.config.reward_normalizer(reward)
-        self.replay.feed([self.state, action, reward, next_state, done.astype(np.uint8)])
+
+        bootstrap_mask = np.random.rand(config.ensemble_size) < config.bootstrap_prob
+        self.replay.feed([self.state, action, reward, next_state, done.astype(np.uint8), bootstrap_mask.astype(np.uint8)])
         if done[0]:
             config.logger.add_scalar('train_episode_return', self.episode_reward)
             self.episode_rewards.append(self.episode_reward)
@@ -63,18 +89,26 @@ class ModelDDPGAgent(BaseAgent):
         self.state = next_state
         self.total_steps += 1
 
+        if self.total_steps >= config.model_warm_up:
+            self.train_model()
+
         if self.replay.size() >= config.min_memory_size:
             experiences = self.replay.sample()
-            states, actions, rewards, next_states, terminals = experiences
+            states, actions, rewards, next_states, terminals, _ = experiences
             states = states.squeeze(1)
             actions = actions.squeeze(1)
             rewards = tensor(rewards)
             next_states = next_states.squeeze(1)
             terminals = tensor(terminals)
 
+            r_hat, next_s_hat = self.model(states, actions)
+            next_states = torch.cat([next_s_hat, tensor(next_states).unsqueeze(1)], dim=1)
+
             phi_next = self.target_network.feature(next_states)
             a_next = self.target_network.actor(phi_next)
             q_next = self.target_network.critic(phi_next, a_next)
+            config.logger.add_scalar('q_std', q_next.std(1).mean())
+            q_next = q_next.max(1)[0]
             q_next = config.discount * q_next * (1 - terminals)
             q_next.add_(rewards)
             q_next = q_next.detach()
