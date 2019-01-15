@@ -24,10 +24,6 @@ class DoubleDDPGAgent(BaseAgent):
         self.episode_reward = 0
         self.episode_rewards = []
 
-        self.exploitation_actor = -1
-        self.exploration_actor = 0
-        # self.std_weight = tensor(config.std_weight).unsqueeze(1)
-
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.detach_()
@@ -38,7 +34,7 @@ class DoubleDDPGAgent(BaseAgent):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(state)
         action = self.network(state)
-        action = action[:, self.exploitation_actor, :]
+        action = action[:, -1, :]
         self.config.state_normalizer.unset_read_only()
         return to_np(action)
 
@@ -52,7 +48,7 @@ class DoubleDDPGAgent(BaseAgent):
             action = [self.task.action_space.sample()]
         else:
             action = self.network(self.state)
-            action = action[:, self.exploration_actor, :]
+            action = action[:, -1, :]
             action = to_np(action)
             action += self.random_process.sample()
         action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
@@ -61,7 +57,7 @@ class DoubleDDPGAgent(BaseAgent):
         self.episode_reward += reward[0]
         reward = self.config.reward_normalizer(reward)
 
-        bootstrap_mask = np.random.rand(config.num_critics) < config.bootstrap_prob
+        bootstrap_mask = np.random.rand(2) < config.bootstrap_prob
         self.replay.feed([self.state, action, reward, next_state, done.astype(np.uint8), bootstrap_mask.astype(np.uint8)])
         if done[0]:
             config.logger.add_scalar('train_episode_return', self.episode_reward)
@@ -83,8 +79,10 @@ class DoubleDDPGAgent(BaseAgent):
 
             phi_next = self.target_network.feature(next_states)
             a_next = self.target_network.actor(phi_next)
-            a_next = a_next[:, self.exploitation_actor, :]
+            a_next = torch.cat([a_next[:, [1], :], a_next[:, [0], :]], dim=1)
+            phi_next = phi_next.unsqueeze(1).expand(-1, 2, -1)
             q_next = self.target_network.critic(phi_next, a_next)
+            q_next = q_next.min(-1)[0]
             q_next = config.discount * q_next * (1 - mask)
             q_next.add_(rewards)
             q_next = q_next.detach()
@@ -94,7 +92,6 @@ class DoubleDDPGAgent(BaseAgent):
             critic_loss = (q - q_next).mul(b_mask).pow(2).mul(0.5).sum(-1).mean()
             config.logger.add_scalar('q_std', q.std(-1).mean())
             config.logger.add_histogram('q_std_dist', q[0])
-            config.logger.add_scalar('q_std_prop', (q.std(1) / q.mean(1)).mean())
             config.logger.add_scalar('q_loss', critic_loss)
 
             self.network.zero_grad()
@@ -105,10 +102,13 @@ class DoubleDDPGAgent(BaseAgent):
             action = self.network.actor(phi)
 
             policy_loss = 0
-            for i in range(config.num_actors):
+            for i in range(2):
                 q = self.network.critic(phi.detach(), action[:, i, :])
-                q = q.mean(-1) + config.std_weight[i] * q.std(-1)
+                q = q[:, i]
                 policy_loss = policy_loss - q.mean()
+            q = self.network.critic(phi.detach(), action[:, -1, :])
+            policy_loss = policy_loss - q.mean()
+
             config.logger.add_scalar('pi_loss', policy_loss)
 
             self.network.zero_grad()
