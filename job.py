@@ -18,7 +18,6 @@ def batch():
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    double_ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
     # matrix_ddpg_continuous(game=game, run=cf.i2, remark='ucb', std_weight=[4, 2, 0.5, 0.125][cf.i1])
 
     exit()
@@ -57,7 +56,7 @@ def ddpg_continuous(**kwargs):
 
     config.task_fn = lambda: Task(kwargs['game'])
     config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
-    config.max_steps = int(2e6)
+    config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
 
@@ -82,51 +81,6 @@ def ddpg_continuous(**kwargs):
     run_steps(DDPGAgent(config))
 
 
-def matrix_ddpg_continuous(**kwargs):
-    set_tag(kwargs)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('gate', F.relu)
-    kwargs.setdefault('weight_decay', 0)
-    kwargs.setdefault('state_norm', False)
-    kwargs.setdefault('num_actors', 2)
-    kwargs.setdefault('row', 5)
-    kwargs.setdefault('column', 2)
-    kwargs.setdefault('bootstrap_prob', 0.5)
-    kwargs.setdefault('std_weight', 1)
-    kwargs.setdefault('skip', True)
-    config = Config()
-    config.merge(kwargs)
-    config.std_weight = [config.std_weight, 0]
-
-    config.task_fn = lambda: Task(kwargs['game'])
-    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
-    config.max_steps = int(2e6)
-    config.eval_interval = int(1e4)
-    config.eval_episodes = 20
-
-    if kwargs['state_norm']:
-        config.state_normalizer = MeanStdNormalizer()
-
-    config.network_fn = lambda: EnsembleDeterministicActorCriticNet(
-        config.state_dim, config.action_dim,
-        num_actors=config.num_actors,
-        num_critics=config.row * config.column,
-        actor_body=FCBody(config.state_dim, (400, 300), gate=kwargs['gate']),
-        critic_body=TwoLayerFCBodyWithAction(
-            config.state_dim, config.action_dim, (400, 300), gate=kwargs['gate']),
-        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=kwargs['weight_decay']))
-
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
-    config.discount = 0.99
-    config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
-        size=(config.action_dim, ), std=LinearSchedule(0.2))
-    config.min_memory_size = int(1e4)
-    config.target_network_mix = 1e-3
-    config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
-    run_steps(MatrixDDPGAgent(config))
-
-
 def model_ddpg_continuous(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
@@ -134,14 +88,19 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('weight_decay', 0)
     kwargs.setdefault('state_norm', False)
     kwargs.setdefault('skip', True)
-    kwargs.setdefault('ensemble_size', 10)
-    kwargs.setdefault('model_type', 'P')
+    kwargs.setdefault('debug', False)
+    kwargs.setdefault('num_models', 5)
+    kwargs.setdefault('ensemble_size', 5)
+    kwargs.setdefault('bootstrap_prob', 0.5)
+    kwargs.setdefault('model_type', 'D')
+    kwargs.setdefault('plan', True)
+    kwargs.setdefault('max_uncertainty', 5)
     config = Config()
     config.merge(kwargs)
 
     config.task_fn = lambda: Task(kwargs['game'])
     config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
-    config.max_steps = int(2e6)
+    config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
 
@@ -160,7 +119,7 @@ def model_ddpg_continuous(**kwargs):
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim, ), std=LinearSchedule(0.2))
-    config.min_memory_size = int(1e4)
+    config.agent_warm_up = int(1e4) if not kwargs['debug'] else int(1e3)
     config.target_network_mix = 1e-3
     config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
 
@@ -170,52 +129,11 @@ def model_ddpg_continuous(**kwargs):
                                     config.ensemble_size,
                                     config.model_type)
     config.model_opt_fn = lambda params: torch.optim.Adam(params, lr=3e-4, weight_decay=1e-3)
-    config.model_opt_epochs = 1
-    config.model_opt_batch_size = 128
-    config.bootstrap_prob = 0.5
-    config.model_warm_up = config.min_memory_size // 2
+    config.model_replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=512, drop_prob=1-config.bootstrap_prob)
+    config.model_opt_epochs = 4
+    config.model_warm_up = config.agent_warm_up // 2
 
     run_steps(ModelDDPGAgent(config))
-
-
-def double_ddpg_continuous(**kwargs):
-    set_tag(kwargs)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('gate', F.relu)
-    kwargs.setdefault('weight_decay', 0)
-    kwargs.setdefault('state_norm', False)
-    kwargs.setdefault('bootstrap_prob', 0.5)
-    kwargs.setdefault('skip', True)
-    config = Config()
-    config.merge(kwargs)
-
-    config.task_fn = lambda: Task(kwargs['game'])
-    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
-    config.max_steps = int(2e6)
-    config.eval_interval = int(1e4)
-    config.eval_episodes = 20
-
-    if kwargs['state_norm']:
-        config.state_normalizer = MeanStdNormalizer()
-
-    config.network_fn = lambda: EnsembleDeterministicActorCriticNet(
-        config.state_dim, config.action_dim,
-        num_actors=3,
-        num_critics=2,
-        actor_body=FCBody(config.state_dim, (400, 300), gate=kwargs['gate']),
-        critic_body=TwoLayerFCBodyWithAction(
-            config.state_dim, config.action_dim, (400, 300), gate=kwargs['gate']),
-        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=kwargs['weight_decay']))
-
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
-    config.discount = 0.99
-    config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
-        size=(config.action_dim, ), std=LinearSchedule(0.2))
-    config.min_memory_size = int(1e4)
-    config.target_network_mix = 1e-3
-    config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
-    run_steps(DoubleDDPGAgent(config))
 
 
 if __name__ == '__main__':
@@ -224,14 +142,16 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    batch()
+    # batch()
     # select_device(0)
 
-    # game = 'HalfCheetah-v2'
-    game = 'Walker2d-v2'
-    # matrix_ddpg_continuous(game=game, skip=False)
+    game = 'HalfCheetah-v2'
+    # game = 'Walker2d-v2'
     # ddpg_continuous(game=game)
-    # model_ddpg_continuous(game=game,
-    #                       skip=False,
-    #                       model_type='P')
-    # double_ddpg_continuous(game=game, skip=False)
+    model_ddpg_continuous(game=game,
+                          skip=False,
+                          debug=False,
+                          plan=True,
+                          model_type='D',
+                          max_uncertainty=0,
+                          num_models=1)

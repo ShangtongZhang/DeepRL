@@ -12,13 +12,16 @@ from ..utils import *
 
 
 class Replay:
-    def __init__(self, memory_size, batch_size):
+    def __init__(self, memory_size, batch_size, drop_prob=0):
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.data = []
         self.pos = 0
+        self.drop_prob = drop_prob
 
     def feed(self, experience):
+        if np.random.rand() < self.drop_prob:
+            return
         if self.pos >= len(self.data):
             self.data.append(experience)
         else:
@@ -45,6 +48,13 @@ class Replay:
 
     def empty(self):
         return not len(self.data)
+
+    def shuffle(self):
+        np.random.shuffle(self.data)
+
+    def clear(self):
+        self.data = []
+        self.pos = 0
 
 
 class SkewedReplay:

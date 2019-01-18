@@ -258,16 +258,16 @@ class Model(nn.Module, BaseNet):
             nn.ReLU(),
         )
 
-        self.fc_p_mean = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size), 1e-3)
+        self.fc_p_mean = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size))
         if type == 'P':
-            self.fc_p_std = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size), 1e-3)
+            self.fc_p_std = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size))
 
         self.fc_r = nn.Sequential(
             layer_init(nn.Linear(state_dim + action_dim, hidden_units)),
             nn.ReLU(),
             layer_init(nn.Linear(hidden_units, hidden_units)),
             nn.ReLU(),
-            layer_init(nn.Linear(hidden_units, ensemble_size), 1e-3)
+            layer_init(nn.Linear(hidden_units, ensemble_size))
         )
 
         self.state_dim = state_dim
