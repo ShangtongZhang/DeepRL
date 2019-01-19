@@ -89,12 +89,14 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('state_norm', False)
     kwargs.setdefault('skip', True)
     kwargs.setdefault('debug', False)
-    kwargs.setdefault('num_models', 5)
+    kwargs.setdefault('num_models', 1)
     kwargs.setdefault('ensemble_size', 5)
     kwargs.setdefault('bootstrap_prob', 0.5)
     kwargs.setdefault('model_type', 'D')
     kwargs.setdefault('plan', True)
-    kwargs.setdefault('max_uncertainty', 5)
+    kwargs.setdefault('max_uncertainty', 1)
+    kwargs.setdefault('plan_warm_up', int(1e4))
+    kwargs.setdefault('action_noise', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -128,8 +130,8 @@ def model_ddpg_continuous(**kwargs):
                                     128,
                                     config.ensemble_size,
                                     config.model_type)
-    config.model_opt_fn = lambda params: torch.optim.Adam(params, lr=3e-4, weight_decay=1e-3)
-    config.model_replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=512, drop_prob=1-config.bootstrap_prob)
+    config.model_opt_fn = lambda params: torch.optim.Adam(params, lr=1e-3)
+    config.model_replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=512, drop_prob=0)
     config.model_opt_epochs = 4
     config.model_warm_up = config.agent_warm_up // 2
 
@@ -153,5 +155,7 @@ if __name__ == '__main__':
                           debug=False,
                           plan=True,
                           model_type='D',
-                          max_uncertainty=0,
-                          num_models=1)
+                          max_uncertainty=1,
+                          plan_warm_up=int(1e4),
+                          action_noise=0.01
+                          )

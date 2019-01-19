@@ -47,17 +47,21 @@ class ModelDDPGAgent(BaseAgent):
         model_opt = self.model_opts[model_index]
         model_replay = self.model_replays[model_index]
         for i in range(config.model_opt_epochs):
-            s, a, r, next_s, _ = model_replay.sample()
+            s, a, r, next_s, _, b_mask = model_replay.sample()
             s = tensor(s)
             a = tensor(a)
             r = tensor(r).unsqueeze(1)
             next_s = tensor(next_s)
+            b_mask = tensor(b_mask)
 
             p_loss, r_loss = model.loss(s, a, r, next_s)
             config.logger.add_scalar('model_%d_tran_loss' % (model_index), p_loss.mean())
             config.logger.add_scalar('model_%d_r_loss' % (model_index), r_loss.mean())
 
-            loss = p_loss.sum(-1).mean() + r_loss.sum(-1).mean()
+            p_loss = (p_loss * b_mask).sum() / b_mask.sum()
+            r_loss = (r_loss * b_mask).sum() / b_mask.sum()
+
+            loss = p_loss + r_loss
 
             model_opt.zero_grad()
             loss.backward()
@@ -102,8 +106,9 @@ class ModelDDPGAgent(BaseAgent):
             config.logger.add_histogram('uncertainty_dist', uncertainty)
             config.logger.add_scalar('uncertainty_max', uncertainty.max())
             config.logger.add_scalar('uncertainty_mean', uncertainty.mean())
-            config.logger.add_scalar('uncertainty_ratio', t_mask.mean())
+            config.logger.add_scalar('uncertainty_ratio', t_mask.sum())
 
+        target = target.mean(-1).unsqueeze(-1)
         q = self.network.critic(states, actions.detach())
         critic_loss = (q - target).mul(t_mask).pow(2).mul(0.5).sum() / t_mask.sum().add(1e-5)
         config.logger.add_scalar('q_loss_plan', critic_loss)
@@ -148,7 +153,9 @@ class ModelDDPGAgent(BaseAgent):
         self.episode_reward += reward[0]
         reward = self.config.reward_normalizer(reward)
 
-        batch_data = list(zip(self.state, action, reward, next_state, 1 - done))
+        b_mask = np.random.rand(1, config.ensemble_size) < config.bootstrap_prob
+        b_mask = b_mask.astype(np.uint8)
+        batch_data = list(zip(self.state, action, reward, next_state, 1 - done, b_mask))
         self.replay.feed_batch(batch_data)
         for m_replay in self.model_replays:
             m_replay.feed_batch(batch_data)
@@ -162,13 +169,13 @@ class ModelDDPGAgent(BaseAgent):
         self.state = next_state
         self.total_steps += 1
 
-        if self.total_steps >= config.model_warm_up and config.plan:
+        if self.total_steps >= config.model_warm_up:
             for i in range(config.num_models):
                 self.train_model(i)
 
         if self.replay.size() >= config.agent_warm_up:
             experiences = self.replay.sample()
-            states, actions, rewards, next_states, mask = experiences
+            states, actions, rewards, next_states, mask, _ = experiences
             states = tensor(states)
             actions = tensor(actions)
             rewards = tensor(rewards).unsqueeze(1)
@@ -176,8 +183,8 @@ class ModelDDPGAgent(BaseAgent):
             mask = tensor(mask).unsqueeze(1)
             self.real_transitions([states, actions, rewards, next_states, mask])
 
-            if config.plan:
-                actions = actions + torch.randn(actions.size(), device=Config.DEVICE).mul(0.1)
+            if config.plan and self.total_steps >= config.plan_warm_up:
+                actions = actions + torch.randn(actions.size(), device=Config.DEVICE).mul(config.action_noise)
                 self.imaginary_transitions(states, actions)
 
             self.soft_update(self.target_network, self.network)

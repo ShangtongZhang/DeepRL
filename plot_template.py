@@ -116,19 +116,19 @@ def plot_mujoco():
     }
     games = [
         'HalfCheetah-v2',
-        'Walker2d-v2',
-        'Hopper-v2',
+        # 'Walker2d-v2',
+        # 'Hopper-v2',
         # 'Reacher-v2',
-        'Swimmer-v2',
-    ][:1]
+        # 'Swimmer-v2',
+    ]
 
     patterns = [
         'remark_ddpg-run',
-        'remark_ucb-run',
-        'remark_ucb-std_weight_4-run',
-        'remark_ucb-std_weight_2-run',
-        'remark_ucb-std_weight_0\.5-run',
-        'remark_ucb-std_weight_0\.125-run',
+        # 'remark_ucb-run',
+        # 'remark_ucb-std_weight_4-run',
+        # 'remark_ucb-std_weight_2-run',
+        # 'remark_ucb-std_weight_0\.5-run',
+        # 'remark_ucb-std_weight_0\.125-run',
     ]
 
     l = len(games)

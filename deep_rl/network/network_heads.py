@@ -251,8 +251,12 @@ class Model(nn.Module, BaseNet):
         super(Model, self).__init__()
         assert type in ['D', 'P']
 
-        self.fc_p = nn.Sequential(
+        self.fc_body = nn.Sequential(
             layer_init(nn.Linear(state_dim + action_dim, hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(hidden_units, hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(hidden_units, hidden_units)),
             nn.ReLU(),
             layer_init(nn.Linear(hidden_units, hidden_units)),
             nn.ReLU(),
@@ -262,13 +266,7 @@ class Model(nn.Module, BaseNet):
         if type == 'P':
             self.fc_p_std = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size))
 
-        self.fc_r = nn.Sequential(
-            layer_init(nn.Linear(state_dim + action_dim, hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(hidden_units, hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(hidden_units, ensemble_size))
-        )
+        self.fc_r = layer_init(nn.Linear(hidden_units, ensemble_size))
 
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -277,7 +275,8 @@ class Model(nn.Module, BaseNet):
         self.to(Config.DEVICE)
 
     def transition(self, s_a):
-        phi = self.fc_p(s_a)
+        phi = self.fc_body(s_a)
+        r = self.fc_r(phi)
         mean = self.fc_p_mean(phi)
         mean = mean.view(-1, self.ensemble_size, self.state_dim)
         if self.type == 'P':
@@ -285,16 +284,12 @@ class Model(nn.Module, BaseNet):
             std = std.view(-1, self.ensemble_size, self.state_dim)
         else:
             std = None
-        return mean, std
-
-    def reward(self, s_a):
-        return self.fc_r(s_a)
+        return mean, std, r
 
     def loss(self, s, a, r, next_s):
         s_a = torch.cat([s, a], dim=-1)
-        r_hat = self.reward(s_a)
+        mean, std, r_hat = self.transition(s_a)
         r_loss = (r - r_hat).pow(2).mul(0.5)
-        mean, std = self.transition(s_a)
         next_s = next_s.unsqueeze(1)
         if self.type == 'P':
             dist = DiagonalNormal(mean, std)
@@ -312,8 +307,7 @@ class Model(nn.Module, BaseNet):
         s = tensor(s)
         a = tensor(a)
         s_a = torch.cat([s, a], dim=-1)
-        r = self.reward(s_a)
-        mean, std = self.transition(s_a)
+        mean, std, r = self.transition(s_a)
         if self.type == 'P':
             next_s = mean
         elif self.type == 'D':
