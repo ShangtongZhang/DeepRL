@@ -103,6 +103,11 @@ class ModelDDPGAgent(BaseAgent):
             target = rewards + config.discount * q_next.squeeze(-1)
             uncertainty = target.std(-1).unsqueeze(-1)
             t_mask = (uncertainty < config.max_uncertainty).float()
+            if config.random_t_mask:
+                shape = t_mask.size()
+                t_mask = to_np(t_mask).flatten()
+                np.random.shuffle(t_mask)
+                t_mask = tensor(t_mask).view(shape)
             config.logger.add_histogram('uncertainty_dist', uncertainty)
             config.logger.add_scalar('uncertainty_max', uncertainty.max())
             config.logger.add_scalar('uncertainty_mean', uncertainty.mean())
