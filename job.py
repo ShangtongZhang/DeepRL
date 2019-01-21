@@ -20,13 +20,21 @@ def batch():
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
     # matrix_ddpg_continuous(game=game, run=cf.i2, remark='ucb', std_weight=[4, 2, 0.5, 0.125][cf.i1])
     params = [
-        dict(max_uncertainty=1, action_noise=0, random_t_mask=False),
-        dict(max_uncertainty=1, action_noise=0.05, random_t_mask=False),
-        dict(max_uncertainty=1, action_noise=0.1, random_t_mask=False),
-        dict(max_uncertainty=1, action_noise=0.2, random_t_mask=False),
-        dict(max_uncertainty=1, action_noise=0.1, random_t_mask=True),
-        dict(max_uncertainty=float('inf'), action_noise=0.1),
-        dict(max_uncertainty=float('inf'), action_noise=0),
+        # dict(max_uncertainty=1, action_noise=0, random_t_mask=False),
+        # dict(max_uncertainty=1, action_noise=0.05, random_t_mask=False),
+        # dict(max_uncertainty=1, action_noise=0.1, random_t_mask=False),
+        # dict(max_uncertainty=1, action_noise=0.2, random_t_mask=False),
+        # dict(max_uncertainty=1, action_noise=0.1, random_t_mask=True),
+        # dict(max_uncertainty=float('inf'), action_noise=0.1),
+        # dict(max_uncertainty=float('inf'), action_noise=0),
+
+        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=1),
+        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=1),
+        dict(max_uncertainty=4, action_noise=0.1, live_action=False, plan_steps=1),
+        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=2),
+        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=4),
+        dict(max_uncertainty=1, action_noise=0.1, live_action=True, plan_steps=1),
+        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=1, plan_actor=True),
     ]
     model_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
 
@@ -109,6 +117,9 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('agent_warm_up', int(1e4))
     kwargs.setdefault('action_noise', 0)
     kwargs.setdefault('random_t_mask', False)
+    kwargs.setdefault('live_action', False)
+    kwargs.setdefault('plan_steps', 1)
+    kwargs.setdefault('plan_actor', False)
     config = Config()
     config.merge(kwargs)
 
@@ -167,10 +178,12 @@ if __name__ == '__main__':
     # game = 'Walker2d-v2'
     # ddpg_continuous(game=game)
     model_ddpg_continuous(game=game,
-                          skip=False,
+                          skip=True,
                           debug=True,
                           plan=True,
                           max_uncertainty=float('inf'),
                           action_noise=0.01,
-                          random_t_mask=False,
+                          plan_steps=2,
+                          live_action=True,
+                          plan_actor=True,
                           )

@@ -74,6 +74,7 @@ def ddpg_plot(**kwargs):
     kwargs.setdefault('color', 0)
     kwargs.setdefault('top_k', 0)
     kwargs.setdefault('max_timesteps', 1e8)
+    kwargs.setdefault('max_x_len', None)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
@@ -84,6 +85,10 @@ def ddpg_plot(**kwargs):
     for y in data:
         y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
         x = np.arange(y.shape[0]) * kwargs['x_interval']
+        max_x_len = kwargs['max_x_len']
+        if max_x_len is not None:
+            x = x[:max_x_len]
+            y = y[:max_x_len]
         new_data.append([x, y])
     data = new_data
 
@@ -112,7 +117,8 @@ def plot_mujoco():
     kwargs = {
         'x_interval': int(1e4),
         'rep': 20,
-        'average': False
+        'average': True,
+        'max_x_len': 101
     }
     games = [
         'HalfCheetah-v2',
@@ -123,12 +129,15 @@ def plot_mujoco():
     ]
 
     patterns = [
-        'remark_ddpg-run',
-        # 'remark_ucb-run',
-        # 'remark_ucb-std_weight_4-run',
-        # 'remark_ucb-std_weight_2-run',
-        # 'remark_ucb-std_weight_0\.5-run',
-        # 'remark_ucb-std_weight_0\.125-run',
+        # 'remark_ddpg-run',
+        'action_noise_0\.1-max_uncertainty_1-random_t_mask_False-run',
+        'action_noise_0\.1-max_uncertainty_1-random_t_mask_True-run',
+        # 'action_noise_0-max_uncertainty_1-random_t_mask_False-run',
+        'action_noise_0-max_uncertainty_inf-run',
+        'action_noise_0\.1-max_uncertainty_inf-run',
+
+        # 'action_noise_0\.2-max_uncertainty_1-random_t_mask_False-run',
+        # 'action_noise_0\.05-max_uncertainty_1-random_t_mask_False-run',
     ]
 
     l = len(games)
@@ -136,7 +145,8 @@ def plot_mujoco():
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+        ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs)
     plt.show()
 
 if __name__ == '__main__':

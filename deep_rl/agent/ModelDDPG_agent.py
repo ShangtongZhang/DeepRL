@@ -122,12 +122,13 @@ class ModelDDPGAgent(BaseAgent):
         critic_loss.backward()
         self.network.critic_opt.step()
 
-        # policy_loss = -self.network.critic(states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
-        # config.logger.add_scalar('pi_loss_plan', policy_loss)
-        #
-        # self.network.zero_grad()
-        # policy_loss.backward()
-        # self.network.actor_opt.step()
+        if config.plan_actor:
+            actions = self.network.actor(states)
+            policy_loss = -self.network.critic(states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
+            config.logger.add_scalar('pi_loss_plan', policy_loss)
+            self.network.zero_grad()
+            policy_loss.backward()
+            self.network.actor_opt.step()
 
     def model_predict(self, s, a):
         rewards = []
@@ -189,7 +190,13 @@ class ModelDDPGAgent(BaseAgent):
             self.real_transitions([states, actions, rewards, next_states, mask])
 
             if config.plan and self.total_steps >= config.plan_warm_up:
-                actions = actions + torch.randn(actions.size(), device=Config.DEVICE).mul(config.action_noise)
+                if config.live_action:
+                    with torch.no_grad():
+                        actions = self.network.actor(states)
+                noise = torch.randn((actions.size(0) * config.plan_steps, actions.size(1)), device=Config.DEVICE).mul(config.action_noise)
+                actions = torch.cat([actions] * config.plan_steps, dim=0)
+                actions = actions + noise
+                states = torch.cat([states] * config.plan_steps, dim=0)
                 self.imaginary_transitions(states, actions)
 
             self.soft_update(self.target_network, self.network)
