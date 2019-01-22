@@ -113,7 +113,15 @@ class ModelDDPGAgent(BaseAgent):
             config.logger.add_scalar('uncertainty_mean', uncertainty.mean())
             config.logger.add_scalar('uncertainty_ratio', t_mask.sum())
 
-        target = target.mean(-1).unsqueeze(-1)
+        if config.model_agg == 'mean':
+            target = target.mean(-1)
+        elif config.model_agg == 'min':
+            target = target.min(-1)[0]
+        elif config.model_agg == 'max':
+            target = target.max(-1)[0]
+        else:
+            raise NotImplementedError
+        target = target.unsqueeze(-1)
         q = self.network.critic(states, actions.detach())
         critic_loss = (q - target).mul(t_mask).pow(2).mul(0.5).sum() / t_mask.sum().add(1e-5)
         config.logger.add_scalar('q_loss_plan', critic_loss)

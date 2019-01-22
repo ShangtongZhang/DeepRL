@@ -28,13 +28,17 @@ def batch():
         # dict(max_uncertainty=float('inf'), action_noise=0.1),
         # dict(max_uncertainty=float('inf'), action_noise=0),
 
-        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=1),
-        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=1),
-        dict(max_uncertainty=4, action_noise=0.1, live_action=False, plan_steps=1),
-        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=2),
-        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=4),
-        dict(max_uncertainty=1, action_noise=0.1, live_action=True, plan_steps=1),
-        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=1, plan_actor=True),
+        # dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=1),
+        # dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=1),
+        # dict(max_uncertainty=4, action_noise=0.1, live_action=False, plan_steps=1),
+        # dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=2),
+        # dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=4),
+        # dict(max_uncertainty=1, action_noise=0.1, live_action=True, plan_steps=1),
+        # dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=1, plan_actor=True),
+
+        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='mean'),
+        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='min'),
+        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='max'),
     ]
     model_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
 
@@ -120,6 +124,7 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('live_action', False)
     kwargs.setdefault('plan_steps', 1)
     kwargs.setdefault('plan_actor', False)
+    kwargs.setdefault('model_agg', 'mean')
     config = Config()
     config.merge(kwargs)
 
