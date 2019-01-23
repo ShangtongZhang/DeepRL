@@ -152,10 +152,14 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-max_uncertainty_1-plan_steps_2-run',
         # 'action_noise_0\.1-live_action_False-max_uncertainty_1-plan_steps_4-run',
 
-        'action_noise_0\.1-live_action_False-max_uncertainty_2-plan_steps_1-run',
+        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-plan_steps_1-run',
         # 'action_noise_0\.1-live_action_False-max_uncertainty_4-plan_steps_1-run',
 
         # 'action_noise_0.1-live_action_True-max_uncertainty_1-plan_steps_1-run',
+
+        'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_max-plan_steps_2-run',
+        'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_min-plan_steps_2-run',
+        'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_2-run',
     ]
 
     l = len(games)
@@ -163,8 +167,8 @@ def plot_mujoco():
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs, top_k=3)
-        ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs, top_k=6)
+            ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs, top_k=9)
+        ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs, top_k=9)
     plt.show()
 
 if __name__ == '__main__':
