@@ -14,7 +14,7 @@ def batch():
 
     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
     # game = games[cf.i1]
-    game = games[0]
+    game = games[1]
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
@@ -45,17 +45,22 @@ def batch():
         # dict(max_uncertainty=2, action_noise=0.2, live_action=False, plan_steps=1, model_agg='mean'),
         # dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=2, model_agg='mean'),
 
-        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.05, plan_actor=True),
-        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.1, plan_actor=True),
-        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.2, plan_actor=True),
+        # dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.05, plan_actor=True),
+        # dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.1, plan_actor=True),
+        # dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.2, plan_actor=True),
 
-        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.05, plan_actor=False),
-        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.1, plan_actor=False),
+        # dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.05, plan_actor=False),
+        # dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.1, plan_actor=False),
         # dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.2, plan_actor=False),
         #
         # dict(max_uncertainty=2, action_noise=0, live_action=True, plan_steps=1, state_noise=0.05, plan_actor=True),
         # dict(max_uncertainty=2, action_noise=0, live_action=True, plan_steps=1, state_noise=0.1, plan_actor=True),
         # dict(max_uncertainty=2, action_noise=0, live_action=True, plan_steps=1, state_noise=0.2, plan_actor=True),
+
+        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=1, model_agg='mean', plan_actor=True),
+        dict(max_uncertainty=2, action_noise=0.2, live_action=False, plan_steps=1, model_agg='mean', plan_actor=True),
+        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=2, model_agg='mean', plan_actor=True),
+        dict(max_uncertainty=1, action_noise=0.2, live_action=False, plan_steps=2, model_agg='mean', plan_actor=True),
     ]
 
     model_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
@@ -206,9 +211,9 @@ if __name__ == '__main__':
                           debug=True,
                           plan=True,
                           max_uncertainty=2,
-                          action_noise=0,
+                          action_noise=0.2,
                           plan_steps=1,
                           live_action=True,
                           plan_actor=True,
-                          state_noise=0.1
+                          state_noise=0
                           )

@@ -112,6 +112,7 @@ class ModelDDPGAgent(BaseAgent):
             config.logger.add_scalar('uncertainty_max', uncertainty.max())
             config.logger.add_scalar('uncertainty_mean', uncertainty.mean())
             config.logger.add_scalar('uncertainty_ratio', t_mask.sum())
+            config.logger.info('uncertainty_ratio_%d' % t_mask.sum())
 
         if config.model_agg == 'mean':
             target = target.mean(-1)
@@ -131,8 +132,9 @@ class ModelDDPGAgent(BaseAgent):
         self.network.critic_opt.step()
 
         if config.plan_actor:
-            actions = self.network.actor(states)
-            policy_loss = -self.network.critic(states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
+            actions = self.network.actor(next_states)
+            t_mask = t_mask.unsqueeze(1).expand(-1, actions.size(1), -1)
+            policy_loss = -self.network.critic(next_states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
             config.logger.add_scalar('pi_loss_plan', policy_loss)
             self.network.zero_grad()
             policy_loss.backward()
