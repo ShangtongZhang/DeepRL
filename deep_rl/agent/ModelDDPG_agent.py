@@ -198,13 +198,18 @@ class ModelDDPGAgent(BaseAgent):
             self.real_transitions([states, actions, rewards, next_states, mask])
 
             if config.plan and self.total_steps >= config.plan_warm_up:
+                if config.state_noise:
+                    noise = torch.randn((states.size(0) * config.plan_steps, states.size(1)), device=Config.DEVICE).mul(config.state_noise)
+                    states = torch.cat([states] * config.plan_steps, dim=0)
+                    states = states + noise
                 if config.live_action:
                     with torch.no_grad():
                         actions = self.network.actor(states)
-                noise = torch.randn((actions.size(0) * config.plan_steps, actions.size(1)), device=Config.DEVICE).mul(config.action_noise)
-                actions = torch.cat([actions] * config.plan_steps, dim=0)
-                actions = actions + noise
-                states = torch.cat([states] * config.plan_steps, dim=0)
+                if config.action_noise:
+                    noise = torch.randn((actions.size(0) * config.plan_steps, actions.size(1)), device=Config.DEVICE).mul(config.action_noise)
+                    actions = torch.cat([actions] * config.plan_steps, dim=0)
+                    actions = actions + noise
+                    states = torch.cat([states] * config.plan_steps, dim=0)
                 self.imaginary_transitions(states, actions)
 
             self.soft_update(self.target_network, self.network)

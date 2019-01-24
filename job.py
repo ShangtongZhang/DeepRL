@@ -36,10 +36,28 @@ def batch():
         # dict(max_uncertainty=1, action_noise=0.1, live_action=True, plan_steps=1),
         # dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=1, plan_actor=True),
 
-        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='mean'),
-        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='min'),
-        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='max'),
+        # dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='mean'),
+        # dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='min'),
+        # dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=2, model_agg='max'),
+
+        # dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=1, model_agg='mean'),
+        # dict(max_uncertainty=2, action_noise=0.05, live_action=False, plan_steps=1, model_agg='mean'),
+        # dict(max_uncertainty=2, action_noise=0.2, live_action=False, plan_steps=1, model_agg='mean'),
+        # dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=2, model_agg='mean'),
+
+        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.05, plan_actor=True),
+        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.1, plan_actor=True),
+        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.2, plan_actor=True),
+
+        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.05, plan_actor=False),
+        dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.1, plan_actor=False),
+        # dict(max_uncertainty=2, action_noise=0, live_action=False, plan_steps=1, state_noise=0.2, plan_actor=False),
+        #
+        # dict(max_uncertainty=2, action_noise=0, live_action=True, plan_steps=1, state_noise=0.05, plan_actor=True),
+        # dict(max_uncertainty=2, action_noise=0, live_action=True, plan_steps=1, state_noise=0.1, plan_actor=True),
+        # dict(max_uncertainty=2, action_noise=0, live_action=True, plan_steps=1, state_noise=0.2, plan_actor=True),
     ]
+
     model_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
 
     exit()
@@ -125,6 +143,7 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('plan_steps', 1)
     kwargs.setdefault('plan_actor', False)
     kwargs.setdefault('model_agg', 'mean')
+    kwargs.setdefault('state_noise', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -186,9 +205,10 @@ if __name__ == '__main__':
                           skip=True,
                           debug=True,
                           plan=True,
-                          max_uncertainty=float('inf'),
-                          action_noise=0.01,
-                          plan_steps=2,
+                          max_uncertainty=2,
+                          action_noise=0,
+                          plan_steps=1,
                           live_action=True,
                           plan_actor=True,
+                          state_noise=0.1
                           )
