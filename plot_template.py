@@ -127,6 +127,7 @@ def plot_mujoco():
         'rep': 20,
         'average': True,
         'max_x_len': 101,
+        'top_k': 5,
     }
     games = [
         'HalfCheetah-v2',
@@ -185,12 +186,12 @@ def plot_mujoco():
     ]
 
     l = len(games)
-    plt.figure(figsize=(l * 10, 10))
+    plt.figure(figsize=(l * 15, 15))
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs, top_k=0)
-        ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs, top_k=0)
+            ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+        ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs)
     plt.show()
 
 if __name__ == '__main__':
