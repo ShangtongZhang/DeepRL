@@ -130,7 +130,7 @@ def plot_mujoco():
     }
     games = [
         'HalfCheetah-v2',
-        # 'Walker2d-v2',
+        'Walker2d-v2',
         # 'Hopper-v2',
         # 'Reacher-v2',
         # 'Swimmer-v2',
@@ -161,10 +161,10 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_min-plan_steps_2-run',
         # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_2-run',
 
-        'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
-        'action_noise_0\.05-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
-        'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
-        'action_noise_0\.1-live_action_False-max_uncertainty_1-model_agg_mean-plan_steps_2-run',
+        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
+        # 'action_noise_0\.05-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
+        # 'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
+        # 'action_noise_0\.1-live_action_False-max_uncertainty_1-model_agg_mean-plan_steps_2-run',
 
         # 'action_noise_0-live_action_False-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.2-run',
         # 'action_noise_0-live_action_False-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.05-run',
@@ -178,6 +178,10 @@ def plot_mujoco():
         # 'action_noise_0-live_action_True-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.05-run',
         # 'action_noise_0-live_action_True-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.1-run',
 
+        'action_noise_0\.1-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
+        'action_noise_0\.2-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
+        'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
+        'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
     ]
 
     l = len(games)
