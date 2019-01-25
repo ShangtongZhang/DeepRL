@@ -10,3 +10,4 @@ from .UCBDDPG_agent import *
 from .ModelDDPG_agent import *
 from .MatrixDDPG_agent import *
 from .DoubleDDPG_agent import *
+from .BackwardModelDDPG_agent import *
