@@ -9,7 +9,7 @@ from ..component import *
 from .BaseAgent import *
 import torchvision
 
-class ModelDDPGAgent(BaseAgent):
+class BackwardModelDDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -94,14 +94,29 @@ class ModelDDPGAgent(BaseAgent):
         policy_loss.backward()
         self.network.actor_opt.step()
 
-    def imaginary_transitions(self, states, actions):
+    def imaginary_transitions(self, actions, next_states, mask):
         config = self.config
         with torch.no_grad():
-            rewards, next_states = self.model_predict(states, actions)
+            rewards, states = self.model_predict(next_states, actions)
             a_next = self.target_network.actor(next_states)
             q_next = self.target_network.critic(next_states, a_next)
-            target = rewards + config.discount * q_next.squeeze(-1)
-            uncertainty = target.std(-1).unsqueeze(-1)
+
+            states_std = states.std(1).mean(-1).view(-1, 1)
+            rewards_std = rewards.std(-1).view(-1, 1)
+
+            indices = torch.randint(0, states.size(1), (states.size(0), 1), device=Config.DEVICE).long()
+            states = states.gather(1, indices.unsqueeze(-1).expand(-1, -1, states.size(2))).squeeze(1)
+            rewards = rewards.gather(1, indices)
+            target = rewards + config.discount * mask * q_next
+
+            config.logger.add_histogram('state_std_dist', states_std)
+            config.logger.add_scalar('state_std_max', states_std.max())
+            config.logger.add_scalar('state_std_mean', states_std.mean())
+            config.logger.add_histogram('reward_std_dist', rewards_std)
+            config.logger.add_scalar('reward_std_max', rewards.max())
+            config.logger.add_scalar('reward_std_mean', rewards.mean())
+
+            uncertainty = states_std + rewards_std
             t_mask = (uncertainty < config.max_uncertainty).float()
             if config.random_t_mask:
                 shape = t_mask.size()
@@ -112,17 +127,8 @@ class ModelDDPGAgent(BaseAgent):
             config.logger.add_scalar('uncertainty_max', uncertainty.max())
             config.logger.add_scalar('uncertainty_mean', uncertainty.mean())
             config.logger.add_scalar('uncertainty_ratio', t_mask.sum())
-            config.logger.info('uncertainty_ratio_%d' % t_mask.sum())
+            # config.logger.info('uncertainty_ratio_%d' % t_mask.sum())
 
-        if config.model_agg == 'mean':
-            target = target.mean(-1)
-        elif config.model_agg == 'min':
-            target = target.min(-1)[0]
-        elif config.model_agg == 'max':
-            target = target.max(-1)[0]
-        else:
-            raise NotImplementedError
-        target = target.unsqueeze(-1)
         q = self.network.critic(states, actions.detach())
         critic_loss = (q - target).mul(t_mask).pow(2).mul(0.5).sum() / t_mask.sum().add(1e-5)
         config.logger.add_scalar('q_loss_plan', critic_loss)
@@ -132,8 +138,7 @@ class ModelDDPGAgent(BaseAgent):
         self.network.critic_opt.step()
 
         if config.plan_actor:
-            actions = self.network.actor(next_states)
-            t_mask = t_mask.unsqueeze(1).expand(-1, actions.size(1), -1)
+            actions = self.network.actor(states)
             policy_loss = -self.network.critic(next_states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
             config.logger.add_scalar('pi_loss_plan', policy_loss)
             self.network.zero_grad()
@@ -142,14 +147,14 @@ class ModelDDPGAgent(BaseAgent):
 
     def model_predict(self, s, a):
         rewards = []
-        next_states = []
+        prev_states = []
         for m in self.models:
-            r, next_s = m(s, a)
+            r, prev_s = m(s, a)
             rewards.append(r)
-            next_states.append(next_s)
+            prev_states.append(prev_s)
         r = torch.cat(rewards, dim=-1)
-        next_s = torch.cat(next_states, dim=1)
-        return r, next_s
+        prev_states = torch.cat(prev_states, dim=1)
+        return r, prev_states
 
     def step(self):
         config = self.config
@@ -200,10 +205,6 @@ class ModelDDPGAgent(BaseAgent):
             self.real_transitions([states, actions, rewards, next_states, mask])
 
             if config.plan and self.total_steps >= config.plan_warm_up:
-                if config.state_noise:
-                    noise = torch.randn((states.size(0) * config.plan_steps, states.size(1)), device=Config.DEVICE).mul(config.state_noise)
-                    states = torch.cat([states] * config.plan_steps, dim=0)
-                    states = states + noise
                 if config.live_action:
                     with torch.no_grad():
                         actions = self.network.actor(states)
@@ -211,7 +212,8 @@ class ModelDDPGAgent(BaseAgent):
                     noise = torch.randn((actions.size(0) * config.plan_steps, actions.size(1)), device=Config.DEVICE).mul(config.action_noise)
                     actions = torch.cat([actions] * config.plan_steps, dim=0)
                     actions = actions + noise
-                    states = torch.cat([states] * config.plan_steps, dim=0)
-                self.imaginary_transitions(states, actions)
+                    next_states = torch.cat([next_states] * config.plan_steps, dim=0)
+                    mask = torch.cat([mask] * config.plan_steps, dim=0)
+                self.imaginary_transitions(actions, next_states, mask)
 
             self.soft_update(self.target_network, self.network)
