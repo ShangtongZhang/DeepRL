@@ -280,25 +280,25 @@ if __name__ == '__main__':
     game = 'Reacher-v2'
     # game = 'Walker2d-v2'
     # ddpg_continuous(game=game)
-    backward_model_ddpg_continuous(game=game,
-                                   skip=False,
-                                   debug=False,
-                                   plan=True,
-                                   max_uncertainty=float('inf'),
-                                   action_noise=0.1,
-                                   plan_steps=1,
-                                   live_action=False,
-                                   plan_actor=True,
-                                   )
+    # backward_model_ddpg_continuous(game=game,
+    #                                skip=False,
+    #                                debug=False,
+    #                                plan=True,
+    #                                max_uncertainty=float('inf'),
+    #                                action_noise=0.1,
+    #                                plan_steps=1,
+    #                                live_action=False,
+    #                                plan_actor=True,
+    #                                )
 
-    # model_ddpg_continuous(game=game,
-    #                       skip=True,
-    #                       debug=True,
-    #                       plan=True,
-    #                       max_uncertainty=2,
-    #                       action_noise=0.2,
-    #                       plan_steps=1,
-    #                       live_action=True,
-    #                       plan_actor=True,
-    #                       state_noise=0
-    #                       )
+    model_ddpg_continuous(game=game,
+                          skip=True,
+                          debug=True,
+                          plan=True,
+                          max_uncertainty=2,
+                          action_noise=0.2,
+                          plan_steps=1,
+                          live_action=True,
+                          plan_actor=True,
+                          state_noise=0
+                          )

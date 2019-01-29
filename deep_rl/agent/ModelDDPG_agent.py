@@ -127,6 +127,13 @@ class ModelDDPGAgent(BaseAgent):
         critic_loss = (q - target).mul(t_mask).pow(2).mul(0.5).sum() / t_mask.sum().add(1e-5)
         config.logger.add_scalar('q_loss_plan', critic_loss)
 
+        if config.unroll:
+            with torch.no_grad():
+                indices = torch.randint(0, next_states.size(1), (states.size(0), 1), device=Config.DEVICE).long()
+                r, next_s = self.model_predict()
+
+
+
         self.network.zero_grad()
         critic_loss.backward()
         self.network.critic_opt.step()
