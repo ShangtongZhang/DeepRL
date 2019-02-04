@@ -12,6 +12,7 @@ from baselines import bench
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.atari_wrappers import FrameStack as FrameStack_
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv, VecEnv
+import copy
 
 from ..utils import *
 
@@ -139,11 +140,12 @@ class FrameStack(FrameStack_):
 
 # The original one in baselines is really bad
 class DummyVecEnv(VecEnv):
-    def __init__(self, env_fns):
+    def __init__(self, env_fns, auto_reset=True):
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
         VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
         self.actions = None
+        self.auto_reset = auto_reset
 
     def step_async(self, actions):
         self.actions = actions
@@ -152,7 +154,7 @@ class DummyVecEnv(VecEnv):
         data = []
         for i in range(self.num_envs):
             obs, rew, done, info = self.envs[i].step(self.actions[i])
-            if done:
+            if done and self.auto_reset:
                 obs = self.envs[i].reset()
             data.append([obs, rew, done, info])
         obs, rew, done, info = zip(*data)
@@ -171,15 +173,15 @@ class Task:
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
-                 seed=np.random.randint(int(1e5))):
+                 seed=np.random.randint(int(1e5)),
+                 auto_reset=True):
         if log_dir is not None:
             mkdir(log_dir)
         envs = [make_env(name, seed, i, log_dir, episode_life) for i in range(num_envs)]
         if single_process:
-            Wrapper = DummyVecEnv
+            self.env = DummyVecEnv(envs, auto_reset)
         else:
-            Wrapper = SubprocVecEnv
-        self.env = Wrapper(envs)
+            self.env = SubprocVecEnv(envs)
         self.name = name
         self.observation_space = self.env.observation_space
         self.state_dim = int(np.prod(self.env.observation_space.shape))
@@ -192,6 +194,8 @@ class Task:
         else:
             assert 'unknown action space'
 
+        self.sim = self.get_sim(self.env)
+
     def reset(self):
         return self.env.reset()
 
@@ -201,7 +205,17 @@ class Task:
         return self.env.step(actions)
 
     def get_state(self):
-        return self.env.envs[0].env.sim.get_state()
+        return self.sim.get_state()
 
     def set_state(self, state):
-        self.env.envs[0].env.sim.set_state(state)
+        self.sim.set_state(state)
+        self.sim.forward()
+
+    def get_sim(self, env):
+        if hasattr(env, 'sim'):
+            return env.sim
+        if hasattr(env, 'env'):
+            return self.get_sim(env.env)
+        if hasattr(env, 'envs'):
+            return self.get_sim(env.envs[0])
+        raise NotImplementedError
