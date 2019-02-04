@@ -182,7 +182,7 @@ class OracleDDPGAgent(BaseAgent):
             mask = tensor(mask).unsqueeze(1)
             self.real_transitions([states, actions, rewards, next_states, mask])
             r1, s1 = self.model_predict(states, actions, env_states)
-            print((r1 - rewards).abs().max())
+            # print((r1 - rewards).abs().max())
             # print((s1 - next_states).abs().max())
 
             if config.plan:
