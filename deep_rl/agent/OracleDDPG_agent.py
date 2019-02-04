@@ -28,6 +28,9 @@ class OracleDDPGAgent(BaseAgent):
         self.model_opts = [config.model_opt_fn(m.parameters()) for m in self.models]
         self.model_replays = [config.model_replay_fn() for _ in self.models]
 
+        self.oracle = config.task_fn()
+        self.oracle.reset()
+
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.detach_()
@@ -94,69 +97,40 @@ class OracleDDPGAgent(BaseAgent):
         policy_loss.backward()
         self.network.actor_opt.step()
 
-    def imaginary_transitions(self, states, actions):
+    def imaginary_transitions(self, states, actions, env_states):
         config = self.config
         with torch.no_grad():
-            rewards, next_states = self.model_predict(states, actions)
+            rewards, next_states = self.model_predict(states, actions, env_states)
             a_next = self.target_network.actor(next_states)
             q_next = self.target_network.critic(next_states, a_next)
-            target = rewards + config.discount * q_next.squeeze(-1)
-            uncertainty = target.std(-1).unsqueeze(-1)
-            t_mask = (uncertainty < config.max_uncertainty).float()
-            if config.random_t_mask:
-                shape = t_mask.size()
-                t_mask = to_np(t_mask).flatten()
-                np.random.shuffle(t_mask)
-                t_mask = tensor(t_mask).view(shape)
-            config.logger.add_histogram('uncertainty_dist', uncertainty)
-            config.logger.add_scalar('uncertainty_max', uncertainty.max())
-            config.logger.add_scalar('uncertainty_mean', uncertainty.mean())
-            config.logger.add_scalar('uncertainty_ratio', t_mask.sum())
-            config.logger.info('uncertainty_ratio_%d' % t_mask.sum())
-
-        if config.model_agg == 'mean':
-            target = target.mean(-1)
-        elif config.model_agg == 'min':
-            target = target.min(-1)[0]
-        elif config.model_agg == 'max':
-            target = target.max(-1)[0]
-        else:
-            raise NotImplementedError
-        target = target.unsqueeze(-1)
+            target = rewards + config.discount * q_next
         q = self.network.critic(states, actions.detach())
-        critic_loss = (q - target).mul(t_mask).pow(2).mul(0.5).sum() / t_mask.sum().add(1e-5)
+        critic_loss = (q - target).pow(2).mul(0.5).mean()
         config.logger.add_scalar('q_loss_plan', critic_loss)
-
-        if config.unroll:
-            with torch.no_grad():
-                indices = torch.randint(0, next_states.size(1), (states.size(0), 1), device=Config.DEVICE).long()
-                r, next_s = self.model_predict()
-
-
 
         self.network.zero_grad()
         critic_loss.backward()
         self.network.critic_opt.step()
 
-        if config.plan_actor:
-            actions = self.network.actor(next_states)
-            t_mask = t_mask.unsqueeze(1).expand(-1, actions.size(1), -1)
-            policy_loss = -self.network.critic(next_states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
-            config.logger.add_scalar('pi_loss_plan', policy_loss)
-            self.network.zero_grad()
-            policy_loss.backward()
-            self.network.actor_opt.step()
+        # if config.plan_actor:
+        #     actions = self.network.actor(next_states)
+        #     t_mask = t_mask.unsqueeze(1).expand(-1, actions.size(1), -1)
+        #     policy_loss = -self.network.critic(next_states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
+        #     config.logger.add_scalar('pi_loss_plan', policy_loss)
+        #     self.network.zero_grad()
+        #     policy_loss.backward()
+        #     self.network.actor_opt.step()
 
-    def model_predict(self, s, a):
+    def model_predict(self, s, a, env_states):
+        env = self.oracle
         rewards = []
         next_states = []
-        for m in self.models:
-            r, next_s = m(s, a)
+        for i in range(s.size(0)):
+            env.set_state(env_states[i])
+            next_s, r, done, _ = env.step(to_np(a[[i]]))
             rewards.append(r)
             next_states.append(next_s)
-        r = torch.cat(rewards, dim=-1)
-        next_s = torch.cat(next_states, dim=1)
-        return r, next_s
+        return tensor(rewards), tensor(next_states).squeeze(1)
 
     def step(self):
         config = self.config
@@ -171,6 +145,7 @@ class OracleDDPGAgent(BaseAgent):
             action = to_np(action)
             action += self.random_process.sample()
         action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
+        env_state = self.task.get_state()
         next_state, reward, done, _ = self.task.step(action)
         next_state = self.config.state_normalizer(next_state)
         self.episode_reward += reward[0]
@@ -178,39 +153,39 @@ class OracleDDPGAgent(BaseAgent):
 
         b_mask = np.random.rand(1, config.ensemble_size) < config.bootstrap_prob
         b_mask = b_mask.astype(np.uint8)
-        batch_data = list(zip(self.state, action, reward, next_state, 1 - done, b_mask))
+        batch_data = list(zip(self.state, action, reward, next_state, 1 - done, b_mask, [env_state]))
         self.replay.feed_batch(batch_data)
-        for m_replay in self.model_replays:
-            m_replay.feed_batch(batch_data)
+        # for m_replay in self.model_replays:
+        #     m_replay.feed_batch(batch_data)
 
         if done[0]:
             config.logger.add_scalar('train_episode_return', self.episode_reward)
             self.episode_rewards.append(self.episode_reward)
             self.episode_reward = 0
+            next_state = self.task.reset()
             self.random_process.reset_states()
 
         self.state = next_state
         self.total_steps += 1
 
-        if self.total_steps >= config.model_warm_up:
-            for i in range(config.num_models):
-                self.train_model(i)
+        # if self.total_steps >= config.model_warm_up:
+        #     for i in range(config.num_models):
+        #         self.train_model(i)
 
-        if self.replay.size() >= config.agent_warm_up:
+        if self.replay.size() >= 1:
             experiences = self.replay.sample()
-            states, actions, rewards, next_states, mask, _ = experiences
+            states, actions, rewards, next_states, mask, _, env_states = experiences
             states = tensor(states)
             actions = tensor(actions)
             rewards = tensor(rewards).unsqueeze(1)
             next_states = tensor(next_states)
             mask = tensor(mask).unsqueeze(1)
             self.real_transitions([states, actions, rewards, next_states, mask])
+            r1, s1 = self.model_predict(states, actions, env_states)
+            print((r1 - rewards).abs().max())
+            # print((s1 - next_states).abs().max())
 
-            if config.plan and self.total_steps >= config.plan_warm_up:
-                if config.state_noise:
-                    noise = torch.randn((states.size(0) * config.plan_steps, states.size(1)), device=Config.DEVICE).mul(config.state_noise)
-                    states = torch.cat([states] * config.plan_steps, dim=0)
-                    states = states + noise
+            if config.plan:
                 if config.live_action:
                     with torch.no_grad():
                         actions = self.network.actor(states)
@@ -219,6 +194,6 @@ class OracleDDPGAgent(BaseAgent):
                     actions = torch.cat([actions] * config.plan_steps, dim=0)
                     actions = actions + noise
                     states = torch.cat([states] * config.plan_steps, dim=0)
-                self.imaginary_transitions(states, actions)
+                self.imaginary_transitions(states, actions, env_states)
 
             self.soft_update(self.target_network, self.network)
