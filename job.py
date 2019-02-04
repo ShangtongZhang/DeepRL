@@ -16,7 +16,7 @@ def batch():
 
     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
     # game = games[cf.i1]
-    game = games[1]
+    game = games[0]
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
@@ -59,13 +59,19 @@ def batch():
         # dict(max_uncertainty=2, action_noise=0, live_action=True, plan_steps=1, state_noise=0.1, plan_actor=True),
         # dict(max_uncertainty=2, action_noise=0, live_action=True, plan_steps=1, state_noise=0.2, plan_actor=True),
 
-        dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=1, model_agg='mean', plan_actor=True),
-        dict(max_uncertainty=2, action_noise=0.2, live_action=False, plan_steps=1, model_agg='mean', plan_actor=True),
-        dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=2, model_agg='mean', plan_actor=True),
-        dict(max_uncertainty=1, action_noise=0.2, live_action=False, plan_steps=2, model_agg='mean', plan_actor=True),
+        # dict(max_uncertainty=2, action_noise=0.1, live_action=False, plan_steps=1, model_agg='mean', plan_actor=True),
+        # dict(max_uncertainty=2, action_noise=0.2, live_action=False, plan_steps=1, model_agg='mean', plan_actor=True),
+        # dict(max_uncertainty=1, action_noise=0.1, live_action=False, plan_steps=2, model_agg='mean', plan_actor=True),
+        # dict(max_uncertainty=1, action_noise=0.2, live_action=False, plan_steps=2, model_agg='mean', plan_actor=True),
+
+        dict(action_noise=0.1, live_action=False, plan_steps=1),
+        dict(action_noise=0.1, live_action=True, plan_steps=1),
+        dict(action_noise=0.1, live_action=False, plan_steps=2),
+        dict(action_noise=0.2, live_action=False, plan_steps=1),
+        dict(plan=False),
     ]
 
-    model_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
+    oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
 
     exit()
 
@@ -341,11 +347,11 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    # batch()
+    batch()
     # select_device(0)
 
-    # game = 'HalfCheetah-v2'
-    game = 'Reacher-v2'
+    game = 'HalfCheetah-v2'
+    # game = 'Reacher-v2'
     # game = 'Walker2d-v2'
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
@@ -374,11 +380,9 @@ if __name__ == '__main__':
     oracle_ddpg_continuous(game=game,
                            skip=True,
                            debug=True,
-                           plan=False,
-                           max_uncertainty=2,
+                           plan=True,
                            action_noise=0.2,
-                           plan_steps=1,
+                           plan_steps=2,
                            live_action=False,
                            plan_actor=True,
-                           state_noise=0
                            )

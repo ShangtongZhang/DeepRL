@@ -172,7 +172,7 @@ class OracleDDPGAgent(BaseAgent):
         #     for i in range(config.num_models):
         #         self.train_model(i)
 
-        if self.replay.size() >= 1:
+        if self.replay.size() >= config.agent_warm_up:
             experiences = self.replay.sample()
             states, actions, rewards, next_states, mask, _, env_states = experiences
             states = tensor(states)
@@ -181,7 +181,7 @@ class OracleDDPGAgent(BaseAgent):
             next_states = tensor(next_states)
             mask = tensor(mask).unsqueeze(1)
             self.real_transitions([states, actions, rewards, next_states, mask])
-            r1, s1 = self.model_predict(states, actions, env_states)
+            # r1, s1 = self.model_predict(states, actions, env_states)
             # print((r1 - rewards).abs().max())
             # print((s1 - next_states).abs().max())
 
@@ -193,7 +193,9 @@ class OracleDDPGAgent(BaseAgent):
                     noise = torch.randn((actions.size(0) * config.plan_steps, actions.size(1)), device=Config.DEVICE).mul(config.action_noise)
                     actions = torch.cat([actions] * config.plan_steps, dim=0)
                     actions = actions + noise
+                    actions = actions.clamp(-1, 1)
                     states = torch.cat([states] * config.plan_steps, dim=0)
+                    env_states = env_states * config.plan_steps
                 self.imaginary_transitions(states, actions, env_states)
 
             self.soft_update(self.target_network, self.network)
