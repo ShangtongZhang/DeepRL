@@ -200,10 +200,8 @@ class Task:
             actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return self.env.step(actions)
 
-if __name__ == '__main__':
-    task = Task('Hopper-v2', 5, single_process=False)
-    state = task.reset()
-    while True:
-        action = np.random.rand(task.observation_space.shape[0])
-        next_state, reward, done, _ = task.step(action)
-        print(done)
+    def get_state(self):
+        return self.env.envs[0].env.sim.get_state()
+
+    def set_state(self, state):
+        self.env.envs[0].env.sim.set_state(state)
