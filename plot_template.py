@@ -78,6 +78,9 @@ def ddpg_plot(**kwargs):
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    if len(data) == 0:
+        print('File not found')
+        return
     data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
     min_y = np.min([len(y) for y in data])
     data = [y[ :min_y] for y in data]
@@ -183,13 +186,16 @@ def plot_mujoco():
         # 'action_noise_0\.2-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
         # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
         # 'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-run',
         # 'action_noise_0\.1-live_action_True-plan_steps_1-run',
         # 'action_noise_0\.2-live_action_False-plan_steps_1-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_2-run',
         'plan_False-run',
-        'plan_False-real_updates_2-run',
-        'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_False-run',
+        # 'plan_False-real_updates_2-run',
+        # 'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_False-run',
+
+        'action_noise_0\.1-live_action_False-plan_actor_False-plan_steps_1-residual_True-run',
+        'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_True-run',
 
     ]
 
@@ -200,6 +206,7 @@ def plot_mujoco():
         for i, p in enumerate(patterns):
             # ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
             ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
         # ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs)
     plt.show()
 

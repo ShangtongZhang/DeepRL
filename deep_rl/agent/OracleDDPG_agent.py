@@ -106,19 +106,34 @@ class OracleDDPGAgent(BaseAgent):
             noise = torch.randn(next_states.size(), device=Config.DEVICE).mul(config.prediction_noise)
             next_states = next_states + noise
 
-        with torch.no_grad():
-            a_next = self.target_network.actor(next_states)
-            q_next = self.target_network.critic(next_states, a_next)
-            target = rewards + config.discount * q_next
-        q = self.network.critic(states, actions.detach())
-        critic_loss = (q - target).pow(2).mul(0.5).mean()
-
         if config.residual:
+            if config.target_net_residual:
+                target_net = self.target_network
+            else:
+                target_net = self.network
+
+            with torch.no_grad():
+                a_next = target_net.actor(next_states)
+                q_next = target_net.critic(next_states, a_next)
+                target = rewards + config.discount * q_next
+            q = self.network.critic(states, actions.detach())
+            d_loss = (q - target).pow(2).mul(0.5).mean()
+
             a_next = self.network.actor(next_states).detach()
             q_next = self.network.critic(next_states, a_next)
             target = rewards + config.discount * q_next
-            q = self.target_network.critic(states, actions.detach()).detach()
-            critic_loss = critic_loss + config.residual * (q - target).pow(2).mul(0.5).mean()
+            with torch.no_grad():
+                q = target_net.critic(states, actions)
+            rd_loss = (q - target).pow(2).mul(0.5).mean()
+
+            critic_loss = config.residual * rd_loss + d_loss
+        else:
+            with torch.no_grad():
+                a_next = self.target_network.actor(next_states)
+                q_next = self.target_network.critic(next_states, a_next)
+                target = rewards + config.discount * q_next
+            q = self.network.critic(states, actions.detach())
+            critic_loss = (q - target).pow(2).mul(0.5).mean()
 
         config.logger.add_scalar('q_loss_plan', critic_loss)
 

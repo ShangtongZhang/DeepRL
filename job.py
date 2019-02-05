@@ -16,7 +16,7 @@ def batch():
 
     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
     # game = games[cf.i1]
-    game = games[0]
+    game = games[1]
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
@@ -81,10 +81,13 @@ def batch():
         # dict(action_noise=0.1, live_action=False, plan_steps=1, prediction_noise=0.1),
         # dict(action_noise=0.1, live_action=False, plan_steps=1, prediction_noise=0.2),
 
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.01),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.05),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.1),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.5),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.1, target_net_residual=False),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.5, target_net_residual=False),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=1.0, target_net_residual=False),
+
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.1, target_net_residual=True),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.5, target_net_residual=True),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=1.0, target_net_residual=True),
     ]
 
     oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
@@ -315,6 +318,7 @@ def oracle_ddpg_continuous(**kwargs):
     kwargs.setdefault('residual', False)
     kwargs.setdefault('real_updates', 1)
     kwargs.setdefault('prediction_noise', 0)
+    kwargs.setdefault('target_net_residual', False)
     config = Config()
     config.merge(kwargs)
 
@@ -406,4 +410,5 @@ if __name__ == '__main__':
                            plan_actor=True,
                            residual=0.1,
                            prediction_noise=0.1,
+                           target_net_residual=True,
                            )
