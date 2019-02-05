@@ -16,7 +16,7 @@ def batch():
 
     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
     # game = games[cf.i1]
-    game = games[1]
+    game = games[0]
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
@@ -70,11 +70,21 @@ def batch():
         # dict(action_noise=0.2, live_action=False, plan_steps=1),
         # dict(plan=False),
 
-        dict(action_noise=0.1, live_action=False, plan_steps=1),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=True, plan_actor=False),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=False, plan_actor=True),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=True, plan_actor=True),
-        dict(plan=False, real_updates=2)
+        # dict(action_noise=0.1, live_action=False, plan_steps=1),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=True, plan_actor=False),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=False, plan_actor=True),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=True, plan_actor=True),
+        # dict(plan=False, real_updates=2)
+
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, prediction_noise=0.01),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, prediction_noise=0.05),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, prediction_noise=0.1),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, prediction_noise=0.2),
+
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.01),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.05),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.1),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.5),
     ]
 
     oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
@@ -304,6 +314,7 @@ def oracle_ddpg_continuous(**kwargs):
     kwargs.setdefault('state_noise', 0)
     kwargs.setdefault('residual', False)
     kwargs.setdefault('real_updates', 1)
+    kwargs.setdefault('prediction_noise', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -393,5 +404,6 @@ if __name__ == '__main__':
                            plan_steps=2,
                            live_action=False,
                            plan_actor=True,
-                           residual=True,
+                           residual=0.1,
+                           prediction_noise=0.1,
                            )

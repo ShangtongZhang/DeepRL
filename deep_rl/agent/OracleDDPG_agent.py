@@ -102,19 +102,24 @@ class OracleDDPGAgent(BaseAgent):
         with torch.no_grad():
             rewards, next_states = self.model_predict(states, actions, env_states)
 
+        if config.prediction_noise:
+            noise = torch.randn(next_states.size(), device=Config.DEVICE).mul(config.prediction_noise)
+            next_states = next_states + noise
+
+        with torch.no_grad():
+            a_next = self.target_network.actor(next_states)
+            q_next = self.target_network.critic(next_states, a_next)
+            target = rewards + config.discount * q_next
+        q = self.network.critic(states, actions.detach())
+        critic_loss = (q - target).pow(2).mul(0.5).mean()
+
         if config.residual:
-            with torch.no_grad():
-                q = self.target_network.critic(states, actions.detach())
             a_next = self.network.actor(next_states).detach()
             q_next = self.network.critic(next_states, a_next)
             target = rewards + config.discount * q_next
-        else:
-            with torch.no_grad():
-                a_next = self.target_network.actor(next_states)
-                q_next = self.target_network.critic(next_states, a_next)
-                target = rewards + config.discount * q_next
-            q = self.network.critic(states, actions.detach())
-        critic_loss = (q - target).pow(2).mul(0.5).mean()
+            q = self.target_network.critic(states, actions.detach()).detach()
+            critic_loss = critic_loss + config.residual * (q - target).pow(2).mul(0.5).mean()
+
         config.logger.add_scalar('q_loss_plan', critic_loss)
 
         self.network.zero_grad()

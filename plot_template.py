@@ -127,7 +127,7 @@ def plot_mujoco():
         'rep': 20,
         'average': True,
         'max_x_len': 101,
-        'top_k': 0,
+        'top_k': 5,
     }
     games = [
         'HalfCheetah-v2',
@@ -184,10 +184,13 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
         # 'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
         'action_noise_0\.1-live_action_False-plan_steps_1-run',
-        'action_noise_0\.1-live_action_True-plan_steps_1-run',
-        'action_noise_0\.2-live_action_False-plan_steps_1-run',
-        'action_noise_0\.1-live_action_False-plan_steps_2-run',
+        # 'action_noise_0\.1-live_action_True-plan_steps_1-run',
+        # 'action_noise_0\.2-live_action_False-plan_steps_1-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_2-run',
         'plan_False-run',
+        'plan_False-real_updates_2-run',
+        'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_False-run',
+
     ]
 
     l = len(games)
