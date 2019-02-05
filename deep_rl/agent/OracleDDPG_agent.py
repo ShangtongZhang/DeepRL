@@ -101,10 +101,19 @@ class OracleDDPGAgent(BaseAgent):
         config = self.config
         with torch.no_grad():
             rewards, next_states = self.model_predict(states, actions, env_states)
-            a_next = self.target_network.actor(next_states)
-            q_next = self.target_network.critic(next_states, a_next)
+
+        if config.residual:
+            with torch.no_grad():
+                q = self.target_network.critic(states, actions.detach())
+            a_next = self.network.actor(next_states).detach()
+            q_next = self.network.critic(next_states, a_next)
             target = rewards + config.discount * q_next
-        q = self.network.critic(states, actions.detach())
+        else:
+            with torch.no_grad():
+                a_next = self.target_network.actor(next_states)
+                q_next = self.target_network.critic(next_states, a_next)
+                target = rewards + config.discount * q_next
+            q = self.network.critic(states, actions.detach())
         critic_loss = (q - target).pow(2).mul(0.5).mean()
         config.logger.add_scalar('q_loss_plan', critic_loss)
 
@@ -112,14 +121,13 @@ class OracleDDPGAgent(BaseAgent):
         critic_loss.backward()
         self.network.critic_opt.step()
 
-        # if config.plan_actor:
-        #     actions = self.network.actor(next_states)
-        #     t_mask = t_mask.unsqueeze(1).expand(-1, actions.size(1), -1)
-        #     policy_loss = -self.network.critic(next_states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
-        #     config.logger.add_scalar('pi_loss_plan', policy_loss)
-        #     self.network.zero_grad()
-        #     policy_loss.backward()
-        #     self.network.actor_opt.step()
+        if config.plan_actor:
+            actions = self.network.actor(next_states)
+            policy_loss = -self.network.critic(next_states, actions).mean()
+            config.logger.add_scalar('pi_loss_plan', policy_loss)
+            self.network.zero_grad()
+            policy_loss.backward()
+            self.network.actor_opt.step()
 
     def model_predict(self, s, a, env_states):
         env = self.oracle
@@ -180,7 +188,8 @@ class OracleDDPGAgent(BaseAgent):
             rewards = tensor(rewards).unsqueeze(1)
             next_states = tensor(next_states)
             mask = tensor(mask).unsqueeze(1)
-            self.real_transitions([states, actions, rewards, next_states, mask])
+            for _ in range(config.real_updates):
+                self.real_transitions([states, actions, rewards, next_states, mask])
             # r1, s1 = self.model_predict(states, actions, env_states)
             # print((r1 - rewards).abs().max())
             # print((s1 - next_states).abs().max())

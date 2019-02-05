@@ -127,7 +127,7 @@ def plot_mujoco():
         'rep': 20,
         'average': True,
         'max_x_len': 101,
-        'top_k': 5,
+        'top_k': 0,
     }
     games = [
         'HalfCheetah-v2',
@@ -179,10 +179,15 @@ def plot_mujoco():
         # 'action_noise_0-live_action_True-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.05-run',
         # 'action_noise_0-live_action_True-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.1-run',
 
-        'action_noise_0\.1-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
-        'action_noise_0\.2-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
-        'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
-        'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
+        # 'action_noise_0\.1-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
+        # 'action_noise_0\.2-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
+        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
+        # 'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-run',
+        'action_noise_0\.1-live_action_True-plan_steps_1-run',
+        'action_noise_0\.2-live_action_False-plan_steps_1-run',
+        'action_noise_0\.1-live_action_False-plan_steps_2-run',
+        'plan_False-run',
     ]
 
     l = len(games)
@@ -190,8 +195,9 @@ def plot_mujoco():
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
-        ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs)
+            # ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+        # ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs)
     plt.show()
 
 if __name__ == '__main__':
