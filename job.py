@@ -81,16 +81,28 @@ def batch():
         # dict(action_noise=0.1, live_action=False, plan_steps=1, prediction_noise=0.1),
         # dict(action_noise=0.1, live_action=False, plan_steps=1, prediction_noise=0.2),
 
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.1, target_net_residual=False),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.5, target_net_residual=False),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=1.0, target_net_residual=False),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.1, target_net_residual=False),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.5, target_net_residual=False),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=1.0, target_net_residual=False),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.1, target_net_residual=True),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.5, target_net_residual=True),
+        # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=1.0, target_net_residual=True),
 
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.1, target_net_residual=True),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.5, target_net_residual=True),
-        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=1.0, target_net_residual=True),
+        # dict(residual=0.01),
+        # dict(residual=0.1),
+        # dict(residual=0.5),
+        # dict(residual=1),
+
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0, target_net_residual=False),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0, target_net_residual=True),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.05, target_net_residual=False),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.05, target_net_residual=True),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.2, target_net_residual=False),
+        dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.2, target_net_residual=True),
     ]
 
     oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
+    # residual_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
 
     exit()
 
@@ -364,6 +376,44 @@ def oracle_ddpg_continuous(**kwargs):
     run_steps(OracleDDPGAgent(config))
 
 
+def residual_ddpg_continuous(**kwargs):
+    set_tag(kwargs)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('gate', F.relu)
+    kwargs.setdefault('weight_decay', 0)
+    kwargs.setdefault('state_norm', False)
+    kwargs.setdefault('skip', True)
+    kwargs.setdefault('residual', 0.1)
+    config = Config()
+    config.merge(kwargs)
+
+    config.task_fn = lambda: Task(kwargs['game'])
+    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
+    config.max_steps = int(1e6)
+    config.eval_interval = int(1e4)
+    config.eval_episodes = 20
+
+    if kwargs['state_norm']:
+        config.state_normalizer = MeanStdNormalizer()
+
+    config.network_fn = lambda: DeterministicActorCriticNet(
+        config.state_dim, config.action_dim,
+        actor_body=FCBody(config.state_dim, (400, 300), gate=kwargs['gate']),
+        critic_body=TwoLayerFCBodyWithAction(
+            config.state_dim, config.action_dim, (400, 300), gate=kwargs['gate']),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=kwargs['weight_decay']))
+
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
+    config.discount = 0.99
+    config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
+        size=(config.action_dim,), std=LinearSchedule(0.2))
+    config.min_memory_size = int(1e4)
+    config.target_network_mix = 1e-3
+    config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
+    run_steps(ResidualDDPGAgent(config))
+
+
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
@@ -400,15 +450,18 @@ if __name__ == '__main__':
     #                       state_noise=0
     #                       )
 
-    oracle_ddpg_continuous(game=game,
-                           skip=True,
-                           debug=True,
-                           plan=True,
-                           action_noise=0.2,
-                           plan_steps=2,
-                           live_action=False,
-                           plan_actor=True,
-                           residual=0.1,
-                           prediction_noise=0.1,
-                           target_net_residual=True,
-                           )
+    # oracle_ddpg_continuous(game=game,
+    #                        skip=True,
+    #                        debug=True,
+    #                        plan=True,
+    #                        action_noise=0.2,
+    #                        plan_steps=2,
+    #                        live_action=False,
+    #                        plan_actor=True,
+    #                        residual=0.1,
+    #                        prediction_noise=0.1,
+    #                        target_net_residual=True,
+    #                        )
+
+    # residual_ddpg_continuous(game=game,
+    #                          residual=0.1)

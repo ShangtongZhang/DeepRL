@@ -66,10 +66,10 @@ class ResidualDDPGAgent(BaseAgent):
         if self.replay.size() >= config.min_memory_size:
             experiences = self.replay.sample()
             states, actions, rewards, next_states, terminals = experiences
-            states = states.squeeze(1)
-            actions = actions.squeeze(1)
+            states = tensor(states).squeeze(1)
+            actions = tensor(actions).squeeze(1)
             rewards = tensor(rewards)
-            next_states = next_states.squeeze(1)
+            next_states = tensor(next_states).squeeze(1)
             terminals = tensor(terminals)
 
             phi_next = self.target_network.feature(next_states)
@@ -81,6 +81,14 @@ class ResidualDDPGAgent(BaseAgent):
             phi = self.network.feature(states)
             q = self.network.critic(phi, tensor(actions))
             critic_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean()
+
+            if config.residual:
+                a_next = self.network.actor(phi_next).detach()
+                q_next = self.network.critic(phi_next, a_next)
+                target = rewards + config.discount * (1 - terminals) * q_next
+                q = self.target_network.critic(phi, actions).detach()
+                critic_loss = critic_loss + config.residual * (q - target).pow(2).mul(0.5).mean()
+
             config.logger.add_scalar('q_loss', critic_loss)
 
             self.network.zero_grad()

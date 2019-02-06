@@ -134,7 +134,7 @@ def plot_mujoco():
     }
     games = [
         'HalfCheetah-v2',
-        # 'Walker2d-v2',
+        'Walker2d-v2',
         # 'Hopper-v2',
         # 'Reacher-v2',
         # 'Swimmer-v2',
@@ -197,17 +197,22 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-plan_actor_False-plan_steps_1-residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_True-run',
 
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_True-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_True-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_True-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_False-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_False-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_False-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_True-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_True-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_True-run',
 
-        'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.01-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.05-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.1-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.2-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.01-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.05-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.1-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.2-run',
+
+        # 'residual_0\.01-run',
+        # 'residual_0\.1-run',
+        # 'residual_0\.5-run',
+        # 'residual_1-run',
 
     ]
 
