@@ -66,10 +66,10 @@ class DDPGAgent(BaseAgent):
         if self.replay.size() >= config.min_memory_size:
             experiences = self.replay.sample()
             states, actions, rewards, next_states, terminals = experiences
-            states = states.squeeze(1)
-            actions = actions.squeeze(1)
+            states = tensor(states).squeeze(1)
+            actions = tensor(actions).squeeze(1)
             rewards = tensor(rewards)
-            next_states = next_states.squeeze(1)
+            next_states = tensor(next_states).squeeze(1)
             terminals = tensor(terminals)
 
             phi_next = self.target_network.feature(next_states)

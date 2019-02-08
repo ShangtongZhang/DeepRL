@@ -8,7 +8,7 @@ GPUs=(0 1 2 3 4 5 6 7)
 #    done
 #done
 
-for i in $(seq 0 5); do
+for i in $(seq 0 3); do
     for j in $(seq 0 7); do
         nohup bash docker_python.sh $i "job.py --i1 $i --i2 $j" >| job_${i}_${j}.out &
     done

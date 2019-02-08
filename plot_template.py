@@ -130,18 +130,18 @@ def plot_mujoco():
         'rep': 20,
         'average': True,
         'max_x_len': 101,
-        'top_k': 5,
+        'top_k': 0,
     }
     games = [
         'HalfCheetah-v2',
         'Walker2d-v2',
-        # 'Hopper-v2',
+        'Hopper-v2',
         # 'Reacher-v2',
-        # 'Swimmer-v2',
+        'Swimmer-v2',
     ]
 
     patterns = [
-        # 'remark_ddpg-run',
+        'remark_ddpg-run',
         # 'action_noise_0\.1-max_uncertainty_1-random_t_mask_False-run',
         # 'action_noise_0\.1-max_uncertainty_1-random_t_mask_True-run',
         # 'action_noise_0-max_uncertainty_1-random_t_mask_False-run',
@@ -190,19 +190,27 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_True-plan_steps_1-run',
         # 'action_noise_0\.2-live_action_False-plan_steps_1-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_2-run',
-        'plan_False-run',
+        # 'plan_False-run',
         # 'plan_False-real_updates_2-run',
         # 'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_False-run',
 
         # 'action_noise_0\.1-live_action_False-plan_actor_False-plan_steps_1-residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_True-run',
 
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_False-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_False-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_False-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_True-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_True-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_True-run',
+
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_False-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_False-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_False-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_True-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_True-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_True-run',
+
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_False-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_False-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_True-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_True-run',
 
         # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.01-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.05-run',
@@ -223,7 +231,8 @@ def plot_mujoco():
         for i, p in enumerate(patterns):
             # ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
             ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
-            ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+            # ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
         # ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs)
     plt.show()
 
