@@ -177,22 +177,28 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('skip', True)
     kwargs.setdefault('debug', False)
     kwargs.setdefault('num_models', 1)
-    kwargs.setdefault('ensemble_size', 5)
-    kwargs.setdefault('bootstrap_prob', 0.5)
-    kwargs.setdefault('model_type', 'D')
+    kwargs.setdefault('ensemble_size', 1)
+    kwargs.setdefault('bootstrap_prob', 1)
     kwargs.setdefault('plan', True)
     kwargs.setdefault('max_uncertainty', 1)
     kwargs.setdefault('plan_warm_up', int(1e4))
     kwargs.setdefault('agent_warm_up', int(1e4))
-    kwargs.setdefault('action_noise', 0)
+    kwargs.setdefault('action_noise', 0.1)
     kwargs.setdefault('random_t_mask', False)
     kwargs.setdefault('live_action', False)
     kwargs.setdefault('plan_steps', 1)
     kwargs.setdefault('plan_actor', False)
-    kwargs.setdefault('model_agg', 'mean')
     kwargs.setdefault('state_noise', 0)
+    kwargs.setdefault('async_replay', True)
+    kwargs.setdefault('residual', 0)
+    kwargs.setdefault('target_net_residual', False)
     config = Config()
     config.merge(kwargs)
+
+    if config.async_replay:
+        replay = AsyncReplay
+    else:
+        replay = Replay
 
     config.task_fn = lambda: Task(kwargs['game'])
     config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
@@ -211,7 +217,7 @@ def model_ddpg_continuous(**kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=kwargs['weight_decay']))
 
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
+    config.replay_fn = lambda: replay(memory_size=int(1e6), batch_size=64)
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
@@ -221,15 +227,14 @@ def model_ddpg_continuous(**kwargs):
 
     config.model_fn = lambda: Model(config.state_dim,
                                     config.action_dim,
-                                    128,
-                                    config.ensemble_size,
-                                    config.model_type)
+                                    config.ensemble_size)
     config.model_opt_fn = lambda params: torch.optim.Adam(params, lr=1e-3)
-    config.model_replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=512, drop_prob=0)
+    config.model_replay_fn = lambda: replay(memory_size=int(1e6), batch_size=1024)
     config.model_opt_epochs = 4
     config.model_warm_up = config.agent_warm_up // 2
 
     if kwargs['debug']:
+        config.model_warm_up = int(1e3)
         config.agent_warm_up = int(1e3)
         config.plan_warm_up = int(1e3)
 
@@ -420,13 +425,14 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    select_device(-1)
-    batch()
-    # select_device(0)
+    # select_device(-1)
+    # batch()
+    select_device(0)
 
-    game = 'HalfCheetah-v2'
+    # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'
     # game = 'Walker2d-v2'
+    game = 'Swimmer-v2'
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
     #                                skip=False,
@@ -439,17 +445,13 @@ if __name__ == '__main__':
     #                                plan_actor=True,
     #                                )
 
-    # model_ddpg_continuous(game=game,
-    #                       skip=True,
-    #                       debug=True,
-    #                       plan=True,
-    #                       max_uncertainty=2,
-    #                       action_noise=0.2,
-    #                       plan_steps=1,
-    #                       live_action=True,
-    #                       plan_actor=True,
-    #                       state_noise=0
-    #                       )
+    model_ddpg_continuous(game=game,
+                          skip=True,
+                          debug=True,
+                          plan=True,
+                          async_replay=True,
+                          residual=0.2
+                          )
 
     # oracle_ddpg_continuous(game=game,
     #                        skip=True,

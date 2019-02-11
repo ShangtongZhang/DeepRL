@@ -245,28 +245,48 @@ class Model(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
                  action_dim,
-                 hidden_units,
                  ensemble_size,
-                 type):
+                 p_hidden_units=512,
+                 r_hidden_units=128,
+                 type='D'):
         super(Model, self).__init__()
         assert type in ['D', 'P']
 
-        self.fc_body = nn.Sequential(
-            layer_init(nn.Linear(state_dim + action_dim, hidden_units)),
+        self.fc_body_p = nn.Sequential(
+            layer_init(nn.Linear(state_dim + action_dim, p_hidden_units)),
             nn.ReLU(),
-            layer_init(nn.Linear(hidden_units, hidden_units)),
+            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
             nn.ReLU(),
-            layer_init(nn.Linear(hidden_units, hidden_units)),
+            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
             nn.ReLU(),
-            layer_init(nn.Linear(hidden_units, hidden_units)),
+            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
             nn.ReLU(),
         )
 
-        self.fc_p_mean = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size))
-        if type == 'P':
-            self.fc_p_std = layer_init(nn.Linear(hidden_units, state_dim * ensemble_size))
+        self.fc_body_r = nn.Sequential(
+            layer_init(nn.Linear(state_dim + action_dim, r_hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
+            nn.ReLU(),
+            layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
+            nn.ReLU(),
+        )
 
-        self.fc_r = layer_init(nn.Linear(hidden_units, ensemble_size))
+        self.fc_p_mean = layer_init(nn.Linear(p_hidden_units, state_dim * ensemble_size))
+        if type == 'P':
+            self.fc_p_std = layer_init(nn.Linear(p_hidden_units, state_dim * ensemble_size))
+
+        self.fc_r = layer_init(nn.Linear(r_hidden_units, ensemble_size))
 
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -275,12 +295,15 @@ class Model(nn.Module, BaseNet):
         self.to(Config.DEVICE)
 
     def transition(self, s_a):
-        phi = self.fc_body(s_a)
-        r = self.fc_r(phi)
-        mean = self.fc_p_mean(phi)
+        phi_p = self.fc_body_p(s_a)
+        mean = self.fc_p_mean(phi_p)
+
+        phi_r = self.fc_body_r(s_a)
+        r = self.fc_r(phi_r)
+
         mean = mean.view(-1, self.ensemble_size, self.state_dim)
         if self.type == 'P':
-            std = F.softplus(self.fc_p_std(phi))
+            std = F.softplus(self.fc_p_std(phi_p))
             std = std.view(-1, self.ensemble_size, self.state_dim)
         else:
             std = None
@@ -304,8 +327,6 @@ class Model(nn.Module, BaseNet):
         return p_loss, r_loss
 
     def forward(self, s, a):
-        s = tensor(s)
-        a = tensor(a)
         s_a = torch.cat([s, a], dim=-1)
         mean, std, r = self.transition(s_a)
         if self.type == 'P':

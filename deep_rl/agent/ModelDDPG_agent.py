@@ -13,11 +13,13 @@ class ModelDDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
+        self.replay = config.replay_fn()
+        self.model_replays = [config.model_replay_fn() for _ in range(config.num_models)]
+
         self.task = config.task_fn()
         self.network = config.network_fn()
         self.target_network = config.network_fn()
         self.target_network.load_state_dict(self.network.state_dict())
-        self.replay = config.replay_fn()
         self.random_process = config.random_process_fn()
         self.total_steps = 0
         self.state = None
@@ -26,7 +28,6 @@ class ModelDDPGAgent(BaseAgent):
 
         self.models = [config.model_fn() for _ in range(config.num_models)]
         self.model_opts = [config.model_opt_fn(m.parameters()) for m in self.models]
-        self.model_replays = [config.model_replay_fn() for _ in self.models]
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -94,45 +95,45 @@ class ModelDDPGAgent(BaseAgent):
         policy_loss.backward()
         self.network.actor_opt.step()
 
+    def model_predict(self, states, actions):
+        rewards, next_states = self.models[0](states, actions)
+        return rewards, next_states.squeeze(1)
+
     def imaginary_transitions(self, states, actions):
         config = self.config
         with torch.no_grad():
             rewards, next_states = self.model_predict(states, actions)
-            a_next = self.target_network.actor(next_states)
-            q_next = self.target_network.critic(next_states, a_next)
-            target = rewards + config.discount * q_next.squeeze(-1)
-            uncertainty = target.std(-1).unsqueeze(-1)
-            t_mask = (uncertainty < config.max_uncertainty).float()
-            if config.random_t_mask:
-                shape = t_mask.size()
-                t_mask = to_np(t_mask).flatten()
-                np.random.shuffle(t_mask)
-                t_mask = tensor(t_mask).view(shape)
-            config.logger.add_histogram('uncertainty_dist', uncertainty)
-            config.logger.add_scalar('uncertainty_max', uncertainty.max())
-            config.logger.add_scalar('uncertainty_mean', uncertainty.mean())
-            config.logger.add_scalar('uncertainty_ratio', t_mask.sum())
-            config.logger.info('uncertainty_ratio_%d' % t_mask.sum())
 
-        if config.model_agg == 'mean':
-            target = target.mean(-1)
-        elif config.model_agg == 'min':
-            target = target.min(-1)[0]
-        elif config.model_agg == 'max':
-            target = target.max(-1)[0]
-        else:
-            raise NotImplementedError
-        target = target.unsqueeze(-1)
-        q = self.network.critic(states, actions.detach())
-        critic_loss = (q - target).mul(t_mask).pow(2).mul(0.5).sum() / t_mask.sum().add(1e-5)
-        config.logger.add_scalar('q_loss_plan', critic_loss)
+        if config.residual:
+            if config.target_net_residual:
+                target_net = self.target_network
+            else:
+                target_net = self.network
 
-        if config.unroll:
             with torch.no_grad():
-                indices = torch.randint(0, next_states.size(1), (states.size(0), 1), device=Config.DEVICE).long()
-                r, next_s = self.model_predict()
+                a_next = target_net.actor(next_states)
+                q_next = target_net.critic(next_states, a_next)
+                target = rewards + config.discount * q_next
+            q = self.network.critic(states, actions.detach())
+            d_loss = (q - target).pow(2).mul(0.5).mean()
 
+            a_next = self.network.actor(next_states).detach()
+            q_next = self.network.critic(next_states, a_next)
+            target = rewards + config.discount * q_next
+            with torch.no_grad():
+                q = target_net.critic(states, actions)
+            rd_loss = (q - target).pow(2).mul(0.5).mean()
 
+            critic_loss = config.residual * rd_loss + d_loss
+        else:
+            with torch.no_grad():
+                a_next = self.target_network.actor(next_states)
+                q_next = self.target_network.critic(next_states, a_next)
+                target = rewards + config.discount * q_next
+            q = self.network.critic(states, actions.detach())
+            critic_loss = (q - target).pow(2).mul(0.5).mean()
+
+        config.logger.add_scalar('q_loss_plan', critic_loss)
 
         self.network.zero_grad()
         critic_loss.backward()
@@ -140,23 +141,11 @@ class ModelDDPGAgent(BaseAgent):
 
         if config.plan_actor:
             actions = self.network.actor(next_states)
-            t_mask = t_mask.unsqueeze(1).expand(-1, actions.size(1), -1)
-            policy_loss = -self.network.critic(next_states, actions).mul(t_mask).sum() / t_mask.sum().add(1e-5)
+            policy_loss = -self.network.critic(next_states, actions).mean()
             config.logger.add_scalar('pi_loss_plan', policy_loss)
             self.network.zero_grad()
             policy_loss.backward()
             self.network.actor_opt.step()
-
-    def model_predict(self, s, a):
-        rewards = []
-        next_states = []
-        for m in self.models:
-            r, next_s = m(s, a)
-            rewards.append(r)
-            next_states.append(next_s)
-        r = torch.cat(rewards, dim=-1)
-        next_s = torch.cat(next_states, dim=1)
-        return r, next_s
 
     def step(self):
         config = self.config
@@ -196,7 +185,7 @@ class ModelDDPGAgent(BaseAgent):
             for i in range(config.num_models):
                 self.train_model(i)
 
-        if self.replay.size() >= config.agent_warm_up:
+        if self.total_steps >= config.agent_warm_up:
             experiences = self.replay.sample()
             states, actions, rewards, next_states, mask, _ = experiences
             states = tensor(states)
