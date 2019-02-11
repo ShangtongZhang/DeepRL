@@ -138,7 +138,9 @@ def plot_mujoco():
         'Hopper-v2',
         # 'Reacher-v2',
         'Swimmer-v2',
+        'Humanoid-v2',
     ]
+    # games = ['Ant-v2', 'HumanoidStandup-v2']
 
     patterns = [
         'remark_ddpg-run',
@@ -205,12 +207,12 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_True-run',
 
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_False-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_False-run',
         'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_False-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_True-run',
         'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_True-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_True-run',
 
         # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.01-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.05-run',
