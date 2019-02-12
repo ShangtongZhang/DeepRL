@@ -208,10 +208,10 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_True-run',
 
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_False-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_False-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_True-run',
-        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_True-run',
 
         # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.01-run',
@@ -224,6 +224,9 @@ def plot_mujoco():
         # 'residual_0\.5-run',
         # 'residual_1-run',
 
+        'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
+        'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
+
     ]
 
     l = len(games)
@@ -232,8 +235,9 @@ def plot_mujoco():
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
             # ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
-            ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+            # ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
             ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
             # ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
         # ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, 'remark_ddpg-run'), color=i+1, name=game, **kwargs)
     plt.show()
