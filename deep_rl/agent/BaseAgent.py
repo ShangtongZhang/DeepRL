@@ -34,7 +34,7 @@ class BaseAgent:
         total_rewards = 0
         while True:
             action = self.eval_step(state)
-            state, reward, done, _ = env.step([action])
+            state, reward, done, _ = env.step(action)
             total_rewards += reward[0]
             if done[0]:
                 break

@@ -194,7 +194,13 @@ class Task:
         else:
             assert 'unknown action space'
 
-        self.sim = self.get_sim(self.env)
+        if name in ['HalfCheetah-v2',
+                    'Walker2d-v2',
+                    'Swimmer-v2',
+                    'Hopper-v2',
+                    'Humanoid-v2',
+                    'Reacher-v2']:
+            self.sim = self.get_sim(self.env)
 
     def reset(self):
         return self.env.reset()
