@@ -16,9 +16,9 @@ def batch():
 
     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Humanoid-v2']
     # games = ['Ant-v2', , 'HumanoidStandup-v2']
-    games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
+    # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
     # game = games[cf.i1]
-    game = games[0]
+    game = games[3]
     # game = games[1]
     # algo = cf.i1 // 4
     # if algo == 0:
@@ -103,14 +103,8 @@ def batch():
         # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.2, target_net_residual=False),
         # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.2, target_net_residual=True),
 
-        # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
-        # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
-
-        # dict(action_noise=0.1, plan_steps=1, residual=0.1, target_net_residual=False, skip=False),
-        # dict(action_noise=0.1, plan_steps=1, residual=0.05, target_net_residual=False, skip=False),
-
-        dict(action_noise=0.1, plan_steps=1, residual=0.1, target_net_residual=True, skip=False),
-        dict(action_noise=0.1, plan_steps=1, residual=0.05, target_net_residual=True, skip=False),
+        dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
+        dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')

@@ -133,14 +133,16 @@ def plot_mujoco():
         'top_k': 0,
     }
     games = [
-        'HalfCheetah-v2',
+        # 'HalfCheetah-v2',
         'Walker2d-v2',
-        'Hopper-v2',
+        # 'Hopper-v2',
         # 'Reacher-v2',
         'Swimmer-v2',
         'Humanoid-v2',
     ]
-    games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
+    # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
+    # games = ['RoboschoolHumanoid-v1']
+    # games = ['RoboschoolAnt-v1']
     # games = ['Ant-v2', 'HumanoidStandup-v2']
 
     patterns = [
@@ -228,6 +230,10 @@ def plot_mujoco():
         'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
         'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
 
+        # 'action_noise_0.1-plan_steps_1-residual_0\.05-skip_False-target_net_residual_True-run',
+        # 'action_noise_0.1-plan_steps_1-residual_0\.1-skip_False-target_net_residual_True-run',
+        # 'action_noise_0.1-plan_steps_1-residual_0\.05-skip_False-target_net_residual_False-run',
+        # 'action_noise_0.1-plan_steps_1-residual_0\.1-skip_False-target_net_residual_False-run',
     ]
 
     l = len(games)
