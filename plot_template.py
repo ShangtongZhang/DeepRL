@@ -140,7 +140,7 @@ def plot_mujoco():
         'Swimmer-v2',
         'Humanoid-v2',
     ]
-    # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
+    games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
     # games = ['Ant-v2', 'HumanoidStandup-v2']
 
     patterns = [
