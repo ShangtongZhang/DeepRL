@@ -81,6 +81,7 @@ class TabularAgent:
         self.state = self.env.reset()
 
         self.v_check = Convergent(1e-3)
+        self.c_check = Convergent(1e-5)
         self.logger = kwargs['logger']
 
 
@@ -119,6 +120,9 @@ class TabularAgent:
     def value(self, state):
         return self.v[state.id]
 
+    def cov_shift(self, state):
+        return self.c[state.id]
+
     def learn_v(self, trajectory):
         with torch.no_grad():
             for i, (s, a, r, next_s) in enumerate(trajectory):
@@ -131,11 +135,14 @@ class TabularAgent:
 
     def learn_c(self, trajectory):
         with torch.no_grad():
-            for s, a, r, next_s in trajectory:
+            for i, (s, a, r, next_s) in enumerate(trajectory):
                 rho = self.rho(s, a)
                 self.c[next_s.id] = self.c[next_s.id] + self.params['c_lr'] * (
                         self.params['gamma_hat'] * rho * self.c[s.id] +
                         (1 - self.params['gamma_hat']) - self.c[next_s.id])
+                if self.c_check(self.c):
+                    print(i)
+                    return
 
     def emphatic_ac(self, trajectory):
         rho_prev = 0
@@ -161,6 +168,74 @@ class TabularAgent:
                 self.logger.add_scalar('v1', self.v[1])
                 self.logger.add_scalar('v4', self.v[4])
 
+    def compute_M1(self, trajectory):
+        F = 0
+        rho = 0
+        for i, (s, a, r, next_s) in enumerate(trajectory):
+            with torch.no_grad():
+                c = self.cov_shift(s)
+                F = self.params['gamma'] * rho * F + c
+                M = (1 - self.params['lam_1']) * c + self.params['lam_1'] * F
+                rho = self.rho(s, a)
+        return M
+
+    def compute_M2(self, trajectory):
+        F = 0
+        c_prev = 0
+        rho_prev = 0
+        grad_prev = torch.zeros((2, ))
+        for i, (s, a, r, next_s) in enumerate(trajectory):
+            I = c_prev * rho_prev * grad_prev
+            F = self.params['gamma_hat'] * rho_prev * F + I
+            M = (1 - self.params['lam_2']) * I + self.params['lam_2'] * F
+
+            rho_prev = self.rho(s, a)
+            c_prev = self.cov_shift(s)
+            if s.id:
+                grad_prev = torch.zeros((2, ))
+            else:
+                pi_loss = self.log_prob(s, a)
+                self.opt.zero_grad()
+                pi_loss.backward()
+                grad_prev = self.pi.grad.clone()
+        return M
+
+    def generalized_ac(self, trajectory):
+        for i, (s, a, r, next_s) in enumerate(trajectory):
+            if i < self.params['window']:
+                continue
+            with torch.no_grad():
+                adv = r + self.params['gamma'] * self.value(next_s) - self.value(s)
+                rho = self.rho(s, a)
+            sub_trajectory = trajectory[max(i - self.params['window'], 0): i + 1]
+            M_1 = self.compute_M1(sub_trajectory)
+            M_2 = self.compute_M2(sub_trajectory)
+            M_2 = self.params['gamma_hat'] * self.value(s) * M_2
+            M_2 = M_2.detach()
+            if s.id == 0:
+                pi_loss = -rho * M_1 * adv * self.log_prob(s, a)
+                self.opt.zero_grad()
+                pi_loss.backward()
+                self.pi.grad.add_(-M_2)
+                self.opt.step()
+            else:
+                self.opt.zero_grad()
+                self.pi._grad = -M_2
+                self.opt.step()
+
+            self.learn_v(trajectory)
+            self.learn_c(trajectory)
+
+            prob = self.prob(State(0))
+            self.logger.add_scalar('p0', prob[0])
+            self.logger.add_scalar('p1', prob[1])
+            self.logger.add_scalar('v0', self.v[0])
+            self.logger.add_scalar('v1', self.v[1])
+            self.logger.add_scalar('v4', self.v[4])
+            self.logger.add_scalar('c1', self.c[1])
+            self.logger.add_scalar('c4', self.c[4])
+
+
     def generate_trajectory(self):
         trajectory = []
         for i in range(self.params['T']):
@@ -173,11 +248,12 @@ class TabularAgent:
     def run(self):
         trajectory = self.generate_trajectory()
         self.learn_v(trajectory)
-        # self.learn_c(trajectory)
-        self.emphatic_ac(trajectory)
+        self.learn_c(trajectory)
+        self.generalized_ac(trajectory)
+        # self.emphatic_ac(trajectory)
         self.print()
         # print(self.v)
-        # print(self.c)
+        print(self.c)
         # print(F.softmax(self.pi, dim=0))
 
     def print(self):
@@ -193,11 +269,14 @@ if __name__ == '__main__':
         up_prob=0.5,
         v_lr=0.01,
         c_lr=0.01,
-        pi_lr=0.01,
+        pi_lr=0.001,
         T=100000,
+        # T=1000,
+        window=10000,
         gamma=0.6,
-        gamma_hat=0.9,
+        gamma_hat=0.99,
         lam_1=1,
+        lam_2=1,
         logger=get_logger(tag='MDP', skip=False)
     )
     agent = TabularAgent(**params)
