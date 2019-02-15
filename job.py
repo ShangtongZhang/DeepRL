@@ -18,7 +18,7 @@ def batch():
     # games = ['Ant-v2', , 'HumanoidStandup-v2']
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
     # game = games[cf.i1]
-    game = games[3]
+    game = games[2]
     # game = games[1]
     # algo = cf.i1 // 4
     # if algo == 0:
@@ -103,14 +103,21 @@ def batch():
         # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.2, target_net_residual=False),
         # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.2, target_net_residual=True),
 
-        dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
-        dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
+        # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
+        # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
+
+        dict(residual=0.05),
+        dict(residual=0.1),
+        dict(residual=0.2),
+        dict(residual=0.4),
+        dict(residual=0.8),
+        dict(residual=1),
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    model_ddpg_continuous(game=game, run=cf.i1, **params[cf.i2])
+    # model_ddpg_continuous(game=game, run=cf.i1, **params[cf.i2])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
-    # residual_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
+    residual_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1], remark='residual', target_net_residual=True)
 
     exit()
 
@@ -432,8 +439,8 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    # select_device(-1)
-    select_device(0)
+    select_device(-1)
+    # select_device(0)
     batch()
 
     # game = 'HalfCheetah-v2'
@@ -454,13 +461,13 @@ if __name__ == '__main__':
     #                                plan_actor=True,
     #                                )
 
-    model_ddpg_continuous(game=game,
-                          skip=True,
-                          debug=True,
-                          plan=True,
-                          async_replay=True,
-                          residual=0.2
-                          )
+    # model_ddpg_continuous(game=game,
+    #                       skip=True,
+    #                       debug=True,
+    #                       plan=True,
+    #                       async_replay=True,
+    #                       residual=0.2
+    #                       )
 
     # oracle_ddpg_continuous(game=game,
     #                        skip=True,
@@ -476,4 +483,5 @@ if __name__ == '__main__':
     #                        )
 
     # residual_ddpg_continuous(game=game,
-    #                          residual=0.1)
+    #                          residual=0.1,
+    #                          target_net_residual=True)
