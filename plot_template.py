@@ -133,9 +133,9 @@ def plot_mujoco():
         'top_k': 0,
     }
     games = [
-        # 'HalfCheetah-v2',
+        'HalfCheetah-v2',
         'Walker2d-v2',
-        # 'Hopper-v2',
+        'Hopper-v2',
         # 'Reacher-v2',
         'Swimmer-v2',
         'Humanoid-v2',
@@ -210,6 +210,11 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_True-run',
 
+        # oralce model
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
+        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
+
+
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_False-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_False-run',
@@ -227,6 +232,7 @@ def plot_mujoco():
         # 'residual_0\.5-run',
         # 'residual_1-run',
 
+        # learned model
         'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
         'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
 
@@ -241,7 +247,6 @@ def plot_mujoco():
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            # ddpg_plot(pattern='.*model-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
             # ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
             ddpg_plot(pattern='.*exp-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
             ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
