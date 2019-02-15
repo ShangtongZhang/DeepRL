@@ -5,6 +5,8 @@ import torch.nn.functional as F
 from deep_rl import get_logger
 from deep_rl import mkdir
 from deep_rl import set_one_thread
+from deep_rl import set_tag
+from deep_rl import Config
 
 
 class State:
@@ -44,6 +46,7 @@ class Chain:
             self.state = State(sid + 1)
         return r, self.state
 
+
 class Convergent:
     def __init__(self, threshold, min_success=100):
         self.data = None
@@ -76,16 +79,14 @@ class TabularAgent:
         self.params = kwargs
         self.v = torch.zeros((11,))
         self.c = torch.zeros((11,))
-        # self.pi = torch.randn((2, ), requires_grad=True)
         self.pi = nn.Parameter(torch.zeros((2,), requires_grad=True))
-        self.opt = torch.optim.SGD([self.pi], lr=params['pi_lr'])
+        self.opt = torch.optim.SGD([self.pi], lr=kwargs['pi_lr'])
         self.env = Chain()
         self.state = self.env.reset()
 
         self.v_check = Convergent(1e-3)
         self.c_check = Convergent(1e-5)
         self.logger = kwargs['logger']
-
 
     def prob(self, state, action=None):
         if state.id:
@@ -97,7 +98,7 @@ class TabularAgent:
 
     def log_prob(self, state, action):
         if state.id:
-            return torch.zeros((1, ), requires_grad=True)
+            return torch.zeros((1,), requires_grad=True)
         log_prob = F.log_softmax(self.pi, dim=0)
         return log_prob[action]
 
@@ -143,7 +144,6 @@ class TabularAgent:
                         self.params['gamma_hat'] * rho * self.c[s.id] +
                         (1 - self.params['gamma_hat']) - self.c[next_s.id])
                 if self.c_check(self.c):
-                    print(i)
                     return
 
     def emphatic_ac(self, trajectory):
@@ -185,7 +185,7 @@ class TabularAgent:
         F = 0
         c_prev = 0
         rho_prev = 0
-        grad_prev = torch.zeros((2, ))
+        grad_prev = torch.zeros((2,))
         for i, (s, a, r, next_s) in enumerate(trajectory):
             I = c_prev * rho_prev * grad_prev
             F = self.params['gamma_hat'] * rho_prev * F + I
@@ -194,7 +194,7 @@ class TabularAgent:
             rho_prev = self.rho(s, a)
             c_prev = self.cov_shift(s)
             if s.id:
-                grad_prev = torch.zeros((2, ))
+                grad_prev = torch.zeros((2,))
             else:
                 pi_loss = self.log_prob(s, a)
                 self.opt.zero_grad()
@@ -230,13 +230,13 @@ class TabularAgent:
 
             prob = self.prob(State(0))
             self.logger.add_scalar('p0', prob[0])
+            self.logger.info('p0: %.2f' % (prob[0]))
             self.logger.add_scalar('p1', prob[1])
             self.logger.add_scalar('v0', self.v[0])
             self.logger.add_scalar('v1', self.v[1])
             self.logger.add_scalar('v4', self.v[4])
             self.logger.add_scalar('c1', self.c[1])
             self.logger.add_scalar('c4', self.c[4])
-
 
     def generate_trajectory(self):
         trajectory = []
@@ -255,7 +255,7 @@ class TabularAgent:
         elif self.params['alg'] == 'GACE':
             self.learn_c(trajectory)
             self.generalized_ac(trajectory)
-        self.print()
+        # self.print()
         # print(self.v)
         # print(self.c)
         # print(F.softmax(self.pi, dim=0))
@@ -268,25 +268,67 @@ class TabularAgent:
         print('d_mu_v4: %.2f' % (1 / 8 * (1 - self.params['up_prob']) * self.v[4]))
 
 
+def read_tf_log(path):
+    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+    event_acc = EventAccumulator(path)
+    event_acc.Reload()
+    print(event_acc.Tags())
+    w_times, step_nums, vals = zip(*event_acc.Scalars('p0'))
+
+
+def tabular_agent(**kwargs):
+    set_tag(kwargs)
+    kwargs.setdefault('window', 10000)
+    kwargs.setdefault('pi_lr', 0.001)
+    kwargs.setdefault('v_lr', 0.01)
+    kwargs.setdefault('c_lr', 0.01)
+    kwargs.setdefault('alg', 'GACE')
+    kwargs.setdefault('lam_2', 1)
+    kwargs.setdefault('gamma_hat', 0.99)
+    params = dict(
+        up_prob=0.5,
+        T=100000,
+        gamma=0.6,
+        lam_1=1,
+        logger=get_logger(tag=kwargs['tag'], skip=False)
+    )
+    params.update(kwargs)
+    agent = TabularAgent(**params)
+    agent.run()
+
+
+def batch():
+    cf = Config()
+    cf.add_argument('--i1', type=int, default=0)
+    cf.add_argument('--i2', type=int, default=0)
+    cf.merge()
+
+    params = [
+        dict(window=10000),
+        dict(window=1000),
+        dict(window=100),
+        dict(window=10),
+        dict(window=10000, pi_lr=0.01),
+        dict(window=10000, lam_2=0.9),
+        dict(window=10000, lam_2=0.5),
+        dict(window=10000, lam_2=0),
+    ]
+
+    tabular_agent(game='MDP', alg='GACE', run=cf.i2, **params[cf.i1])
+
+    exit()
+
+
 if __name__ == '__main__':
     mkdir('log')
     set_one_thread()
-    params = dict(
-        up_prob=0.5,
-        v_lr=0.01,
-        c_lr=0.01,
-        T=100000,
-        # T=1000,
-        window=10000,
-        gamma=0.6,
-        gamma_hat=0.99,
-        lam_1=1,
-        lam_2=1,
-        logger=get_logger(tag='MDP', skip=False)
-    )
+    batch()
 
-    params.update(dict(pi_lr=0.001, alg='GACE'))
-    params.update(dict(pi_lr=0.01, alg='ACE'))
+    # read_tf_log('./tf_log/logger-MDP-190214-231348/events.out.tfevents.1550186028.c43b8419fa46')
+    # read_tf_log('./tf_log/logger-MDP-190214-231348')
 
-    agent = TabularAgent(**params)
-    agent.run()
+    # params.update(dict(pi_lr=0.001, alg='GACE'))
+    # params.update(dict(pi_lr=0.01, alg='ACE'))
+
+    # agent = TabularAgent(**params)
+    # agent.run()
