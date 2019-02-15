@@ -3,6 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from deep_rl import get_logger
+from deep_rl import mkdir
+from deep_rl import set_one_thread
 
 
 class State:
@@ -248,12 +250,14 @@ class TabularAgent:
     def run(self):
         trajectory = self.generate_trajectory()
         self.learn_v(trajectory)
-        self.learn_c(trajectory)
-        self.generalized_ac(trajectory)
-        # self.emphatic_ac(trajectory)
+        if self.params['alg'] == 'ACE':
+            self.emphatic_ac(trajectory)
+        elif self.params['alg'] == 'GACE':
+            self.learn_c(trajectory)
+            self.generalized_ac(trajectory)
         self.print()
         # print(self.v)
-        print(self.c)
+        # print(self.c)
         # print(F.softmax(self.pi, dim=0))
 
     def print(self):
@@ -265,11 +269,12 @@ class TabularAgent:
 
 
 if __name__ == '__main__':
+    mkdir('log')
+    set_one_thread()
     params = dict(
         up_prob=0.5,
         v_lr=0.01,
         c_lr=0.01,
-        pi_lr=0.001,
         T=100000,
         # T=1000,
         window=10000,
@@ -279,5 +284,9 @@ if __name__ == '__main__':
         lam_2=1,
         logger=get_logger(tag='MDP', skip=False)
     )
+
+    params.update(dict(pi_lr=0.001, alg='GACE'))
+    params.update(dict(pi_lr=0.01, alg='ACE'))
+
     agent = TabularAgent(**params)
     agent.run()
