@@ -151,6 +151,7 @@ class TabularAgent:
         rho_prev = 0
         F = 0
         for i, (s, a, r, next_s) in enumerate(trajectory):
+            self.learn_v([trajectory[i]])
             with torch.no_grad():
                 F = self.params['gamma'] * rho_prev * F + 1
                 M = (1 - self.params['lam_1']) + self.params['lam_1'] * F
@@ -162,15 +163,13 @@ class TabularAgent:
                 self.opt.zero_grad()
                 pi_loss.backward()
                 self.opt.step()
-                sub_trajectory = trajectory[max(0, i - self.params['window']): i + 1]
-                self.learn_v(sub_trajectory)
 
-                prob = self.prob(s)
-                self.logger.add_scalar('p0', prob[0])
-                self.logger.add_scalar('p1', prob[1])
-                self.logger.add_scalar('v0', self.v[0])
-                self.logger.add_scalar('v1', self.v[1])
-                self.logger.add_scalar('v4', self.v[4])
+            prob = self.prob(State(0))
+            self.logger.add_scalar('p0', prob[0])
+            self.logger.add_scalar('p1', prob[1])
+            self.logger.add_scalar('v0', self.v[0])
+            self.logger.add_scalar('v1', self.v[1])
+            self.logger.add_scalar('v4', self.v[4])
 
     def compute_M1(self, trajectory):
         F = 0
@@ -205,30 +204,40 @@ class TabularAgent:
         return M
 
     def generalized_ac(self, trajectory):
+        F_1 = 0
+        F_2 = 0
+        rho_prev = 0
+        c_prev = 0
+        grad_log_pi_prev = torch.zeros((2, ))
+
         for i, (s, a, r, next_s) in enumerate(trajectory):
-            if i < self.params['window']:
-                continue
+            self.learn_v([trajectory[i]])
+            self.learn_c([trajectory[i]])
             with torch.no_grad():
                 adv = r + self.params['gamma'] * self.value(next_s) - self.value(s)
                 rho = self.rho(s, a)
-            sub_trajectory = trajectory[max(i - self.params['window'], 0): i + 1]
-            M_1 = self.compute_M1(sub_trajectory)
-            M_2 = self.compute_M2(sub_trajectory)
-            M_2 = self.params['gamma_hat'] * self.value(s) * M_2
-            M_2 = M_2.detach()
+                c = self.cov_shift(s)
+                F_1 = self.params['gamma'] * rho_prev * F_1 + c
+                M_1 = (1 - self.params['lam_1']) * c + self.params['lam_1'] * F_1
+                I = c_prev * rho_prev * grad_log_pi_prev
+                F_2 = self.params['gamma_hat'] * rho_prev * F_2 + I
+                M_2 = (1 - self.params['lam_2']) * I + self.params['lam_2'] * F_2
+                grad = self.params['gamma_hat'] * self.value(s) * M_2
+
+                rho_prev = rho
+                c_prev = c
+
             if s.id == 0:
-                pi_loss = -rho * M_1 * adv * self.log_prob(s, a)
                 self.opt.zero_grad()
-                pi_loss.backward()
-                self.pi.grad.add_(-M_2)
+                self.log_prob(s, a).backward()
+                grad_log_pi_prev = self.pi.grad.clone()
+                self.pi.grad.mul_(rho * M_1 * adv).add_(grad).mul(-1)
                 self.opt.step()
             else:
                 self.opt.zero_grad()
-                self.pi._grad = -M_2
+                grad_log_pi_prev = torch.zeros((2, ))
+                self.pi._grad = -grad
                 self.opt.step()
-
-            self.learn_v(sub_trajectory)
-            self.learn_c(sub_trajectory)
 
             prob = self.prob(State(0))
             self.logger.add_scalar('p0', prob[0])
@@ -251,16 +260,10 @@ class TabularAgent:
 
     def run(self):
         trajectory = self.generate_trajectory()
-        self.learn_v(trajectory)
         if self.params['alg'] == 'ACE':
             self.emphatic_ac(trajectory)
         elif self.params['alg'] == 'GACE':
-            self.learn_c(trajectory)
             self.generalized_ac(trajectory)
-        # self.print()
-        # print(self.v)
-        # print(self.c)
-        # print(F.softmax(self.pi, dim=0))
 
     def print(self):
         print('v0: %.2f' % (self.v[0]))
@@ -325,16 +328,6 @@ if __name__ == '__main__':
     mkdir('log')
     set_one_thread()
     random_seed()
-
-    tabular_agent(game='MDP', alg='ACE')
-
     # batch()
 
-    # read_tf_log('./tf_log/logger-MDP-190214-231348/events.out.tfevents.1550186028.c43b8419fa46')
-    # read_tf_log('./tf_log/logger-MDP-190214-231348')
-
-    # params.update(dict(pi_lr=0.001, alg='GACE'))
-    # params.update(dict(pi_lr=0.01, alg='ACE'))
-
-    # agent = TabularAgent(**params)
-    # agent.run()
+    tabular_agent(game='MDP', alg='ACE')
