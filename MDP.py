@@ -7,6 +7,7 @@ from deep_rl import mkdir
 from deep_rl import set_one_thread
 from deep_rl import set_tag
 from deep_rl import Config
+from deep_rl import random_seed
 
 
 class State:
@@ -161,7 +162,8 @@ class TabularAgent:
                 self.opt.zero_grad()
                 pi_loss.backward()
                 self.opt.step()
-                self.learn_v(trajectory)
+                sub_trajectory = trajectory[max(0, i - self.params['window']): i + 1]
+                self.learn_v(sub_trajectory)
 
                 prob = self.prob(s)
                 self.logger.add_scalar('p0', prob[0])
@@ -225,8 +227,8 @@ class TabularAgent:
                 self.pi._grad = -M_2
                 self.opt.step()
 
-            self.learn_v(trajectory)
-            self.learn_c(trajectory)
+            self.learn_v(sub_trajectory)
+            self.learn_c(sub_trajectory)
 
             prob = self.prob(State(0))
             self.logger.add_scalar('p0', prob[0])
@@ -278,7 +280,7 @@ def read_tf_log(path):
 
 def tabular_agent(**kwargs):
     set_tag(kwargs)
-    kwargs.setdefault('window', 10000)
+    kwargs.setdefault('window', 10)
     kwargs.setdefault('pi_lr', 0.001)
     kwargs.setdefault('v_lr', 0.01)
     kwargs.setdefault('c_lr', 0.01)
@@ -321,7 +323,11 @@ def batch():
 
 if __name__ == '__main__':
     mkdir('log')
-    # set_one_thread()
+    set_one_thread()
+    random_seed()
+
+    tabular_agent(game='MDP', alg='ACE')
+
     # batch()
 
     # read_tf_log('./tf_log/logger-MDP-190214-231348/events.out.tfevents.1550186028.c43b8419fa46')
