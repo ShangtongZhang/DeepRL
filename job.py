@@ -14,12 +14,13 @@ def batch():
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Humanoid-v2']
-    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2', 'Humanoid-v2']
+    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Humanoid-v2']
+    # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2', 'Humanoid-v2']
     # games = ['Ant-v2', , 'HumanoidStandup-v2']
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
-    game = games[cf.i1]
-    # game = games[2]
+    games = games[-1:]
+    # game = games[cf.i1]
+    # game = games[-1]
     # game = games[1]
     # algo = cf.i1 // 4
     # if algo == 0:
@@ -107,43 +108,22 @@ def batch():
         # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
         # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
 
-        dict(residual=0.05),
+        # dict(residual=0.05),
         # dict(residual=0.1),
         # dict(residual=0.2),
         # dict(residual=0.4),
         # dict(residual=0.8),
         # dict(residual=1),
+
+        dict(skip=False, plan=False, MVE=4),
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    # model_ddpg_continuous(game=game, run=cf.i1, **params[cf.i2])
+    model_ddpg_continuous(game=games[cf.i2], run=cf.i1, **params[0])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
-    residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=True)
+    # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=True)
 
     exit()
-
-
-def single_run(run, game, fn, tag, **kwargs):
-    random_seed()
-    log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
-    fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
-
-
-def multi_runs(game, fn, tag, **kwargs):
-    kwargs.setdefault('runs', 2)
-    runs = kwargs['runs']
-    if np.isscalar(runs):
-        runs = np.arange(0, runs)
-    kwargs.setdefault('parallel', False)
-    if not kwargs['parallel']:
-        for run in runs:
-            single_run(run, game, fn, tag, **kwargs)
-        return
-    ps = [mp.Process(target=single_run, args=(run, game, fn, tag), kwargs=kwargs) for run in runs]
-    for p in ps:
-        p.start()
-        time.sleep(1)
-    for p in ps: p.join()
 
 
 def ddpg_continuous(**kwargs):
@@ -197,6 +177,7 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('plan', True)
     kwargs.setdefault('max_uncertainty', 1)
     kwargs.setdefault('plan_warm_up', int(1e4))
+    kwargs.setdefault('MVE_warm_up', int(1e4))
     kwargs.setdefault('agent_warm_up', int(1e4))
     kwargs.setdefault('action_noise', 0.1)
     kwargs.setdefault('random_t_mask', False)
@@ -207,6 +188,7 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('async_replay', True)
     kwargs.setdefault('residual', 0)
     kwargs.setdefault('target_net_residual', False)
+    kwargs.setdefault('MVE', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -252,6 +234,7 @@ def model_ddpg_continuous(**kwargs):
         config.model_warm_up = int(1e3)
         config.agent_warm_up = int(1e3)
         config.plan_warm_up = int(1e3)
+        config.MVE_warm_up = int(1e3)
 
     run_steps(ModelDDPGAgent(config))
 
@@ -440,8 +423,8 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    select_device(-1)
-    # select_device(0)
+    # select_device(-1)
+    select_device(0)
     batch()
 
     # game = 'HalfCheetah-v2'
@@ -462,13 +445,14 @@ if __name__ == '__main__':
     #                                plan_actor=True,
     #                                )
 
-    # model_ddpg_continuous(game=game,
-    #                       skip=True,
-    #                       debug=True,
-    #                       plan=True,
-    #                       async_replay=True,
-    #                       residual=0.2
-    #                       )
+    model_ddpg_continuous(game=game,
+                          skip=True,
+                          debug=True,
+                          plan=False,
+                          async_replay=False,
+                          residual=0.2,
+                          MVE=4,
+                          )
 
     # oracle_ddpg_continuous(game=game,
     #                        skip=True,

@@ -95,6 +95,42 @@ class ModelDDPGAgent(BaseAgent):
         policy_loss.backward()
         self.network.actor_opt.step()
 
+    def MVE_real_transition(self, transitions):
+        config = self.config
+        states, actions, rewards, next_states, mask = transitions
+
+        trajectory = [transitions]
+        with torch.no_grad():
+            while len(trajectory) < config.MVE:
+                s = trajectory[-1][-2]
+                a = self.target_network.actor(s)
+                r, next_s = self.model_predict(s, a)
+                m = torch.ones(mask.size(), device=Config.DEVICE)
+                trajectory.append([s, a, r, next_s, m])
+            next_a = self.target_network.actor(next_s)
+            ret = self.target_network.critic(next_s, next_a)
+
+        critic_loss = 0
+        for s, a, r, _, m in reversed(trajectory):
+            q = self.network.critic(s, a)
+            ret = r + config.discount * m * ret
+            critic_loss = critic_loss + (q - ret).pow(2).mul(0.5).mean()
+        critic_loss = critic_loss / config.MVE
+
+        config.logger.add_scalar('q_loss_replay', critic_loss)
+        self.network.zero_grad()
+        critic_loss.backward()
+        self.network.critic_opt.step()
+
+        phi = self.network.feature(states)
+        action = self.network.actor(phi)
+        policy_loss = -self.network.critic(phi.detach(), action).mean()
+        config.logger.add_scalar('pi_loss_replay', policy_loss)
+
+        self.network.zero_grad()
+        policy_loss.backward()
+        self.network.actor_opt.step()
+
     def model_predict(self, states, actions):
         rewards, next_states = self.models[0](states, actions)
         return rewards, next_states.squeeze(1)
@@ -193,7 +229,11 @@ class ModelDDPGAgent(BaseAgent):
             rewards = tensor(rewards).unsqueeze(1)
             next_states = tensor(next_states)
             mask = tensor(mask).unsqueeze(1)
-            self.real_transitions([states, actions, rewards, next_states, mask])
+
+            if config.MVE and self.total_steps >= config.MVE_warm_up:
+                self.MVE_real_transition([states, actions, rewards, next_states, mask])
+            else:
+                self.real_transitions([states, actions, rewards, next_states, mask])
 
             if config.plan and self.total_steps >= config.plan_warm_up:
                 if config.state_noise:
