@@ -97,6 +97,9 @@ def off_pac_cart_pole():
     config.logger = get_logger()
     # config.entropy_weight = 0.01
     config.entropy_weight = 0
+    config.algo = 'ace'
+    # config.algo = 'off-pac'
+    config.lam1 = 1
     config.gradient_clip = 0.5
     config.eval_interval = 1000
     config.eval_episodes = 10

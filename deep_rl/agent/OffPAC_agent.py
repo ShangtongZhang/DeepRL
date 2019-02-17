@@ -8,6 +8,7 @@ from ..network import *
 from ..component import *
 from .BaseAgent import *
 
+
 class OffPACAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
@@ -21,11 +22,14 @@ class OffPACAgent(BaseAgent):
         self.episode_rewards = []
         self.online_rewards = np.zeros(config.num_workers)
 
+        self.F1 = torch.zeros((config.num_workers, 1), device=Config.DEVICE)
+        self.rho_prev = torch.zeros(self.F1.size(), device=Config.DEVICE)
+
     def random_action(self):
         config = self.config
-        return np.random.randint(0, config.action_dim, size=(config.num_workers, ))
+        return np.random.randint(0, config.action_dim, size=(config.num_workers,))
 
-    def update(self, s, a, mu_a, r, next_s, m):
+    def off_pac_update(self, s, a, mu_a, r, next_s, m):
         config = self.config
         prediction = self.network(s, a)
         with torch.no_grad():
@@ -44,11 +48,35 @@ class OffPACAgent(BaseAgent):
         torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.optimizer.step()
 
+    def ace_update(self, s, a, mu_a, r, next_s, m):
+        config = self.config
+        prediction = self.network(s, a)
+        with torch.no_grad():
+            target = self.network(next_s)['v']
+            target = r + config.discount * m * target
+            self.F1 = m * config.discount * self.rho_prev * self.F1 + 1
+            M = (1 - config.lam1) + config.lam1 * self.F1
+            rho = prediction['pi_a'] / mu_a
+
+        td_error = target - prediction['v']
+        v_loss = td_error.pow(2).mul(0.5).mean()
+
+        entropy = prediction['ent'].mean()
+        pi_loss = -M * rho * td_error.detach() * prediction['log_pi_a'] - config.entropy_weight * entropy
+        pi_loss = pi_loss.mean()
+
+        self.rho_prev = rho
+
+        loss = (v_loss + pi_loss)
+        self.optimizer.zero_grad()
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
+        self.optimizer.step()
+
     def eval_step(self, state):
         with torch.no_grad():
             action = self.network(state)['a']
         return np.asscalar(to_np(action))
-
 
     def step(self):
         config = self.config
@@ -63,13 +91,19 @@ class OffPACAgent(BaseAgent):
                 self.online_rewards[i] = 0
 
         mask = (1 - terminals).astype(np.uint8)
-        self.update(
-            tensor(self.states),
-            tensor(actions),
-            tensor(mu_a).unsqueeze(1),
-            tensor(rewards).unsqueeze(1),
-            tensor(next_states),
-            tensor(mask).unsqueeze(1))
+        transition = [tensor(self.states),
+                      tensor(actions),
+                      tensor(mu_a).unsqueeze(1),
+                      tensor(rewards).unsqueeze(1),
+                      tensor(next_states),
+                      tensor(mask).unsqueeze(1)]
+        if config.algo == 'off-pac':
+            self.off_pac_update(*transition)
+        elif config.algo == 'ace':
+            self.ace_update(*transition)
+        else:
+            raise NotImplementedError
+
         self.states = next_states
 
         self.total_steps += 1
