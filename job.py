@@ -423,9 +423,9 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    # select_device(-1)
-    select_device(0)
-    batch()
+    select_device(-1)
+    # select_device(0)
+    # batch()
 
     # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'
@@ -445,14 +445,14 @@ if __name__ == '__main__':
     #                                plan_actor=True,
     #                                )
 
-    # model_ddpg_continuous(game=game,
-    #                       skip=True,
-    #                       debug=True,
-    #                       plan=False,
-    #                       async_replay=False,
-    #                       residual=0.2,
-    #                       MVE=4,
-    #                       )
+    model_ddpg_continuous(game=game,
+                          skip=True,
+                          debug=True,
+                          plan=False,
+                          async_replay=False,
+                          residual=0.2,
+                          MVE=4,
+                          )
 
     # oracle_ddpg_continuous(game=game,
     #                        skip=True,
