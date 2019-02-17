@@ -100,9 +100,10 @@ class ModelDDPGAgent(BaseAgent):
         states, actions, rewards, next_states, mask = transitions
 
         trajectory = [transitions]
+        next_s = next_states
         with torch.no_grad():
             while len(trajectory) < config.MVE:
-                s = trajectory[-1][-2]
+                s = next_s
                 a = self.target_network.actor(s)
                 r, next_s = self.model_predict(s, a)
                 m = torch.ones(mask.size(), device=Config.DEVICE)
@@ -120,6 +121,7 @@ class ModelDDPGAgent(BaseAgent):
         config.logger.add_scalar('q_loss_replay', critic_loss)
         self.network.zero_grad()
         critic_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.network.critic_opt.step()
 
         phi = self.network.feature(states)
@@ -129,6 +131,7 @@ class ModelDDPGAgent(BaseAgent):
 
         self.network.zero_grad()
         policy_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.network.actor_opt.step()
 
     def model_predict(self, states, actions):

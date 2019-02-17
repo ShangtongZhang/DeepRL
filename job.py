@@ -121,7 +121,7 @@ def batch():
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
     model_ddpg_continuous(game=games[cf.i2], run=cf.i1, **params[0])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
-    # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=True)
+    # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=False)
 
     exit()
 
@@ -445,14 +445,14 @@ if __name__ == '__main__':
     #                                plan_actor=True,
     #                                )
 
-    model_ddpg_continuous(game=game,
-                          skip=True,
-                          debug=True,
-                          plan=False,
-                          async_replay=False,
-                          residual=0.2,
-                          MVE=4,
-                          )
+    # model_ddpg_continuous(game=game,
+    #                       skip=True,
+    #                       debug=True,
+    #                       plan=False,
+    #                       async_replay=False,
+    #                       residual=0.2,
+    #                       MVE=4,
+    #                       )
 
     # oracle_ddpg_continuous(game=game,
     #                        skip=True,

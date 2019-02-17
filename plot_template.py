@@ -144,7 +144,7 @@ def plot_mujoco():
     # games = ['RoboschoolHumanoid-v1']
     # games = ['RoboschoolAnt-v1']
     # games = ['Ant-v2', 'HumanoidStandup-v2']
-    games = ['Swimmer-v2']
+    # games = ['Swimmer-v2']
 
     patterns = [
         # 'remark_ddpg-run',
@@ -216,7 +216,7 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_False-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_True-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_True-run',
 
         # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.01-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.05-run',
@@ -229,6 +229,7 @@ def plot_mujoco():
         # 'residual_1-run',
 
         # learned model
+        # skip=False indicates a learned model
         # 'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
         # 'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
 
@@ -249,11 +250,11 @@ def plot_mujoco():
         # 'remark_residual-residual_1-target_net_residual_False-run',
 
         'remark_residual-residual_0\.05-target_net_residual_True-run',
-        'remark_residual-residual_0\.1-target_net_residual_True-run',
-        'remark_residual-residual_0\.2-target_net_residual_True-run',
-        'remark_residual-residual_0\.4-target_net_residual_True-run',
-        'remark_residual-residual_0\.8-target_net_residual_True-run',
-        'remark_residual-residual_1-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.1-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.2-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.4-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.8-target_net_residual_True-run',
+        # 'remark_residual-residual_1-target_net_residual_True-run',
     ]
 
     l = len(games)
@@ -262,8 +263,8 @@ def plot_mujoco():
         plt.subplot(1, l, j+1)
         ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, name=game, **kwargs)
         for i, p in enumerate(patterns):
-            # ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
-            # ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            # ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
     plt.show()
 
