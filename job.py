@@ -1,10 +1,12 @@
 from deep_rl import *
 
+
 def foo(game, **kwargs):
     kwargs.setdefault('tag', foo.__name__)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     config = Config()
     config.merge(kwargs)
+
 
 def batch():
     cf = Config()
@@ -28,6 +30,7 @@ def single_run(run, game, fn, tag, **kwargs):
     log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
 
+
 def multi_runs(game, fn, tag, **kwargs):
     kwargs.setdefault('runs', 2)
     runs = kwargs['runs']
@@ -43,6 +46,7 @@ def multi_runs(game, fn, tag, **kwargs):
         p.start()
         time.sleep(1)
     for p in ps: p.join()
+
 
 def ddpg_continuous(name, **kwargs):
     kwargs.setdefault('tag', ddpg_continuous.__name__)
@@ -73,11 +77,31 @@ def ddpg_continuous(name, **kwargs):
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
-        size=(config.action_dim, ), std=LinearSchedule(0.2))
+        size=(config.action_dim,), std=LinearSchedule(0.2))
     config.min_memory_size = int(1e4)
     config.target_network_mix = 1e-3
     config.logger = get_logger(tag=kwargs['tag'])
     run_steps(DDPGAgent(config))
+
+
+def off_pac_cart_pole():
+    config = Config()
+    game = 'CartPole-v0'
+    config.num_workers = 5
+    config.task_fn = lambda: Task(game, num_envs=config.num_workers)
+    config.eval_env = Task(game)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.network_fn = lambda: OffPACNet(
+        config.state_dim, config.action_dim, FCBody(config.state_dim))
+    config.discount = 0.99
+    config.logger = get_logger()
+    # config.entropy_weight = 0.01
+    config.entropy_weight = 0
+    config.gradient_clip = 0.5
+    config.eval_interval = 1000
+    config.eval_episodes = 10
+    run_steps(OffPACAgent(config))
+
 
 if __name__ == '__main__':
     mkdir('log')
@@ -85,5 +109,7 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    batch()
+    # batch()
     # select_device(0)
+
+    off_pac_cart_pole()

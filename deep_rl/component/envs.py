@@ -194,7 +194,6 @@ class Task:
         else:
             assert 'unknown action space'
 
-        self.sim = self.get_sim(self.env)
 
     def reset(self):
         return self.env.reset()
