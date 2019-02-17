@@ -330,4 +330,4 @@ if __name__ == '__main__':
     random_seed()
     # batch()
 
-    tabular_agent(game='MDP', alg='ACE')
+    tabular_agent(game='MDP', alg='GACE')
