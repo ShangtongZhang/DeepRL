@@ -88,20 +88,30 @@ class DQNAgent(BaseAgent):
             states, actions, rewards, next_states, terminals = experiences
             states = self.config.state_normalizer(states)
             next_states = self.config.state_normalizer(next_states)
-            q_next = self.target_network(next_states).detach()
-            if self.config.double_q:
-                best_actions = torch.argmax(self.network(next_states), dim=-1)
-                q_next = q_next[self.batch_indices, best_actions]
-            else:
-                q_next = q_next.max(1)[0]
-            terminals = tensor(terminals)
+            mask = 1 - tensor(terminals)
             rewards = tensor(rewards)
-            q_next = self.config.discount * q_next * (1 - terminals)
-            q_next.add_(rewards)
             actions = tensor(actions).long()
+
+            if config.target_net_residual:
+                target_net = self.target_network
+            else:
+                target_net = self.network
+
+            with torch.no_grad():
+                q_next = target_net(next_states).detach().max(1)[0]
+                q_next = rewards + config.discount * q_next * mask
             q = self.network(states)
             q = q[self.batch_indices, actions]
-            loss = (q_next - q).pow(2).mul(0.5).mean()
+            d_loss = (q - q_next).pow(2).mul(0.5).mean()
+
+            q_next = self.network(next_states).max(1)[0]
+            q_next = rewards + config.discount * q_next * mask
+            with torch.no_grad():
+                q = target_net(states)
+                q = q[self.batch_indices, actions]
+            rd_loss = (q - q_next).pow(2).mul(0.5).mean()
+
+            loss = config.residual * rd_loss + d_loss
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)

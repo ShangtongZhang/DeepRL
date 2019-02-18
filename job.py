@@ -127,6 +127,28 @@ def batch():
     exit()
 
 
+def batch_atari():
+    cf = Config()
+    cf.add_argument('--i1', type=int, default=0)
+    cf.add_argument('--i2', type=int, default=0)
+    cf.merge()
+
+    games = ['BreakoutNoFrameskip-v4']
+
+    params = [
+        dict(residual=0, target_net_residual=True),
+        dict(residual=0.05, target_net_residual=True),
+        dict(residual=0.1, target_net_residual=True),
+    ]
+
+    param = params[cf.i1 // 2]
+    run = cf.i1 % 2
+
+    residual_dqn_pixel_atari(game=games[0], run=run, **param)
+
+    exit()
+
+
 def ddpg_continuous(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
@@ -419,6 +441,52 @@ def residual_ddpg_continuous(**kwargs):
     run_steps(ResidualDDPGAgent(config))
 
 
+def residual_dqn_pixel_atari(**kwargs):
+    set_tag(kwargs)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
+    kwargs.setdefault('skip', False)
+    kwargs.setdefault('target_net_residual', True)
+    kwargs.setdefault('residual', 0)
+    kwargs.setdefault('debug', False)
+
+    config = Config()
+    config.merge(kwargs)
+
+    if kwargs['debug']:
+        replay = Replay
+    else:
+        replay = AsyncReplay
+
+    config.history_length = 4
+    config.task_fn = lambda: Task(kwargs['game'], log_dir=kwargs['log_dir'])
+    config.eval_env = Task(kwargs['game'], episode_life=False)
+
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(
+        params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
+    config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
+    config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
+
+    config.replay_fn = lambda: replay(memory_size=int(1e6), batch_size=32)
+
+    config.batch_size = 32
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.exploration_steps = 50000
+    config.sgd_update_frequency = 4
+    config.gradient_clip = 5
+    config.double_q = False
+    config.max_steps = int(2e7)
+    config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
+
+    if kwargs['debug']:
+        config.exploration_steps = 1000
+        config.async_actor = False
+
+    run_steps(DQNAgent(config))
+
+
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
@@ -426,7 +494,9 @@ if __name__ == '__main__':
     set_one_thread()
     # select_device(-1)
     select_device(0)
+    batch_atari()
     batch()
+
 
     # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'
@@ -446,14 +516,20 @@ if __name__ == '__main__':
     #                                plan_actor=True,
     #                                )
 
-    model_ddpg_continuous(game=game,
-                          skip=True,
-                          debug=True,
-                          plan=False,
-                          async_replay=False,
-                          residual=0.2,
-                          MVE=4,
-                          )
+    # model_ddpg_continuous(game=game,
+    #                       skip=True,
+    #                       debug=True,
+    #                       plan=False,
+    #                       async_replay=False,
+    #                       residual=0.2,
+    #                       MVE=4,
+    #                       )
+
+    game = 'BreakoutNoFrameskip-v4'
+    residual_dqn_pixel_atari(game=game,
+                             skip=False,
+                             debug=True,
+                             residual=0.05)
 
     # oracle_ddpg_continuous(game=game,
     #                        skip=True,
