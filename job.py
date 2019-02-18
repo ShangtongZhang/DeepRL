@@ -18,7 +18,7 @@ def batch():
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2', 'Humanoid-v2']
     # games = ['Ant-v2', , 'HumanoidStandup-v2']
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
-    games = games[-1:]
+    games = games[:2]
     # game = games[cf.i1]
     # game = games[-1]
     # game = games[1]
@@ -116,10 +116,11 @@ def batch():
         # dict(residual=1),
 
         dict(skip=False, plan=False, MVE=4),
+        dict(skip=False, plan=False, MVE=3),
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    model_ddpg_continuous(game=games[cf.i2], run=cf.i1, **params[0])
+    model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
     # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=False)
 
@@ -423,9 +424,9 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    select_device(-1)
-    # select_device(0)
-    # batch()
+    # select_device(-1)
+    select_device(0)
+    batch()
 
     # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'

@@ -115,7 +115,8 @@ class ModelDDPGAgent(BaseAgent):
         for s, a, r, _, m in reversed(trajectory):
             q = self.network.critic(s, a)
             ret = r + config.discount * m * ret
-            critic_loss = critic_loss + (q - ret).pow(2).mul(0.5).mean()
+            critic_loss = critic_loss + huber(q - ret).mean()
+            # critic_loss = critic_loss + (q - ret).pow(2).mul(0.5).mean()
         critic_loss = critic_loss / config.MVE
 
         config.logger.add_scalar('q_loss_replay', critic_loss)
