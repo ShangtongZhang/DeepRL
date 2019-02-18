@@ -495,7 +495,7 @@ if __name__ == '__main__':
     # select_device(-1)
     select_device(0)
     batch_atari()
-    batch()
+    # batch()
 
 
     # game = 'HalfCheetah-v2'
