@@ -6,4 +6,4 @@ from .NStepDQN_agent import *
 from .QuantileRegressionDQN_agent import *
 from .PPO_agent import *
 from .OptionCritic_agent import *
-from .OffPAC_agent import *
+from .GeoffPAC_agent import *
