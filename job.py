@@ -115,12 +115,12 @@ def batch():
         # dict(residual=0.8),
         # dict(residual=1),
 
-        dict(skip=False, plan=False, MVE=4),
         dict(skip=False, plan=False, MVE=3),
+        dict(skip=False, plan=False, MVE=2),
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
+    model_ddpg_continuous(game=games[0], run=cf.i1 % 4, **params[cf.i1 // 4])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
     # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=False)
 
@@ -136,9 +136,13 @@ def batch_atari():
     games = ['BreakoutNoFrameskip-v4']
 
     params = [
-        dict(residual=0, target_net_residual=True),
-        dict(residual=0.05, target_net_residual=True),
-        dict(residual=0.1, target_net_residual=True),
+        # dict(residual=0, target_net_residual=True),
+        # dict(residual=0.05, target_net_residual=True),
+        # dict(residual=0.1, target_net_residual=True),
+        dict(residual=0.2, target_net_residual=True),
+        dict(residual=0.4, target_net_residual=True),
+        dict(residual=0.8, target_net_residual=True),
+        dict(residual=1, target_net_residual=True),
     ]
 
     param = params[cf.i1 // 2]
@@ -494,8 +498,8 @@ if __name__ == '__main__':
     set_one_thread()
     # select_device(-1)
     select_device(0)
-    batch_atari()
-    # batch()
+    # batch_atari()
+    batch()
 
 
     # game = 'HalfCheetah-v2'
@@ -516,20 +520,20 @@ if __name__ == '__main__':
     #                                plan_actor=True,
     #                                )
 
-    # model_ddpg_continuous(game=game,
-    #                       skip=True,
-    #                       debug=True,
-    #                       plan=False,
-    #                       async_replay=False,
-    #                       residual=0.2,
-    #                       MVE=4,
-    #                       )
+    model_ddpg_continuous(game=game,
+                          skip=True,
+                          debug=True,
+                          plan=False,
+                          async_replay=False,
+                          residual=0.2,
+                          MVE=3,
+                          )
 
-    game = 'BreakoutNoFrameskip-v4'
-    residual_dqn_pixel_atari(game=game,
-                             skip=False,
-                             debug=True,
-                             residual=0.05)
+    # game = 'BreakoutNoFrameskip-v4'
+    # residual_dqn_pixel_atari(game=game,
+    #                          skip=False,
+    #                          debug=True,
+    #                          residual=0.05)
 
     # oracle_ddpg_continuous(game=game,
     #                        skip=True,

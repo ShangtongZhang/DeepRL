@@ -99,7 +99,7 @@ class ModelDDPGAgent(BaseAgent):
         config = self.config
         states, actions, rewards, next_states, mask = transitions
 
-        trajectory = [transitions]
+        trajectory = []
         next_s = next_states
         with torch.no_grad():
             while len(trajectory) < config.MVE:
@@ -116,7 +116,6 @@ class ModelDDPGAgent(BaseAgent):
             q = self.network.critic(s, a)
             ret = r + config.discount * m * ret
             critic_loss = critic_loss + huber(q - ret).mean()
-            # critic_loss = critic_loss + (q - ret).pow(2).mul(0.5).mean()
         critic_loss = critic_loss / config.MVE
 
         config.logger.add_scalar('q_loss_replay', critic_loss)
@@ -236,8 +235,7 @@ class ModelDDPGAgent(BaseAgent):
 
             if config.MVE and self.total_steps >= config.MVE_warm_up:
                 self.MVE_real_transition([states, actions, rewards, next_states, mask])
-            else:
-                self.real_transitions([states, actions, rewards, next_states, mask])
+            self.real_transitions([states, actions, rewards, next_states, mask])
 
             if config.plan and self.total_steps >= config.plan_warm_up:
                 if config.state_noise:
