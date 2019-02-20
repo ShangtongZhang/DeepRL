@@ -12,11 +12,12 @@ from ..utils import *
 
 
 class Replay:
-    def __init__(self, memory_size, batch_size):
+    def __init__(self, memory_size, batch_size, cat_fn=lambda x: np.asarray(x)):
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.data = []
         self.pos = 0
+        self.cat_fn = cat_fn
 
     def feed(self, experience):
         if self.pos >= len(self.data):
@@ -37,7 +38,7 @@ class Replay:
 
         sampled_indices = [np.random.randint(0, len(self.data)) for _ in range(batch_size)]
         sampled_data = [self.data[ind] for ind in sampled_indices]
-        batch_data = list(map(lambda x: np.asarray(x), zip(*sampled_data)))
+        batch_data = list(map(self.cat_fn, zip(*sampled_data)))
         return batch_data
 
     def size(self):

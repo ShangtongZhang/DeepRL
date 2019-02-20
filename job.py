@@ -7,15 +7,23 @@ def batch():
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    games = ['Hopper-v2', 'HalfCheetah-v2', 'Swimmer-v2', 'Reacher-v2', 'Walker2d-v2']
-    game = games[cf.i1 % 5]
-    state_norm = cf.i1 // 5
-    ddpg_continuous(game, gate=F.relu, weight_decay=1e-2, state_norm=state_norm,
-                    tag='%s_relu_norm_%d_l2_%d' % (game, state_norm, cf.i2))
-    ddpg_continuous(game, gate=F.relu, weight_decay=0, state_norm=state_norm,
-                    tag='%s_relu_norm_%d_nl2_%d' % (game, state_norm, cf.i2))
-    ddpg_continuous(game, gate=F.tanh, weight_decay=0, state_norm=state_norm,
-                    tag='%s_tanh_norm_%d_%d' % (game, state_norm, cf.i2))
+    games = ['HalfCheetah-v2', 'Swimmer-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
+    game = games[2]
+
+    params = [
+        dict(algo='off-pac'),
+        dict(algo='ace', lam1=0),
+        dict(algo='ace', lam1=0.5),
+        dict(algo='ace', lam1=1),
+        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0),
+        dict(algo='geoff-pac', lam1=0.5, lam2=0, gamma_hat=0),
+        dict(algo='geoff-pac', lam1=1, lam2=0, gamma_hat=0),
+        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.5),
+        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=1),
+    ]
+
+    geoff_pac(game=game, run=cf.i2, **params[cf.i1], skip=False)
 
 
 def ddpg_continuous(name, **kwargs):
@@ -55,17 +63,19 @@ def ddpg_continuous(name, **kwargs):
 
 
 def geoff_pac(**kwargs):
+    set_tag(kwargs)
+    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('skip', True)
     kwargs.setdefault('lam1', 1)
     kwargs.setdefault('lam2', 1)
     kwargs.setdefault('gamma_hat', 0.99)
-    set_tag(kwargs)
+    kwargs.setdefault('vc_epochs', 1)
     config = Config()
 
     config.merge(kwargs)
     config.num_workers = 10
     config.task_fn = lambda: Task(kwargs['game'], num_envs=config.num_workers)
-    config.eval_env = Task(kwargs['game'])
+    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: GeoffPACNet(
         config.state_dim, config.action_dim,
@@ -79,9 +89,13 @@ def geoff_pac(**kwargs):
     config.entropy_weight = 0
     config.c_coef = 1e-3
     config.gradient_clip = 0.5
-    config.target_network_update_freq = 1000
-    config.eval_interval = 1000
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=10,
+                                      cat_fn=lambda x: torch.cat(x, dim=0))
+    config.target_network_update_freq = 200
+    config.eval_interval = 100
     config.eval_episodes = 10
+    config.replay_warm_up = 100
+    config.max_steps = int(1e5)
     run_steps(GeoffPACAgent(config))
 
 
@@ -91,13 +105,13 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    # batch()
+    batch()
     # select_device(0)
 
     # game = 'CartPole-v0'
     # game = 'LunarLander-v2'
-    # game = 'HalfCheetah-v2'
-    game = 'Reacher-v2'
+    game = 'HalfCheetah-v2'
+    # game = 'Reacher-v2'
 
     geoff_pac(
         game=game,
@@ -107,5 +121,5 @@ if __name__ == '__main__':
         algo='geoff-pac',
         lam1=0,
         lam2=0,
-        gamma_hat=0,
+        gamma_hat=0.1,
     )

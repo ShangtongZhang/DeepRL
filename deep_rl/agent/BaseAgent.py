@@ -46,6 +46,7 @@ class BaseAgent:
             rewards.append(self.eval_episode())
         self.config.logger.info('evaluation episode return: %f(%f)' % (
             np.mean(rewards), np.std(rewards) / np.sqrt(len(rewards))))
+        self.config.logger.add_scalar('evaluation', np.mean(rewards))
 
 class BaseActor(mp.Process):
     STEP = 0
