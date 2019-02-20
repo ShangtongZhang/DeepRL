@@ -84,27 +84,31 @@ def ddpg_continuous(name, **kwargs):
     run_steps(DDPGAgent(config))
 
 
-def geoff_pac_cart_pole():
+def geoff_pac_cart_pole(**kwargs):
+    kwargs.setdefault('skip', True)
+    kwargs.setdefault('lam1', 1)
+    kwargs.setdefault('lam2', 1)
+    kwargs.setdefault('gamma_hat', 0.99)
+    set_tag(kwargs)
     config = Config()
-    game = 'CartPole-v0'
-    config.num_workers = 5
-    config.task_fn = lambda: Task(game, num_envs=config.num_workers)
-    config.eval_env = Task(game)
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+
+    config.merge(kwargs)
+    config.num_workers = 10
+    config.task_fn = lambda: Task(kwargs['game'], num_envs=config.num_workers)
+    config.eval_env = Task(kwargs['game'])
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: GeoffPACNet(
-        config.state_dim, config.action_dim, FCBody(config.state_dim))
+        config.state_dim, config.action_dim,
+        actor_body=FCBody(config.state_dim),
+        critic_body=FCBody(config.state_dim),
+        cov_shift_body=FCBody(config.state_dim),
+    )
     config.discount = 0.99
-    config.logger = get_logger()
-    # config.entropy_weight = 0.01
+    config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
     config.entropy_weight = 0
-    # config.algo = 'ace'
-    # config.algo = 'off-pac'
-    config.algo = 'geoff-pac'
-    config.lam1 = 1
-    config.lam2 = 1
-    config.gamma_hat = 0.99
     config.c_coef = 1e-3
     config.gradient_clip = 0.5
+    config.target_network_update_freq = 1000
     config.eval_interval = 1000
     config.eval_episodes = 10
     run_steps(GeoffPACAgent(config))
@@ -119,4 +123,15 @@ if __name__ == '__main__':
     # batch()
     # select_device(0)
 
-    geoff_pac_cart_pole()
+    # game = 'CartPole-v0'
+    game = 'LunarLander-v2'
+    geoff_pac_cart_pole(
+        game=game,
+        skip=False,
+        # algo='off-pac',
+        # algo='ace',
+        algo='geoff-pac',
+        lam1=0,
+        lam2=0,
+        gamma_hat=0,
+    )

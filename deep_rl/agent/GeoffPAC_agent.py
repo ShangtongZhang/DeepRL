@@ -15,6 +15,8 @@ class GeoffPACAgent(BaseAgent):
         self.config = config
         self.task = config.task_fn()
         self.network = config.network_fn()
+        self.target_network = config.network_fn()
+        self.target_network.load_state_dict(self.network.state_dict())
         self.optimizer = config.optimizer_fn(self.network.parameters())
         self.total_steps = 0
         self.states = self.task.reset()
@@ -36,16 +38,17 @@ class GeoffPACAgent(BaseAgent):
         config = self.config
         prediction = self.network(s, a)
         with torch.no_grad():
-            target = self.network(next_s)['v']
+            target = self.target_network(next_s)['v']
             target = r + config.discount * m * target
+            rho = prediction['pi_a'] / mu_a
         td_error = target - prediction['v']
-        v_loss = td_error.pow(2).mul(0.5).mean()
-        rho = prediction['pi_a'] / mu_a
+        config.logger.add_histogram('v', prediction['v'])
+        v_loss = td_error.pow(2).mul(0.5).mul(rho.clamp(0, 1)).mean()
         entropy = prediction['ent'].mean()
-        pi_loss = -rho.detach() * td_error.detach() * prediction['log_pi_a'] - config.entropy_weight * entropy
+        pi_loss = -rho * td_error.detach() * prediction['log_pi_a'] - config.entropy_weight * entropy
         pi_loss = pi_loss.mean()
 
-        loss = (v_loss + pi_loss)
+        loss = v_loss + pi_loss
         self.optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
@@ -55,14 +58,15 @@ class GeoffPACAgent(BaseAgent):
         config = self.config
         prediction = self.network(s, a)
         with torch.no_grad():
-            target = self.network(next_s)['v']
+            target = self.target_network(next_s)['v']
             target = r + config.discount * m * target
             self.F1 = m * config.discount * self.rho_prev * self.F1 + 1
             M = (1 - config.lam1) + config.lam1 * self.F1
             rho = prediction['pi_a'] / mu_a
 
         td_error = target - prediction['v']
-        v_loss = (td_error * rho.clamp(0.95, 1.05)).pow(2).mul(0.5).mean()
+        config.logger.add_histogram('v', prediction['v'])
+        v_loss = td_error.pow(2).mul(0.5).mul(rho.clamp(0, 1)).mean()
 
         entropy = prediction['ent'].mean()
         pi_loss = -M * rho * td_error.detach() * prediction['log_pi_a'] - config.entropy_weight * entropy
@@ -80,17 +84,21 @@ class GeoffPACAgent(BaseAgent):
         config = self.config
         prediction = self.network(s, a)
         next_prediction = self.network(next_s)
+        prediction_target = self.target_network(s, a)
+        next_prediction_target = self.target_network(next_s)
 
         rho = prediction['pi_a'] / mu_a
         rho = rho.detach()
 
-        v_target = next_prediction['v']
+        v_target = next_prediction_target['v']
         v_target = r + config.discount * m * v_target
         v_target = v_target.detach()
         td_error = v_target - prediction['v']
-        v_loss = (td_error).pow(2).mul(0.5).mean()
+        config.logger.add_histogram('v', prediction['v'])
+        config.logger.add_histogram('c', prediction['c'])
+        v_loss = td_error.pow(2).mul(0.5).mul(rho.clamp(0, 1)).mean()
 
-        c_target = config.gamma_hat * rho * prediction['c'] + 1 - config.gamma_hat
+        c_target = config.gamma_hat * rho.clamp(0, 2) * prediction_target['c'] + 1 - config.gamma_hat
         c_target = c_target.detach()
         c_next = next_prediction['c'] * m
 
@@ -100,10 +108,12 @@ class GeoffPACAgent(BaseAgent):
         c_loss = (c_target - c_next).pow(2).mul(0.5).mean() + config.c_coef * c_normalizer.mean()
 
         self.optimizer.zero_grad()
-        (v_loss + c_loss).backward(retain_graph=True)
+        (v_loss + c_loss).backward()
+        # nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.optimizer.step()
 
-        c = prediction['c'].detach()
+        prediction = self.network(s, a)
+        c = prediction['c'].detach().clamp(0, 2)
         self.F1 = m * config.discount * self.rho_prev * self.F1 + c
         M1 = (1 - config.lam1) * c + config.lam1 * self.F1
 
@@ -125,14 +135,15 @@ class GeoffPACAgent(BaseAgent):
             self.grad_prev.grads[i].add(self.network)
 
         grad = self.grad_prev.clone()
-        grad.mul(rho * M1 * td_error.detach()).add(M2)
-        grad = grad.mean().mul(-1)
+        grad.mul(rho.clamp(0, 2) * M1 * td_error.detach()).add(M2)
+        grad = grad.mean().mul(-0.1)
 
         self.optimizer.zero_grad()
         grad.assign(self.network)
+        # nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.optimizer.step()
 
-        self.rho_prev = rho
+        self.rho_prev = rho.clamp(0, 2)
         self.c_prev = c
 
     def eval_step(self, state):
@@ -171,3 +182,6 @@ class GeoffPACAgent(BaseAgent):
         self.states = next_states
 
         self.total_steps += 1
+
+        if self.total_steps % config.target_network_update_freq == 0:
+            self.target_network.load_state_dict(self.network.state_dict())
