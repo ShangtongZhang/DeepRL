@@ -189,11 +189,12 @@ class Task:
         self.action_space = self.env.action_space
         if isinstance(self.action_space, Discrete):
             self.action_dim = self.action_space.n
+            self.action_type = 'discrete'
         elif isinstance(self.action_space, Box):
             self.action_dim = self.action_space.shape[0]
+            self.action_type = 'continuous'
         else:
             assert 'unknown action space'
-
 
     def reset(self):
         return self.env.reset()

@@ -1,13 +1,6 @@
 from deep_rl import *
 
 
-def foo(game, **kwargs):
-    kwargs.setdefault('tag', foo.__name__)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    config = Config()
-    config.merge(kwargs)
-
-
 def batch():
     cf = Config()
     cf.add_argument('--i1', type=int, default=0)
@@ -23,29 +16,6 @@ def batch():
                     tag='%s_relu_norm_%d_nl2_%d' % (game, state_norm, cf.i2))
     ddpg_continuous(game, gate=F.tanh, weight_decay=0, state_norm=state_norm,
                     tag='%s_tanh_norm_%d_%d' % (game, state_norm, cf.i2))
-
-
-def single_run(run, game, fn, tag, **kwargs):
-    random_seed()
-    log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
-    fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
-
-
-def multi_runs(game, fn, tag, **kwargs):
-    kwargs.setdefault('runs', 2)
-    runs = kwargs['runs']
-    if np.isscalar(runs):
-        runs = np.arange(0, runs)
-    kwargs.setdefault('parallel', False)
-    if not kwargs['parallel']:
-        for run in runs:
-            single_run(run, game, fn, tag, **kwargs)
-        return
-    ps = [mp.Process(target=single_run, args=(run, game, fn, tag), kwargs=kwargs) for run in runs]
-    for p in ps:
-        p.start()
-        time.sleep(1)
-    for p in ps: p.join()
 
 
 def ddpg_continuous(name, **kwargs):
@@ -84,7 +54,7 @@ def ddpg_continuous(name, **kwargs):
     run_steps(DDPGAgent(config))
 
 
-def geoff_pac_cart_pole(**kwargs):
+def geoff_pac(**kwargs):
     kwargs.setdefault('skip', True)
     kwargs.setdefault('lam1', 1)
     kwargs.setdefault('lam2', 1)
@@ -99,6 +69,7 @@ def geoff_pac_cart_pole(**kwargs):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: GeoffPACNet(
         config.state_dim, config.action_dim,
+        action_type=config.action_type,
         actor_body=FCBody(config.state_dim),
         critic_body=FCBody(config.state_dim),
         cov_shift_body=FCBody(config.state_dim),
@@ -124,8 +95,11 @@ if __name__ == '__main__':
     # select_device(0)
 
     # game = 'CartPole-v0'
-    game = 'LunarLander-v2'
-    geoff_pac_cart_pole(
+    # game = 'LunarLander-v2'
+    # game = 'HalfCheetah-v2'
+    game = 'Reacher-v2'
+
+    geoff_pac(
         game=game,
         skip=False,
         # algo='off-pac',

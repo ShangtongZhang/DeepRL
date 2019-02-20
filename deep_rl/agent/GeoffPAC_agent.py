@@ -32,7 +32,8 @@ class GeoffPACAgent(BaseAgent):
 
     def random_action(self):
         config = self.config
-        return np.random.randint(0, config.action_dim, size=(config.num_workers,))
+        action = [config.eval_env.action_space.sample() for _ in range(config.num_workers)]
+        return np.asarray(action)
 
     def off_pac_update(self, s, a, mu_a, r, next_s, m):
         config = self.config
@@ -149,12 +150,22 @@ class GeoffPACAgent(BaseAgent):
     def eval_step(self, state):
         with torch.no_grad():
             action = self.network(state)['a']
-        return np.asscalar(to_np(action))
+        if self.config.action_type == 'discrete':
+            return to_np(action)
+        elif self.config.action_type == 'continuous':
+            return to_np(action)
+        else:
+            raise NotImplementedError
 
     def step(self):
         config = self.config
         actions = self.random_action()
-        mu_a = np.zeros_like(actions) + 1 / config.action_dim
+        if config.action_type == 'discrete':
+            mu_a = np.zeros_like(actions) + 1 / config.action_dim
+        elif config.action_type == 'continuous':
+            mu_a = np.zeros((config.num_workers, )) + 1 / np.power(2.0, config.action_dim)
+        else:
+            raise NotImplementedError
         next_states, rewards, terminals, _ = self.task.step(actions)
         self.online_rewards += rewards
         rewards = config.reward_normalizer(rewards)

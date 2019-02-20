@@ -193,6 +193,7 @@ class GeoffPACNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
                  action_dim,
+                 action_type,
                  phi_body=None,
                  actor_body=None,
                  critic_body=None,
@@ -206,14 +207,13 @@ class GeoffPACNet(nn.Module, BaseNet):
         self.actor_body = actor_body
         self.critic_body = critic_body
         self.cov_shift_body = cov_shift_body
+        self.action_type = action_type
 
         self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
         self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
         self.fc_cov_shift = layer_init(nn.Linear(cov_shift_body.feature_dim, 1), 1e-3)
-
-        self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
-        self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
-        self.phi_params = list(self.phi_body.parameters())
+        if action_type:
+            self.std = nn.Parameter(torch.zeros(action_dim))
         self.to(Config.DEVICE)
 
     def forward(self, obs, action=None):
@@ -222,15 +222,23 @@ class GeoffPACNet(nn.Module, BaseNet):
         phi_a = self.actor_body(phi)
         phi_v = self.critic_body(phi)
         phi_c = self.cov_shift_body(phi)
-        logits = self.fc_action(phi_a)
         v = self.fc_critic(phi_v)
-        dist = torch.distributions.Categorical(logits=logits)
+        c = F.softplus(self.fc_cov_shift(phi_c))
+
+        if self.action_type == 'continuous':
+            mean = F.tanh(self.fc_action(phi_a))
+            dist = DiagonalNormal(mean, F.softplus(self.std))
+        elif self.action_type == 'discrete':
+            logits = self.fc_action(phi_a)
+            dist = torch.distributions.Categorical(logits=logits)
+        else:
+            raise NotImplementedError
+
         if action is None:
             action = dist.sample()
         log_prob = dist.log_prob(action).unsqueeze(-1)
         prob = log_prob.exp()
         entropy = dist.entropy().unsqueeze(-1)
-        c = F.softplus(self.fc_cov_shift(phi_c))
         return {'a': action,
                 'log_pi_a': log_prob,
                 'pi_a': prob,

@@ -81,10 +81,10 @@ class DiagonalNormal:
         self.sample = self.dist.sample
 
     def log_prob(self, action):
-        return self.dist.log_prob(action).sum(-1).unsqueeze(-1)
+        return self.dist.log_prob(action).sum(-1)
 
     def entropy(self):
-        return self.dist.entropy().sum(-1).unsqueeze(-1)
+        return self.dist.entropy().sum(-1)
 
     def cdf(self, action):
         return self.dist.cdf(action).prod(-1).unsqueeze(-1)
