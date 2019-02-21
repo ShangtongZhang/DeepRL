@@ -74,7 +74,6 @@ class GeoffPACAgent(BaseAgent):
 
         self.optimizer.zero_grad()
         (v_loss + c_loss).backward()
-        # nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.optimizer.step()
 
     def off_pac_update(self, s, a, mu_a, r, next_s, m):
@@ -86,6 +85,7 @@ class GeoffPACAgent(BaseAgent):
             target = self.target_network(next_s)['v']
             target = r + config.discount * m * target
             rho = prediction['pi_a'] / mu_a
+            rho = rho.clamp(0, 2)
         td_error = target - prediction['v']
         entropy = prediction['ent'].mean()
         pi_loss = -rho * td_error.detach() * prediction['log_pi_a'] - config.entropy_weight * entropy
@@ -93,7 +93,6 @@ class GeoffPACAgent(BaseAgent):
 
         self.optimizer.zero_grad()
         pi_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.optimizer.step()
 
     def ace_update(self, s, a, mu_a, r, next_s, m):
@@ -107,6 +106,7 @@ class GeoffPACAgent(BaseAgent):
             self.F1 = m * config.discount * self.rho_prev * self.F1 + 1
             M = (1 - config.lam1) + config.lam1 * self.F1
             rho = prediction['pi_a'] / mu_a
+            rho = rho.clamp(0, 2)
 
         td_error = target - prediction['v']
 
@@ -118,7 +118,6 @@ class GeoffPACAgent(BaseAgent):
 
         self.optimizer.zero_grad()
         pi_loss.backward()
-        torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.optimizer.step()
 
     def geoff_pac_update(self, s, a, mu_a, r, next_s, m):
@@ -159,7 +158,6 @@ class GeoffPACAgent(BaseAgent):
 
         self.optimizer.zero_grad()
         grad.assign(self.network)
-        # nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
         self.optimizer.step()
 
         self.rho_prev = rho
