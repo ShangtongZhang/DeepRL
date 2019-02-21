@@ -18,7 +18,7 @@ def batch():
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2', 'Humanoid-v2']
     # games = ['Ant-v2', , 'HumanoidStandup-v2']
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
-    games = games[:2]
+    games = games[2:4]
     # game = games[cf.i1]
     # game = games[-1]
     # game = games[1]
@@ -116,11 +116,10 @@ def batch():
         # dict(residual=1),
 
         dict(skip=False, plan=False, MVE=3),
-        dict(skip=False, plan=False, MVE=2),
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    model_ddpg_continuous(game=games[0], run=cf.i1 % 4, **params[cf.i1 // 4])
+    model_ddpg_continuous(game=games[cf.i2], run=cf.i1, **params[0])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
     # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=False)
 

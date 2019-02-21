@@ -59,6 +59,10 @@ def plot_atari():
         'residual_0-target_net_residual_True-run',
         'residual_0\.1-target_net_residual_True-run',
         'residual_0\.05-target_net_residual_True-run',
+        'residual_0\.2-target_net_residual_True-run',
+        'residual_0\.4-target_net_residual_True-run',
+        'residual_0\.8-target_net_residual_True-run',
+        'residual_1-target_net_residual_True-run',
     ]
 
     l = len(games)
@@ -274,5 +278,5 @@ def plot_mujoco():
     plt.show()
 
 if __name__ == '__main__':
-    plot_mujoco()
-    # plot_atari()
+    # plot_mujoco()
+    plot_atari()
