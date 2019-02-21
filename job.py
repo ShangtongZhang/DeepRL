@@ -11,39 +11,63 @@ def batch():
     game = games[0]
 
     params = [
-        dict(algo='ace', lam1=0),
-        dict(algo='ace', lam1=0.05),
-        dict(algo='ace', lam1=0.1),
-        dict(algo='ace', lam1=0.2),
-        dict(algo='ace', lam1=0.4),
-        dict(algo='ace', lam1=0.8),
-        dict(algo='ace', lam1=1),
+        # dict(algo='off-pac'),
+        # dict(algo='ace', lam1=0),
+        # dict(algo='ace', lam1=0.05),
+        # dict(algo='ace', lam1=0.1),
+        # dict(algo='ace', lam1=0.2),
+        # dict(algo='ace', lam1=0.4),
+        # dict(algo='ace', lam1=0.8),
+        # dict(algo='ace', lam1=1),
 
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0),
-        dict(algo='geoff-pac', lam1=0.05, lam2=0, gamma_hat=0),
-        dict(algo='geoff-pac', lam1=0.1, lam2=0, gamma_hat=0),
-        dict(algo='geoff-pac', lam1=0.2, lam2=0, gamma_hat=0),
-        dict(algo='geoff-pac', lam1=0.4, lam2=0, gamma_hat=0),
-        dict(algo='geoff-pac', lam1=0.8, lam2=0, gamma_hat=0),
-        dict(algo='geoff-pac', lam1=1, lam2=0, gamma_hat=0),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0),
+        # dict(algo='geoff-pac', lam1=0.05, lam2=0, gamma_hat=0),
+        # dict(algo='geoff-pac', lam1=0.1, lam2=0, gamma_hat=0),
+        # dict(algo='geoff-pac', lam1=0.2, lam2=0, gamma_hat=0),
+        # dict(algo='geoff-pac', lam1=0.4, lam2=0, gamma_hat=0),
+        # dict(algo='geoff-pac', lam1=0.8, lam2=0, gamma_hat=0),
+        # dict(algo='geoff-pac', lam1=1, lam2=0, gamma_hat=0),
+        #
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.05),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.1),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.4),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.8),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=1),
+        #
+        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.1),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.1),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.1),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.1),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.1),
+        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
 
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.05),
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.4),
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.8),
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=1),
+        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0.05, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0.1, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0.2, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0.4, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0.8, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=1, lam2=1, gamma_hat=0.1),
 
-        dict(algo='off-pac'),
-        dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0.05, lam2=1, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0.1, lam2=1, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0.2, lam2=1, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0.4, lam2=1, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0.8, lam2=1, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=1, lam2=1, gamma_hat=0.2),
+
+        dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
+
     ]
 
-    params = params[20:]
+    params = params[10:]
 
     geoff_pac(game=game, run=cf.i2, **params[cf.i1], skip=False)
 

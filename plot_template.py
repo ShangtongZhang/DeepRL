@@ -87,6 +87,14 @@ def ddpg_plot(**kwargs):
         new_data.append([x, y])
     data = new_data
 
+    if kwargs['top_k']:
+        scores = []
+        for x, y in data:
+            scores.append(np.sum(y))
+        best = list(reversed(np.argsort(scores)))
+        best = best[:kwargs['top_k']]
+        data = [data[i] for i in best]
+
     print('')
 
     game = kwargs['name']
@@ -110,25 +118,52 @@ def ddpg_plot(**kwargs):
 
 def plot_mujoco():
     kwargs = {
-        'x_interval': int(1e4),
-        'rep': 20,
-        'average': True
+        'x_interval': int(1e2),
+        'rep': 10,
+        'average': True,
+        'top_k': 0
     }
     games = [
-        'Walker2d-v2',
-        'Hopper-v2',
         'HalfCheetah-v2',
-        'Reacher-v2',
-        'Swimmer-v2',
+        # 'Walker2d-v2',
+        # 'Hopper-v2',
+        # 'Reacher-v2',
+        # 'Swimmer-v2',
     ]
 
     patterns = [
-        # 'relu_norm_0_l2',
-        'relu_norm_0_nl2',
-        # 'relu_norm_1_l2',
-        # 'relu_norm_1_nl2',
-        # 'tanh_norm_0',
-        # 'tanh_norm_1',
+        'algo_off-pac-skip_False-run',
+
+        'algo_ace-lam1_0-skip_False-run',
+        # 'algo_ace-lam1_0\.05-skip_False-run',
+        # 'algo_ace-lam1_0\.1-skip_False-run',
+        # 'algo_ace-lam1_0\.2-skip_False-run',
+        # 'algo_ace-lam1_0\.4-skip_False-run',
+        # 'algo_ace-lam1_0\.8-skip_False-run',
+        # 'algo_ace-lam1_1-skip_False-run',
+
+        # 'algo_geoff-pac-gamma_hat_0-lam1_0-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0-lam1_0\.05-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0-lam1_0\.1-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0-lam1_0\.2-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0-lam1_0\.4-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0-lam1_0\.8-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0-lam1_1-lam2_0-skip_False-run',
+
+        # 'algo_geoff-pac-gamma_hat_0\.05-lam1_0-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.4-lam1_0-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.8-lam1_0-lam2_0-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_1-lam1_0-lam2_0-skip_False-run',
+
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.05-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.2-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.4-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.8-skip_False-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-skip_False-run',
+
     ]
 
     l = len(games)
@@ -136,7 +171,7 @@ def plot_mujoco():
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*mujoco-ddpg/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*geoff-pac/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
     plt.show()
 
 if __name__ == '__main__':
