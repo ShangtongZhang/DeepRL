@@ -276,65 +276,6 @@ class TabularAgent:
         print('d_mu_v4: %.2f' % (1 / 8 * (1 - self.params['up_prob']) * self.v[4]))
 
 
-def read_tf_log(path):
-    from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-    event_acc = EventAccumulator(path)
-    event_acc.Reload()
-    print(event_acc.Tags())
-    w_times, step_nums, vals = zip(*event_acc.Scalars('p0'))
-    return vals
-
-
-def extract_heatmap_data():
-    coef = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-
-    results = {}
-    plotter = Plotter()
-    root = './log/two-circle'
-    for gamma_hat in coef:
-        for lam2 in coef:
-            print(gamma_hat, lam2)
-            pattern = 'alg_GACE-gamma_hat_%s-lam2_%s-run' % (gamma_hat, lam2)
-            pattern = translate(pattern)
-            pattern = '.*%s.*' % (pattern)
-            print(pattern)
-            dirs = plotter.load_log_dirs(pattern, root=root)
-            data = plotter.load_tf_results(dirs, 'p0', align=True)
-            _, y = zip(*data)
-            y = np.asarray(y)
-            print(y.shape)
-            y = y[:, :-100].mean()
-            results[(gamma_hat, lam2)] = y
-
-    print(results)
-    with open('data/two-circle.bin', 'wb') as f:
-        pickle.dump(results, f)
-
-
-def two_circle_heatmap():
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
-    with open('data/two-circle.bin', 'rb') as f:
-        data = pickle.load(f)
-    print(data)
-    coef = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-    p0 = np.zeros((len(coef[:-1]), len(coef)))
-    for i in range(len(coef[:-1])):
-        for j in range(len(coef)):
-            p0[i, j] = data[(coef[i], coef[j])]
-    ax = sns.heatmap(p0, cmap='YlGnBu')
-    ax.set_xticks(np.arange(0, 11) + 0.5)
-    ax.set_xticklabels(['%s' % x for x in coef])
-    ax.set_yticks(np.arange(0, 10) + 0.5)
-    ax.set_yticklabels(['%s' % x for x in coef[:-1]], rotation='horizontal')
-    plt.xlabel(r'$\lambda_2$')
-    plt.ylabel(r'$\hat{\gamma}$', rotation='horizontal')
-    plt.show()
-
-
 def tabular_agent(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('pi_lr', 0.01)
@@ -388,5 +329,4 @@ if __name__ == '__main__':
     # batch()
 
     # extract_heatmap_data()
-    two_circle_heatmap()
     # tabular_agent(game='MDP', alg='GACE', gamma_hat=0.3)
