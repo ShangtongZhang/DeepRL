@@ -231,7 +231,7 @@ class TabularAgent:
                 self.opt.zero_grad()
                 self.log_prob(s, a).backward()
                 grad_log_pi_prev = self.pi.grad.clone()
-                self.pi.grad.mul_(rho * M_1 * adv).add_(grad).mul(-1)
+                self.pi.grad.mul_(rho * M_1 * adv).add_(grad).mul_(-1)
                 self.opt.step()
             else:
                 self.opt.zero_grad()
@@ -283,16 +283,15 @@ def read_tf_log(path):
 
 def tabular_agent(**kwargs):
     set_tag(kwargs)
-    kwargs.setdefault('window', 10)
-    kwargs.setdefault('pi_lr', 0.001)
-    kwargs.setdefault('v_lr', 0.01)
-    kwargs.setdefault('c_lr', 0.01)
+    kwargs.setdefault('pi_lr', 0.01)
+    kwargs.setdefault('v_lr', 0.1)
+    kwargs.setdefault('c_lr', 0.1)
     kwargs.setdefault('alg', 'GACE')
     kwargs.setdefault('lam_2', 1)
     kwargs.setdefault('gamma_hat', 0.99)
+    kwargs.setdefault('T', 10000)
     params = dict(
         up_prob=0.5,
-        T=100000,
         gamma=0.6,
         lam_1=1,
         logger=get_logger(tag=kwargs['tag'], skip=False)
@@ -309,14 +308,6 @@ def batch():
     cf.merge()
 
     params = [
-        dict(window=10000),
-        dict(window=1000),
-        dict(window=100),
-        dict(window=10),
-        dict(window=10000, pi_lr=0.01),
-        dict(window=10000, lam_2=0.9),
-        dict(window=10000, lam_2=0.5),
-        dict(window=10000, lam_2=0),
     ]
 
     tabular_agent(game='MDP', alg='GACE', run=cf.i2, **params[cf.i1])
@@ -330,4 +321,4 @@ if __name__ == '__main__':
     random_seed()
     # batch()
 
-    tabular_agent(game='MDP', alg='GACE')
+    tabular_agent(game='MDP', alg='GACE', gamma_hat=0.3)
