@@ -116,3 +116,22 @@ class Plotter:
         plt.plot(x, m_x, **kwargs)
         del kwargs['label']
         plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
+
+    def load_tf_results(self, dirs, tag, window=0, align=False):
+        xy_list = []
+        from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+        for dir in dirs:
+            event_acc = EventAccumulator(dir)
+            event_acc.Reload()
+            _, x, y = zip(*event_acc.Scalars(tag))
+            xy_list.append([x, y])
+        if align:
+            x_max = float('inf')
+            for x, y in xy_list:
+                x_max = min(x_max, len(y))
+            xy_list = [[x[:x_max], y[:x_max]] for x, y in xy_list]
+        if window:
+            xy_list = [self._window_func(x, y, window, np.mean) for x, y in xy_list]
+        return xy_list
+
+

@@ -74,3 +74,8 @@ def set_tag(params):
     params['tag'] = tag
     params['game'] = game
     params['run'] = run
+
+def translate(pattern):
+    groups = pattern.split('.')
+    pattern = ('\.').join(groups)
+    return pattern
