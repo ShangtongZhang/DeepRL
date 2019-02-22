@@ -166,10 +166,10 @@ class TabularAgent:
 
             prob = self.prob(State(0))
             self.logger.add_scalar('p0', prob[0])
-            self.logger.add_scalar('p1', prob[1])
-            self.logger.add_scalar('v0', self.v[0])
-            self.logger.add_scalar('v1', self.v[1])
-            self.logger.add_scalar('v4', self.v[4])
+            # self.logger.add_scalar('p1', prob[1])
+            # self.logger.add_scalar('v0', self.v[0])
+            # self.logger.add_scalar('v1', self.v[1])
+            # self.logger.add_scalar('v4', self.v[4])
 
     def compute_M1(self, trajectory):
         F = 0
@@ -241,13 +241,13 @@ class TabularAgent:
 
             prob = self.prob(State(0))
             self.logger.add_scalar('p0', prob[0])
-            self.logger.info('p0: %.2f' % (prob[0]))
-            self.logger.add_scalar('p1', prob[1])
-            self.logger.add_scalar('v0', self.v[0])
-            self.logger.add_scalar('v1', self.v[1])
-            self.logger.add_scalar('v4', self.v[4])
-            self.logger.add_scalar('c1', self.c[1])
-            self.logger.add_scalar('c4', self.c[4])
+            # self.logger.info('p0: %.2f' % (prob[0]))
+            # self.logger.add_scalar('p1', prob[1])
+            # self.logger.add_scalar('v0', self.v[0])
+            # self.logger.add_scalar('v1', self.v[1])
+            # self.logger.add_scalar('v4', self.v[4])
+            # self.logger.add_scalar('c1', self.c[1])
+            # self.logger.add_scalar('c4', self.c[4])
 
     def generate_trajectory(self):
         trajectory = []
@@ -301,6 +301,11 @@ def tabular_agent(**kwargs):
     agent.run()
 
 
+def split(a, n):
+    k, m = divmod(len(a), n)
+    return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
+
+
 def batch():
     cf = Config()
     cf.add_argument('--i1', type=int, default=0)
@@ -308,9 +313,16 @@ def batch():
     cf.merge()
 
     params = [
+        dict(alg='ACE'),
     ]
 
-    tabular_agent(game='MDP', alg='GACE', run=cf.i2, **params[cf.i1])
+    for lam2 in np.linspace(0, 1, 11):
+        for gamma_hat in np.linspace(0, 1, 11):
+            params.append(dict(alg='GACE', lam2=lam2, gamma_hat=gamma_hat))
+
+    params = list(split(params, 5))
+    for param in params[cf.i1]:
+        tabular_agent(game='MDP', run=cf.i2, **param)
 
     exit()
 
@@ -319,6 +331,6 @@ if __name__ == '__main__':
     mkdir('log')
     set_one_thread()
     random_seed()
-    # batch()
+    batch()
 
-    tabular_agent(game='MDP', alg='GACE', gamma_hat=0.3)
+    # tabular_agent(game='MDP', alg='GACE', gamma_hat=0.3)
