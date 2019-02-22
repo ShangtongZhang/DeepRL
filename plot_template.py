@@ -124,17 +124,17 @@ def plot_mujoco():
         'top_k': 0
     }
     games = [
-        'HalfCheetah-v2',
-        # 'Walker2d-v2',
+        # 'HalfCheetah-v2',
+        'Walker2d-v2',
         # 'Hopper-v2',
         # 'Reacher-v2',
-        # 'Swimmer-v2',
+        'Swimmer-v2',
     ]
 
     patterns = [
-        'algo_off-pac-skip_False-run',
+        # 'algo_off-pac-skip_False-run',
 
-        'algo_ace-lam1_0-skip_False-run',
+        # 'algo_ace-lam1_0-skip_False-run',
         # 'algo_ace-lam1_0\.05-skip_False-run',
         # 'algo_ace-lam1_0\.1-skip_False-run',
         # 'algo_ace-lam1_0\.2-skip_False-run',
@@ -162,7 +162,34 @@ def plot_mujoco():
         # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.2-skip_False-run',
         # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.4-skip_False-run',
         # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.8-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-skip_False-run',
+
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.05-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.1-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.2-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.4-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.8-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_1-lam2_1-skip_False-run',
+
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.05-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.1-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.2-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.4-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.8-lam2_1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_1-lam2_1-skip_False-run',
+
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_0\.05-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_0\.1-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_0\.2-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_0\.4-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_0\.8-skip_False-run',
+        # 'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_1-skip_False-run',
+
+        'algo_off-pac-run',
+        'algo_ace-lam1_0-run',
+        # 'algo_geoff-pac-gamma_hat_0\.05-lam1_0-lam2_1-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
 
     ]
 
@@ -171,7 +198,8 @@ def plot_mujoco():
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*geoff-pac/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
+            # ddpg_plot(pattern='.*geoff-pac/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*tmp/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
     plt.show()
 
 if __name__ == '__main__':
