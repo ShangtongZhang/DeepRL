@@ -8,7 +8,7 @@ def batch():
     cf.merge()
 
     games = ['HalfCheetah-v2', 'Swimmer-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
-    game = games[3]
+    game = games[2]
 
     params = [
         # dict(algo='off-pac'),
@@ -42,13 +42,31 @@ def batch():
         # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.1),
         # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.1),
         #
-        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.05),
+
+        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.01),
+        dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.01),
+        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.01),
+        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.01),
+        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.01),
+        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.01),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.01),
+
+        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.05),
         # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
+        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.05),
+        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.05),
+        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.05),
+        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.05),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
+
+        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.2),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
+
         #
         # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
         # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.2),
@@ -89,7 +107,7 @@ def batch():
 
     # for game in games:
     #     geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(5e5))
-    params = params[:10]
+    params = params[10:]
     geoff_pac(game=game, run=cf.i2, **params[cf.i1])
 
     exit()
