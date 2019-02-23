@@ -18,7 +18,7 @@ def batch():
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2', 'Humanoid-v2']
     # games = ['Ant-v2', , 'HumanoidStandup-v2']
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
-    games = games[2:4]
+    games = games[2:]
     # game = games[cf.i1]
     # game = games[-1]
     # game = games[1]
@@ -106,6 +106,7 @@ def batch():
         # dict(action_noise=0.1, live_action=False, plan_steps=1, residual=0.2, target_net_residual=True),
 
         # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
+        dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=True, skip=False),
         # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
 
         # dict(residual=0.05),
@@ -115,7 +116,7 @@ def batch():
         # dict(residual=0.8),
         # dict(residual=1),
 
-        dict(skip=False, plan=False, MVE=3),
+        # dict(skip=False, plan=False, MVE=3),
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
