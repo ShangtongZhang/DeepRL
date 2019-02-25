@@ -43,29 +43,29 @@ def batch():
         # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.1),
         #
 
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.01),
-        dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.01),
-        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.01),
-        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.01),
-        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.01),
-        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.01),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.01),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.01),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.01),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.01),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.01),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.01),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.01),
+        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.01),
 
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.05),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.05),
         # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.05),
-        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.05),
-        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.05),
-        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.05),
-        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.05),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.05),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.05),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.05),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.05),
+        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
 
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
-        dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.2),
-        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.2),
-        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.2),
-        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.2),
-        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.2),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
+        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.2),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.2),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.2),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.2),
+        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.2),
+        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
 
         #
         # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
@@ -103,12 +103,13 @@ def batch():
         # dict(algo='ace', lam1=0),
         # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
         # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1, c_coef=1e-1),
     ]
 
     # for game in games:
     #     geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(5e5))
-    params = params[10:]
-    geoff_pac(game=game, run=cf.i2, **params[cf.i1])
+    # params = params[10:]
+    geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(2e3), eval_interval=10)
 
     exit()
 
@@ -158,6 +159,8 @@ def geoff_pac(**kwargs):
     kwargs.setdefault('gamma_hat', 0.99)
     kwargs.setdefault('vc_epochs', 1)
     kwargs.setdefault('max_steps', int(1e5))
+    kwargs.setdefault('eval_interval', 100)
+    kwargs.setdefault('c_coef', 1e-3)
     config = Config()
 
     config.merge(kwargs)
@@ -175,12 +178,10 @@ def geoff_pac(**kwargs):
     config.discount = 0.99
     config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
     config.entropy_weight = 0
-    config.c_coef = 1e-3
     config.gradient_clip = 0.5
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=10,
                                       cat_fn=lambda x: torch.cat(x, dim=0))
     config.target_network_update_freq = 200
-    config.eval_interval = 100
     config.eval_episodes = 10
     config.replay_warm_up = 100
     run_steps(GeoffPACAgent(config))
@@ -196,9 +197,9 @@ if __name__ == '__main__':
     # select_device(0)
 
     # game = 'CartPole-v0'
-    # game = 'LunarLander-v2'
-    game = 'HalfCheetah-v2'
-    # game = 'Reacher-v2'
+    # game = 'HalfCheetah-v2'
+    game = 'Reacher-v2'
+    # game = 'Hopper-v2'
 
     geoff_pac(
         game=game,
@@ -207,6 +208,7 @@ if __name__ == '__main__':
         # algo='ace',
         algo='geoff-pac',
         lam1=0,
-        lam2=0,
+        lam2=1,
         gamma_hat=0.1,
+        c_coef=1e-3,
     )

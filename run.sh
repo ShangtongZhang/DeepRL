@@ -8,8 +8,8 @@ GPUs=(0 1 2 3 4 5 6 7)
 #    done
 #done
 
-for i in $(seq 0 9); do
-    for j in $(seq 0 4); do
+for i in $(seq 0 2); do
+    for j in $(seq 0 9); do
         nohup bash docker_python.sh $i "job.py --i1 $i --i2 $j" >| job_${i}_${j}.out &
 #        nohup bash docker_python.sh $i "MDP.py --i1 $i --i2 $j" >| job_${i}_${j}.out &
     done
