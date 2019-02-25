@@ -1,7 +1,14 @@
 import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from deep_rl import *
+import numpy as np
+import pickle
+from deep_rl import Plotter
+from deep_rl import translate
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+FOLDER = '/Users/Shangtong/Dropbox/Paper/true-off-policy-policy-gradient/img'
 
 def plot(**kwargs):
     kwargs.setdefault('average', False)
@@ -11,6 +18,9 @@ def plot(**kwargs):
     kwargs.setdefault('window', 100)
     kwargs.setdefault('down_sample', True)
     kwargs.setdefault('root', '../large_logs/two-circle')
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='serif')
+
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_tf_results(names, 'p0', kwargs['window'], align=True)
@@ -27,9 +37,10 @@ def plot(**kwargs):
             x = x[indices]
             y = y[:, indices]
         name = names[0].split('/')[-1]
-        plotter.plot_standard_error(y, x, label=name, color=Plotter.COLORS[color])
+        kwargs.setdefault('label', name)
+        plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
         # sns.tsplot(y, x, condition=name, , ci='sd')
-        plt.title(names[0])
+        # plt.title(names[0])
     else:
         for i, name in enumerate(names):
             x, y = data[i]
@@ -41,8 +52,8 @@ def plot(**kwargs):
     plt.legend()
     if 'y_lim' in kwargs.keys():
         plt.ylim(kwargs['y_lim'])
-    plt.xlabel('timesteps')
-    plt.ylabel('episode return')
+    plt.xlabel('Timesteps')
+    # plt.ylabel('episode return')
 
 
 def extract_heatmap_data():
@@ -72,9 +83,8 @@ def extract_heatmap_data():
 
 
 def two_circle_heatmap():
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-
+    plt.figure(figsize=(5, 4))
+    plt.tight_layout()
     plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     with open('data/two-circle.bin', 'rb') as f:
@@ -92,6 +102,42 @@ def two_circle_heatmap():
     ax.set_yticklabels(['%s' % x for x in coef[:-1]], rotation='horizontal')
     plt.xlabel(r'$\lambda_2$')
     plt.ylabel(r'$\hat{\gamma}$', rotation='horizontal')
+    plt.title(r'$\pi(\texttt{A} \rightarrow \texttt{B})$')
+    plt.savefig('%s/mdp-heatmap.png' % (FOLDER), bbox_inches='tight')
+    plt.show()
+
+
+def plot_learning_curve():
+    kwargs = {
+        'window': 0,
+        'top_k': 0,
+        'max_timesteps': int(1e5),
+        'average': True,
+        'x_interval': 100
+    }
+
+    patterns = [
+        'alg_ACE-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0.2-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0.4-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0.6-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0.8-run',
+        'alg_GACE-gamma_hat_0.9-lam2_1-run',
+    ]
+
+    labels = [
+        'ACE',
+        'Geoff-PAC'
+    ]
+
+    plt.tight_layout()
+    plt.figure(figsize=(5, 5))
+    for i, p in enumerate(patterns):
+        p = translate(p)
+        plot(pattern='.*%s.*' % (p), color=i, label=labels[i], **kwargs)
+    plt.ylabel(r'$\pi(\texttt{A} \rightarrow \texttt{B})$', rotation='horizontal')
+    plt.savefig('%s/mdp-curve.png' % (FOLDER), bbox_inches='tight')
     plt.show()
 
 
@@ -106,14 +152,16 @@ def plot_mdp():
 
     patterns = [
         'alg_ACE-run',
-        'alg_GACE-gamma_hat_0.9-lam2_0-run',
-        'alg_GACE-gamma_hat_0.9-lam2_0.2-run',
-        'alg_GACE-gamma_hat_0.9-lam2_0.4-run',
-        'alg_GACE-gamma_hat_0.9-lam2_0.6-run',
-        'alg_GACE-gamma_hat_0.9-lam2_0.8-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0.2-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0.4-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0.6-run',
+        # 'alg_GACE-gamma_hat_0.9-lam2_0.8-run',
         'alg_GACE-gamma_hat_0.9-lam2_1-run',
     ]
 
+
+    plt.figure(figsize=(20, 20))
     for i, p in enumerate(patterns):
         p = translate(p)
         plot(pattern='.*%s.*' % (p), color=i, **kwargs)
@@ -121,5 +169,6 @@ def plot_mdp():
 
 
 if __name__ == '__main__':
-    # two_circle_heatmap()
-    plot_mdp()
+    two_circle_heatmap()
+    # plot_learning_curve()
+    # plot_mdp()

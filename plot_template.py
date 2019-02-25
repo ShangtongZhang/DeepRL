@@ -124,11 +124,11 @@ def plot_mujoco():
         'top_k': 0
     }
     games = [
-        # 'HalfCheetah-v2',
-        # 'Walker2d-v2',
-        # 'Hopper-v2',
-        'Reacher-v2',
-        # 'Swimmer-v2',
+        'HalfCheetah-v2',
+        'Walker2d-v2',
+        'Hopper-v2',
+        # 'Reacher-v2',
+        'Swimmer-v2',
     ]
 
     patterns = [
@@ -197,9 +197,11 @@ def plot_mujoco():
         # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-max_steps_500000-run',
 
         # for reacher
-        'algo_off-pac-eval_interval_10-max_steps_2000-run',
-        'algo_ace-eval_interval_10-lam1_0-max_steps_2000-run',
-        'algo_geoff-pac-c_coef_0\.01-eval_interval_10-gamma_hat_0\.1-lam1_0-lam2_1-max_steps_2000-run',
+        # 'algo_off-pac-eval_interval_10-max_steps_2000-run',
+        # 'algo_ace-eval_interval_10-lam1_0-max_steps_2000-run',
+        # 'algo_geoff-pac-c_coef_0\.01-eval_interval_10-gamma_hat_0\.1-lam1_0-lam2_1-max_steps_2000-run',
+
+        'algo_geoff-pac-c_coef_0\.01-gamma_hat_0\.1-lam1_0-lam2_1-run',
     ]
 
     l = len(games)

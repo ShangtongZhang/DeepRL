@@ -7,8 +7,9 @@ def batch():
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    games = ['HalfCheetah-v2', 'Swimmer-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
-    game = games[2]
+    # games = ['HalfCheetah-v2', 'Swimmer-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
+    games = ['HalfCheetah-v2', 'Swimmer-v2', 'Walker2d-v2', 'Hopper-v2']
+    game = games[cf.i1]
 
     params = [
         # dict(algo='off-pac'),
@@ -103,13 +104,14 @@ def batch():
         # dict(algo='ace', lam1=0),
         # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
         # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1, c_coef=1e-1),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1, c_coef=1e-2),
     ]
 
     # for game in games:
     #     geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(5e5))
     # params = params[10:]
-    geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(2e3), eval_interval=10)
+    # geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(2e3), eval_interval=10)
+    geoff_pac(game=game, run=cf.i2, **params[0])
 
     exit()
 
