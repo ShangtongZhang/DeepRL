@@ -7,9 +7,9 @@ def batch():
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    # games = ['HalfCheetah-v2', 'Swimmer-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
-    games = ['HalfCheetah-v2', 'Swimmer-v2', 'Walker2d-v2', 'Hopper-v2']
-    game = games[cf.i1]
+    games = ['HalfCheetah-v2', 'Swimmer-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
+    # games = ['HalfCheetah-v2', 'Swimmer-v2', 'Walker2d-v2', 'Hopper-v2']
+    # game = games[cf.i1]
 
     params = [
         # dict(algo='off-pac'),
@@ -111,25 +111,34 @@ def batch():
     #     geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(5e5))
     # params = params[10:]
     # geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(2e3), eval_interval=10)
-    geoff_pac(game=game, run=cf.i2, **params[0])
+    # geoff_pac(game=game, run=cf.i2, **params[0])
+
+    params = [
+        dict(),
+        dict(max_steps=int(5e6)),
+        dict(max_steps=int(2e5), eval_interval=int(1e3)),
+        dict(),
+        dict(),
+    ]
+    ddpg_continuous(game=games[cf.i1], run=cf.i2, **params[cf.i1], remark='ddpg_random')
 
     exit()
 
 
-def ddpg_continuous(name, **kwargs):
-    kwargs.setdefault('tag', ddpg_continuous.__name__)
+def ddpg_continuous(**kwargs):
+    set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('gate', None)
-    kwargs.setdefault('weight_decay', None)
+    kwargs.setdefault('gate', F.relu)
     kwargs.setdefault('state_norm', None)
+    kwargs.setdefault('max_steps', int(1e6))
+    kwargs.setdefault('eval_interval', int(1e4))
+    kwargs.setdefault('skip', True)
     config = Config()
     config.merge(kwargs)
 
-    config.task_fn = lambda: Task(name)
-    config.eval_env = Task(name, log_dir=kwargs['log_dir'])
-    config.max_steps = int(2e6)
-    config.eval_interval = int(1e4)
-    config.eval_episodes = 20
+    config.task_fn = lambda: Task(kwargs['game'])
+    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
+    config.eval_episodes = 10
 
     if kwargs['state_norm']:
         config.state_normalizer = MeanStdNormalizer()
@@ -140,7 +149,7 @@ def ddpg_continuous(name, **kwargs):
         critic_body=TwoLayerFCBodyWithAction(
             config.state_dim, config.action_dim, (400, 300), gate=kwargs['gate']),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
-        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=kwargs['weight_decay']))
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
     config.discount = 0.99
@@ -148,7 +157,7 @@ def ddpg_continuous(name, **kwargs):
         size=(config.action_dim,), std=LinearSchedule(0.2))
     config.min_memory_size = int(1e4)
     config.target_network_mix = 1e-3
-    config.logger = get_logger(tag=kwargs['tag'])
+    config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
     run_steps(DDPGAgent(config))
 
 
@@ -200,8 +209,12 @@ if __name__ == '__main__':
 
     # game = 'CartPole-v0'
     # game = 'HalfCheetah-v2'
-    game = 'Reacher-v2'
+    # game = 'Reacher-v2'
     # game = 'Hopper-v2'
+    # game = 'Swimmer-v2'
+    game = 'Walker2d-v2'
+
+    ddpg_continuous(game)
 
     geoff_pac(
         game=game,
