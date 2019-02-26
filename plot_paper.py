@@ -1,4 +1,4 @@
-import matplotlib
+# import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from deep_rl import *
@@ -52,20 +52,21 @@ def ddpg_plot(**kwargs):
     kwargs.setdefault('color', 0)
     kwargs.setdefault('top_k', 0)
     kwargs.setdefault('max_timesteps', 1e8)
-    plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
+
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
     data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
     min_y = np.min([len(y) for y in data])
     data = [y[:min_y] for y in data]
+    random_agent = np.asarray(data)[:, 0].mean()
     new_data = []
     for y in data:
         y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
         x = np.arange(y.shape[0]) * kwargs['x_interval']
         new_data.append([x, y])
     data = new_data
+    random_agent = [x, [random_agent] * len(x)]
 
     if kwargs['top_k']:
         scores = []
@@ -83,15 +84,13 @@ def ddpg_plot(**kwargs):
         x = data[0][0]
         y = [entry[1] for entry in data]
         y = np.stack(y)
-        kwargs.setdefault('label', names[0].split('/')[-1])
         plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
-        plt.title(game)
+        plt.title(game, fontsize=25, fontweight="bold")
     else:
         for i, name in enumerate(names):
             x, y = data[i]
             plt.plot(x, y, color=Plotter.COLORS[i], label=name if i == 0 else '')
-    plt.xlabel('Timesteps')
-
+    return random_agent
 
 def get_pattern(game):
     if game == 'Reacher-v2':
@@ -139,20 +138,26 @@ def plot_mujoco():
         'Geoff-PAC',
     ]
 
-    plt.tight_layout()
+    # plt.tight_layout()
     l = len(games)
     plt.figure(figsize=(l * 6, 5))
+    plt.rc('text', usetex=True)
+    # plt.figure(figsize=(l * 3, 5 * 2))
     for j, game in enumerate(games):
+        # plt.subplot(2, 3, j + 1)
         plt.subplot(1, l, j + 1)
         patterns, x_ticks = get_pattern(game)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*geoff-pac-10/%s.*%s.*' % (game, p), color=i, label=labels[i], game=game, **kwargs)
+            x, y = ddpg_plot(pattern='.*geoff-pac-10/%s.*%s.*' % (game, p), color=i, label=labels[i], game=game, **kwargs)
+            if i == 0:
+                plt.plot(x, y, color='black', linestyle=':')
         plt.xticks(*x_ticks)
         if j == 0:
-            plt.ylabel('Episode Return')
-            plt.legend()
+            plt.legend(fontsize=20, frameon=False)
+            plt.ylabel('Episode Return', fontsize=20)
+        if j > -1:
+            plt.xlabel('Timesteps', fontsize=20)
     plt.savefig('%s/mujoco.png' % (FOLDER), bbox_inches='tight')
-
     plt.show()
 
 

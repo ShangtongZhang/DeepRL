@@ -19,7 +19,6 @@ def plot(**kwargs):
     kwargs.setdefault('down_sample', True)
     kwargs.setdefault('root', '../large_logs/two-circle')
     plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
 
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
