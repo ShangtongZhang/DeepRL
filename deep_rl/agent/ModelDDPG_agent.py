@@ -29,6 +29,11 @@ class ModelDDPGAgent(BaseAgent):
         self.models = [config.model_fn() for _ in range(config.num_models)]
         self.model_opts = [config.model_opt_fn(m.parameters()) for m in self.models]
 
+    def close(self):
+        close_obj(self.replay)
+        for m_replay in self.model_replays:
+            close_obj(m_replay)
+
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.detach_()
