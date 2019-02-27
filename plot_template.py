@@ -77,6 +77,9 @@ def ddpg_plot(**kwargs):
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    if len(data) == 0:
+        print('File not found')
+        return
     data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
     min_y = np.min([len(y) for y in data])
     data = [y[ :min_y] for y in data]
@@ -105,6 +108,7 @@ def ddpg_plot(**kwargs):
         y = np.stack(y)
         name = names[0].split('/')[-1]
         plotter.plot_standard_error(y, x, label=name, color=Plotter.COLORS[color])
+        # plotter.plot_median_std(y, x, label=name, color=Plotter.COLORS[color])
         plt.title(game)
     else:
         for i, name in enumerate(names):
@@ -118,7 +122,7 @@ def ddpg_plot(**kwargs):
 
 def plot_mujoco():
     kwargs = {
-        'x_interval': int(1e2),
+        'x_interval': int(1e3),
         'rep': 10,
         'average': True,
         'top_k': 0
@@ -128,7 +132,7 @@ def plot_mujoco():
         'Walker2d-v2',
         'Hopper-v2',
         # 'Reacher-v2',
-        'Swimmer-v2',
+        # 'Swimmer-v2',
     ]
 
     patterns = [
@@ -188,8 +192,7 @@ def plot_mujoco():
 
         # 'algo_off-pac-run',
         # 'algo_ace-lam1_0-run',
-        # 'algo_geoff-pac-gamma_hat_0\.05-lam1_0-lam2_1-run',
-        # 'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
 
         # for swimmer
         # 'algo_off-pac-max_steps_500000-run',
@@ -201,7 +204,8 @@ def plot_mujoco():
         # 'algo_ace-eval_interval_10-lam1_0-max_steps_2000-run',
         # 'algo_geoff-pac-c_coef_0\.01-eval_interval_10-gamma_hat_0\.1-lam1_0-lam2_1-max_steps_2000-run',
 
-        'algo_geoff-pac-c_coef_0\.01-gamma_hat_0\.1-lam1_0-lam2_1-run',
+        # 'remark_ddpg_random-run',
+
     ]
 
     l = len(games)
@@ -209,8 +213,11 @@ def plot_mujoco():
     for j, game in enumerate(games):
         plt.subplot(1, l, j+1)
         for i, p in enumerate(patterns):
-            # ddpg_plot(pattern='.*geoff-pac-10/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
-            ddpg_plot(pattern='.*tmp/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
+            ddpg_plot(pattern='.*geoff-pac-10/%s.*%s.*' % (game, p), color=i, name=game, **kwargs)
+
+            param = kwargs.copy()
+            param['x_interval'] = int(1e4)
+            ddpg_plot(pattern='.*tmp/%s.*%s.*' % (game, p), color=i, name=game, **param)
     plt.show()
 
 if __name__ == '__main__':
