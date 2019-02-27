@@ -15,11 +15,15 @@ def plot(**kwargs):
     kwargs.setdefault('window', 100)
     kwargs.setdefault('down_sample', True)
     kwargs.setdefault('root', '../large_logs/two-circle')
+    kwargs.setdefault('type', 'mean')
     plt.rc('text', usetex=True)
 
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_tf_results(names, 'p0', kwargs['window'], align=True)
+    if len(data) == 0:
+        print('FIle not found')
+        return
     print('')
 
     if kwargs['average']:
@@ -34,7 +38,13 @@ def plot(**kwargs):
             y = y[:, indices]
         name = names[0].split('/')[-1]
         kwargs.setdefault('label', name)
-        plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        if kwargs['type'] == 'mean':
+            plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        elif kwargs['type'] == 'median':
+            plotter.plot_median_std(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        else:
+            raise NotImplementedError
+
         # sns.tsplot(y, x, condition=name, , ci='sd')
         # plt.title(names[0])
     else:
@@ -55,10 +65,15 @@ def ddpg_plot(**kwargs):
     kwargs.setdefault('color', 0)
     kwargs.setdefault('top_k', 0)
     kwargs.setdefault('max_timesteps', 1e8)
+    kwargs.setdefault('type', 'mean')
 
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    if len(data) == 0:
+        print('FIle not found')
+        return
+
     data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
     min_y = np.min([len(y) for y in data])
     data = [y[:min_y] for y in data]
@@ -87,7 +102,12 @@ def ddpg_plot(**kwargs):
         x = data[0][0]
         y = [entry[1] for entry in data]
         y = np.stack(y)
-        plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        if kwargs['type'] == 'mean':
+            plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        elif kwargs['type'] == 'median':
+            plotter.plot_median_std(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        else:
+            raise NotImplementedError
     else:
         for i, name in enumerate(names):
             x, y = data[i]
@@ -95,12 +115,13 @@ def ddpg_plot(**kwargs):
     return random_agent
 
 
-def plot_mujoco_learning_curves():
+def plot_mujoco_learning_curves(type):
     kwargs = {
         'x_interval': int(1e2),
         'rep': 10,
         'average': True,
-        'top_k': 0
+        'top_k': 0,
+        'type': type,
     }
     games = [
         'HalfCheetah-v2',
@@ -161,7 +182,7 @@ def plot_mujoco_learning_curves():
             plt.xlabel('Steps', fontsize=30)
         plt.title(game, fontsize=30, fontweight="bold")
     plt.tight_layout()
-    plt.savefig('%s/mujoco.png' % (FOLDER), bbox_inches='tight')
+    plt.savefig('%s/mujoco-%s.png' % (FOLDER, type), bbox_inches='tight')
     plt.show()
 
 
@@ -380,9 +401,81 @@ def two_circle_learning_curve():
     plt.show()
 
 
+def plot_ddpg_learning_curves(type):
+    kwargs = {
+        'rep': 10,
+        'average': True,
+        'top_k': 0,
+        'type': type
+    }
+    games = [
+        'HalfCheetah-v2',
+        'Walker2d-v2',
+        'Hopper-v2',
+        'Reacher-v2',
+        'Swimmer-v2',
+    ]
+
+    labels = [
+        'Geoff-PAC',
+        'DDPG',
+    ]
+
+    def get_pattern(game):
+        if game == 'Reacher-v2':
+            patterns = [
+                'algo_geoff-pac-c_coef_0\.01-eval_interval_10-gamma_hat_0\.1-lam1_0-lam2_1-max_steps_2000-run',
+                'remark_ddpg_random-run',
+            ]
+            x_ticks = [[0, int(2e5)], ['0', r'$2\times10^5$']]
+            x_intervals = [int(1e3), int(1e3)]
+        elif game == 'Swimmer-v2':
+            patterns = [
+                'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-max_steps_500000-run',
+                'remark_ddpg_random-run',
+            ]
+            x_ticks = [[0, int(5e6)], ['0', r'$5\times10^6$']]
+            x_intervals = [int(1e3), int(1e4)]
+        else:
+            patterns = [
+                'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
+                'remark_ddpg_random-run',
+            ]
+            x_ticks = [[0, int(1e6)], ['0', r'$10^6$']]
+            x_intervals = [int(1e3), int(1e4)]
+        return patterns, x_ticks, x_intervals
+
+    l = len(games)
+    plt.figure(figsize=(l * 5, 5))
+    plt.rc('text', usetex=True)
+    # plt.figure(figsize=(l * 3, 5 * 2))
+    for j, game in enumerate(games):
+        # plt.subplot(2, 3, j + 1)
+        plt.subplot(1, l, j + 1)
+        patterns, x_ticks, x_intervals = get_pattern(game)
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*geoff-pac-10/%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
+                      x_interval=x_intervals[0], **kwargs)
+            ddpg_plot(pattern='.*tmp/%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
+                      x_interval=x_intervals[1], **kwargs)
+        plt.xticks(*x_ticks)
+        if j == 0:
+            plt.legend(fontsize=20, frameon=False)
+            plt.ylabel('Episode Return', fontsize=30)
+        if j > -1:
+            plt.xlabel('Steps', fontsize=30)
+        plt.title(game, fontsize=30, fontweight="bold")
+    plt.tight_layout()
+    plt.savefig('%s/ddpg-%s.png' % (FOLDER, type), bbox_inches='tight')
+    plt.show()
+
+
 if __name__ == '__main__':
     # plot_lam1_ACE()
-    # plot_mujoco_learning_curves()
     # two_circle_heatmap()
-    two_circle_learning_curve()
+    # two_circle_learning_curve()
     # plot_parameter_study()
+    plot_mujoco_learning_curves('mean')
+    plot_ddpg_learning_curves('mean')
+    plot_mujoco_learning_curves('median')
+    plot_ddpg_learning_curves('median')
