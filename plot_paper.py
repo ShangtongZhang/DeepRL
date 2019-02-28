@@ -455,9 +455,7 @@ def plot_ddpg_learning_curves(type):
         patterns, x_ticks, x_intervals = get_pattern(game)
         for i, p in enumerate(patterns):
             ddpg_plot(pattern='.*geoff-pac-10/%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
-                      x_interval=x_intervals[0], **kwargs)
-            ddpg_plot(pattern='.*tmp/%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
-                      x_interval=x_intervals[1], **kwargs)
+                      x_interval=x_intervals[i], **kwargs)
         plt.xticks(*x_ticks)
         if j == 0:
             plt.legend(fontsize=20, frameon=False)
@@ -475,7 +473,7 @@ if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
     # plot_parameter_study()
-    plot_mujoco_learning_curves('mean')
+    # plot_mujoco_learning_curves('mean')
     plot_ddpg_learning_curves('mean')
-    plot_mujoco_learning_curves('median')
+    # plot_mujoco_learning_curves('median')
     plot_ddpg_learning_curves('median')
