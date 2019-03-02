@@ -140,9 +140,9 @@ def plot_mujoco():
         'HalfCheetah-v2',
         'Walker2d-v2',
         'Hopper-v2',
-        # 'Reacher-v2',
         'Swimmer-v2',
         'Humanoid-v2',
+        # 'Reacher-v2',
     ]
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
     # games = ['RoboschoolHumanoid-v1']
@@ -235,8 +235,13 @@ def plot_mujoco():
         # learned model
         # skip=False indicates a learned model
         # 'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
-        'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
-        'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_True-run',
+        # 'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
+        # 'action_noise_0.1-plan_steps_3-residual_0\.2-skip_False-target_net_residual_False-run',
+        # 'action_noise_0.1-plan_steps_5-residual_0\.2-skip_False-target_net_residual_False-run',
+        # 'action_noise_0.1-plan_steps_5-residual_0\.2-skip_False-target_net_residual_True-run',
+        # 'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_True-run',
+        # 'action_noise_0\.2-plan_steps_3-residual_0\.2-skip_False-target_net_residual_True-run',
+        # 'action_noise_0\.05-plan_steps_3-residual_0\.2-skip_False-target_net_residual_True-run',
 
         # oralce model
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
@@ -262,7 +267,7 @@ def plot_mujoco():
         # 'remark_residual-residual_0\.8-target_net_residual_True-run',
         # 'remark_residual-residual_1-target_net_residual_True-run',
 
-        'MVE_3-plan_False-skip_False-run',
+        # 'MVE_3-plan_False-skip_False-run',
         # 'MVE_4-plan_False-skip_False-run',
 
     ]
@@ -277,7 +282,7 @@ def plot_mujoco():
             ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            # ddpg_plot(pattern='.*tmp/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            ddpg_plot(pattern='.*tmp/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
     plt.show()
 
 if __name__ == '__main__':
