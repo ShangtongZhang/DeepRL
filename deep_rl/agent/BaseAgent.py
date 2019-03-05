@@ -11,6 +11,7 @@ import torch.multiprocessing as mp
 from collections import deque
 import sys
 
+
 class BaseAgent:
     def __init__(self, config):
         self.config = config
@@ -31,22 +32,35 @@ class BaseAgent:
     def eval_episode(self):
         env = self.config.eval_env
         state = env.reset()
-        total_rewards = 0
+        total_rewards = []
         while True:
             action = self.eval_step(state)
             state, reward, done, _ = env.step(action)
-            total_rewards += reward[0]
+            total_rewards.append(reward[0])
             if done[0]:
                 break
         return total_rewards
 
+    def compute_values(self, rewards):
+        config = self.config
+        values = rewards.copy()
+        for i in reversed(range(len(values) - 1)):
+            values[i] = values[i] + config.discount * values[i + 1]
+        return values
+
     def eval_episodes(self):
-        rewards = []
+        episodic_rewards = []
+        values = []
         for ep in range(self.config.eval_episodes):
-            rewards.append(self.eval_episode())
-        self.config.logger.info('evaluation episode return: %f(%f)' % (
-            np.mean(rewards), np.std(rewards) / np.sqrt(len(rewards))))
-        self.config.logger.add_scalar('evaluation', np.mean(rewards))
+            total_rewards = self.eval_episode()
+            episodic_rewards.append(np.sum(total_rewards))
+            values.extend(self.compute_values(total_rewards))
+        self.config.logger.info('total_steps %d, episodic_return %.2f(%.2f), averaged_value %.2f' % (
+            self.total_steps, np.mean(episodic_rewards), np.std(episodic_rewards) / np.sqrt(len(episodic_rewards)), np.mean(values)
+        ))
+        self.config.logger.add_scalar('episodic_return', np.mean(episodic_rewards), self.total_steps)
+        self.config.logger.add_scalar('averaged_value', np.mean(values), self.total_steps)
+
 
 class BaseActor(mp.Process):
     STEP = 0

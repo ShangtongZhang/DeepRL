@@ -209,7 +209,7 @@ class GeoffPACAgent(BaseAgent):
         self.replay.feed(transition)
         self.states = next_states
 
-        self.total_steps += 1
+        self.total_steps += config.num_workers
 
-        if self.total_steps % config.target_network_update_freq == 0:
+        if self.total_steps // config.num_workers % config.target_network_update_freq == 0:
             self.target_network.load_state_dict(self.network.state_dict())

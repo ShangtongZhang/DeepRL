@@ -1,125 +1,90 @@
 from deep_rl import *
 
 
-def batch():
+def batch_parameter_study():
     cf = Config()
     cf.add_argument('--i1', type=int, default=0)
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    games = ['HalfCheetah-v2', 'Swimmer-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
-    # game = games[cf.i1]
-    game = games[0]
+    game = 'HalfCheetah-v2'
 
     params = [
-        # dict(algo='off-pac'),
-        # dict(algo='ace', lam1=0),
-        # dict(algo='ace', lam1=0.05),
-        # dict(algo='ace', lam1=0.1),
-        # dict(algo='ace', lam1=0.2),
-        # dict(algo='ace', lam1=0.4),
-        # dict(algo='ace', lam1=0.8),
-        # dict(algo='ace', lam1=1),
+        dict(algo='ace', lam1=0),
+        dict(algo='ace', lam1=0.1),
+        dict(algo='ace', lam1=0.2),
+        dict(algo='ace', lam1=0.4),
+        dict(algo='ace', lam1=0.8),
+        dict(algo='ace', lam1=1),
 
-        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0),
-        # dict(algo='geoff-pac', lam1=0.05, lam2=0, gamma_hat=0),
-        # dict(algo='geoff-pac', lam1=0.1, lam2=0, gamma_hat=0),
-        # dict(algo='geoff-pac', lam1=0.2, lam2=0, gamma_hat=0),
-        # dict(algo='geoff-pac', lam1=0.4, lam2=0, gamma_hat=0),
-        # dict(algo='geoff-pac', lam1=0.8, lam2=0, gamma_hat=0),
-        # dict(algo='geoff-pac', lam1=1, lam2=0, gamma_hat=0),
-        #
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
+
         dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0),
         dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
         dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.4),
         dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.8),
         dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=1),
 
-        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.1),
-        #
+        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.1),
 
-        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.01),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.01),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.01),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.01),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.01),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.01),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.01),
-
-        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
-
-        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
-
-        # dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
-
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0.05, lam2=1, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0.1, lam2=1, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0.2, lam2=1, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0.4, lam2=1, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0.8, lam2=1, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=1, lam2=1, gamma_hat=0.1),
-        #
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0.05, lam2=1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0.1, lam2=1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0.2, lam2=1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0.4, lam2=1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0.8, lam2=1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=1, lam2=1, gamma_hat=0.2),
-        #
-        # dict(algo='geoff-pac', lam1=0, lam2=0.05, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.2),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
-
-        # dict(algo='off-pac'),
-        # dict(algo='ace', lam1=0),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.05),
-        # dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1, c_coef=1e-2),
+        dict(algo='geoff-pac', lam1=0.1, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0.2, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0.4, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=0.8, lam2=1, gamma_hat=0.1),
+        dict(algo='geoff-pac', lam1=1, lam2=1, gamma_hat=0.1),
     ]
 
-    # for game in games:
-    #     geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(5e5))
-    # params = params[10:]
-    # geoff_pac(game=game, run=cf.i2, **params[cf.i1], max_steps=int(2e3), eval_interval=10)
-    geoff_pac(game=game, run=cf.i2, **params[cf.i1])
+    param_groups = split(params, 3)
+    for params in param_groups:
+        geoff_pac(game=game, run=cf.i2, **params[cf.i1])
 
-    # params = [
-    #     dict(),
-    #     dict(max_steps=int(5e6)),
-    #     dict(max_steps=int(2e5), eval_interval=int(1e3)),
-    #     dict(),
-    #     dict(),
-    # ]
-    # ddpg_continuous(game=games[cf.i1], run=cf.i2, **params[cf.i1], remark='ddpg_random')
+    exit()
+
+
+def batch1():
+    cf = Config()
+    cf.add_argument('--i1', type=int, default=0)
+    cf.add_argument('--i2', type=int, default=0)
+    cf.merge()
+
+    games = ['HalfCheetah-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
+    game = games[cf.i1]
+
+    params = [
+        dict(algo='off-pac'),
+        dict(algo='ace', lam1=0),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
+    ]
+
+    for param in params:
+        geoff_pac(game=game, run=cf.i2, **param)
+    ddpg_continuous(game=game, run=cf.i2, remark='ddpg_random')
+
+    exit()
+
+
+def batch2():
+    cf = Config()
+    cf.add_argument('--i1', type=int, default=0)
+    cf.add_argument('--i2', type=int, default=0)
+    cf.merge()
+
+    game = 'Swimmer-v2'
+
+    params = [
+        dict(algo='off-pac'),
+        dict(algo='ace', lam1=0),
+        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
+    ]
+
+    if cf.i1 < 3 :
+        geoff_pac(game=game, run=cf.i2, **params[cf.i1])
+    elif cf.i1 == 3:
+        ddpg_continuous(game=game, run=cf.i2, remark='ddpg_random')
 
     exit()
 
@@ -134,6 +99,18 @@ def ddpg_continuous(**kwargs):
     kwargs.setdefault('skip', True)
     config = Config()
     config.merge(kwargs)
+
+    if kwargs['game'] in ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2']:
+        config.max_steps = int(1e6)
+        config.eval_interval = int(1e3)
+    elif kwargs['game'] in ['Swimmer-v2']:
+        config.max_steps = int(5e6)
+        config.eval_interval = int(1e3)
+    elif kwargs['game'] in ['Reacher-v2']:
+        config.max_steps = int(2e4)
+        config.eval_interval = int(1e2)
+    else:
+        raise NotImplementedError
 
     config.task_fn = lambda: Task(kwargs['game'])
     config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
@@ -156,6 +133,7 @@ def ddpg_continuous(**kwargs):
         size=(config.action_dim,), std=LinearSchedule(0.2))
     config.min_memory_size = int(1e4)
     config.target_network_mix = 1e-3
+    config.log_interval = 0
     config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
     run_steps(DDPGAgent(config))
 
@@ -163,7 +141,7 @@ def ddpg_continuous(**kwargs):
 def geoff_pac(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('skip', True)
+    kwargs.setdefault('skip', False)
     kwargs.setdefault('lam1', 1)
     kwargs.setdefault('lam2', 1)
     kwargs.setdefault('gamma_hat', 0.99)
@@ -172,8 +150,21 @@ def geoff_pac(**kwargs):
     kwargs.setdefault('eval_interval', 100)
     kwargs.setdefault('c_coef', 1e-3)
     config = Config()
-
     config.merge(kwargs)
+
+    if kwargs['game'] in ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2']:
+        config.max_steps = int(1e6)
+        config.eval_interval = int(1e3)
+    elif kwargs['game'] in ['Swimmer-v2']:
+        config.max_steps = int(5e6)
+        config.eval_interval = int(1e3)
+    elif kwargs['game'] in ['Reacher-v2']:
+        config.max_steps = int(2e4)
+        config.eval_interval = int(1e2)
+        config.c_coef = 1e-2
+    else:
+        raise NotImplementedError
+
     config.num_workers = 10
     config.task_fn = lambda: Task(kwargs['game'], num_envs=config.num_workers)
     config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
@@ -194,6 +185,7 @@ def geoff_pac(**kwargs):
     config.target_network_update_freq = 200
     config.eval_episodes = 10
     config.replay_warm_up = 100
+    config.log_interval = 0
     run_steps(GeoffPACAgent(config))
 
 
@@ -203,26 +195,28 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    batch()
+    # batch_parameter_study()
+    # batch1()
+    batch2()
     # select_device(0)
 
     # game = 'CartPole-v0'
-    # game = 'HalfCheetah-v2'
+    game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'
     # game = 'Hopper-v2'
     # game = 'Swimmer-v2'
-    game = 'Walker2d-v2'
+    # game = 'Walker2d-v2'
 
-    ddpg_continuous(game)
+    ddpg_continuous(game=game)
 
     geoff_pac(
         game=game,
         skip=False,
-        # algo='off-pac',
+        algo='off-pac',
         # algo='ace',
-        algo='geoff-pac',
+        # algo='geoff-pac',
         lam1=0,
         lam2=1,
         gamma_hat=0.1,
-        c_coef=1e-3,
+        # c_coef=1e-3,
     )

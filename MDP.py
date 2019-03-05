@@ -8,9 +8,7 @@ from deep_rl import set_one_thread
 from deep_rl import set_tag
 from deep_rl import Config
 from deep_rl import random_seed
-from deep_rl import Plotter
-from deep_rl import translate
-import pickle
+from deep_rl import split
 
 
 class State:
@@ -294,11 +292,6 @@ def tabular_agent(**kwargs):
     params.update(kwargs)
     agent = TabularAgent(**params)
     agent.run()
-
-
-def split(a, n):
-    k, m = divmod(len(a), n)
-    return (a[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
 def batch():
