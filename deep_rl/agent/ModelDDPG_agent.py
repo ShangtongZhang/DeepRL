@@ -254,6 +254,7 @@ class ModelDDPGAgent(BaseAgent):
                     noise = torch.randn((actions.size(0) * config.plan_steps, actions.size(1)), device=Config.DEVICE).mul(config.action_noise)
                     actions = torch.cat([actions] * config.plan_steps, dim=0)
                     actions = actions + noise
+                    # actions = actions.clamp(-1, 1)
                     states = torch.cat([states] * config.plan_steps, dim=0)
                 self.imaginary_transitions(states, actions)
 

@@ -31,6 +31,17 @@ class OracleDDPGAgent(BaseAgent):
         self.oracle = config.task_fn()
         self.oracle.reset()
 
+        self.next_s_over_s = []
+        self.next_s_hat_over_s = []
+        self.next_s_hat_over_next_s = []
+
+        if self.config.analyse_net == 'target':
+            self.ana_net = self.target_network
+        elif self.config.analyse_net == 'online':
+            self.ana_net = self.network
+        else:
+            raise NotImplementedError
+
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.detach_()
@@ -160,6 +171,33 @@ class OracleDDPGAgent(BaseAgent):
             next_states.append(next_s)
         return tensor(rewards), tensor(next_states).squeeze(1)
 
+    def rollout_from(self, s, env_s):
+        env = self.oracle
+        env.reset()
+        env.set_state(env_s)
+        rets = []
+        while True:
+            a = self.ana_net(s)
+            next_s, r, done, _ = env.step(to_np(a))
+            rets.append(r)
+            if done or len(rets) > 500:
+                break
+            s = next_s
+        ret = 0
+        for r in reversed(rets):
+            ret = r + self.config.discount * ret
+        self.config.logger.add_scalar('trajectory_length', len(rets))
+        return ret
+
+    def compute_error(self, s, env_s):
+        rets = [self.rollout_from(s, env_s) for _ in range(1)]
+        self.config.logger.add_scalar('mc_ret_std', np.std(rets))
+        mc_ret = np.mean(rets)
+        q = self.ana_net.critic(s, self.ana_net.actor(s))
+        q = np.asscalar(to_np(q))
+        diff = (q - mc_ret) ** 2
+        return diff
+
     def step(self):
         config = self.config
         if self.state is None:
@@ -175,13 +213,14 @@ class OracleDDPGAgent(BaseAgent):
         action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
         env_state = self.task.get_state()
         next_state, reward, done, _ = self.task.step(action)
+        env_next_state = self.task.get_state()
         next_state = self.config.state_normalizer(next_state)
         self.episode_reward += reward[0]
         reward = self.config.reward_normalizer(reward)
 
         b_mask = np.random.rand(1, config.ensemble_size) < config.bootstrap_prob
         b_mask = b_mask.astype(np.uint8)
-        batch_data = list(zip(self.state, action, reward, next_state, 1 - done, b_mask, [env_state]))
+        batch_data = list(zip(self.state, action, reward, next_state, 1 - done, b_mask, [env_state], [env_next_state]))
         self.replay.feed_batch(batch_data)
         # for m_replay in self.model_replays:
         #     m_replay.feed_batch(batch_data)
@@ -202,7 +241,7 @@ class OracleDDPGAgent(BaseAgent):
 
         if self.replay.size() >= config.agent_warm_up:
             experiences = self.replay.sample()
-            states, actions, rewards, next_states, mask, _, env_states = experiences
+            states, actions, rewards, next_states, mask, _, env_states, env_next_states = experiences
             states = tensor(states)
             actions = tensor(actions)
             rewards = tensor(rewards).unsqueeze(1)
@@ -213,6 +252,49 @@ class OracleDDPGAgent(BaseAgent):
             # r1, s1 = self.model_predict(states, actions, env_states)
             # print((r1 - rewards).abs().max())
             # print((s1 - next_states).abs().max())
+
+            if config.analyse and self.total_steps % config.analyse == 0:
+                noise = torch.randn((actions.size(0), actions.size(1)), device=Config.DEVICE).mul(config.action_noise)
+                actions = actions + noise
+                actions = actions.clamp(-1, 1)
+
+                for i in range(actions.size(0)):
+                    if mask[i].item() != 1:
+                        continue
+                    s = states[[i]]
+                    env_s = env_states[i]
+                    next_s = next_states[[i]]
+                    env_next_s = env_next_states[i]
+                    a = actions[[i]]
+                    self.oracle.set_state(env_s)
+                    next_s_hat, _, done, _ = self.oracle.step(to_np(a))
+                    next_s_hat = tensor(next_s_hat)
+                    # if done:
+                    #     break
+                    env_next_s_hat = self.oracle.get_state()
+
+                    s_error = self.compute_error(s, env_s)
+                    next_s_error = self.compute_error(next_s, env_next_s)
+                    next_s_hat_error = self.compute_error(next_s_hat, env_next_s_hat)
+
+                    config.logger.add_scalar('s_error', s_error)
+                    config.logger.add_scalar('next_s_error', next_s_error)
+                    config.logger.add_scalar('next_s_hat_error', next_s_hat_error)
+
+                    self.next_s_over_s.append(next_s_error > s_error)
+                    self.next_s_hat_over_s.append(next_s_hat_error > s_error)
+                    self.next_s_hat_over_next_s.append(next_s_hat_error > next_s_error)
+                    window = 100
+
+                    config.logger.add_scalar('next_s_over_s', next_s_error > s_error)
+                    config.logger.add_scalar('next_s_hat_over_s', next_s_hat_error > s_error)
+                    config.logger.add_scalar('next_s_hat_over_next_s', next_s_hat_error > next_s_error)
+
+                    config.logger.add_scalar('next_s_over_s_window', np.mean(self.next_s_over_s[-window:]))
+                    config.logger.add_scalar('next_s_hat_over_s_window', np.mean(self.next_s_hat_over_s[-window:]))
+                    config.logger.add_scalar('next_s_hat_over_next_s_window', np.mean(self.next_s_hat_over_next_s[-window:]))
+                    break
+
 
             if config.plan:
                 if config.live_action:

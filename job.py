@@ -14,14 +14,13 @@ def batch():
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Humanoid-v2']
+    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Humanoid-v2', 'HumanoidStandup-v2']
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2', 'Humanoid-v2']
-    games = ['Humanoid-v2', 'HumanoidStandup-v2']
+    # games = ['Humanoid-v2', 'HumanoidStandup-v2']
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
     # games = [games[1], games[3]]
     # game = games[cf.i1]
-    # game = games[-1]
-    # game = games[1]
+    games = games[2:4]
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
@@ -112,7 +111,8 @@ def batch():
         # dict(action_noise=0.1, plan_steps=5, residual=0.2, target_net_residual=False, skip=False),
         # dict(action_noise=0.1, plan_steps=5, residual=0.2, target_net_residual=True, skip=False),
 
-        dict(action_noise=0.1, plan_steps=3, residual=0.2, target_net_residual=True),
+        # dict(action_noise=0.1, plan_steps=3, residual=0.2, target_net_residual=True),
+        dict(action_noise=0.1, plan_steps=3, residual=0.2, target_net_residual=False),
 
         # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=True, skip=False),
         # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
@@ -390,7 +390,7 @@ def oracle_ddpg_continuous(**kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3, weight_decay=kwargs['weight_decay']))
 
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64, to_np=False)
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
@@ -400,9 +400,7 @@ def oracle_ddpg_continuous(**kwargs):
 
     config.model_fn = lambda: Model(config.state_dim,
                                     config.action_dim,
-                                    128,
-                                    config.ensemble_size,
-                                    config.model_type)
+                                    config.ensemble_size)
     config.model_opt_fn = lambda params: torch.optim.Adam(params, lr=1e-3)
     config.model_replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=512, drop_prob=0)
     config.model_opt_epochs = 4
@@ -504,18 +502,18 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    # select_device(-1)
-    select_device(0)
+    select_device(-1)
+    # select_device(0)
     # batch_atari()
-    batch()
+    # batch()
 
 
     # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'
     # game = 'Walker2d-v2'
-    game = 'Swimmer-v2'
+    # game = 'Swimmer-v2'
     # game = 'RoboschoolHumanoid-v1'
-    # game = 'Humanoid-v2'
+    game = 'Humanoid-v2'
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
     #                                skip=False,
@@ -528,14 +526,14 @@ if __name__ == '__main__':
     #                                plan_actor=True,
     #                                )
 
-    model_ddpg_continuous(game=game,
-                          skip=True,
-                          debug=True,
-                          plan=False,
-                          async_replay=False,
-                          residual=0.2,
-                          MVE=3,
-                          )
+    # model_ddpg_continuous(game=game,
+    #                       skip=True,
+    #                       debug=True,
+    #                       plan=False,
+    #                       async_replay=False,
+    #                       residual=0.2,
+    #                       MVE=3,
+    #                       )
 
     # game = 'BreakoutNoFrameskip-v4'
     # residual_dqn_pixel_atari(game=game,
@@ -543,18 +541,21 @@ if __name__ == '__main__':
     #                          debug=True,
     #                          residual=0.05)
 
-    # oracle_ddpg_continuous(game=game,
-    #                        skip=True,
-    #                        debug=True,
-    #                        plan=True,
-    #                        action_noise=0.2,
-    #                        plan_steps=2,
-    #                        live_action=False,
-    #                        plan_actor=True,
-    #                        residual=0.1,
-    #                        prediction_noise=0.1,
-    #                        target_net_residual=True,
-    #                        )
+    oracle_ddpg_continuous(game=game,
+                           skip=False,
+                           debug=False,
+                           plan=False,
+                           action_noise=0.1,
+                           plan_steps=2,
+                           live_action=False,
+                           plan_actor=True,
+                           residual=0.1,
+                           prediction_noise=0.1,
+                           target_net_residual=True,
+                           analyse=100,
+                           # analyse_net='target',
+                           analyse_net='online',
+                           )
 
     # residual_ddpg_continuous(game=game,
     #                          residual=0.1,

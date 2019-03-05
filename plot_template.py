@@ -142,6 +142,7 @@ def plot_mujoco():
         'Hopper-v2',
         'Swimmer-v2',
         'Humanoid-v2',
+        'HumanoidStandup-v2',
         # 'Reacher-v2',
     ]
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
@@ -270,6 +271,8 @@ def plot_mujoco():
         # 'MVE_3-plan_False-skip_False-run',
         # 'MVE_4-plan_False-skip_False-run',
 
+
+        'action_noise_0\.1-plan_steps_3-residual_0\.2-target_net_residual_True',
     ]
 
     l = len(games)
@@ -279,7 +282,7 @@ def plot_mujoco():
         ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, name=game, **kwargs)
         for i, p in enumerate(patterns):
             # ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            # ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             ddpg_plot(pattern='.*tmp/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
