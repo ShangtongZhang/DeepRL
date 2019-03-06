@@ -136,6 +136,54 @@ def batch():
     exit()
 
 
+def dm_control_batch():
+    cf = Config()
+    cf.add_argument('--i1', type=int, default=0)
+    cf.add_argument('--i2', type=int, default=0)
+    cf.merge()
+
+    games = [
+        'dm-acrobot-swingup',
+        'dm-acrobot-swingup_sparse',
+        'dm-ball_in_cup-catch',
+        'dm-cartpole-swingup',
+        'dm-cartpole-swingup_sparse',
+        'dm-cartpole-balance',
+        'dm-cartpole-balance_sparse',
+        'dm-cheetah-run',
+        'dm-finger-turn_hard',
+        'dm-finger-spin',
+        'dm-finger-turn_easy',
+        'dm-fish-upright',
+        'dm-fish-swim',
+        'dm-hopper-stand',
+        'dm-hopper-hop',
+        'dm-humanoid-stand',
+        'dm-humanoid-walk',
+        'dm-humanoid-run',
+        'dm-manipulator-bring_ball',
+        'dm-pendulum-swingup',
+        'dm-point_mass-easy',
+        'dm-reacher-easy',
+        'dm-reacher-hard',
+        'dm-swimmer-swimmer15',
+        'dm-swimmer-swimmer6',
+        'dm-walker-stand',
+        'dm-walker-walk',
+        'dm-walker-run',
+    ]
+
+    params = []
+    for game in reversed(games):
+        for r in range(5):
+            params.append(dict(game=game, run=r))
+
+    residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
+    residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
+
+    exit()
+
+
 def batch_atari():
     cf = Config()
     cf.add_argument('--i1', type=int, default=0)
@@ -504,6 +552,7 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
+    dm_control_batch()
     # select_device(0)
     # batch_atari()
     # batch()
@@ -515,7 +564,10 @@ if __name__ == '__main__':
     # game = 'Swimmer-v2'
     # game = 'RoboschoolHumanoid-v1'
     # game = 'Humanoid-v2'
-    game = 'Hopper-v2'
+    # game = 'Hopper-v2'
+    game = 'dm-cartpole-swingup'
+    residual_ddpg_continuous(game=game, residual=0.05, target_net_residual=True)
+
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
     #                                skip=False,
