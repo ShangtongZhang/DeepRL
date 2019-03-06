@@ -15,9 +15,12 @@ GPUs=(0 1 2 3 4 5 6 7)
 #    done
 #done
 
-for i in $(seq 0 3); do
-    for j in $(seq 0 9); do
-        nohup bash docker_python.sh $i "job.py --i1 $i --i2 $j" >| job_${i}_${j}.out &
-#        nohup bash docker_python.sh $i "MDP.py --i1 $i --i2 $j" >| job_${i}_${j}.out &
-    done
+rm -f jobs.txt
+touch jobs.txt
+for i in $(seq 0 305); do
+    echo "$i" >> jobs.txt
 done
+cat jobs.txt | xargs -n 1 -P 50 sh -c 'bash docker_python.sh 0 "job.py --i1 $0"'
+
+
+

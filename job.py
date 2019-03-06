@@ -38,9 +38,16 @@ def batch_parameter_study():
         dict(algo='geoff-pac', lam1=1, lam2=1, gamma_hat=0.1),
     ]
 
-    param_groups = split(params, 3)
-    for params in param_groups:
-        geoff_pac(game=game, run=cf.i2, **params[cf.i1])
+    coefs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    params = []
+    for c1 in coefs:
+        for c2 in coefs:
+            for r in range(5):
+                params.append(dict(algo='geoff-pac', lam1=c1, lam2=c2, gamma_hat=0.1, run=r))
+    # print(len(params) // 2)
+    # params = params[:302]
+    params = params[302:]
+    geoff_pac(game=game, **params[cf.i1])
 
     exit()
 
@@ -96,7 +103,7 @@ def ddpg_continuous(**kwargs):
     kwargs.setdefault('state_norm', None)
     kwargs.setdefault('max_steps', int(1e6))
     kwargs.setdefault('eval_interval', int(1e4))
-    kwargs.setdefault('skip', True)
+    kwargs.setdefault('skip', False)
     config = Config()
     config.merge(kwargs)
 
@@ -195,9 +202,9 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    # batch_parameter_study()
+    batch_parameter_study()
     # batch1()
-    batch2()
+    # batch2()
     # select_device(0)
 
     # game = 'CartPole-v0'

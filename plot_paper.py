@@ -69,22 +69,23 @@ def ddpg_plot(**kwargs):
 
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    # data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    data = plotter.load_tf_results(names, tag=kwargs['tag'], align=True)
     if len(data) == 0:
-        print('FIle not found')
+        print('File not found')
         return
 
-    data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
-    min_y = np.min([len(y) for y in data])
-    data = [y[:min_y] for y in data]
-    random_agent = np.asarray(data)[:, 0].mean()
-    new_data = []
-    for y in data:
-        y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
-        x = np.arange(y.shape[0]) * kwargs['x_interval']
-        new_data.append([x, y])
-    data = new_data
-    random_agent = [x, [random_agent] * len(x)]
+    # data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
+    # min_y = np.min([len(y) for y in data])
+    # data = [y[:min_y] for y in data]
+    # random_agent = np.asarray(data)[:, 0].mean()
+    # new_data = []
+    # for y in data:
+    #     y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
+    #     x = np.arange(y.shape[0]) * kwargs['x_interval']
+    #     new_data.append([x, y])
+    # data = new_data
+    # random_agent = [x, [random_agent] * len(x)]
 
     if kwargs['top_k']:
         scores = []
@@ -112,16 +113,16 @@ def ddpg_plot(**kwargs):
         for i, name in enumerate(names):
             x, y = data[i]
             plt.plot(x, y, color=Plotter.COLORS[i], label=name if i == 0 else '')
-    return random_agent
+    # return random_agent
 
 
 def plot_mujoco_learning_curves(type):
     kwargs = {
-        'x_interval': int(1e2),
-        'rep': 10,
         'average': True,
         'top_k': 0,
         'type': type,
+        # 'tag': 'episodic_return',
+        'tag': 'averaged_value',
     }
     games = [
         'HalfCheetah-v2',
@@ -137,43 +138,32 @@ def plot_mujoco_learning_curves(type):
         'Off-PAC',
     ]
 
-    def get_pattern(game):
+    patterns = [
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
+        'algo_ace-lam1_0-run',
+        'algo_off-pac-run',
+    ]
+
+    def get_x_ticks(game):
         if game == 'Reacher-v2':
-            patterns = [
-                'algo_geoff-pac-c_coef_0\.01-eval_interval_10-gamma_hat_0\.1-lam1_0-lam2_1-max_steps_2000-run',
-                'algo_ace-eval_interval_10-lam1_0-max_steps_2000-run',
-                'algo_off-pac-eval_interval_10-max_steps_2000-run',
-            ]
-            x_ticks = [[0, int(2e4)], ['0', r'$2\times10^5$']]
+            x_ticks = [[0, int(2e4)], ['0', r'$2\times10^4$']]
         elif game == 'Swimmer-v2':
-            patterns = [
-                'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-max_steps_500000-run',
-                'algo_ace-lam1_0-max_steps_500000-run',
-                'algo_off-pac-max_steps_500000-run',
-            ]
-            x_ticks = [[0, int(5e5)], ['0', r'$5\times10^6$']]
+            x_ticks = [[0, int(5e6)], ['0', r'$5\times10^6$']]
         else:
-            patterns = [
-                'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
-                'algo_ace-lam1_0-run',
-                'algo_off-pac-run',
-            ]
-            x_ticks = [[0, int(1e5)], ['0', r'$10^6$']]
-        return patterns, x_ticks
+            x_ticks = [[0, int(1e6)], ['0', r'$10^6$']]
+        return x_ticks
 
     l = len(games)
     plt.figure(figsize=(l * 5, 5))
     plt.rc('text', usetex=True)
-    # plt.figure(figsize=(l * 3, 5 * 2))
     for j, game in enumerate(games):
-        # plt.subplot(2, 3, j + 1)
         plt.subplot(1, l, j + 1)
-        patterns, x_ticks = get_pattern(game)
+        x_ticks = get_x_ticks(game)
         for i, p in enumerate(patterns):
-            x, y = ddpg_plot(pattern='.*geoff-pac-10/%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
-                             **kwargs)
-            if i == 0:
-                plt.plot(x, y, color='black', linestyle=':')
+            ddpg_plot(pattern='.*geoff-pac-10/.*%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
+                      **kwargs)
+            # if i == 0:
+            #     plt.plot(x, y, color='black', linestyle=':')
         plt.xticks(*x_ticks)
         if j == 0:
             plt.legend(fontsize=20, frameon=False)
@@ -186,22 +176,14 @@ def plot_mujoco_learning_curves(type):
     plt.show()
 
 
-def plot_lam1_ACE():
-    kwargs = {
-        'x_interval': int(1e2),
-        'rep': 10,
-        'average': True,
-        'top_k': 0,
-        'game': 'HalfCheetah-v2',
-    }
+def plot_lam1_ACE(**kwargs):
     patterns = [
-        'algo_ace-lam1_0-skip_False-run',
-        # 'algo_ace-lam1_0\.05-skip_False-run',
-        'algo_ace-lam1_0\.1-skip_False-run',
-        'algo_ace-lam1_0\.2-skip_False-run',
-        'algo_ace-lam1_0\.4-skip_False-run',
-        'algo_ace-lam1_0\.8-skip_False-run',
-        'algo_ace-lam1_1-skip_False-run',
+        'algo_ace-lam1_0-run',
+        'algo_ace-lam1_0\.1-run',
+        'algo_ace-lam1_0\.2-run',
+        'algo_ace-lam1_0\.4-run',
+        'algo_ace-lam1_0\.8-run',
+        'algo_ace-lam1_1-run',
     ]
 
     label_template = r'$\lambda_1 = %s$'
@@ -209,27 +191,21 @@ def plot_lam1_ACE():
     for i in [0, 0.1, 0.2, 0.4, 0.8, 1]:
         labels.append(label_template % (i))
 
-    plt.figure(figsize=(5, 5))
     for i, p in enumerate(patterns):
-        ddpg_plot(pattern='.*geoff-pac-5/%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i], **kwargs)
+        ddpg_plot(pattern='.*geoff-pac-5/.*%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i], **kwargs)
     plt.title('HalfCheetah-v2', fontsize=25)
-    plt.xticks([0, int(1e5)], ['0', r'$10^6$'])
-    plt.xlabel('Steps')
-    plt.ylabel('Episode Return')
+    plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
     plt.legend()
-    plt.tight_layout()
-    plt.savefig('%s/ace.png' % (FOLDER), bbox_inches='tight')
-    plt.show()
 
 
 def plot_lam1_GeoffPAC(**kwargs):
     patterns = [
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.1-lam2_1-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.2-lam2_1-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.4-lam2_1-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.8-lam2_1-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_1-lam2_1-skip_False-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.1-lam2_1-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.2-lam2_1-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.4-lam2_1-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.8-lam2_1-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_1-lam2_1-run',
     ]
 
     label_template = r'$\lambda_1 = %s$'
@@ -238,20 +214,20 @@ def plot_lam1_GeoffPAC(**kwargs):
         labels.append(label_template % (i))
 
     for i, p in enumerate(patterns):
-        ddpg_plot(pattern='.*geoff-pac-5/%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i], **kwargs)
+        ddpg_plot(pattern='.*geoff-pac-5/.*%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i], **kwargs)
     plt.title(r'Geoff-PAC ($\lambda_2=1, \hat{\gamma}=0.1$)', fontsize=25, fontweight="bold")
-    plt.xticks([0, int(1e5)], ['0', r'$10^6$'])
+    plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
     plt.legend()
 
 
 def plot_lam2_GeoffPAC(**kwargs):
     patterns = [
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.1-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.2-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.4-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.8-skip_False-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-skip_False-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.1-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.2-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.4-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_0\.8-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
     ]
 
     label_template = r'$\lambda_2 = %s$'
@@ -260,16 +236,16 @@ def plot_lam2_GeoffPAC(**kwargs):
         labels.append(label_template % (i))
 
     for i, p in enumerate(patterns):
-        ddpg_plot(pattern='.*geoff-pac-5/%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i], **kwargs)
+        ddpg_plot(pattern='.*geoff-pac-5/.*%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i], **kwargs)
     plt.title(r'Geoff-PAC ($\lambda_1=0, \hat{\gamma}=0.1$)', fontsize=25, fontweight="bold")
-    plt.xticks([0, int(1e5)], ['0', r'$10^6$'])
+    plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
     plt.legend()
 
 
 def plot_gamma_hat_GeoffPAC(**kwargs):
     patterns = [
         'algo_geoff-pac-gamma_hat_0-lam1_0-lam2_1-run',
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-skip_False-run',
+        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
         'algo_geoff-pac-gamma_hat_0\.2-lam1_0-lam2_1-run',
         'algo_geoff-pac-gamma_hat_0\.4-lam1_0-lam2_1-run',
         'algo_geoff-pac-gamma_hat_0\.8-lam1_0-lam2_1-run',
@@ -282,36 +258,34 @@ def plot_gamma_hat_GeoffPAC(**kwargs):
         labels.append(label_template % (i))
 
     for i, p in enumerate(patterns):
-        ddpg_plot(pattern='.*geoff-pac-5/%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i], **kwargs)
+        ddpg_plot(pattern='.*geoff-pac-5/.*%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i], **kwargs)
     plt.title(r'Geoff-PAC ($\lambda_1=0, \lambda_2=1$)', fontsize=25, fontweight="bold")
-    plt.xticks([0, int(1e5)], ['0', r'$10^6$'])
+    plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
     plt.legend()
 
 
-def plot_parameter_study():
+def plot_parameter_study(type):
     kwargs = {
-        'x_interval': int(1e2),
-        'rep': 10,
         'average': True,
         'top_k': 0,
         'game': 'HalfCheetah-v2',
+        # 'tag': 'episodic_return',
+        'tag': 'averaged_value',
+        'type': type,
     }
-    plt.figure(figsize=(3 * 5, 5))
+    funcs = [plot_lam1_ACE, plot_lam1_GeoffPAC, plot_lam2_GeoffPAC, plot_gamma_hat_GeoffPAC]
+    plt.figure(figsize=(len(funcs) * 5, 5))
     plt.rc('text', usetex=True)
-    # plt.subplot(1, 4, 1)
-    # plot_lam1_ACE(**kwargs)
-    plt.subplot(1, 3, 1)
-    plot_lam1_GeoffPAC(**kwargs)
-    plt.xlabel('Steps', fontsize=20)
-    plt.ylabel('Episode Return', fontsize=20)
-    plt.subplot(1, 3, 2)
-    plot_lam2_GeoffPAC(**kwargs)
-    plt.xlabel('Steps', fontsize=20)
-    plt.subplot(1, 3, 3)
-    plot_gamma_hat_GeoffPAC(**kwargs)
-    plt.xlabel('Steps', fontsize=20)
+    for i in range(len(funcs)):
+        plt.subplot(1, len(funcs), i + 1)
+        # plt.ylim([-60, 40])
+        funcs[i](**kwargs)
+        plt.xlabel('Steps', fontsize=20)
+        if i == 0:
+            plt.ylabel(r'$J_\pi$', fontsize=20, rotation='horizontal')
+
     plt.tight_layout()
-    plt.savefig('%s/geoff-pac-params.png' % (FOLDER), bbox_inches='tight')
+    plt.savefig('%s/params.png' % (FOLDER), bbox_inches='tight')
     plt.show()
 
 
@@ -469,11 +443,10 @@ def plot_ddpg_learning_curves(type):
 
 
 if __name__ == '__main__':
-    # plot_lam1_ACE()
     # two_circle_heatmap()
     # two_circle_learning_curve()
-    # plot_parameter_study()
+    plot_parameter_study('median')
     # plot_mujoco_learning_curves('mean')
-    plot_ddpg_learning_curves('mean')
+    # plot_ddpg_learning_curves('mean')
     # plot_mujoco_learning_curves('median')
-    plot_ddpg_learning_curves('median')
+    # plot_ddpg_learning_curves('median')
