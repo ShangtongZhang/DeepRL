@@ -30,46 +30,26 @@ def batch_parameter_study():
     exit()
 
 
-def batch1():
+def batch():
     cf = Config()
     cf.add_argument('--i1', type=int, default=0)
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    games = ['HalfCheetah-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
-    game = games[cf.i1]
+    # games = ['HalfCheetah-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
+    games = ['Swimmer-v2']
+    params = []
+    for game in games:
+        for r in range(10):
+            params.append(dict(algo='off-pac', run=r, game=game))
+            params.append(dict(algo='ace', lam1=0, run=r, game=game))
+            params.append(dict(algo='geoff-pac', lam1=0.3, lam2=0.1, gamma_hat=0.2, run=r, game=game))
+            params.append(dict(algo='geoff-pac', lam1=0.3, lam2=0.1, gamma_hat=0.1, run=r, game=game))
 
-    params = [
-        dict(algo='off-pac'),
-        dict(algo='ace', lam1=0),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
-    ]
+    # print(len(params))
+    geoff_pac(**params[cf.i1])
 
-    for param in params:
-        geoff_pac(game=game, run=cf.i2, **param)
-    ddpg_continuous(game=game, run=cf.i2, remark='ddpg_random')
-
-    exit()
-
-
-def batch2():
-    cf = Config()
-    cf.add_argument('--i1', type=int, default=0)
-    cf.add_argument('--i2', type=int, default=0)
-    cf.merge()
-
-    game = 'Swimmer-v2'
-
-    params = [
-        dict(algo='off-pac'),
-        dict(algo='ace', lam1=0),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
-    ]
-
-    if cf.i1 < 3 :
-        geoff_pac(game=game, run=cf.i2, **params[cf.i1])
-    elif cf.i1 == 3:
-        ddpg_continuous(game=game, run=cf.i2, remark='ddpg_random')
+    # ddpg_continuous(game=game, run=cf.i2, remark='ddpg_random')
 
     exit()
 
@@ -180,9 +160,8 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    batch_parameter_study()
-    # batch1()
-    # batch2()
+    # batch_parameter_study()
+    batch()
     # select_device(0)
 
     # game = 'CartPole-v0'
