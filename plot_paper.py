@@ -442,11 +442,68 @@ def plot_ddpg_learning_curves(type):
     plt.show()
 
 
+def extract_geoff_pac_heatmap():
+    def measure(data):
+        y = [y for x, y in data]
+        y = np.asarray(y)
+        y = y[:, -100:]
+        return np.mean(y)
+
+    plotter = Plotter()
+    coefs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    pattern_tmp = 'algo_geoff-pac-gamma_hat_0.1-lam1_%s-lam2_%s-run'
+    data = dict()
+    for lam1 in coefs:
+        for lam2 in coefs:
+            pattern = translate(pattern_tmp % (lam1, lam2))
+            names = plotter.load_log_dirs(pattern = '.*geoff-pac-params/.*%s.*' % (pattern))
+            R = plotter.load_tf_results(names, tag='episodic_return', align=True)
+            J = plotter.load_tf_results(names, tag='averaged_value', align=True)
+            data[(lam1, lam2)] = [measure(R), measure(J)]
+            print('lam1 %s, lam2 %s' % (lam1, lam2))
+            print(data[(lam1, lam2)])
+
+    with open('data/geoff_pac_heatmap.bin', 'wb') as f:
+        pickle.dump(data, f)
+
+
+def plot_geoff_pac_heatmap(key='J'):
+    plt.figure(figsize=(5, 4.5))
+    plt.tight_layout()
+    plt.rc('text', usetex=True)
+    with open('data/geoff_pac_heatmap.bin', 'rb') as f:
+        data = pickle.load(f)
+    print(data)
+    coef = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+    perf = np.zeros((len(coef), len(coef)))
+    for i in range(len(coef)):
+        for j in range(len(coef)):
+            if key == 'J':
+                perf[i, j] = data[(coef[i], coef[j])][1]
+            elif key == 'R':
+                perf[i, j] = data[(coef[i], coef[j])][0]
+            else:
+                raise NotImplementedError
+    ax = sns.heatmap(perf, cmap='YlGnBu')
+    ax.set_xticks(np.arange(0, 11) + 0.5)
+    ax.set_xticklabels(['%s' % x for x in coef])
+    ax.set_yticks(np.arange(0, 11) + 0.5)
+    ax.set_yticklabels(['%s' % x for x in coef], rotation='horizontal')
+    plt.xlabel(r'$\lambda_2$', fontsize=20)
+    plt.ylabel(r'$\lambda_1$', rotation='horizontal', fontsize=20)
+    plt.title(r'$J_\pi (\hat{\gamma}=0.1)$', fontsize=25)
+    plt.savefig('%s/geoff-pac-heatmap.png' % (FOLDER), bbox_inches='tight')
+    plt.show()
+
+
 if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
-    plot_parameter_study('median')
+    # plot_parameter_study('median')
     # plot_mujoco_learning_curves('mean')
     # plot_ddpg_learning_curves('mean')
     # plot_mujoco_learning_curves('median')
     # plot_ddpg_learning_curves('median')
+    # extract_heatmap_data()
+    # extract_geoff_pac_heatmap()
+    plot_geoff_pac_heatmap('J')

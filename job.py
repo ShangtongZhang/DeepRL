@@ -9,44 +9,22 @@ def batch_parameter_study():
 
     game = 'HalfCheetah-v2'
 
-    params = [
-        dict(algo='ace', lam1=0),
-        dict(algo='ace', lam1=0.1),
-        dict(algo='ace', lam1=0.2),
-        dict(algo='ace', lam1=0.4),
-        dict(algo='ace', lam1=0.8),
-        dict(algo='ace', lam1=1),
-
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.1),
-
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.2),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.4),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=0.8),
-        dict(algo='geoff-pac', lam1=0, lam2=1, gamma_hat=1),
-
-        dict(algo='geoff-pac', lam1=0, lam2=0, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0.1, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0.2, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0.4, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0, lam2=0.8, gamma_hat=0.1),
-
-        dict(algo='geoff-pac', lam1=0.1, lam2=1, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0.2, lam2=1, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0.4, lam2=1, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=0.8, lam2=1, gamma_hat=0.1),
-        dict(algo='geoff-pac', lam1=1, lam2=1, gamma_hat=0.1),
-    ]
-
     coefs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
     params = []
-    for c1 in coefs:
-        for c2 in coefs:
-            for r in range(5):
-                params.append(dict(algo='geoff-pac', lam1=c1, lam2=c2, gamma_hat=0.1, run=r))
+    # for c1 in coefs:
+    #     for c2 in coefs:
+    #         for r in range(5):
+    #             params.append(dict(algo='geoff-pac', lam1=c1, lam2=c2, gamma_hat=0.1, run=r))
+
+    for c in coefs:
+        for r in range(5):
+            # params.append(dict(algo='ace', lam1=c, run=r))
+            if c < 1:
+                params.append(dict(algo='geoff-pac', lam1=0.3, lam2=0.1, gamma_hat=c, run=r))
+
     # print(len(params) // 2)
     # params = params[:302]
-    params = params[302:]
+    # params = params[302:]
     geoff_pac(game=game, **params[cf.i1])
 
     exit()
