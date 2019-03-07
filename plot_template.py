@@ -3,6 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from deep_rl import *
 
+
 def plot(**kwargs):
     kwargs.setdefault('average', False)
     # kwargs.setdefault('color', 0)
@@ -36,12 +37,13 @@ def plot(**kwargs):
                 color = Plotter.COLORS[i]
             else:
                 color = Plotter.COLORS[kwargs['color']]
-            plt.plot(x, y, color=color, label=name if i==0 else '')
+            plt.plot(x, y, color=color, label=name if i == 0 else '')
     plt.legend()
     if 'y_lim' in kwargs.keys():
         plt.ylim(kwargs['y_lim'])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
+
 
 def plot_atari():
     train_kwargs = {
@@ -73,6 +75,7 @@ def plot_atari():
             plot(pattern='.*residual-dqn/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
     plt.show()
 
+
 def ddpg_plot(**kwargs):
     kwargs.setdefault('average', True)
     kwargs.setdefault('color', 0)
@@ -87,7 +90,7 @@ def ddpg_plot(**kwargs):
         return
     data = [y[: len(y) // kwargs['rep'] * kwargs['rep']] for x, y in data]
     min_y = np.min([len(y) for y in data])
-    data = [y[ :min_y] for y in data]
+    data = [y[:min_y] for y in data]
     new_data = []
     for y in data:
         y = np.reshape(np.asarray(y), (-1, kwargs['rep'])).mean(-1)
@@ -107,7 +110,6 @@ def ddpg_plot(**kwargs):
         best = best[:kwargs['top_k']]
         data = [data[i] for i in best]
 
-
     print('')
 
     game = kwargs['name']
@@ -121,12 +123,13 @@ def ddpg_plot(**kwargs):
         plt.title(game)
     else:
         for i, (x, y) in enumerate(data):
-            plt.plot(x, y, color=Plotter.COLORS[color], label=names[i] if i==0 else '')
+            plt.plot(x, y, color=Plotter.COLORS[color], label=names[i] if i == 0 else '')
     plt.legend()
     # plt.ylim([-200, 1400])
     # plt.ylim([-200, 2500])
     plt.xlabel('timesteps')
     plt.ylabel('episode return')
+
 
 def plot_mujoco():
     kwargs = {
@@ -208,7 +211,6 @@ def plot_mujoco():
         # 'action_noise_0\.1-live_action_False-plan_actor_False-plan_steps_1-residual_True-run',
         # 'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_True-run',
 
-
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_False-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_False-run',
         # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_False-run',
@@ -278,16 +280,74 @@ def plot_mujoco():
     l = len(games)
     plt.figure(figsize=(l * 15, 15))
     for j, game in enumerate(games):
-        plt.subplot(1, l, j+1)
+        plt.subplot(1, l, j + 1)
         ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, name=game, **kwargs)
         for i, p in enumerate(patterns):
             # ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
             # ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*dyna-ddpg-2nd/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
     plt.show()
 
+
+def plot_dm_control():
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True,
+        'max_x_len': 101,
+        'top_k': 0,
+    }
+
+    games = [
+        'dm-acrobot-swingup',
+        'dm-acrobot-swingup_sparse',
+        'dm-ball_in_cup-catch',
+        'dm-cartpole-swingup',
+        'dm-cartpole-swingup_sparse',
+        'dm-cartpole-balance',
+        'dm-cartpole-balance_sparse',
+        'dm-cheetah-run',
+        'dm-finger-turn_hard',
+        'dm-finger-spin',
+        'dm-finger-turn_easy',
+        'dm-fish-upright',
+        'dm-fish-swim',
+        'dm-hopper-stand',
+        'dm-hopper-hop',
+        'dm-humanoid-stand',
+        'dm-humanoid-walk',
+        'dm-humanoid-run',
+        'dm-manipulator-bring_ball',
+        'dm-pendulum-swingup',
+        'dm-point_mass-easy',
+        'dm-reacher-easy',
+        'dm-reacher-hard',
+        'dm-swimmer-swimmer15',
+        'dm-swimmer-swimmer6',
+        'dm-walker-stand',
+        'dm-walker-walk',
+        'dm-walker-run',
+    ]
+
+    games = games[-7:]
+
+    patterns = [
+        'remark_residual-residual_0\.05-target_net_residual_True-run',
+        'remark_residual-residual_0-target_net_residual_True-run',
+    ]
+
+    l = len(games)
+    plt.figure(figsize=(l * 15, 15))
+    for j, game in enumerate(games):
+        plt.subplot(1, l, j + 1)
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*dm-residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
+    plt.show()
+
+
 if __name__ == '__main__':
-    plot_mujoco()
+    # plot_mujoco()
     # plot_atari()
+    plot_dm_control()
