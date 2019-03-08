@@ -190,22 +190,22 @@ def batch_atari():
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    games = ['BreakoutNoFrameskip-v4']
-
-    params = [
-        # dict(residual=0, target_net_residual=True),
-        # dict(residual=0.05, target_net_residual=True),
-        # dict(residual=0.1, target_net_residual=True),
-        dict(residual=0.2, target_net_residual=True),
-        dict(residual=0.4, target_net_residual=True),
-        dict(residual=0.8, target_net_residual=True),
-        dict(residual=1, target_net_residual=True),
+    games = [
+        # 'BreakoutNoFrameskip-v4',
+        'AlienNoFrameskip-v4',
+        'DemonAttackNoFrameskip-v4',
+        'SeaquestNoFrameskip-v4',
+        'MsPacmanNoFrameskip-v4'
     ]
 
-    param = params[cf.i1 // 2]
-    run = cf.i1 % 2
+    params = []
+    for game in games:
+        for r in range(4):
+            # params.append(dict(residual=0, target_net_residual=True, game=game, run=r))
+            params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r))
 
-    residual_dqn_pixel_atari(game=games[0], run=run, **param)
+
+    residual_dqn_pixel_atari(**params[cf.i1])
 
     exit()
 
@@ -551,10 +551,10 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    select_device(-1)
-    dm_control_batch()
-    # select_device(0)
-    # batch_atari()
+    # select_device(-1)
+    # dm_control_batch()
+    select_device(0)
+    batch_atari()
     # batch()
 
 
