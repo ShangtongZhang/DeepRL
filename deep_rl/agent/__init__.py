@@ -7,3 +7,4 @@ from .QuantileRegressionDQN_agent import *
 from .PPO_agent import *
 from .OptionCritic_agent import *
 from .GeoffPAC_agent import *
+from .RND_agent import *

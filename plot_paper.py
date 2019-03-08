@@ -66,11 +66,11 @@ def ddpg_plot(**kwargs):
     kwargs.setdefault('top_k', 0)
     kwargs.setdefault('max_timesteps', 1e8)
     kwargs.setdefault('type', 'mean')
+    kwargs.setdefault('window', 0)
 
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    # data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
-    data = plotter.load_tf_results(names, tag=kwargs['tag'], align=True)
+    data = plotter.load_tf_results(names, tag=kwargs['tag'], align=True, window=kwargs['window'])
     if len(data) == 0:
         print('File not found')
         return
@@ -116,14 +116,12 @@ def ddpg_plot(**kwargs):
     # return random_agent
 
 
-def plot_mujoco_learning_curves(type):
-    kwargs = {
-        'average': True,
-        'top_k': 0,
-        'type': type,
-        # 'tag': 'episodic_return',
-        'tag': 'averaged_value',
-    }
+def plot_mujoco_learning_curves(**kwargs):
+    kwargs.setdefault('average', True)
+    kwargs.setdefault('top_k', 5)
+    kwargs.setdefault('type', 'mean')
+    kwargs.setdefault('tag', 'averaged_value')
+
     games = [
         'HalfCheetah-v2',
         'Walker2d-v2',
@@ -138,36 +136,47 @@ def plot_mujoco_learning_curves(type):
         'Off-PAC',
     ]
 
-    patterns = [
-        'algo_geoff-pac-gamma_hat_0\.1-lam1_0-lam2_1-run',
-        'algo_ace-lam1_0-run',
-        'algo_off-pac-run',
-    ]
-
-    def get_x_ticks(game):
+    def info(game):
+        with open('data/random_agent_mujoco.bin', 'rb') as f:
+            rnd_perf = pickle.load(f)
+        rnd_perf = rnd_perf[game][kwargs['tag']]
+        patterns = [
+            'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.3-lam2_0\.1-run',
+            'algo_ace-lam1_0-run',
+            'algo_off-pac-run',
+        ]
         if game == 'Reacher-v2':
+            patterns[0] = 'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.3-lam2_0\.1-run'
             x_ticks = [[0, int(2e4)], ['0', r'$2\times10^4$']]
+            rnd_x = np.linspace(0, int(2e4), 100).astype(np.int)
         elif game == 'Swimmer-v2':
             x_ticks = [[0, int(5e6)], ['0', r'$5\times10^6$']]
+            rnd_x = np.linspace(0, int(5e6), 100).astype(np.int)
         else:
             x_ticks = [[0, int(1e6)], ['0', r'$10^6$']]
-        return x_ticks
+            rnd_x = np.linspace(0, int(1e6), 100).astype(np.int)
+        rnd_y = [rnd_perf] * len(rnd_x)
+        return patterns, x_ticks, rnd_x, rnd_y
 
     l = len(games)
     plt.figure(figsize=(l * 5, 5))
     plt.rc('text', usetex=True)
     for j, game in enumerate(games):
         plt.subplot(1, l, j + 1)
-        x_ticks = get_x_ticks(game)
+        patterns, x_ticks, rnd_x, rnd_y = info(game)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*geoff-pac-10/.*%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
+            ddpg_plot(pattern='.*geoff-pac-mujoco/.*%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
                       **kwargs)
-            # if i == 0:
-            #     plt.plot(x, y, color='black', linestyle=':')
+        plt.plot(rnd_x, rnd_y, color='black', linestyle=':')
         plt.xticks(*x_ticks)
         if j == 0:
             plt.legend(fontsize=20, frameon=False)
-            plt.ylabel('Episode Return', fontsize=30)
+            if kwargs['tag'] == 'averaged_value':
+                plt.ylabel(r'$J_\pi$', fontsize=30, rotation='horizontal')
+            elif kwargs['tag'] == 'episodic_return':
+                plt.ylabel('Episode Return', fontsize=30)
+            else:
+                raise NotImplementedError
         if j > -1:
             plt.xlabel('Steps', fontsize=30)
         plt.title(game, fontsize=30, fontweight="bold")
@@ -483,7 +492,7 @@ def plot_geoff_pac_heatmap(key='J'):
     ax.set_yticklabels(['%s' % x for x in coef], rotation='horizontal')
     plt.xlabel(r'$\lambda_2$', fontsize=20)
     plt.ylabel(r'$\lambda_1$', rotation='horizontal', fontsize=20)
-    plt.title(r'$J_\pi (\hat{\gamma}=0.1)$', fontsize=25)
+    plt.title(r'$J_\pi \, (\hat{\gamma}=0.1)$', fontsize=25)
     plt.savefig('%s/geoff-pac-heatmap.png' % (FOLDER), bbox_inches='tight')
     plt.show()
 
@@ -491,11 +500,12 @@ def plot_geoff_pac_heatmap(key='J'):
 if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
-    plot_parameter_study('mean')
-    # plot_mujoco_learning_curves('mean')
+    # plot_parameter_study('mean')
+    plot_geoff_pac_heatmap('J')
+    # plot_mujoco_learning_curves(type='mean', tag='averaged_value')
+    # plot_mujoco_learning_curves(type='mean', tag='episodic_return')
     # plot_ddpg_learning_curves('mean')
     # plot_mujoco_learning_curves('median')
     # plot_ddpg_learning_curves('median')
     # extract_heatmap_data()
     # extract_geoff_pac_heatmap()
-    # plot_geoff_pac_heatmap('J')

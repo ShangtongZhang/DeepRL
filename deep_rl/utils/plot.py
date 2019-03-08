@@ -131,7 +131,7 @@ class Plotter:
                 x_max = min(x_max, len(y))
             xy_list = [[x[:x_max], y[:x_max]] for x, y in xy_list]
         if window:
-            xy_list = [self._window_func(x, y, window, np.mean) for x, y in xy_list]
+            xy_list = [self._window_func(np.asarray(x), np.asarray(y), window, np.mean) for x, y in xy_list]
         return xy_list
 
 

@@ -36,20 +36,21 @@ def batch():
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
-    # games = ['HalfCheetah-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2']
-    games = ['Swimmer-v2']
+    games = ['HalfCheetah-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2', 'Swimmer-v2']
+    # games = ['Swimmer-v2']
+    # games = ['Reacher-v2']
     params = []
     for game in games:
         for r in range(10):
-            params.append(dict(algo='off-pac', run=r, game=game))
-            params.append(dict(algo='ace', lam1=0, run=r, game=game))
-            params.append(dict(algo='geoff-pac', lam1=0.3, lam2=0.1, gamma_hat=0.2, run=r, game=game))
-            params.append(dict(algo='geoff-pac', lam1=0.3, lam2=0.1, gamma_hat=0.1, run=r, game=game))
+            # params.append(dict(algo='off-pac', run=r, game=game))
+            # params.append(dict(algo='ace', lam1=0, run=r, game=game))
+            # params.append(dict(algo='geoff-pac', lam1=0.3, lam2=0.1, gamma_hat=0.2, run=r, game=game))
+            # params.append(dict(algo='geoff-pac', lam1=0.3, lam2=0.1, gamma_hat=0.1, run=r, game=game))
+            params.append(dict(game=game, run=r))
 
     # print(len(params))
-    geoff_pac(**params[cf.i1])
-
-    # ddpg_continuous(game=game, run=cf.i2, remark='ddpg_random')
+    # geoff_pac(**params[cf.i1])
+    ddpg_continuous(**params[cf.i1], remark='ddpg_random')
 
     exit()
 
@@ -103,6 +104,22 @@ def ddpg_continuous(**kwargs):
     run_steps(DDPGAgent(config))
 
 
+def random_agent():
+    perf = dict()
+    games = ['HalfCheetah-v2', 'Reacher-v2', 'Walker2d-v2', 'Hopper-v2', 'Swimmer-v2']
+    for game in games:
+        config = Config()
+        config.task_fn = lambda: Task(game)
+        config.eval_env = Task(game)
+        config.eval_episodes = 10
+        config.discount = 0.99
+        config.logger = get_logger(skip=True)
+        agent = RNDAgent(config)
+        perf[game] = agent.eval_episodes()
+    with open('data/random_agent_mujoco.bin', 'wb') as f:
+        pickle.dump(perf, f)
+
+
 def geoff_pac(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
@@ -126,7 +143,6 @@ def geoff_pac(**kwargs):
     elif kwargs['game'] in ['Reacher-v2']:
         config.max_steps = int(2e4)
         config.eval_interval = int(1e2)
-        config.c_coef = 1e-2
     else:
         raise NotImplementedError
 
@@ -161,26 +177,27 @@ if __name__ == '__main__':
     set_one_thread()
     select_device(-1)
     # batch_parameter_study()
-    batch()
+    # batch()
     # select_device(0)
 
     # game = 'CartPole-v0'
-    game = 'HalfCheetah-v2'
-    # game = 'Reacher-v2'
+    # game = 'HalfCheetah-v2'
+    game = 'Reacher-v2'
     # game = 'Hopper-v2'
     # game = 'Swimmer-v2'
     # game = 'Walker2d-v2'
 
-    ddpg_continuous(game=game)
+    # ddpg_continuous(game=game)
+    random_agent()
 
     geoff_pac(
         game=game,
         skip=False,
-        algo='off-pac',
+        # algo='off-pac',
         # algo='ace',
-        # algo='geoff-pac',
-        lam1=0,
-        lam2=1,
+        algo='geoff-pac',
+        lam1=0.3,
+        lam2=0.1,
         gamma_hat=0.1,
         # c_coef=1e-3,
     )
