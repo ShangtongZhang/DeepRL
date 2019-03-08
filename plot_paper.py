@@ -292,19 +292,17 @@ def plot_parameter_study(type):
     }
     # funcs = [plot_lam1_ACE, plot_lam1_GeoffPAC, plot_lam2_GeoffPAC, plot_gamma_hat_GeoffPAC]
     funcs = [plot_lam1_ACE, plot_gamma_hat_GeoffPAC]
-    plt.figure(figsize=(len(funcs) * 5, 5))
-    plt.rc('text', usetex=True)
     for i in range(len(funcs)):
-        plt.subplot(1, len(funcs), i + 1)
+        plt.figure(figsize=(5, 5))
+        plt.rc('text', usetex=True)
+        # plt.subplot(1, len(funcs), i + 1)
         plt.ylim([-60, 30])
         funcs[i](**kwargs)
         plt.xlabel('Steps', fontsize=20)
-        if i == 0:
-            plt.ylabel(r'$J_\pi$', fontsize=20, rotation='horizontal')
-
-    plt.tight_layout()
-    plt.savefig('%s/params.png' % (FOLDER), bbox_inches='tight')
-    plt.show()
+        plt.ylabel(r'$J_\pi$', fontsize=20, rotation='horizontal')
+        plt.tight_layout()
+        plt.savefig('%s/params-%d.png' % (FOLDER, i), bbox_inches='tight')
+        plt.show()
 
 
 def extract_heatmap_data():
@@ -450,9 +448,9 @@ def plot_geoff_pac_heatmap(key='J'):
 if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
-    # plot_parameter_study('mean')
-    # plot_geoff_pac_heatmap('J')
-    plot_mujoco_learning_curves(type='median', tag='averaged_value', top_k=5, ddpg=True)
+    plot_parameter_study('mean')
+    plot_geoff_pac_heatmap('J')
+    # plot_mujoco_learning_curves(type='median', tag='averaged_value', top_k=5, ddpg=True)
 
     # extract_heatmap_data()
     # extract_geoff_pac_heatmap()
