@@ -55,16 +55,22 @@ def plot_atari():
         'x_interval': 100
     }
 
-    games = ['Breakout']
+    games = [
+        'BreakoutNoFrameskip-v4',
+        'AlienNoFrameskip-v4',
+        'DemonAttackNoFrameskip-v4',
+        'SeaquestNoFrameskip-v4',
+        'MsPacmanNoFrameskip-v4'
+    ]
 
     patterns = [
         'residual_0-target_net_residual_True-run',
-        'residual_0\.1-target_net_residual_True-run',
+        # 'residual_0\.1-target_net_residual_True-run',
         'residual_0\.05-target_net_residual_True-run',
-        'residual_0\.2-target_net_residual_True-run',
-        'residual_0\.4-target_net_residual_True-run',
-        'residual_0\.8-target_net_residual_True-run',
-        'residual_1-target_net_residual_True-run',
+        # 'residual_0\.2-target_net_residual_True-run',
+        # 'residual_0\.4-target_net_residual_True-run',
+        # 'residual_0\.8-target_net_residual_True-run',
+        # 'residual_1-target_net_residual_True-run',
     ]
 
     l = len(games)
