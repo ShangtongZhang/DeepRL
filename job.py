@@ -20,7 +20,12 @@ def batch():
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
     # games = [games[1], games[3]]
     # game = games[cf.i1]
-    games = games[4:]
+    # games = games[4:]
+    games = [
+        'dm-humanoid-stand',
+        'dm-humanoid-walk',
+        'dm-humanoid-run',
+    ]
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
@@ -113,7 +118,9 @@ def batch():
 
         # dict(action_noise=0.1, plan_steps=3, residual=0.2, target_net_residual=True),
         # dict(action_noise=0.1, plan_steps=3, residual=0.2, target_net_residual=False),
+
         dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False),
+        dict(action_noise=0.1, plan_steps=1, residual=0),
 
         # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=True, skip=False),
         # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
@@ -129,7 +136,7 @@ def batch():
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    model_ddpg_continuous(game=games[cf.i2], run=cf.i1, **params[0])
+    model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
     # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=False)
 
@@ -554,8 +561,8 @@ if __name__ == '__main__':
     # select_device(-1)
     # dm_control_batch()
     select_device(0)
-    batch_atari()
-    # batch()
+    # batch_atari()
+    batch()
 
 
     # game = 'HalfCheetah-v2'
