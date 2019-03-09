@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-docker build -t deeprl .
+nohup docker build -t deeprl . &

@@ -264,7 +264,8 @@ def plot_lam2_GeoffPAC(**kwargs):
 def plot_gamma_hat_GeoffPAC(**kwargs):
     coefs = [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 
-    pattern_tmp = 'algo_geoff-pac-gamma_hat_%s-lam1_0.3-lam2_0.1-run'
+    # pattern_tmp = 'algo_geoff-pac-gamma_hat_%s-lam1_0.3-lam2_0.1-run'
+    pattern_tmp = 'algo_geoff-pac-gamma_hat_%s-lam1_0.7-lam2_0.6-run'
     label_template = r'$\hat{\gamma} = %s$'
     patterns = []
     labels = []
@@ -275,7 +276,7 @@ def plot_gamma_hat_GeoffPAC(**kwargs):
     for i, p in enumerate(patterns):
         ddpg_plot(pattern='.*geoff-pac-params/other/.*%s.*%s.*' % (kwargs['game'], p), color=i, label=labels[i],
                   **kwargs)
-    plt.title(r'Geoff-PAC ($\lambda_1=0.3, \lambda_2=0.1$)', fontsize=25, fontweight="bold")
+    plt.title(r'Geoff-PAC ($\lambda_1=0.7, \lambda_2=0.6$)', fontsize=25, fontweight="bold")
     plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
     plt.legend()
 
@@ -448,11 +449,11 @@ if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
     plot_parameter_study('mean')
-    plot_geoff_pac_heatmap('J')
-    plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=False)
-    plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
-    plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=False)
-    plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=True)
+    # plot_geoff_pac_heatmap('J')
+    # plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=False)
+    # plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
+    # plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=False)
+    # plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=True)
 
     # extract_heatmap_data()
     # extract_geoff_pac_heatmap()
