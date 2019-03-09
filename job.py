@@ -20,7 +20,7 @@ def batch_parameter_study():
         for r in range(5):
             # params.append(dict(algo='ace', lam1=c, run=r))
             if c < 1:
-                params.append(dict(algo='geoff-pac', lam1=0.3, lam2=0.1, gamma_hat=c, run=r))
+                params.append(dict(algo='geoff-pac', lam1=0.7, lam2=0.6, gamma_hat=c, run=r))
 
     # print(len(params) // 2)
     # params = params[:302]
@@ -178,8 +178,8 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    # batch_parameter_study()
-    batch()
+    batch_parameter_study()
+    # batch()
     # select_device(0)
 
     # game = 'CartPole-v0'

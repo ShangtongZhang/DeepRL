@@ -447,9 +447,12 @@ def plot_geoff_pac_heatmap(key='J'):
 if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
-    # plot_parameter_study('mean')
-    # plot_geoff_pac_heatmap('J')
+    plot_parameter_study('mean')
+    plot_geoff_pac_heatmap('J')
+    plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=False)
     plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
+    plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=False)
+    plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=True)
 
     # extract_heatmap_data()
     # extract_geoff_pac_heatmap()
