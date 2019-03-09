@@ -123,7 +123,13 @@ class Plotter:
         for dir in dirs:
             event_acc = EventAccumulator(dir)
             event_acc.Reload()
-            _, x, y = zip(*event_acc.Scalars(tag))
+            try:
+                _, x, y = zip(*event_acc.Scalars(tag))
+            except Exception as e:
+                # a stupid typo
+                print(e)
+                if tag == 'averaged_value':
+                    _, x, y = zip(*event_acc.Scalars('everaged_value'))
             xy_list.append([x, y])
         if align:
             x_max = float('inf')

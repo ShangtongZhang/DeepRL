@@ -149,17 +149,16 @@ def plot_mujoco_learning_curves(**kwargs):
         rnd_perf = rnd_perf[game][kwargs['tag']]
         if kwargs['ddpg']:
             patterns = [
-                'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.3-lam2_0\.1-run',
+                'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.7-lam2_0\.6-run',
                 'remark_ddpg',
             ]
         else:
             patterns = [
-                'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.3-lam2_0\.1-run',
+                'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.7-lam2_0\.6-run',
                 'algo_ace-lam1_0-run',
                 'algo_off-pac-run',
             ]
         if game == 'Reacher-v2':
-            patterns[0] = 'algo_geoff-pac-gamma_hat_0\.1-lam1_0\.3-lam2_0\.1-run'
             x_ticks = [[0, int(2e4)], ['0', r'$2\times10^4$']]
             rnd_x = np.linspace(0, int(2e4), 100).astype(np.int)
         elif game == 'Swimmer-v2':
@@ -448,9 +447,9 @@ def plot_geoff_pac_heatmap(key='J'):
 if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
-    plot_parameter_study('mean')
-    plot_geoff_pac_heatmap('J')
-    # plot_mujoco_learning_curves(type='median', tag='averaged_value', top_k=5, ddpg=True)
+    # plot_parameter_study('mean')
+    # plot_geoff_pac_heatmap('J')
+    plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
 
     # extract_heatmap_data()
     # extract_geoff_pac_heatmap()

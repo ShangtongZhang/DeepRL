@@ -59,7 +59,7 @@ class BaseAgent:
             self.total_steps, np.mean(episodic_rewards), np.std(episodic_rewards) / np.sqrt(len(episodic_rewards)), np.mean(values)
         ))
         self.config.logger.add_scalar('episodic_return', np.mean(episodic_rewards), self.total_steps)
-        self.config.logger.add_scalar('everaged_value', np.mean(values), self.total_steps)
+        self.config.logger.add_scalar('averaged_value', np.mean(values), self.total_steps)
         return {
             'episodic_return': np.mean(episodic_rewards),
             'averaged_value': np.mean(values)
