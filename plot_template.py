@@ -243,8 +243,8 @@ def plot_mujoco():
 
         # learned model
         # skip=False indicates a learned model
-        # 'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
-        # 'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
+        'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
+        'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
         # 'action_noise_0.1-plan_steps_3-residual_0\.2-skip_False-target_net_residual_False-run',
         # 'action_noise_0.1-plan_steps_5-residual_0\.2-skip_False-target_net_residual_False-run',
         # 'action_noise_0.1-plan_steps_5-residual_0\.2-skip_False-target_net_residual_True-run',
@@ -280,7 +280,7 @@ def plot_mujoco():
 
         # 'action_noise_0\.1-plan_steps_3-residual_0\.2-target_net_residual_True',
         # 'action_noise_0\.1-plan_steps_3-residual_0\.2-target_net_residual_False',
-        'action_noise_0\.1-plan_steps_1-residual_0\.2-target_net_residual_False-run',
+        # 'action_noise_0\.1-plan_steps_1-residual_0\.2-target_net_residual_False-run',
     ]
 
     l = len(games)
@@ -293,7 +293,8 @@ def plot_mujoco():
             # ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
             ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            ddpg_plot(pattern='.*dyna-ddpg-2nd/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            ddpg_plot(pattern='.*dyna-ddpg-1st/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            # ddpg_plot(pattern='.*dyna-ddpg-2nd/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
     plt.show()
 
 
@@ -356,6 +357,6 @@ def plot_dm_control():
 
 
 if __name__ == '__main__':
-    # plot_mujoco()
+    plot_mujoco()
     # plot_atari()
-    plot_dm_control()
+    # plot_dm_control()
