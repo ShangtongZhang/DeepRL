@@ -136,7 +136,7 @@ def batch():
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
+    model_ddpg_continuous(game=games[1], run=cf.i1, **params[cf.i2])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
     # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=False)
 

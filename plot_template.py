@@ -151,7 +151,7 @@ def plot_mujoco():
         'Hopper-v2',
         'Swimmer-v2',
         'Humanoid-v2',
-        'HumanoidStandup-v2',
+        # 'HumanoidStandup-v2',
         # 'Reacher-v2',
     ]
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
@@ -291,9 +291,9 @@ def plot_mujoco():
         for i, p in enumerate(patterns):
             # ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
-            # ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            # ddpg_plot(pattern='.*dyna-ddpg-2nd/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            # ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
+            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            ddpg_plot(pattern='.*dyna-ddpg-2nd/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
     plt.show()
 
 
@@ -337,7 +337,7 @@ def plot_dm_control():
         'dm-walker-run',
     ]
 
-    games = games[-7:]
+    # games = games[-7:]
 
     patterns = [
         'remark_residual-residual_0\.05-target_net_residual_True-run',
@@ -345,9 +345,11 @@ def plot_dm_control():
     ]
 
     l = len(games)
-    plt.figure(figsize=(l * 15, 15))
+    # plt.figure(figsize=(l * 15, 15))
+    plt.figure(figsize=(7 * 10, 4 * 10))
     for j, game in enumerate(games):
-        plt.subplot(1, l, j + 1)
+        # plt.subplot(1, l, j + 1)
+        plt.subplot(4, 7, j+1)
         for i, p in enumerate(patterns):
             ddpg_plot(pattern='.*dm-residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
     plt.show()
