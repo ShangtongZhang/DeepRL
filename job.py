@@ -558,11 +558,11 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    # select_device(-1)
+    select_device(-1)
     # dm_control_batch()
-    select_device(0)
+    # select_device(0)
     # batch_atari()
-    batch()
+    # batch()
 
 
     # game = 'HalfCheetah-v2'
@@ -570,10 +570,10 @@ if __name__ == '__main__':
     # game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
     # game = 'RoboschoolHumanoid-v1'
-    # game = 'Humanoid-v2'
+    game = 'Humanoid-v2'
     # game = 'Hopper-v2'
-    game = 'dm-cartpole-swingup'
-    residual_ddpg_continuous(game=game, residual=0.05, target_net_residual=True)
+    # game = 'dm-cartpole-swingup'
+    # residual_ddpg_continuous(game=game, residual=0.05, target_net_residual=True)
 
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
@@ -604,7 +604,7 @@ if __name__ == '__main__':
 
     oracle_ddpg_continuous(game=game,
                            skip=False,
-                           debug=False,
+                           debug=True,
                            plan=False,
                            action_noise=0.1,
                            plan_steps=2,
@@ -613,9 +613,9 @@ if __name__ == '__main__':
                            residual=0.1,
                            prediction_noise=0.1,
                            target_net_residual=True,
-                           analyse=100,
-                           analyse_net='target',
-                           # analyse_net='online',
+                           analyse=10,
+                           # analyse_net='target',
+                           analyse_net='online',
                            )
 
     # residual_ddpg_continuous(game=game,

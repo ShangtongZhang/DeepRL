@@ -190,7 +190,7 @@ class OracleDDPGAgent(BaseAgent):
         return ret
 
     def compute_error(self, s, env_s):
-        rets = [self.rollout_from(s, env_s) for _ in range(1)]
+        rets = [self.rollout_from(s, env_s) for _ in range(2)]
         self.config.logger.add_scalar('mc_ret_std', np.std(rets))
         mc_ret = np.mean(rets)
         q = self.ana_net.critic(s, self.ana_net.actor(s))
@@ -266,11 +266,12 @@ class OracleDDPGAgent(BaseAgent):
                     next_s = next_states[[i]]
                     env_next_s = env_next_states[i]
                     a = actions[[i]]
+                    self.oracle.reset()
                     self.oracle.set_state(env_s)
                     next_s_hat, _, done, _ = self.oracle.step(to_np(a))
                     next_s_hat = tensor(next_s_hat)
-                    # if done:
-                    #     break
+                    if done:
+                        break
                     env_next_s_hat = self.oracle.get_state()
 
                     s_error = self.compute_error(s, env_s)
