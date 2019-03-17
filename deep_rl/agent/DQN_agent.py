@@ -10,6 +10,7 @@ from ..utils import *
 import time
 from .BaseAgent import *
 
+
 class DQNActor(BaseActor):
     def __init__(self, config):
         BaseActor.__init__(self, config)
@@ -33,6 +34,7 @@ class DQNActor(BaseActor):
         self._total_steps += 1
         self._state = next_state
         return entry
+
 
 class DQNAgent(BaseAgent):
     def __init__(self, config):

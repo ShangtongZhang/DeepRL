@@ -9,6 +9,7 @@ from ..component import *
 from ..utils import *
 from .BaseAgent import *
 
+
 class NStepDQNAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)

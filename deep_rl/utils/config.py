@@ -7,8 +7,10 @@ from .normalizer import *
 import argparse
 import torch
 
+
 class Config:
     DEVICE = torch.device('cpu')
+
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         self.task_fn = None

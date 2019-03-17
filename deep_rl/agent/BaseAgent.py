@@ -53,7 +53,6 @@ class BaseAgent:
             'episodic_return_test': np.mean(episodic_returns),
         }
 
-
     def record_online_return(self, info, offset=0):
         if isinstance(info, dict):
             ret = info['episodic_return']

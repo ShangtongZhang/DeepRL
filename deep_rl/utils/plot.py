@@ -5,6 +5,7 @@ import numpy as np
 import os
 import re
 
+
 class Plotter:
     COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
               'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',

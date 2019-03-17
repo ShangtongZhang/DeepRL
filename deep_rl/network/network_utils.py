@@ -10,9 +10,11 @@ import torch.nn.functional as F
 import numpy as np
 from ..utils import *
 
+
 class BaseNet:
     def __init__(self):
         pass
+
 
 def layer_init(layer, w_scale=1.0):
     nn.init.orthogonal_(layer.weight.data)

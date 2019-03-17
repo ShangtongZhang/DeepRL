@@ -11,6 +11,7 @@ class ConstantSchedule:
     def __call__(self, steps=1):
         return self.val
 
+
 class LinearSchedule:
     def __init__(self, start, end=None, steps=None):
         if end is None:

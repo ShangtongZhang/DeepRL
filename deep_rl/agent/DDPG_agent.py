@@ -9,6 +9,7 @@ from ..component import *
 from .BaseAgent import *
 import torchvision
 
+
 class DDPGAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
@@ -26,7 +27,7 @@ class DDPGAgent(BaseAgent):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.detach_()
             target_param.copy_(target_param * (1.0 - self.config.target_network_mix) +
-                                    param * self.config.target_network_mix)
+                               param * self.config.target_network_mix)
 
     def eval_step(self, state):
         self.config.state_normalizer.set_read_only()

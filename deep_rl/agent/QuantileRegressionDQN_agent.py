@@ -9,6 +9,7 @@ from ..component import *
 from ..utils import *
 from .BaseAgent import *
 
+
 class QuantileRegressionDQNActor(BaseActor):
     def __init__(self, config):
         BaseActor.__init__(self, config)
@@ -32,6 +33,7 @@ class QuantileRegressionDQNActor(BaseActor):
         self._total_steps += 1
         self._state = next_state
         return entry
+
 
 class QuantileRegressionDQNAgent(BaseAgent):
     def __init__(self, config):

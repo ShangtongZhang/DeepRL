@@ -1,8 +1,10 @@
 import numpy as np
 
+
 class RandomProcess(object):
     def reset_states(self):
         pass
+
 
 class GaussianProcess(RandomProcess):
     def __init__(self, size, std):
@@ -11,6 +13,7 @@ class GaussianProcess(RandomProcess):
 
     def sample(self):
         return np.random.randn(*self.size) * self.std()
+
 
 class OrnsteinUhlenbeckProcess(RandomProcess):
     def __init__(self, size, std, theta=.15, dt=1e-2, x0=None):
@@ -23,7 +26,8 @@ class OrnsteinUhlenbeckProcess(RandomProcess):
         self.reset_states()
 
     def sample(self):
-        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + self.std() * np.sqrt(self.dt) * np.random.randn(*self.size)
+        x = self.x_prev + self.theta * (self.mu - self.x_prev) * self.dt + self.std() * np.sqrt(
+            self.dt) * np.random.randn(*self.size)
         self.x_prev = x
         return x
 
