@@ -447,7 +447,7 @@ if __name__ == '__main__':
     # a2c_cart_pole()
     # a2c_continuous('HalfCheetah-v2')
     # n_step_dqn_cart_pole()
-    # option_critic_cart_pole()
+    option_critic_cart_pole()
     # ppo_cart_pole()
     # ppo_continuous('HalfCheetah-v2')
     # ddpg_continuous('HalfCheetah-v2')

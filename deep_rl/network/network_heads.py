@@ -7,6 +7,7 @@
 from .network_utils import *
 from .network_bodies import *
 
+
 class VanillaNet(nn.Module, BaseNet):
     def __init__(self, output_dim, body):
         super(VanillaNet, self).__init__()
@@ -18,6 +19,7 @@ class VanillaNet(nn.Module, BaseNet):
         phi = self.body(tensor(x))
         y = self.fc_head(phi)
         return y
+
 
 class DuelingNet(nn.Module, BaseNet):
     def __init__(self, action_dim, body):
@@ -33,6 +35,7 @@ class DuelingNet(nn.Module, BaseNet):
         advantange = self.fc_advantage(phi)
         q = value.expand_as(advantange) + (advantange - advantange.mean(1, keepdim=True).expand_as(advantange))
         return q
+
 
 class CategoricalNet(nn.Module, BaseNet):
     def __init__(self, action_dim, num_atoms, body):
@@ -50,6 +53,7 @@ class CategoricalNet(nn.Module, BaseNet):
         log_prob = F.log_softmax(pre_prob, dim=-1)
         return prob, log_prob
 
+
 class QuantileNet(nn.Module, BaseNet):
     def __init__(self, action_dim, num_quantiles, body):
         super(QuantileNet, self).__init__()
@@ -64,6 +68,7 @@ class QuantileNet(nn.Module, BaseNet):
         quantiles = self.fc_quantiles(phi)
         quantiles = quantiles.view((-1, self.action_dim, self.num_quantiles))
         return quantiles
+
 
 class OptionCriticNet(nn.Module, BaseNet):
     def __init__(self, body, action_dim, num_options):
@@ -83,7 +88,12 @@ class OptionCriticNet(nn.Module, BaseNet):
         pi = self.fc_pi(phi)
         pi = pi.view(-1, self.num_options, self.action_dim)
         log_pi = F.log_softmax(pi, dim=-1)
-        return q, beta, log_pi
+        pi = F.softmax(pi, dim=-1)
+        return {'q': q,
+                'beta': beta,
+                'log_pi': log_pi,
+                'pi': pi}
+
 
 class ActorCriticNet(nn.Module):
     def __init__(self, state_dim, action_dim, phi_body, actor_body, critic_body):
@@ -100,6 +110,7 @@ class ActorCriticNet(nn.Module):
         self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
         self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
         self.phi_params = list(self.phi_body.parameters())
+
 
 class DeterministicActorCriticNet(nn.Module, BaseNet):
     def __init__(self,
@@ -131,6 +142,7 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
     def critic(self, phi, a):
         return self.network.fc_critic(self.network.critic_body(phi, a))
 
+
 class GaussianActorCriticNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
@@ -160,6 +172,7 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
                 'ent': entropy,
                 'mean': mean,
                 'v': v}
+
 
 class CategoricalActorCriticNet(nn.Module, BaseNet):
     def __init__(self,
