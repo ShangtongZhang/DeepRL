@@ -93,7 +93,6 @@ class OptionCriticAgent(BaseAgent):
 
         with torch.no_grad():
             prediction = self.target_network(self.states)
-            storage.add(prediction)
             storage.placeholder()
             betas = prediction['beta'][self.worker_index, self.prev_options]
             ret = (1 - betas) * prediction['q'][self.worker_index, self.prev_options] + \
@@ -110,45 +109,15 @@ class OptionCriticAgent(BaseAgent):
             q = storage.q[i].gather(1, storage.prev_o[i])
             storage.beta_adv[i] = q - v + config.termination_regularizer
 
-        q, beta, log_pi, ret, adv, beta_adv, ent, option, action, initial_states = \
-            storage.cat(['q', 'beta', 'log_pi', 'ret', 'adv', 'beta_adv', 'ent', 'o', 'a', 'init'])
+        q, beta, log_pi, ret, adv, beta_adv, ent, option, action, initial_states, prev_o = \
+            storage.cat(['q', 'beta', 'log_pi', 'ret', 'adv', 'beta_adv', 'ent', 'o', 'a', 'init', 'prev_o'])
 
-        q_loss = (q.gather(1, option).unsqueeze(-1) - ret.detach()).pow(2).mul(0.5).mean()
-        pi_loss = -(log_pi.gather(1, action).unsqueeze(-1) * adv.detach()) - config.entropy_weight * ent
+        q_loss = (q.gather(1, option) - ret.detach()).pow(2).mul(0.5).mean()
+        pi_loss = -(log_pi.gather(1, action) * adv.detach()) - config.entropy_weight * ent
         pi_loss = pi_loss.mean()
-        beta_loss = (betas * beta_adv.detach() * (1 - initial_states)).mean()
+        beta_loss = (beta.gather(1, prev_o) * beta_adv.detach() * (1 - initial_states)).mean()
 
         self.optimizer.zero_grad()
         (pi_loss + q_loss + beta_loss).backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
-
-
-        # for i in reversed(range(len(rollout))):
-        #     q_options, betas, options, prev_options, rewards, terminals, is_initial_betas, log_pi, actions = rollout[i]
-        #     options = tensor(options).unsqueeze(1).long()
-        #     prev_options = tensor(prev_options).unsqueeze(1).long()
-        #     terminals = tensor(terminals).unsqueeze(1)
-        #     rewards = tensor(rewards).unsqueeze(1)
-        #     is_initial_betas = tensor(is_initial_betas).unsqueeze(1)
-        #     returns = rewards + config.discount * terminals * returns
-        #
-        #     q_omg = q_options.gather(1, options)
-        #     log_action_prob = log_pi.gather(1, actions.unsqueeze(1))
-        #     entropy_loss = (log_pi.exp() * log_pi).sum(-1).unsqueeze(1)
-        #
-        #     q_prev_omg = q_options.gather(1, prev_options)
-        #     v_prev_omg = torch.max(q_options, dim=1, keepdim=True)[0]
-        #     advantage_omg = q_prev_omg - v_prev_omg
-        #     advantage_omg.add_(config.termination_regularizer)
-        #     betas = betas.gather(1, prev_options)
-        #     betas = betas * (1 - is_initial_betas)
-        #     processed_rollout[i] = [q_omg, returns, betas, advantage_omg.detach(), log_action_prob, entropy_loss]
-
-        # q_omg, returns, beta_omg, advantage_omg, log_action_prob, entropy_loss = map(lambda x: torch.cat(x, dim=0),
-        #                                                                              zip(*processed_rollout))
-        # pi_loss = -log_action_prob * (returns - q_omg.detach()) + config.entropy_weight * entropy_loss
-        # pi_loss = pi_loss.mean()
-        # q_loss = 0.5 * (q_omg - returns).pow(2).mean()
-        # beta_loss = (advantage_omg * beta_omg).mean()
-
