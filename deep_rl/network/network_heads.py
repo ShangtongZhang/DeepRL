@@ -248,39 +248,57 @@ class Model(nn.Module, BaseNet):
                  ensemble_size,
                  p_hidden_units=512,
                  r_hidden_units=128,
-                 type='D'):
+                 type='D',
+                 small=False):
         super(Model, self).__init__()
         assert type in ['D', 'P']
 
-        self.fc_body_p = nn.Sequential(
-            layer_init(nn.Linear(state_dim + action_dim, p_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
-            nn.ReLU(),
-        )
+        if small:
+            p_hidden_units = 128
+            r_hidden_units = 128
+            self.fc_body_p = nn.Sequential(
+                layer_init(nn.Linear(state_dim + action_dim, p_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+                nn.ReLU(),
+            )
 
-        self.fc_body_r = nn.Sequential(
-            layer_init(nn.Linear(state_dim + action_dim, r_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
-            nn.ReLU(),
-            layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
-            nn.ReLU(),
-        )
+            self.fc_body_r = nn.Sequential(
+                layer_init(nn.Linear(state_dim + action_dim, r_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
+                nn.ReLU(),
+            )
+        else:
+            self.fc_body_p = nn.Sequential(
+                layer_init(nn.Linear(state_dim + action_dim, p_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(p_hidden_units, p_hidden_units)),
+                nn.ReLU(),
+            )
+
+            self.fc_body_r = nn.Sequential(
+                layer_init(nn.Linear(state_dim + action_dim, r_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
+                nn.ReLU(),
+                layer_init(nn.Linear(r_hidden_units, r_hidden_units)),
+                nn.ReLU(),
+            )
 
         self.fc_p_mean = layer_init(nn.Linear(p_hidden_units, state_dim * ensemble_size))
         if type == 'P':

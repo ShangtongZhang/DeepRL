@@ -193,9 +193,10 @@ class OracleDDPGAgent(BaseAgent):
         rets = [self.rollout_from(s, env_s) for _ in range(2)]
         self.config.logger.add_scalar('mc_ret_std', np.std(rets))
         mc_ret = np.mean(rets)
+        self.config.logger.add_scalar('mc_ret', mc_ret)
         q = self.ana_net.critic(s, self.ana_net.actor(s))
         q = np.asscalar(to_np(q))
-        diff = (q - mc_ret) ** 2
+        diff = np.abs(q - mc_ret)
         return diff
 
     def step(self):

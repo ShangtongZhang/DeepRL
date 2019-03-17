@@ -21,11 +21,11 @@ def batch():
     # games = [games[1], games[3]]
     # game = games[cf.i1]
     # games = games[4:]
-    games = [
-        'dm-humanoid-stand',
-        'dm-humanoid-walk',
-        'dm-humanoid-run',
-    ]
+    # games = [
+    #     'dm-humanoid-stand',
+    #     'dm-humanoid-walk',
+    #     'dm-humanoid-run',
+    # ]
     # algo = cf.i1 // 4
     # if algo == 0:
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
@@ -136,7 +136,7 @@ def batch():
     ]
 
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    model_ddpg_continuous(game=games[1], run=cf.i1, **params[cf.i2])
+    model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2], small=True)
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
     # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=False)
 
@@ -281,6 +281,7 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('target_net_residual', False)
     kwargs.setdefault('MVE', 0)
     kwargs.setdefault('max_steps', int(1e6))
+    kwargs.setdefault('small', False)
     config = Config()
     config.merge(kwargs)
 
@@ -315,7 +316,8 @@ def model_ddpg_continuous(**kwargs):
 
     config.model_fn = lambda: Model(config.state_dim,
                                     config.action_dim,
-                                    config.ensemble_size)
+                                    config.ensemble_size,
+                                    small=config.small)
     config.model_opt_fn = lambda params: torch.optim.Adam(params, lr=1e-3)
     config.model_replay_fn = lambda: replay(memory_size=int(1e6), batch_size=1024)
     config.model_opt_epochs = 4
@@ -568,9 +570,9 @@ if __name__ == '__main__':
     # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'
     # game = 'Walker2d-v2'
-    # game = 'Swimmer-v2'
+    game = 'Swimmer-v2'
     # game = 'RoboschoolHumanoid-v1'
-    game = 'Humanoid-v2'
+    # game = 'Humanoid-v2'
     # game = 'Hopper-v2'
     # game = 'dm-cartpole-swingup'
     # residual_ddpg_continuous(game=game, residual=0.05, target_net_residual=True)
@@ -594,6 +596,7 @@ if __name__ == '__main__':
     #                       async_replay=False,
     #                       residual=0.2,
     #                       MVE=3,
+    #                       small=True,
     #                       )
 
     # game = 'BreakoutNoFrameskip-v4'
