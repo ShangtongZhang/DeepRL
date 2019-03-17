@@ -443,7 +443,7 @@ def ddpg_continuous(**kwargs):
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
-    config.min_memory_size = 64
+    config.warm_up = 1e4
     config.target_network_mix = 1e-3
     run_steps(DDPGAgent(config))
 

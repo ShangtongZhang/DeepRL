@@ -57,7 +57,7 @@ class DDPGAgent(BaseAgent):
         self.state = next_state
         self.total_steps += 1
 
-        if self.replay.size() >= config.min_memory_size:
+        if self.replay.size() >= config.warm_up:
             experiences = self.replay.sample()
             states, actions, rewards, next_states, terminals = experiences
             states = tensor(states)
