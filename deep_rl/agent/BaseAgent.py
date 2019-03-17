@@ -34,7 +34,7 @@ class BaseAgent:
         state = env.reset()
         while True:
             action = self.eval_step(state)
-            state, reward, done, info = env.step([action])
+            state, reward, done, info = env.step(action)
             ret = info[0]['episodic_return']
             if ret is not None:
                 break

@@ -494,14 +494,14 @@ if __name__ == '__main__':
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
     # a2c_feature(game=game)
-    n_step_dqn_feature(game=game)
+    # n_step_dqn_feature(game=game)
     # option_critic_feature(game=game)
     # ppo_feature(game=game)
 
     game = 'HalfCheetah-v2'
     # a2c_continuous(game=game)
     # ppo_continuous(game=game)
-    # ddpg_continuous(game=game)
+    ddpg_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
     # dqn_pixel(game=game)

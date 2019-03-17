@@ -48,7 +48,9 @@ class DDPGAgent(BaseAgent):
         next_state = self.config.state_normalizer(next_state)
         self.record_online_return(info)
         reward = self.config.reward_normalizer(reward)
-        self.replay.feed([self.state, action, reward, next_state, done.astype(np.uint8)])
+
+        experiences = list(zip(self.state, action, reward, next_state, done))
+        self.replay.feed_batch(experiences)
         if done[0]:
             self.random_process.reset_states()
         self.state = next_state
@@ -57,16 +59,16 @@ class DDPGAgent(BaseAgent):
         if self.replay.size() >= config.min_memory_size:
             experiences = self.replay.sample()
             states, actions, rewards, next_states, terminals = experiences
-            states = states.squeeze(1)
-            actions = actions.squeeze(1)
-            rewards = tensor(rewards)
-            next_states = next_states.squeeze(1)
-            terminals = tensor(terminals)
+            states = tensor(states)
+            actions = tensor(actions)
+            rewards = tensor(rewards).unsqueeze(-1)
+            next_states = tensor(next_states)
+            mask = tensor(1 - terminals).unsqueeze(-1)
 
             phi_next = self.target_network.feature(next_states)
             a_next = self.target_network.actor(phi_next)
             q_next = self.target_network.critic(phi_next, a_next)
-            q_next = config.discount * q_next * (1 - terminals)
+            q_next = config.discount * mask * q_next
             q_next.add_(rewards)
             q_next = q_next.detach()
             phi = self.network.feature(states)
