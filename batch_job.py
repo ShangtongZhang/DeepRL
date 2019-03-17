@@ -86,6 +86,8 @@ def batch_mujoco():
     algo = algos[cf.i // 25]
     algo(**params[cf.i % 25], remark=algo.__name__)
 
+    exit()
+
 
 if __name__ == '__main__':
     mkdir('log')
