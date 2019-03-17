@@ -6,4 +6,4 @@ else
   cmd=docker
 fi
 
-NV_GPU=$1 ${cmd} run --rm -v `pwd`:/workspace/DeepRL --entrypoint '/bin/sh' deeprl -c "python3 $2"
+NV_GPU=$1 ${cmd} run --rm -v `pwd`:/shangtong/DeepRL --entrypoint '/bin/sh' deeprl -c "python3 $2"
