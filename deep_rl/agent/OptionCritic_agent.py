@@ -65,9 +65,9 @@ class OptionCriticAgent(BaseAgent):
             actions = dist.sample()
             entropy = dist.entropy()
 
-            next_states, rewards, terminals, _ = self.task.step(to_np(actions))
+            next_states, rewards, terminals, info = self.task.step(to_np(actions))
+            self.record_online_return(info)
             next_states = config.state_normalizer(next_states)
-            self.online_rewards += rewards
             rewards = config.reward_normalizer(rewards)
             storage.add(prediction)
             storage.add({'r': tensor(rewards).unsqueeze(-1),
@@ -77,11 +77,6 @@ class OptionCriticAgent(BaseAgent):
                          'ent': entropy.unsqueeze(-1),
                          'a': actions.unsqueeze(-1),
                          'init': self.is_initial_states.unsqueeze(-1).float()})
-
-            for i, terminal in enumerate(terminals):
-                if terminals[i]:
-                    self.episode_rewards.append(self.online_rewards[i])
-                    self.online_rewards[i] = 0
 
             self.is_initial_states = tensor(terminals).byte()
             self.prev_options = options

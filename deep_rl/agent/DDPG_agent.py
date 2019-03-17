@@ -21,8 +21,6 @@ class DDPGAgent(BaseAgent):
         self.random_process = config.random_process_fn()
         self.total_steps = 0
         self.state = None
-        self.episode_reward = 0
-        self.episode_rewards = []
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -46,14 +44,12 @@ class DDPGAgent(BaseAgent):
         action = self.network(self.state)
         action = to_np(action)
         action += self.random_process.sample()
-        next_state, reward, done, _ = self.task.step(action)
+        next_state, reward, done, info = self.task.step(action)
         next_state = self.config.state_normalizer(next_state)
-        self.episode_reward += reward[0]
+        self.record_online_return(info)
         reward = self.config.reward_normalizer(reward)
         self.replay.feed([self.state, action, reward, next_state, done.astype(np.uint8)])
         if done[0]:
-            self.episode_rewards.append(self.episode_reward)
-            self.episode_reward = 0
             self.random_process.reset_states()
         self.state = next_state
         self.total_steps += 1

@@ -18,27 +18,21 @@ class A2CAgent(BaseAgent):
         self.total_steps = 0
         self.states = self.task.reset()
 
-        self.episode_rewards = []
-        self.online_rewards = np.zeros(config.num_workers)
-
     def step(self):
         config = self.config
         storage = Storage(config.rollout_length)
         states = self.states
         for _ in range(config.rollout_length):
             prediction = self.network(config.state_normalizer(states))
-            next_states, rewards, terminals, _ = self.task.step(to_np(prediction['a']))
-            self.online_rewards += rewards
+            next_states, rewards, terminals, info = self.task.step(to_np(prediction['a']))
+            self.record_online_return(info)
             rewards = config.reward_normalizer(rewards)
-            for i, terminal in enumerate(terminals):
-                if terminals[i]:
-                    self.episode_rewards.append(self.online_rewards[i])
-                    self.online_rewards[i] = 0
             storage.add(prediction)
             storage.add({'r': tensor(rewards).unsqueeze(-1),
                          'm': tensor(1 - terminals).unsqueeze(-1)})
 
             states = next_states
+            self.total_steps += config.num_workers
 
         self.states = states
         prediction = self.network(config.state_normalizer(states))
@@ -67,6 +61,3 @@ class A2CAgent(BaseAgent):
          config.value_loss_weight * value_loss).backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
-
-        steps = config.rollout_length * config.num_workers
-        self.total_steps += steps

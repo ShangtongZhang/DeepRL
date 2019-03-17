@@ -1,4 +1,3 @@
-
 import os
 
 import gym
@@ -6,9 +5,7 @@ import numpy as np
 import torch
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
-from collections import deque
 
-from baselines import bench
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.atari_wrappers import FrameStack as FrameStack_
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv, VecEnv
@@ -20,8 +17,9 @@ try:
 except ImportError:
     pass
 
+
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
-def make_env(env_id, seed, rank, log_dir, episode_life=True):
+def make_env(env_id, seed, rank, episode_life=True):
     def _thunk():
         random_seed(seed)
         if env_id.startswith("dm"):
@@ -35,10 +33,7 @@ def make_env(env_id, seed, rank, log_dir, episode_life=True):
         if is_atari:
             env = make_atari(env_id)
         env.seed(seed + rank)
-
-        if log_dir is not None:
-            # env = Monitor(env=env, filename=os.path.join(log_dir, str(rank)), allow_early_resets=True)
-            env = bench.Monitor(env=env, filename=os.path.join(log_dir, str(rank)), allow_early_resets=True)
+        env = OriginalReturnWrapper(env)
         if is_atari:
             env = wrap_deepmind(env,
                                 episode_life=episode_life,
@@ -55,6 +50,25 @@ def make_env(env_id, seed, rank, log_dir, episode_life=True):
     return _thunk
 
 
+class OriginalReturnWrapper(gym.Wrapper):
+    def __init__(self, env):
+        gym.Wrapper.__init__(self, env)
+        self.total_rewards = 0
+
+    def step(self, action):
+        obs, reward, done, info = self.env.step(action)
+        self.total_rewards += reward
+        if done:
+            info['episodic_return'] = self.total_rewards
+            self.total_rewards = 0
+        else:
+            info['episodic_return'] = None
+        return obs, reward, done, info
+
+    def reset(self):
+        return self.env.reset()
+
+
 class TransposeImage(gym.ObservationWrapper):
     def __init__(self, env=None):
         super(TransposeImage, self).__init__(env)
@@ -67,40 +81,6 @@ class TransposeImage(gym.ObservationWrapper):
 
     def observation(self, observation):
         return observation.transpose(2, 0, 1)
-
-# Allow tensorboard to record original episode return
-class Monitor(bench.Monitor):
-    def __init__(self, **kwargs):
-        super(Monitor, self).__init__(**kwargs)
-        log_dir = kwargs['filename'].replace('./log', './tf_log')
-        log_dir = '/'.join(log_dir.split('/')[:-1])
-        self.tf_logger = Logger(None, log_dir)
-        self.tf_step = 0
-
-    def step(self, action):
-        if self.needs_reset:
-            raise RuntimeError("Tried to step environment that needs reset")
-        ob, rew, done, info = self.env.step(action)
-        self.rewards.append(rew)
-        if done:
-            self.needs_reset = True
-            eprew = sum(self.rewards)
-            eplen = len(self.rewards)
-            epinfo = {"r": round(eprew, 6), "l": eplen, "t": round(time.time() - self.tstart, 6)}
-            self.tf_step += eplen
-            self.tf_logger.add_scalar('return', eprew)
-            for k in self.info_keywords:
-                epinfo[k] = info[k]
-            self.episode_rewards.append(eprew)
-            self.episode_lengths.append(eplen)
-            self.episode_times.append(time.time() - self.tstart)
-            epinfo.update(self.current_reset_info)
-            if self.logger:
-                self.logger.writerow(epinfo)
-                self.f.flush()
-            info['episode'] = epinfo
-        self.total_steps += 1
-        return (ob, rew, done, info)
 
 
 # The original LayzeFrames doesn't work well
@@ -164,6 +144,7 @@ class DummyVecEnv(VecEnv):
     def close(self):
         return
 
+
 class Task:
     def __init__(self,
                  name,
@@ -174,7 +155,7 @@ class Task:
                  seed=np.random.randint(int(1e5))):
         if log_dir is not None:
             mkdir(log_dir)
-        envs = [make_env(name, seed, i, log_dir, episode_life) for i in range(num_envs)]
+        envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
         if single_process:
             Wrapper = DummyVecEnv
         else:
@@ -199,6 +180,7 @@ class Task:
         if isinstance(self.action_space, Box):
             actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return self.env.step(actions)
+
 
 if __name__ == '__main__':
     task = Task('Hopper-v2', 5, single_process=False)

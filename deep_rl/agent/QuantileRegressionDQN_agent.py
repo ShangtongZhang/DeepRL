@@ -76,13 +76,11 @@ class QuantileRegressionDQNAgent(BaseAgent):
         config = self.config
         transitions = self.actor.step()
         experiences = []
-        for state, action, reward, next_state, done, _ in transitions:
+        for state, action, reward, next_state, done, info in transitions:
+            self.record_online_return(info)
             self.episode_reward += reward
             self.total_steps += 1
             reward = config.reward_normalizer(reward)
-            if done:
-                self.episode_rewards.append(self.episode_reward)
-                self.episode_reward = 0
             experiences.append([state, action, reward, next_state, done])
         self.replay.feed_batch(experiences)
 

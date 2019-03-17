@@ -21,8 +21,6 @@ class NStepDQNAgent(BaseAgent):
 
         self.total_steps = 0
         self.states = self.task.reset()
-        self.online_rewards = np.zeros(config.num_workers)
-        self.episode_rewards = []
 
     def step(self):
         config = self.config
@@ -34,13 +32,9 @@ class NStepDQNAgent(BaseAgent):
             epsilon = config.random_action_prob(config.num_workers)
             actions = epsilon_greedy(epsilon, to_np(q))
 
-            next_states, rewards, terminals, _ = self.task.step(actions)
-            self.online_rewards += rewards
+            next_states, rewards, terminals, info = self.task.step(actions)
+            self.record_online_return(info)
             rewards = config.reward_normalizer(rewards)
-            for i, terminal in enumerate(terminals):
-                if terminals[i]:
-                    self.episode_rewards.append(self.online_rewards[i])
-                    self.online_rewards[i] = 0
 
             rollout.append([q, actions, rewards, 1 - terminals])
             states = next_states

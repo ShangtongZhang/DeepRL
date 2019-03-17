@@ -9,11 +9,12 @@ import numpy as np
 from ..utils import *
 import torch.multiprocessing as mp
 from collections import deque
-import sys
+
 
 class BaseAgent:
     def __init__(self, config):
         self.config = config
+        self.logger = get_logger(tag=config.tag, skip=config.skip)
 
     def close(self):
         close_obj(self.task)
@@ -26,26 +27,45 @@ class BaseAgent:
         self.network.load_state_dict(state_dict)
 
     def eval_step(self, state):
-        raise Exception('eval_step not implemented')
+        raise NotImplementedError
 
     def eval_episode(self):
         env = self.config.eval_env
         state = env.reset()
-        total_rewards = 0
         while True:
             action = self.eval_step(state)
-            state, reward, done, _ = env.step([action])
-            total_rewards += reward[0]
-            if done[0]:
+            state, reward, done, info = env.step([action])
+            ret = info[0]['episodic_return']
+            if ret is not None:
                 break
-        return total_rewards
+        return ret
 
     def eval_episodes(self):
-        rewards = []
+        episodic_returns = []
         for ep in range(self.config.eval_episodes):
-            rewards.append(self.eval_episode())
-        self.config.logger.info('evaluation episode return: %f(%f)' % (
-            np.mean(rewards), np.std(rewards) / np.sqrt(len(rewards))))
+            total_rewards = self.eval_episode()
+            episodic_returns.append(np.sum(total_rewards))
+        self.logger.info('steps %d, episodic_return_test %.2f(%.2f)' % (
+            self.total_steps, np.mean(episodic_returns), np.std(episodic_returns) / np.sqrt(len(episodic_returns))
+        ))
+        self.logger.add_scalar('episodic_return_test', np.mean(episodic_returns), self.total_steps)
+        return {
+            'episodic_return_test': np.mean(episodic_returns),
+        }
+
+
+    def record_online_return(self, info, offset=0):
+        if isinstance(info, dict):
+            ret = info['episodic_return']
+            if ret is not None:
+                self.logger.add_scalar('episodic_return_train', ret, self.total_steps + offset)
+                self.logger.info('steps %d, episodic_return_train %s' % (self.total_steps + offset, ret))
+        elif isinstance(info, tuple):
+            for i, info_ in enumerate(info):
+                self.record_online_return(info_, i)
+        else:
+            raise NotImplementedError
+
 
 class BaseActor(mp.Process):
     STEP = 0
@@ -100,10 +120,10 @@ class BaseActor(mp.Process):
             elif op == self.NETWORK:
                 self._network = data
             else:
-                raise Exception('Unknown command')
+                raise NotImplementedError
 
     def _transition(self):
-        raise Exception('Not implemented')
+        raise NotImplementedError
 
     def _set_up(self):
         pass

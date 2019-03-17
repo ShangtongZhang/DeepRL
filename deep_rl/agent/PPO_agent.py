@@ -16,8 +16,6 @@ class PPOAgent(BaseAgent):
         self.network = config.network_fn()
         self.opt = config.optimizer_fn(self.network.parameters())
         self.total_steps = 0
-        self.online_rewards = np.zeros(config.num_workers)
-        self.episode_rewards = []
         self.states = self.task.reset()
         self.states = config.state_normalizer(self.states)
 
@@ -27,13 +25,9 @@ class PPOAgent(BaseAgent):
         states = self.states
         for _ in range(config.rollout_length):
             prediction = self.network(states)
-            next_states, rewards, terminals, _ = self.task.step(to_np(prediction['a']))
-            self.online_rewards += rewards
+            next_states, rewards, terminals, info = self.task.step(to_np(prediction['a']))
+            self.record_online_return(info)
             rewards = config.reward_normalizer(rewards)
-            for i, terminal in enumerate(terminals):
-                if terminals[i]:
-                    self.episode_rewards.append(self.online_rewards[i])
-                    self.online_rewards[i] = 0
             next_states = config.state_normalizer(next_states)
             storage.add(prediction)
             storage.add({'r': tensor(rewards).unsqueeze(-1),

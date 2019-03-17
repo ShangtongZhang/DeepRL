@@ -12,7 +12,7 @@ import logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s: %(message)s')
 from .misc import *
 
-def get_logger(tag=None, skip=False, level=logging.INFO):
+def get_logger(tag='default', skip=False, level=logging.INFO):
     logger = logging.getLogger()
     logger.setLevel(level)
     if tag is not None:
