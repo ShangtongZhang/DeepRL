@@ -24,7 +24,8 @@ class NStepDQNAgent(BaseAgent):
 
     def step(self):
         config = self.config
-        rollout = []
+        storage = Storage(config.rollout_length)
+
         states = self.states
         for _ in range(config.rollout_length):
             q = self.network(self.config.state_normalizer(states))
@@ -36,29 +37,29 @@ class NStepDQNAgent(BaseAgent):
             self.record_online_return(info)
             rewards = config.reward_normalizer(rewards)
 
-            rollout.append([q, actions, rewards, 1 - terminals])
+            storage.add({'q': q,
+                         'a': tensor(actions).unsqueeze(-1).long(),
+                         'r': tensor(rewards).unsqueeze(-1),
+                         'm': tensor(1 - terminals).unsqueeze(-1)})
+
             states = next_states
 
             self.total_steps += config.num_workers
-            if self.total_steps / config.num_workers % config.target_network_update_freq == 0:
+            if self.total_steps // config.num_workers % config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())
 
         self.states = states
 
-        processed_rollout = [None] * (len(rollout))
-        returns = self.target_network(config.state_normalizer(states)).detach()
-        returns, _ = torch.max(returns, dim=1, keepdim=True)
-        for i in reversed(range(len(rollout))):
-            q, actions, rewards, terminals = rollout[i]
-            actions = tensor(actions).unsqueeze(1).long()
-            q = q.gather(1, actions)
-            terminals = tensor(terminals).unsqueeze(1)
-            rewards = tensor(rewards).unsqueeze(1)
-            returns = rewards + config.discount * terminals * returns
-            processed_rollout[i] = [q, returns]
+        storage.placeholder()
 
-        q, returns= map(lambda x: torch.cat(x, dim=0), zip(*processed_rollout))
-        loss = 0.5 * (q - returns).pow(2).mean()
+        ret = self.target_network(config.state_normalizer(states)).detach()
+        ret = torch.max(ret, dim=1, keepdim=True)[0]
+        for i in reversed(range(config.rollout_length)):
+            ret = storage.r[i] + config.discount * storage.m[i] * ret
+            storage.ret[i] = ret
+
+        q, action, ret = storage.cat(['q', 'a', 'ret'])
+        loss = 0.5 * (q.gather(1, action) - ret).pow(2).mean()
         self.optimizer.zero_grad()
         loss.backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)

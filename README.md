@@ -24,9 +24,8 @@ Action Conditional Video Prediction can be found in [v0.4](https://github.com/Sh
 * Core dependencies: `pip install -e .`
 
 # Remarks
-* If you have any questions about the code or want to report a bug, please **open an issue** instead of emailing me directly.
+* If you have any question about the code or want to report a bug, please **open an issue** instead of emailing me directly.
 * There is a super fast DQN implementation with an async actor for data generation and an async replay buffer to transfer data to GPU. Enable this implementation by setting `config.async_actor = True` and using `AsyncReplay`. However, with atari games this fast implementation may not work in macOS. Use Ubuntu or Docker instead.
-* Python 2 is not officially supported after [v0.3](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.3). However, I do expect most of the code will still work well in Python 2.
 * Although there is a `setup.py`, which means you can install the repo as a library, this repo is **never** designed to be a high-level library like Keras. Use it as your codebase instead.
 * **Code for my papers** can be found in corresponding branches, which may be good examples for extending this codebase.
 
