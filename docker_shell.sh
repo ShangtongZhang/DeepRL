@@ -6,4 +6,4 @@ else
   cmd=docker
 fi
 
-${cmd} run --rm -v `pwd`:/shangtong/DeepRL -it deeprl
+${cmd} run --rm -v `pwd`:/shaang/DeepRL -it deeprl

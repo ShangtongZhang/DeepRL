@@ -22,28 +22,28 @@ RUN pip3 install pip --upgrade
 RUN add-apt-repository ppa:jamesh/snap-support && apt-get update && apt install -y patchelf
 RUN rm -rf /var/lib/apt/lists/*
 
-WORKDIR /shangtong
-RUN chmod -R 777 /shangtong
+WORKDIR /shaang
+RUN chmod -R 777 /shaang
 RUN chmod -R 777 /usr/local
 
 # This UID is nothing special
-RUN useradd -d /shangtong -u 13071 shangtong
-USER shangtong
+RUN useradd -d /shaang -u 13071 shaang
+USER shaang
 
 # Install Mujoco
-RUN mkdir -p /shangtong/.mujoco \
+RUN mkdir -p /shaang/.mujoco \
     && wget https://www.roboti.us/download/mjpro150_linux.zip -O mujoco.zip \
-    && unzip mujoco.zip -d /shangtong/.mujoco \
+    && unzip mujoco.zip -d /shaang/.mujoco \
     && rm mujoco.zip
 RUN wget https://www.roboti.us/download/mujoco200_linux.zip -O mujoco.zip \
-    && unzip mujoco.zip -d /shangtong/.mujoco \
+    && unzip mujoco.zip -d /shaang/.mujoco \
     && rm mujoco.zip
 
 # Make sure you have the license, otherwise comment this line out
-COPY ./mjkey.txt /shangtong/.mujoco/mjkey.txt
+COPY ./mjkey.txt /shaang/.mujoco/mjkey.txt
 
-ENV LD_LIBRARY_PATH /shangtong/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
-ENV LD_LIBRARY_PATH /shangtong/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
 
 RUN pip install gym[mujoco] --upgrade
 RUN pip install mujoco-py
@@ -53,4 +53,4 @@ COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN pip install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines
 
-WORKDIR /shangtong/DeepRL
+WORKDIR /shaang/DeepRL

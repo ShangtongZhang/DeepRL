@@ -63,6 +63,7 @@ def dqn_pixel(**kwargs):
     config.exploration_steps = 50000
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
+    config.history_length = 4
     # config.double_q = True
     config.double_q = False
     config.max_steps = int(2e7)
@@ -486,8 +487,8 @@ if __name__ == '__main__':
     mkdir('tf_log')
     set_one_thread()
     random_seed()
-    select_device(-1)
-    # select_device(0)
+    # select_device(-1)
+    select_device(0)
 
     game = 'CartPole-v0'
     # dqn_feature(game=game)
@@ -501,7 +502,7 @@ if __name__ == '__main__':
     game = 'HalfCheetah-v2'
     # a2c_continuous(game=game)
     # ppo_continuous(game=game)
-    ddpg_continuous(game=game)
+    # ddpg_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
     # dqn_pixel(game=game)
@@ -511,5 +512,3 @@ if __name__ == '__main__':
     # n_step_dqn_pixel(game=game)
     # option_ciritc_pixel(game=game)
     # ppo_pixel(game=game)
-
-    # plot()
