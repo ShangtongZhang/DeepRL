@@ -35,6 +35,7 @@ class PPOAgent(BaseAgent):
                          'm': tensor(1 - terminals).unsqueeze(-1),
                          's': tensor(states)})
             states = next_states
+            self.total_steps += config.num_workers
 
         self.states = states
         prediction = self.network(states)
@@ -81,6 +82,3 @@ class PPOAgent(BaseAgent):
                 (policy_loss + value_loss).backward()
                 nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
                 self.opt.step()
-
-        steps = config.rollout_length * config.num_workers
-        self.total_steps += steps

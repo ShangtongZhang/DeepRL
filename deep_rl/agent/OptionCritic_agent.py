@@ -19,9 +19,6 @@ class OptionCriticAgent(BaseAgent):
         self.optimizer = config.optimizer_fn(self.network.parameters())
         self.target_network.load_state_dict(self.network.state_dict())
 
-        self.online_rewards = np.zeros(config.num_workers)
-        self.episode_rewards = []
-
         self.total_steps = 0
         self.worker_index = tensor(np.arange(config.num_workers)).long()
 

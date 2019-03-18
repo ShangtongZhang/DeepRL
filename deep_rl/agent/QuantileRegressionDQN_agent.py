@@ -52,9 +52,6 @@ class QuantileRegressionDQNAgent(BaseAgent):
 
         self.actor.set_network(self.network)
 
-        self.episode_reward = 0
-        self.episode_rewards = []
-
         self.total_steps = 0
         self.batch_indices = range_tensor(self.replay.batch_size)
 

@@ -95,9 +95,16 @@ class OptionCriticNet(nn.Module, BaseNet):
                 'pi': pi}
 
 
-class ActorCriticNet(nn.Module):
-    def __init__(self, state_dim, action_dim, phi_body, actor_body, critic_body):
-        super(ActorCriticNet, self).__init__()
+class DeterministicActorCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 actor_opt_fn,
+                 critic_opt_fn,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None):
+        super(DeterministicActorCriticNet, self).__init__()
         if phi_body is None: phi_body = DummyBody(state_dim)
         if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
         if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
@@ -110,21 +117,9 @@ class ActorCriticNet(nn.Module):
         self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
         self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
         self.phi_params = list(self.phi_body.parameters())
-
-
-class DeterministicActorCriticNet(nn.Module, BaseNet):
-    def __init__(self,
-                 state_dim,
-                 action_dim,
-                 actor_opt_fn,
-                 critic_opt_fn,
-                 phi_body=None,
-                 actor_body=None,
-                 critic_body=None):
-        super(DeterministicActorCriticNet, self).__init__()
-        self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
-        self.actor_opt = actor_opt_fn(self.network.actor_params + self.network.phi_params)
-        self.critic_opt = critic_opt_fn(self.network.critic_params + self.network.phi_params)
+        
+        self.actor_opt = actor_opt_fn(self.actor_params + self.phi_params)
+        self.critic_opt = critic_opt_fn(self.critic_params + self.phi_params)
         self.to(Config.DEVICE)
 
     def forward(self, obs):
@@ -134,13 +129,13 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
 
     def feature(self, obs):
         obs = tensor(obs)
-        return self.network.phi_body(obs)
+        return self.phi_body(obs)
 
     def actor(self, phi):
-        return F.tanh(self.network.fc_action(self.network.actor_body(phi)))
+        return F.tanh(self.fc_action(self.actor_body(phi)))
 
     def critic(self, phi, a):
-        return self.network.fc_critic(self.network.critic_body(phi, a))
+        return self.fc_critic(self.critic_body(phi, a))
 
 
 class GaussianActorCriticNet(nn.Module, BaseNet):
@@ -151,17 +146,29 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
                  actor_body=None,
                  critic_body=None):
         super(GaussianActorCriticNet, self).__init__()
-        self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
+
+        self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
+        self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
+        self.phi_params = list(self.phi_body.parameters())
+        
         self.std = nn.Parameter(torch.zeros(action_dim))
         self.to(Config.DEVICE)
 
     def forward(self, obs, action=None):
         obs = tensor(obs)
-        phi = self.network.phi_body(obs)
-        phi_a = self.network.actor_body(phi)
-        phi_v = self.network.critic_body(phi)
-        mean = F.tanh(self.network.fc_action(phi_a))
-        v = self.network.fc_critic(phi_v)
+        phi = self.phi_body(obs)
+        phi_a = self.actor_body(phi)
+        phi_v = self.critic_body(phi)
+        mean = F.tanh(self.fc_action(phi_a))
+        v = self.fc_critic(phi_v)
         dist = torch.distributions.Normal(mean, F.softplus(self.std))
         if action is None:
             action = dist.sample()
@@ -182,16 +189,28 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
                  actor_body=None,
                  critic_body=None):
         super(CategoricalActorCriticNet, self).__init__()
-        self.network = ActorCriticNet(state_dim, action_dim, phi_body, actor_body, critic_body)
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
+
+        self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
+        self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
+        self.phi_params = list(self.phi_body.parameters())
+        
         self.to(Config.DEVICE)
 
     def forward(self, obs, action=None):
         obs = tensor(obs)
-        phi = self.network.phi_body(obs)
-        phi_a = self.network.actor_body(phi)
-        phi_v = self.network.critic_body(phi)
-        logits = self.network.fc_action(phi_a)
-        v = self.network.fc_critic(phi_v)
+        phi = self.phi_body(obs)
+        phi_a = self.actor_body(phi)
+        phi_v = self.critic_body(phi)
+        logits = self.fc_action(phi_a)
+        v = self.fc_critic(phi_v)
         dist = torch.distributions.Categorical(logits=logits)
         if action is None:
             action = dist.sample()

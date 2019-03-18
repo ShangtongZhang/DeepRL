@@ -73,7 +73,7 @@ class DDPGAgent(BaseAgent):
             q_next.add_(rewards)
             q_next = q_next.detach()
             phi = self.network.feature(states)
-            q = self.network.critic(phi, tensor(actions))
+            q = self.network.critic(phi, actions)
             critic_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean()
 
             self.network.zero_grad()
