@@ -45,10 +45,10 @@ class Plotter:
             xy_list = new_xy_list
 
         if kwargs['interpolation']:
-            x_max = float('inf')
+            x_right = float('inf')
             for x, y in xy_list:
-                x_max = min(x_max, len(y))
-            x = np.arange(0, x_max, kwargs['interpolation'])
+                x_right = min(x_right, x[-1])
+            x = np.arange(0, x_right, kwargs['interpolation'])
             y = []
             for x_, y_ in xy_list:
                 y.append(np.interp(x, x_, y_))
@@ -154,3 +154,7 @@ class Plotter:
                     for k in range(y.shape[0]):
                         plt.plot(x, y[i], label=label, color=color)
                         label = None
+            plt.xlabel('steps')
+            if not i:
+                plt.ylabel(kwargs['tag'])
+            plt.title(game)

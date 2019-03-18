@@ -80,7 +80,7 @@ def batch_mujoco():
             params.append(dict(game=game, run=r))
 
     algos = [
-        ppo_continuous,
+        # ppo_continuous,
         ddpg_continuous,
     ]
     algo = algos[cf.i // 25]
