@@ -28,6 +28,7 @@ Action Conditional Video Prediction can be found in [v0.4](https://github.com/Sh
 * There is a super fast DQN implementation with an async actor for data generation and an async replay buffer to transfer data to GPU. Enable this implementation by setting `config.async_actor = True` and using `AsyncReplay`. However, with atari games this fast implementation may not work in macOS. Use Ubuntu or Docker instead.
 * Although there is a `setup.py`, which means you can install the repo as a library, this repo is **never** designed to be a high-level library like Keras. Use it as your codebase instead.
 * **Code for my papers** can be found in corresponding branches, which may be good examples for extending this codebase.
+* TensorFlow is used only for logging. Open AI baselines is only used very slightly. If you carefully read the code, you should be able to remove/replace them.
 
 # Usage
 
@@ -51,7 +52,7 @@ Please use this bibtex if you want to cite this repo
 
 ## BreakoutNoFrameskip-v4
 
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/breakout.png)
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Breakout.png)
 
 * This is my synchronous option-critic implementation, not the original one.
 * The curves are not directly comparable, as many hyper-parameters are different.

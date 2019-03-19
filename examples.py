@@ -316,7 +316,7 @@ def option_critic_feature(**kwargs):
     run_steps(OptionCriticAgent(config))
 
 
-def option_ciritc_pixel(**kwargs):
+def option_critic_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('skip', False)
     config = Config()
@@ -510,5 +510,5 @@ if __name__ == '__main__':
     # categorical_dqn_pixel(game=game)
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
-    # option_ciritc_pixel(game=game)
+    # option_critic_pixel(game=game)
     # ppo_pixel(game=game)

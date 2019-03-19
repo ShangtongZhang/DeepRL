@@ -22,15 +22,17 @@ RUN pip3 install pip --upgrade
 RUN add-apt-repository ppa:jamesh/snap-support && apt-get update && apt install -y patchelf
 RUN rm -rf /var/lib/apt/lists/*
 
+# For some reason, I have to use a different account from the default one.
+# This is absolutely optional and not recommended. You can remove them safely.
+# But be sure to make corresponding changes to all the scripts.
+
 WORKDIR /shaang
 RUN chmod -R 777 /shaang
 RUN chmod -R 777 /usr/local
 
-# This UID is nothing special
 RUN useradd -d /shaang -u 13071 shaang
 USER shaang
 
-# Install Mujoco
 RUN mkdir -p /shaang/.mujoco \
     && wget https://www.roboti.us/download/mjpro150_linux.zip -O mujoco.zip \
     && unzip mujoco.zip -d /shaang/.mujoco \
@@ -39,7 +41,8 @@ RUN wget https://www.roboti.us/download/mujoco200_linux.zip -O mujoco.zip \
     && unzip mujoco.zip -d /shaang/.mujoco \
     && rm mujoco.zip
 
-# Make sure you have the license, otherwise comment this line out
+# Make sure you have a license, otherwise comment this line out
+# Of course you then cannot use Mujoco and DM Control, but Roboschool is still available
 COPY ./mjkey.txt /shaang/.mujoco/mjkey.txt
 
 ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
@@ -48,7 +51,6 @@ ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
 RUN pip install gym[mujoco] --upgrade
 RUN pip install mujoco-py
 
-# Install other requirements
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN pip install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines

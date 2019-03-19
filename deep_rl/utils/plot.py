@@ -1,9 +1,7 @@
-# Adapted from  https://github.com/openai/baselines/blob/master/baselines/results_plotter.py
-
-from baselines.bench.monitor import load_results
 import numpy as np
 import os
 import re
+
 
 class Plotter:
     COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
@@ -60,21 +58,6 @@ class Plotter:
             y = np.asarray(y)
 
         return x, y
-
-    # def average(self, xy_list, bin, max_timesteps, top_k=0):
-    #     if top_k:
-    #         perf = [np.max(y) for _, y in xy_list]
-    #         top_k_runs = np.argsort(perf)[-top_k:]
-    #         new_xy_list = []
-    #         for r, (x, y) in enumerate(xy_list):
-    #             if r in top_k_runs:
-    #                 new_xy_list.append((x, y))
-    #         xy_list = new_xy_list
-    #     new_x = np.arange(0, max_timesteps, bin)
-    #     new_y = []
-    #     for x, y in xy_list:
-    #         new_y.append(np.interp(new_x, x, y))
-    #     return new_x, np.asarray(new_y)
 
     def filter_log_dirs(self, pattern, negative_pattern=' ', root='./log', **kwargs):
         dirs = [item[0] for item in os.walk(root)]
@@ -134,7 +117,7 @@ class Plotter:
         kwargs.setdefault('agg', 'mean')
         import matplotlib.pyplot as plt
         l = len(games)
-        plt.figure(figsize=(l * 10, 10))
+        plt.figure(figsize=(l * 5, 5))
         for i, game in enumerate(games):
             plt.subplot(1, l, i + 1)
             for j, p in enumerate(kwargs['patterns']):
@@ -158,3 +141,4 @@ class Plotter:
             if not i:
                 plt.ylabel(kwargs['tag'])
             plt.title(game)
+            plt.legend()
