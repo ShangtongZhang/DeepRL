@@ -26,36 +26,30 @@ class InterOptionPGAgent(BaseAgent):
         self.is_initial_states = tensor(np.ones((config.num_workers))).byte()
         self.prev_options = self.is_initial_states.clone().long()
 
-    def sample_option(self, prediction, epsilon, prev_option, is_intial_states):
-        with torch.no_grad():
-            q_option = prediction['q']
-            pi_option = torch.zeros_like(q_option).add(epsilon / q_option.size(1))
-            greedy_option = q_option.argmax(dim=-1, keepdim=True)
-            prob = 1 - epsilon + epsilon / q_option.size(1)
-            prob = torch.zeros_like(pi_option).add(prob)
-            pi_option.scatter_(1, greedy_option, prob)
+    def compose_pi_hat(self, prediction, prev_option, is_intial_states):
+        inter_pi = prediction['inter_pi']
+        mask = torch.zeros_like(inter_pi)
+        mask[:, prev_option] = 1
+        beta = prediction['beta'].detach()
+        pi_hat = (1 - beta) * mask + beta * inter_pi
 
-            mask = torch.zeros_like(q_option)
-            mask[:, prev_option] = 1
-            beta = prediction['beta']
-            pi_hat_option = (1 - beta) * mask + beta * pi_option
+        is_intial_states = is_intial_states.view(-1, 1).expand(-1 ,inter_pi.size(1))
+        pi_hat = torch.where(is_intial_states, inter_pi, pi_hat)
+        return pi_hat
 
-            dist = torch.distributions.Categorical(probs=pi_option)
-            options = dist.sample()
-            dist = torch.distributions.Categorical(probs=pi_hat_option)
-            options_hat = dist.sample()
-
-            options = torch.where(is_intial_states, options, options_hat)
-        return options
 
     def step(self):
         config = self.config
-        storage = Storage(config.rollout_length, ['beta', 'o', 'beta_adv', 'prev_o', 'init'])
-
+        storage = Storage(config.rollout_length, ['beta', 'o', 'beta_adv', 'prev_o', 'init', 'inter_pi',
+                                                  'log_inter_pi', 'pi_hat', 'ent_pi_hat'])
         for _ in range(config.rollout_length):
             prediction = self.network(self.states)
-            epsilon = config.random_option_prob(config.num_workers)
-            options = self.sample_option(prediction, epsilon, self.prev_options, self.is_initial_states)
+
+            pi_hat = self.compose_pi_hat(prediction, self.prev_options, self.is_initial_states)
+            dist = torch.distributions.Categorical(probs=pi_hat)
+            options = dist.sample()
+            ent_pi_hat = dist.entropy()
+
             prediction['pi'] = prediction['pi'][self.worker_index, options]
             prediction['log_pi'] = prediction['log_pi'][self.worker_index, options]
             dist = torch.distributions.Categorical(probs=prediction['pi'])
@@ -73,7 +67,10 @@ class InterOptionPGAgent(BaseAgent):
                          'prev_o': self.prev_options.unsqueeze(-1),
                          'ent': entropy.unsqueeze(-1),
                          'a': actions.unsqueeze(-1),
-                         'init': self.is_initial_states.unsqueeze(-1).float()})
+                         'init': self.is_initial_states.unsqueeze(-1).float(),
+                         'pi_hat': pi_hat,
+                         'ent_pi_hat': ent_pi_hat.unsqueeze(-1),
+                         })
 
             self.is_initial_states = tensor(terminals).byte()
             self.prev_options = options
@@ -88,7 +85,7 @@ class InterOptionPGAgent(BaseAgent):
             storage.placeholder()
             betas = prediction['beta'][self.worker_index, self.prev_options]
             ret = (1 - betas) * prediction['q'][self.worker_index, self.prev_options] + \
-                  betas * torch.max(prediction['q'], dim=-1)[0]
+                  betas * (prediction['q'] * prediction['inter_pi']).mean(-1)
             ret = ret.unsqueeze(-1)
 
         for i in reversed(range(config.rollout_length)):
@@ -97,19 +94,25 @@ class InterOptionPGAgent(BaseAgent):
             storage.ret[i] = ret
             storage.adv[i] = adv
 
-            v = storage.q[i].max(dim=-1, keepdim=True)[0]
+            v = (storage.q[i] * storage.inter_pi[i]).mean(-1).unsqueeze(-1)
             q = storage.q[i].gather(1, storage.prev_o[i])
             storage.beta_adv[i] = q - v + config.termination_regularizer
 
-        q, beta, log_pi, ret, adv, beta_adv, ent, option, action, initial_states, prev_o = \
-            storage.cat(['q', 'beta', 'log_pi', 'ret', 'adv', 'beta_adv', 'ent', 'o', 'a', 'init', 'prev_o'])
+        q, beta, log_pi, ret, adv, beta_adv, ent, option, action, initial_states, prev_o, pi_hat, ent_pi_hat = \
+            storage.cat(['q', 'beta', 'log_pi', 'ret', 'adv', 'beta_adv', 'ent', 'o', 'a', 'init', 'prev_o', 'pi_hat', 'ent_pi_hat'])
 
-        q_loss = (q.gather(1, option) - ret.detach()).pow(2).mul(0.5).mean()
+        q_o = q.gather(1, option)
+        v_hat = (q * pi_hat).mean(-1).unsqueeze(-1)
+        adv_hat = (q_o - v_hat).detach()
+        pi_hat_loss = -pi_hat.log().gather(1, option) * adv_hat - config.entropy_weight * ent_pi_hat
+        pi_hat_loss = pi_hat_loss.mean()
+
+        q_loss = (q_o - ret.detach()).pow(2).mul(0.5).mean()
         pi_loss = -(log_pi.gather(1, action) * adv.detach()) - config.entropy_weight * ent
         pi_loss = pi_loss.mean()
         beta_loss = (beta.gather(1, prev_o) * beta_adv.detach() * (1 - initial_states)).mean()
 
         self.optimizer.zero_grad()
-        (pi_loss + q_loss + beta_loss).backward()
+        (pi_hat_loss + pi_loss + q_loss + beta_loss).backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()

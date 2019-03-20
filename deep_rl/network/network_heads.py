@@ -220,3 +220,36 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
                 'log_pi_a': log_prob,
                 'ent': entropy,
                 'v': v}
+
+
+class InterOptionPGNet(nn.Module, BaseNet):
+    def __init__(self, body, action_dim, num_options):
+        super(InterOptionPGNet, self).__init__()
+        self.fc_q = layer_init(nn.Linear(body.feature_dim, num_options))
+        self.fc_inter_pi = layer_init(nn.Linear(body.feature_dim, num_options))
+        self.fc_pi = layer_init(nn.Linear(body.feature_dim, num_options * action_dim))
+        self.fc_beta = layer_init(nn.Linear(body.feature_dim, num_options))
+        self.num_options = num_options
+        self.action_dim = action_dim
+        self.body = body
+        self.to(Config.DEVICE)
+
+    def forward(self, x):
+        phi = self.body(tensor(x))
+        q = self.fc_q(phi)
+        beta = F.sigmoid(self.fc_beta(phi))
+        pi = self.fc_pi(phi)
+        pi = pi.view(-1, self.num_options, self.action_dim)
+        log_pi = F.log_softmax(pi, dim=-1)
+        pi = F.softmax(pi, dim=-1)
+
+        inter_pi = self.fc_inter_pi(phi)
+        log_inter_pi = F.log_softmax(inter_pi, dim=-1)
+        inter_pi = F.softmax(inter_pi, dim=-1)
+
+        return {'q': q,
+                'beta': beta,
+                'log_pi': log_pi,
+                'pi': pi,
+                'log_inter_pi': log_inter_pi,
+                'inter_pi': inter_pi}
