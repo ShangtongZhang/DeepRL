@@ -22,8 +22,14 @@ RUN pip3 install pip --upgrade
 RUN add-apt-repository ppa:jamesh/snap-support && apt-get update && apt install -y patchelf
 RUN rm -rf /var/lib/apt/lists/*
 
+# For some reason, I have to use a different account from the default one.
+# This is absolutely optional and not recommended. You can remove them safely.
+# But be sure to make corresponding changes to all the scripts.
+
 WORKDIR /shaang
 RUN chmod -R 777 /shaang
+RUN chmod -R 777 /usr/local
+
 RUN useradd -d /shaang -u 13071 shaang
 USER shaang
 
@@ -35,24 +41,18 @@ RUN wget https://www.roboti.us/download/mujoco200_linux.zip -O mujoco.zip \
     && unzip mujoco.zip -d /shaang/.mujoco \
     && rm mujoco.zip
 
-RUN export PATH=$PATH:$HOME/.local/bin
-# Make sure you have the license
+# Make sure you have a license, otherwise comment this line out
+# Of course you then cannot use Mujoco and DM Control, but Roboschool is still available
 COPY ./mjkey.txt /shaang/.mujoco/mjkey.txt
+
 ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
 ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
 
-RUN python3 -m venv py3.5
-RUN echo "source /shaang/py3.5/bin/activate" >> /shaang/.bashrc
-RUN . py3.5/bin/activate && pip install pip --upgrade
-RUN . py3.5/bin/activate && pip install wheel numpy cffi cython lockfile glfw imageio absl-py pyparsing
-RUN . py3.5/bin/activate && pip install gym[mujoco] --upgrade
-RUN . py3.5/bin/activate && pip install mujoco-py
-RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/shaang/.mujoco/mjpro150/bin" >> /shaang/.bashrc
-RUN echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/shaang/.mujoco/mjpro200_linux/bin" >> /shaang/.bashrc
+RUN pip install gym[mujoco] --upgrade
+RUN pip install mujoco-py
 
-# install other requirements
 COPY requirements.txt requirements.txt
-RUN . py3.5/bin/activate && pip install -r requirements.txt
-RUN . py3.5/bin/activate && pip install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines
+RUN pip install -r requirements.txt
+RUN pip install git+git://github.com/openai/baselines.git@8e56dd#egg=baselines
 
 WORKDIR /shaang/DeepRL

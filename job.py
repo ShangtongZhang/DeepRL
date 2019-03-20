@@ -180,13 +180,26 @@ def dm_control_batch():
         'dm-walker-run',
     ]
 
+    games = [
+        'dm-walker-stand',
+        # 'dm-walker-walk',
+        # 'dm-walker-run',
+    ]
+
+    residuals = [0, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.0]
+
     params = []
     for game in reversed(games):
         for r in range(5):
-            params.append(dict(game=game, run=r))
+            for res in residuals:
+                for sym in [False, True]:
+                    params.append(dict(game=game, run=r, residual=res, symmetric=sym))
 
-    residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
-    residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
+    params = params[40:]
+
+    # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
+    # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
+    residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True)
 
     exit()
 
@@ -210,7 +223,6 @@ def batch_atari():
         for r in range(4):
             # params.append(dict(residual=0, target_net_residual=True, game=game, run=r))
             params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r))
-
 
     residual_dqn_pixel_atari(**params[cf.i1])
 
@@ -479,6 +491,7 @@ def residual_ddpg_continuous(**kwargs):
     kwargs.setdefault('state_norm', False)
     kwargs.setdefault('skip', True)
     kwargs.setdefault('residual', 0.1)
+    kwargs.setdefault('symmetric', True)
     config = Config()
     config.merge(kwargs)
 
@@ -561,11 +574,10 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    # dm_control_batch()
+    dm_control_batch()
     # select_device(0)
     # batch_atari()
     # batch()
-
 
     # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'
@@ -575,7 +587,10 @@ if __name__ == '__main__':
     # game = 'Humanoid-v2'
     # game = 'Hopper-v2'
     # game = 'dm-cartpole-swingup'
-    # residual_ddpg_continuous(game=game, residual=0.05, target_net_residual=True)
+    residual_ddpg_continuous(game=game,
+                             residual=0.05,
+                             target_net_residual=True,
+                             symmetric=False)
 
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
