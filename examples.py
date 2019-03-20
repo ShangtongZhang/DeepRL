@@ -449,39 +449,6 @@ def ddpg_continuous(**kwargs):
     run_steps(DDPGAgent(config))
 
 
-def plot():
-    import matplotlib.pyplot as plt
-    plotter = Plotter()
-    dirs = [
-        'a2c_pixel_atari-181026-160814',
-        'dqn_pixel_atari-181026-160501',
-        'n_step_dqn_pixel_atari-181026-160906',
-        'option_ciritc_pixel_atari-181026-160931',
-        'ppo_pixel_atari-181028-092202',
-        'quantile_regression_dqn_pixel_atari-181026-160630',
-        'categorical_dqn_pixel_atari-181026-160743',
-    ]
-    names = [
-        'A2C',
-        'DQN',
-        'NStepDQN',
-        'OptionCritic',
-        'PPO',
-        'QRDQN',
-        'C51'
-    ]
-
-    plt.figure(0)
-    for i, dir in enumerate(dirs):
-        data = plotter.load_results(['./data/benchmark/%s' % (dir)], episode_window=100)
-        x, y = data[0]
-        plt.plot(x, y, label=names[i])
-    plt.xlabel('steps')
-    plt.ylabel('episode return')
-    plt.legend()
-    plt.savefig('./images/breakout.png')
-
-
 if __name__ == '__main__':
     mkdir('log')
     mkdir('tf_log')
