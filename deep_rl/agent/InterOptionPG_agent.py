@@ -37,7 +37,6 @@ class InterOptionPGAgent(BaseAgent):
         pi_hat = torch.where(is_intial_states, inter_pi, pi_hat)
         return pi_hat
 
-
     def step(self):
         config = self.config
         storage = Storage(config.rollout_length, ['beta', 'o', 'beta_adv', 'prev_o', 'init', 'inter_pi',
@@ -104,7 +103,7 @@ class InterOptionPGAgent(BaseAgent):
         q_o = q.gather(1, option)
         v_hat = (q * pi_hat).mean(-1).unsqueeze(-1)
         adv_hat = (q_o - v_hat).detach()
-        pi_hat_loss = -pi_hat.log().gather(1, option) * adv_hat - config.entropy_weight * ent_pi_hat
+        pi_hat_loss = -pi_hat.add(1e-5).log().gather(1, option) * adv_hat - config.entropy_weight * ent_pi_hat
         pi_hat_loss = pi_hat_loss.mean()
 
         q_loss = (q_o - ret.detach()).pow(2).mul(0.5).mean()

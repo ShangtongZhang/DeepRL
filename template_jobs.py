@@ -127,7 +127,7 @@ def IOPG_pixel(**kwargs):
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.rollout_length = 5
-    config.gradient_clip = 5
+    config.gradient_clip = 0.5
     config.max_steps = int(2e7)
     config.entropy_weight = 0.01
     config.termination_regularizer = 0.01
