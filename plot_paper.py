@@ -181,7 +181,8 @@ def plot_mujoco_learning_curves(**kwargs):
                       **kwargs)
         if not kwargs['ddpg']:
             plt.plot(rnd_x, rnd_y, color='black', linestyle=':')
-        plt.xticks(*x_ticks)
+        plt.xticks(*x_ticks, fontsize=30)
+        plt.tick_params(axis='y', labelsize=30)
         if j == 0:
             plt.legend(fontsize=20, frameon=False)
             if kwargs['tag'] == 'averaged_value':
@@ -343,14 +344,20 @@ def two_circle_heatmap():
     for i in range(len(coef[:-1])):
         for j in range(len(coef)):
             p0[i, j] = data[(coef[i], coef[j])]
+    p0 = np.flip(p0, 0)
+    sns.set(font_scale=2)
     ax = sns.heatmap(p0, cmap='YlGnBu')
-    ax.set_xticks(np.arange(0, 11) + 0.5)
-    ax.set_xticklabels(['%s' % x for x in coef])
-    ax.set_yticks(np.arange(0, 10) + 0.5)
-    ax.set_yticklabels(['%s' % x for x in coef[:-1]], rotation='horizontal')
-    plt.xlabel(r'$\lambda_2$', fontsize=20)
-    plt.ylabel(r'$\hat{\gamma}$', rotation='horizontal', fontsize=20)
-    plt.title(r'$\pi(\texttt{A} \rightarrow \texttt{B})$', fontsize=25)
+    # ax.set_xticks(np.arange(0, 11) + 0.5)
+    ax.set_xticks([0.5, 10.5])
+    ax.set_xticklabels(['0', '1'], fontsize=30)
+    # ax.set_xticklabels(['%s' % x for x in coef], fontsize=15)
+    # ax.set_yticks(np.arange(0, 10) + 0.5)
+    ax.set_yticks([0.5, 9.5])
+    ax.set_yticklabels(['0.9', '0'], rotation='horizontal', fontsize=30)
+    # ax.set_yticklabels(['%s' % x for x in reversed(coef[:-1])], rotation='horizontal', fontsize=15)
+    plt.xlabel(r'$\lambda_2$', fontsize=30)
+    plt.ylabel(r'$\hat{\gamma}$', rotation='horizontal', fontsize=30)
+    plt.title(r'$\pi(\texttt{A} \rightarrow \texttt{B})$', fontsize=30)
     plt.savefig('%s/mdp-heatmap.png' % (FOLDER), bbox_inches='tight')
     plt.show()
 
@@ -384,8 +391,10 @@ def two_circle_learning_curve():
     for i, p in enumerate(patterns):
         p = translate(p)
         plot(pattern='.*%s.*' % (p), color=i, label=labels[i], **kwargs)
-    plt.xlabel('Steps', fontsize=20)
-    plt.ylabel(r'$\pi(\texttt{A} \rightarrow \texttt{B})$', fontsize=20)
+    plt.xticks([0, int(1e4)], ['0', r'$10^4$'], fontsize=30)
+    plt.xlabel('Steps', fontsize=30)
+    plt.yticks([0, 1], ['0', '1'], fontsize=30)
+    plt.ylabel(r'$\pi(\texttt{A} \rightarrow \texttt{B})$', fontsize=30)
     plt.legend(fontsize=30, frameon=False)
     plt.savefig('%s/mdp-curve.png' % (FOLDER), bbox_inches='tight')
     plt.show()
@@ -448,12 +457,12 @@ def plot_geoff_pac_heatmap(key='J'):
 if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
-    plot_parameter_study('mean')
+    # plot_parameter_study('mean')
     # plot_geoff_pac_heatmap('J')
-    # plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=False)
-    # plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
-    # plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=False)
-    # plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=True)
+    plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=False)
+    plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
+    plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=False)
+    plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=True)
 
     # extract_heatmap_data()
     # extract_geoff_pac_heatmap()
