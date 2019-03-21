@@ -338,25 +338,51 @@ def plot_dm_control():
         'dm-walker-run',
     ]
 
+
+    games = [
+        'dm-walker-stand',
+        # 'dm-walker-walk',
+        # 'dm-walker-run',
+    ]
+
     # games = games[-7:]
 
     patterns = [
-        'remark_residual-residual_0\.05-target_net_residual_True-run',
-        'remark_residual-residual_0-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.05-target_net_residual_True-run',
+        # 'remark_residual-residual_0-target_net_residual_True-run',
+
+        'remark_residual-residual_0-symmetric_False-target_net_residual_True-run',
+        'remark_residual-residual_0\.025-symmetric_False-target_net_residual_True-run',
+        'remark_residual-residual_0\.05-symmetric_False-target_net_residual_True-run',
+        'remark_residual-residual_0\.1-symmetric_False-target_net_residual_True-run',
+        'remark_residual-residual_0\.2-symmetric_False-target_net_residual_True-run',
+        'remark_residual-residual_0\.4-symmetric_False-target_net_residual_True-run',
+        'remark_residual-residual_0\.8-symmetric_False-target_net_residual_True-run',
+        'remark_residual-residual_0\.1-symmetric_False-target_net_residual_True-run',
+
+        'remark_residual-residual_0-symmetric_True-target_net_residual_True-run',
+        'remark_residual-residual_0\.025-symmetric_True-target_net_residual_True-run',
+        'remark_residual-residual_0\.05-symmetric_True-target_net_residual_True-run',
+        'remark_residual-residual_0\.1-symmetric_True-target_net_residual_True-run',
+        'remark_residual-residual_0\.2-symmetric_True-target_net_residual_True-run',
+        'remark_residual-residual_0\.4-symmetric_True-target_net_residual_True-run',
+        'remark_residual-residual_0\.8-symmetric_True-target_net_residual_True-run',
+        'remark_residual-residual_0\.1-symmetric_True-target_net_residual_True-run',
     ]
 
     l = len(games)
-    # plt.figure(figsize=(l * 15, 15))
-    plt.figure(figsize=(7 * 10, 4 * 10))
+    plt.figure(figsize=(l * 15, 15))
+    # plt.figure(figsize=(7 * 10, 4 * 10))
     for j, game in enumerate(games):
-        # plt.subplot(1, l, j + 1)
-        plt.subplot(4, 7, j+1)
+        plt.subplot(1, l, j + 1)
+        # plt.subplot(4, 7, j+1)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*dm-residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
+            # ddpg_plot(pattern='.*dm-residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
+            ddpg_plot(pattern='.*residual-params/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
     plt.show()
 
 
 if __name__ == '__main__':
-    plot_mujoco()
+    # plot_mujoco()
     # plot_atari()
-    # plot_dm_control()
+    plot_dm_control()
