@@ -181,9 +181,9 @@ def dm_control_batch():
     ]
 
     games = [
-        'dm-walker-stand',
-        # 'dm-walker-walk',
-        # 'dm-walker-run',
+        # 'dm-walker-stand',
+        'dm-walker-walk',
+        'dm-walker-run',
     ]
 
     residuals = [0, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.0]
@@ -192,10 +192,10 @@ def dm_control_batch():
     for game in reversed(games):
         for r in range(5):
             for res in residuals:
-                for sym in [False, True]:
+                for sym in [False]:
                     params.append(dict(game=game, run=r, residual=res, symmetric=sym))
 
-    params = params[40:]
+    params = params[:40]
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
