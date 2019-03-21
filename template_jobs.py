@@ -18,8 +18,8 @@ def batch_atari():
 
     algos = [
         IOPG_pixel,
-        OC_pixel,
-        a2c_pixel,
+        # OC_pixel,
+        # a2c_pixel,
     ]
 
     params = []
