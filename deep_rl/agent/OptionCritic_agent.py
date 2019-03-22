@@ -38,6 +38,7 @@ class OptionCriticAgent(BaseAgent):
             mask = torch.zeros_like(q_option)
             mask[:, prev_option] = 1
             beta = prediction['beta']
+            self.logger.add_scalar('beta', beta[0, prev_option[0]])
             pi_hat_option = (1 - beta) * mask + beta * pi_option
 
             dist = torch.distributions.Categorical(probs=pi_option)
@@ -100,7 +101,7 @@ class OptionCriticAgent(BaseAgent):
 
             v = storage.q[i].max(dim=-1, keepdim=True)[0] * (1 - storage.eps[i]) + storage.q[i].mean(-1).unsqueeze(-1) * storage.eps[i]
             q = storage.q[i].gather(1, storage.prev_o[i])
-            storage.beta_adv[i] = q - v + config.termination_regularizer
+            storage.beta_adv[i] = q - v + config.beta_reg
 
         q, beta, log_pi, ret, adv, beta_adv, ent, option, action, initial_states, prev_o = \
             storage.cat(['q', 'beta', 'log_pi', 'ret', 'adv', 'beta_adv', 'ent', 'o', 'a', 'init', 'prev_o'])

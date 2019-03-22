@@ -198,8 +198,7 @@ def a2c_feature(**kwargs):
     config.network_fn = lambda: CategoricalActorCriticNet(
         config.state_dim, config.action_dim, FCBody(config.state_dim))
     config.discount = 0.99
-    config.use_gae = True
-    config.gae_tau = 0.95
+    config.use_gae = False
     config.entropy_weight = 0.01
     config.rollout_length = 5
     config.gradient_clip = 0.5

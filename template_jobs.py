@@ -15,6 +15,7 @@ def batch_atari():
         # 'DemonAttackNoFrameskip-v4',
         # 'SeaquestNoFrameskip-v4',
     ]
+    game = games[cf.i // 14]
 
     algos = [
         IOPG_pixel,
@@ -22,14 +23,34 @@ def batch_atari():
         # a2c_pixel,
     ]
 
-    params = []
+    params = [
+        [OC_pixel, dict(game=game, remark='OC', beta_reg=0)],
+        [OC_pixel, dict(game=game, remark='OC', beta_reg=0.01)],
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='sample', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
 
-    for game in games:
-        for r in range(4):
-            for algo in algos:
-                params.append([algo, dict(game=game, run=r, remark=algo.__name__)])
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='sample', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
 
-    params = params[cf.i]
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0.01)],
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0.01)],
+
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0)],
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0)],
+
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0.1)],
+        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0.1)],
+
+    ]
+
+    # for game in games:
+    #     for r in range(4):
+    #         for algo in algos:
+    #             params.append([algo, dict(game=game, run=r, remark=algo.__name__)])
+
+    params = params[cf.i % 14]
     params[0](**params[1])
 
     exit()
@@ -93,6 +114,10 @@ def batch_atari():
 def IOPG_feature(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('skip', False)
+    kwargs.setdefault('pi_hat_grad', 'posterior')
+    kwargs.setdefault('beta_grad', 'indirect')
+    kwargs.setdefault('ent_hat', 0)
+    kwargs.setdefault('beta_reg', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -101,11 +126,9 @@ def IOPG_feature(**kwargs):
     config.eval_env = Task(config.game)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: InterOptionPGNet(FCBody(config.state_dim), config.action_dim, num_options=2)
-    config.random_option_prob = LinearSchedule(1.0, 0.1, 1e4)
     config.discount = 0.99
     config.target_network_update_freq = 200
     config.rollout_length = 5
-    config.termination_regularizer = 0.01
     config.entropy_weight = 0.01
     config.gradient_clip = 5
     run_steps(InterOptionPGAgent(config))
@@ -114,6 +137,10 @@ def IOPG_feature(**kwargs):
 def IOPG_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('skip', False)
+    kwargs.setdefault('pi_hat_grad', 'posterior')
+    kwargs.setdefault('beta_grad', 'indirect')
+    kwargs.setdefault('ent_hat', 0)
+    kwargs.setdefault('beta_reg', 0.01)
     config = Config()
     config.merge(kwargs)
 
@@ -130,13 +157,13 @@ def IOPG_pixel(**kwargs):
     config.gradient_clip = 0.5
     config.max_steps = int(2e7)
     config.entropy_weight = 0.01
-    config.termination_regularizer = 0.01
     run_steps(InterOptionPGAgent(config))
 
 
 def OC_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('skip', False)
+    kwargs.setdefault('beta_reg', 0.01)
     config = Config()
     config.merge(kwargs)
 
@@ -154,7 +181,6 @@ def OC_pixel(**kwargs):
     config.gradient_clip = 5
     config.max_steps = int(2e7)
     config.entropy_weight = 0.01
-    config.termination_regularizer = 0.01
     run_steps(OptionCriticAgent(config))
 
 
@@ -189,7 +215,21 @@ if __name__ == '__main__':
     select_device(0)
     batch_atari()
 
-    # select_device(-1)
+    select_device(-1)
     # batch_mujoco()
 
-    IOPG_feature(game='CartPole-v0')
+    from examples import *
+    # a2c_feature(game='LunarLander-v2')
+    # option_critic_feature(game='LunarLander-v2')
+    IOPG_feature(
+        # game='CartPole-v0',
+        game='LunarLander-v2',
+        # game='Acrobot-v1',
+        # pi_hat_grad='sample',
+        # pi_hat_grad='expected',
+        pi_hat_grad='posterior',
+        beta_grad='direct',
+        # beta_grad='indirect',
+        ent_hat=0.1,
+        beta_reg=0.01,
+    )
