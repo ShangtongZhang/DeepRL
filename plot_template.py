@@ -341,8 +341,8 @@ def plot_dm_control():
 
     games = [
         'dm-walker-stand',
-        # 'dm-walker-walk',
-        # 'dm-walker-run',
+        'dm-walker-walk',
+        'dm-walker-run',
     ]
 
     # games = games[-7:]
@@ -360,14 +360,14 @@ def plot_dm_control():
         'remark_residual-residual_0\.8-symmetric_False-target_net_residual_True-run',
         'remark_residual-residual_0\.1-symmetric_False-target_net_residual_True-run',
 
-        'remark_residual-residual_0-symmetric_True-target_net_residual_True-run',
-        'remark_residual-residual_0\.025-symmetric_True-target_net_residual_True-run',
-        'remark_residual-residual_0\.05-symmetric_True-target_net_residual_True-run',
-        'remark_residual-residual_0\.1-symmetric_True-target_net_residual_True-run',
-        'remark_residual-residual_0\.2-symmetric_True-target_net_residual_True-run',
-        'remark_residual-residual_0\.4-symmetric_True-target_net_residual_True-run',
-        'remark_residual-residual_0\.8-symmetric_True-target_net_residual_True-run',
-        'remark_residual-residual_0\.1-symmetric_True-target_net_residual_True-run',
+        # 'remark_residual-residual_0-symmetric_True-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.025-symmetric_True-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.05-symmetric_True-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.1-symmetric_True-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.2-symmetric_True-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.4-symmetric_True-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.8-symmetric_True-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.1-symmetric_True-target_net_residual_True-run',
     ]
 
     l = len(games)
