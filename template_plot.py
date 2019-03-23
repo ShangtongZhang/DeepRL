@@ -113,6 +113,37 @@ def plot_atari():
                        window=100,
                        )
 
+    plt.show()
+    plt.tight_layout()
+    # plt.savefig('images/Breakout.png', bbox_inches='tight')
+
+
+def plot_misc():
+    plotter = Plotter()
+    games = [
+        # 'BreakoutNoFrameskip-v4',
+        'AsterixNoFrameskip-v4',
+    ]
+
+    patterns = [
+        'beta_reg_0-remark_OC-run',
+        'beta_reg_0\.01-remark_OC-run',
+    ]
+
+    labels = patterns
+
+    plotter.plot_games(games=games,
+                       patterns=patterns,
+                       agg='mean',
+                       downsample=100,
+                       labels=labels,
+                       right_align=False,
+                       tag=plotter.RETURN_TRAIN,
+                       root='./tf_log',
+                       interpolation=0,
+                       window=100,
+                       )
+
     # plt.show()
     plt.tight_layout()
     plt.savefig('images/Breakout.png', bbox_inches='tight')
@@ -120,6 +151,7 @@ def plot_atari():
 
 if __name__ == '__main__':
     mkdir('images')
-    plot_ppo()
-    plot_ddpg()
-    plot_atari()
+    # plot_ppo()
+    # plot_ddpg()
+    # plot_atari()
+    plot_misc()
