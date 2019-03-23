@@ -10,7 +10,7 @@ def batch_atari():
     games = [
         'BreakoutNoFrameskip-v4',
         'AsterixNoFrameskip-v4',
-        'MsPacmanNoFrameskip-v4'
+        'MsPacmanNoFrameskip-v4',
         'AlienNoFrameskip-v4',
         # 'DemonAttackNoFrameskip-v4',
         # 'SeaquestNoFrameskip-v4',
@@ -49,7 +49,7 @@ def batch_atari():
     for game in games:
         for r in range(1):
             for beta_reg in [0, 0.01, 0.02, 0.04]:
-                params.append([OC_pixel, dict(game=game, run=r, reark='OC', beta_reg=beta_reg)])
+                params.append([OC_pixel, dict(game=game, run=r, remark='OC', beta_reg=beta_reg)])
     #         for algo in algos:
     #             params.append([algo, dict(game=game, run=r, remark=algo.__name__)])
 
