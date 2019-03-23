@@ -48,8 +48,8 @@ COPY ./mjkey.txt /shaang/.mujoco/mjkey.txt
 ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
 ENV LD_LIBRARY_PATH /shaang/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
 
-RUN pip install gym[mujoco] --upgrade
-RUN pip install mujoco-py
+RUN pip install mujoco-py==1.50.1.68
+RUN pip install gym[mujoco]
 
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
