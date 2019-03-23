@@ -304,14 +304,16 @@ def option_critic_feature(**kwargs):
     config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
     config.eval_env = Task(config.game)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda: OptionCriticNet(FCBody(config.state_dim), config.action_dim, num_options=2)
+    # config.network_fn = lambda: OptionCriticNet(FCBody(config.state_dim), config.action_dim, num_options=2)
+    config.network_fn = lambda: InterOptionPGNet(FCBody(config.state_dim), config.action_dim, num_options=2)
     config.random_option_prob = LinearSchedule(1.0, 0.1, 1e4)
     config.discount = 0.99
     config.target_network_update_freq = 200
     config.rollout_length = 5
-    config.termination_regularizer = 0.01
+    config.beta_reg = 0.01
     config.entropy_weight = 0.01
     config.gradient_clip = 5
+    config.save_interval = 100
     run_steps(OptionCriticAgent(config))
 
 

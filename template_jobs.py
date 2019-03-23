@@ -8,49 +8,52 @@ def batch_atari():
     cf.merge()
 
     games = [
-        # 'BreakoutNoFrameskip-v4',
+        'BreakoutNoFrameskip-v4',
         'AsterixNoFrameskip-v4',
         'MsPacmanNoFrameskip-v4'
-        # 'AlienNoFrameskip-v4',
+        'AlienNoFrameskip-v4',
         # 'DemonAttackNoFrameskip-v4',
         # 'SeaquestNoFrameskip-v4',
     ]
-    game = games[cf.i // 14]
+    # game = games[cf.i // 14]
 
-    algos = [
-        IOPG_pixel,
-        # OC_pixel,
-        # a2c_pixel,
-    ]
+    # algos = [
+    #     IOPG_pixel,
+    #     # OC_pixel,
+    #     # a2c_pixel,
+    # ]
+    #
+    # params = [
+    #     [OC_pixel, dict(game=game, remark='OC', beta_reg=0)],
+    #     [OC_pixel, dict(game=game, remark='OC', beta_reg=0.01)],
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='sample', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
+    #
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='sample', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
+    #
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0.01)],
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0.01)],
+    #
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0)],
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0)],
+    #
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0.1)],
+    #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0.1)],
+    #
+    # ]
 
-    params = [
-        [OC_pixel, dict(game=game, remark='OC', beta_reg=0)],
-        [OC_pixel, dict(game=game, remark='OC', beta_reg=0.01)],
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='sample', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
-
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='sample', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
-
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0.01)],
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0.01)],
-
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0)],
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0)],
-
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0.1)],
-        [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0.1)],
-
-    ]
-
-    # for game in games:
-    #     for r in range(4):
+    params = []
+    for game in games:
+        for r in range(1):
+            for beta_reg in [0, 0.01, 0.02, 0.04]:
+                params.append([OC_pixel, dict(game=game, run=r, reark='OC', beta_reg=beta_reg)])
     #         for algo in algos:
     #             params.append([algo, dict(game=game, run=r, remark=algo.__name__)])
 
-    params = params[cf.i % 14]
+    params = params[cf.i]
     params[0](**params[1])
 
     exit()
@@ -171,7 +174,7 @@ def OC_pixel(**kwargs):
     config.eval_env = Task(config.game)
     config.num_workers = 16
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda: OptionCriticNet(NatureConvBody(), config.action_dim, num_options=4)
+    config.network_fn = lambda: InterOptionPGNet(NatureConvBody(), config.action_dim, num_options=4)
     config.random_option_prob = LinearSchedule(0.1)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -181,6 +184,7 @@ def OC_pixel(**kwargs):
     config.gradient_clip = 5
     config.max_steps = int(2e7)
     config.entropy_weight = 0.01
+    config.save_interval = config.num_workers * int(1e5)
     run_steps(OptionCriticAgent(config))
 
 
@@ -215,12 +219,12 @@ if __name__ == '__main__':
     select_device(0)
     batch_atari()
 
-    select_device(-1)
+    # select_device(-1)
     # batch_mujoco()
 
     from examples import *
     # a2c_feature(game='LunarLander-v2')
-    # option_critic_feature(game='LunarLander-v2')
+    # option_critic_feature(game='CartPole-v0')
     IOPG_feature(
         # game='CartPole-v0',
         game='LunarLander-v2',
