@@ -22,7 +22,7 @@ except ImportError:
     pass
 
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
-def make_env(env_id, seed, rank, log_dir, episode_life=True):
+def make_env(env_id, seed, rank, log_dir, episode_life=True, reward_delay=0):
     def _thunk():
         random_seed(seed)
         if env_id.startswith("dm"):
@@ -50,6 +50,9 @@ def make_env(env_id, seed, rank, log_dir, episode_life=True):
             if len(obs_shape) == 3:
                 env = TransposeImage(env)
             env = FrameStack(env, 4)
+
+        if reward_delay:
+            env = RewardDelay(env, reward_delay)
 
         return env
 
@@ -138,6 +141,26 @@ class FrameStack(FrameStack_):
         return LazyFrames(list(self.frames))
 
 
+class RewardDelay(gym.Wrapper):
+    def __init__(self, env, reward_delay):
+        gym.Wrapper.__init__(self, env)
+        self.rewards = []
+        self.delay = reward_delay
+
+    def step(self, action):
+        obs, reward, done, info = self.env.step(action)
+        self.rewards.append(reward)
+        if done or len(self.rewards) >= self.delay:
+            reward = np.sum(self.rewards)
+            self.rewards = []
+        else:
+            reward = 0
+        return obs, reward, done, info
+
+    def reset(self):
+        return self.env.reset()
+
+
 # The original one in baselines is really bad
 class DummyVecEnv(VecEnv):
     def __init__(self, env_fns, auto_reset=True):
@@ -166,6 +189,7 @@ class DummyVecEnv(VecEnv):
     def close(self):
         return
 
+
 class Task:
     def __init__(self,
                  name,
@@ -174,10 +198,11 @@ class Task:
                  log_dir=None,
                  episode_life=True,
                  seed=np.random.randint(int(1e5)),
-                 auto_reset=True):
+                 auto_reset=True,
+                 reward_delay=0):
         if log_dir is not None:
             mkdir(log_dir)
-        envs = [make_env(name, seed, i, log_dir, episode_life) for i in range(num_envs)]
+        envs = [make_env(name, seed, i, log_dir, episode_life, reward_delay) for i in range(num_envs)]
         if single_process:
             self.env = DummyVecEnv(envs, auto_reset)
         else:

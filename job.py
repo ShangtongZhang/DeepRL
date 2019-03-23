@@ -181,21 +181,21 @@ def dm_control_batch():
     ]
 
     games = [
-        # 'dm-walker-stand',
+        'dm-walker-stand',
         'dm-walker-walk',
         'dm-walker-run',
     ]
 
-    residuals = [0, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.0]
+    # residuals = [0, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.0]
 
     params = []
     for game in reversed(games):
         for r in range(5):
-            for res in residuals:
-                for sym in [False]:
-                    params.append(dict(game=game, run=r, residual=res, symmetric=sym))
+            for delay in [0, 5, 10, 20, 40]:
+                for res in [0, 0.05]:
+                    params.append(dict(game=game, run=r, residual=res, delay=delay))
 
-    params = params[:40]
+    params = params[75:]
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
@@ -492,11 +492,12 @@ def residual_ddpg_continuous(**kwargs):
     kwargs.setdefault('skip', True)
     kwargs.setdefault('residual', 0.1)
     kwargs.setdefault('symmetric', True)
+    kwargs.setdefault('delay', 0)
     config = Config()
     config.merge(kwargs)
 
     config.task_fn = lambda: Task(kwargs['game'])
-    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
+    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'], reward_delay=config.delay)
     config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
@@ -590,7 +591,8 @@ if __name__ == '__main__':
     residual_ddpg_continuous(game=game,
                              residual=0.05,
                              target_net_residual=True,
-                             symmetric=False)
+                             symmetric=False,
+                             delay=10)
 
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
