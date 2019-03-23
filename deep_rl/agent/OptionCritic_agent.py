@@ -50,7 +50,7 @@ class OptionCriticAgent(BaseAgent):
 
     def step(self):
         config = self.config
-        storage = Storage(config.rollout_length, ['beta', 'o', 'beta_adv', 'prev_o', 'init'])
+        storage = Storage(config.rollout_length, ['beta', 'o', 'beta_adv', 'prev_o', 'init', 'eps'])
 
         for _ in range(config.rollout_length):
             prediction = self.network(self.states)
@@ -73,7 +73,8 @@ class OptionCriticAgent(BaseAgent):
                          'prev_o': self.prev_options.unsqueeze(-1),
                          'ent': entropy.unsqueeze(-1),
                          'a': actions.unsqueeze(-1),
-                         'init': self.is_initial_states.unsqueeze(-1).float()})
+                         'init': self.is_initial_states.unsqueeze(-1).float(),
+                         'eps': epsilon})
 
             self.is_initial_states = tensor(terminals).byte()
             self.prev_options = options
@@ -97,7 +98,7 @@ class OptionCriticAgent(BaseAgent):
             storage.ret[i] = ret
             storage.adv[i] = adv
 
-            v = storage.q[i].max(dim=-1, keepdim=True)[0]
+            v = storage.q[i].max(dim=-1, keepdim=True)[0] * (1 - storage.eps[i]) + storage.q[i].mean(-1).unsqueeze(-1) * storage.eps[i]
             q = storage.q[i].gather(1, storage.prev_o[i])
             storage.beta_adv[i] = q - v + config.termination_regularizer
 
