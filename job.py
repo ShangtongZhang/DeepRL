@@ -191,11 +191,12 @@ def dm_control_batch():
     params = []
     for game in reversed(games):
         for r in range(5):
-            for delay in [0, 5, 10, 20, 40]:
+            # for delay in [0, 5, 10, 20, 40]:
+            for delay in [100, 200, 400]:
                 for res in [0, 0.05]:
                     params.append(dict(game=game, run=r, residual=res, delay=delay))
 
-    params = params[75:]
+    params = params[:45]
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
