@@ -86,6 +86,8 @@ class InterOptionAgent(BaseAgent):
             pi_hat = self.compose_pi_hat(prediction, self.prev_options, self.is_initial_states, epsilon)
             dist = torch.distributions.Categorical(probs=pi_hat)
             options = dist.sample()
+            if config.random_option:
+                options = tensor(np.random.randint(0, config.num_options, size=options.size())).long()
             ent_pi_hat = dist.entropy()
 
             all_pi = prediction['pi']
@@ -135,23 +137,26 @@ class InterOptionAgent(BaseAgent):
             storage.cat(['q', 'ret', 'o', 'a', 'init', 'prev_o', 'pi_hat', 'ent_pi_hat', 'all_pi'])
 
         q_o = q.gather(1, option)
-        v_hat = (q * pi_hat).mean(-1).unsqueeze(-1)
-        adv_hat = (q_o - v_hat).detach()
-        if config.pi_hat_grad == 'sample':
-            pi_hat_loss = -pi_hat.add(1e-5).log().gather(1, option) * adv_hat - config.ent_hat * ent_pi_hat
-        elif config.pi_hat_grad == 'expected':
-            pi_hat_loss = -(pi_hat * q.detach()).sum(-1) - config.ent_hat * ent_pi_hat
-        elif config.pi_hat_grad == 'posterior':
-            pi_a = all_pi.gather(-1, action.unsqueeze(-1).expand(-1, pi_hat.size(1), -1))
-            post = pi_hat * pi_a.squeeze(-1)
-            post = post / post.sum(-1).unsqueeze(-1)
-            post = post.detach()
-            pi_hat_loss = -(pi_hat.add(1e-5).log() * q.detach() * post).sum(-1) - config.ent_hat * ent_pi_hat
-        else:
-            raise NotImplementedError
-        pi_hat_loss = pi_hat_loss.mean()
-
         q_loss = (q_o - ret.detach()).pow(2).mul(0.5).mean()
+
+        if config.control_type == 'pi':
+            v_hat = (q * pi_hat).mean(-1).unsqueeze(-1)
+            adv_hat = (q_o - v_hat).detach()
+            if config.pi_hat_grad == 'sample':
+                pi_hat_loss = -pi_hat.add(1e-5).log().gather(1, option) * adv_hat - config.ent_hat * ent_pi_hat
+            elif config.pi_hat_grad == 'expected':
+                pi_hat_loss = -(pi_hat * q.detach()).sum(-1) - config.ent_hat * ent_pi_hat
+            elif config.pi_hat_grad == 'posterior':
+                pi_a = all_pi.gather(-1, action.unsqueeze(-1).expand(-1, pi_hat.size(1), -1))
+                post = pi_hat * pi_a.squeeze(-1)
+                post = post / post.sum(-1).unsqueeze(-1)
+                post = post.detach()
+                pi_hat_loss = -(pi_hat.add(1e-5).log() * q.detach() * post).sum(-1) - config.ent_hat * ent_pi_hat
+            else:
+                raise NotImplementedError
+            pi_hat_loss = pi_hat_loss.mean()
+        else:
+            pi_hat_loss = 0
 
         self.optimizer.zero_grad()
         (pi_hat_loss + q_loss).backward()
