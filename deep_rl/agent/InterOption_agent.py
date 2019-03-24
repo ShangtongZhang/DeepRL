@@ -47,7 +47,6 @@ class InterOptionAgent(BaseAgent):
         mask = torch.zeros_like(inter_pi)
         mask[:, prev_option] = 1
         beta = prediction['beta'].detach()
-        # self.logger.add_scalar('beta', beta[0, prev_option[0]])
         pi_hat = (1 - beta) * mask + beta * inter_pi
 
         is_intial_states = is_intial_states.view(-1, 1).expand(-1 ,inter_pi.size(1))
@@ -91,6 +90,7 @@ class InterOptionAgent(BaseAgent):
 
             all_pi = prediction['pi']
             prediction['pi'] = prediction['pi'][self.worker_index, options]
+            dist = torch.distributions.Categorical(probs=prediction['pi'])
             actions = dist.sample()
 
             next_states, rewards, terminals, info = self.task.step(to_np(actions))
@@ -108,7 +108,6 @@ class InterOptionAgent(BaseAgent):
                          'ent_pi_hat': ent_pi_hat.unsqueeze(-1),
                          'all_pi': all_pi,
                          })
-            self.logger.add_scalar('pi_hat_ent', ent_pi_hat.mean())
 
             self.is_initial_states = tensor(terminals).byte()
             self.prev_options = options
