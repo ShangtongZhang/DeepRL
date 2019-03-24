@@ -163,12 +163,47 @@ def IOPG_pixel(**kwargs):
     run_steps(InterOptionPGAgent(config))
 
 
+def IO_pixel(**kwargs):
+    generate_tag(kwargs)
+    kwargs.setdefault('skip', False)
+    kwargs.setdefault('pi_hat_grad', 'posterior')
+    kwargs.setdefault('ent_hat', 0)
+    kwargs.setdefault('beta_reg', 0.01)
+    kwargs.setdefault('pretrained_phi', True)
+    kwargs.setdefault('verify', False)
+    kwargs.setdefault('control_type', 'q')
+    config = Config()
+    config.merge(kwargs)
+
+    config.saved_option_net = 'data/options/model-OptionCriticAgent-%s-beta_reg_%s-remark_OC-run-0.bin' % \
+                              (config.game, config.beta_reg)
+    config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
+    config.eval_env = Task(config.game)
+    config.num_workers = 16
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
+    config.network_fn = lambda: InterOptionPGNet(NatureConvBody(), config.action_dim, num_options=4)
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.random_option_prob = LinearSchedule(1.0, 0.05, 1e6)
+    config.discount = 0.99
+    config.target_network_update_freq = 10000
+    config.rollout_length = 5
+    config.gradient_clip = 0.5
+    config.max_steps = int(2e7)
+    config.entropy_weight = 0.01
+    run_steps(InterOptionAgent(config))
+
+
 def OC_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('skip', False)
     kwargs.setdefault('beta_reg', 0.01)
+    kwargs.setdefault('verify', False)
     config = Config()
     config.merge(kwargs)
+
+    config.saved_option_net = 'data/options/model-OptionCriticAgent-%s-beta_reg_%s-remark_OC-run-0.bin' % \
+                              (config.game, config.beta_reg)
 
     config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
     config.eval_env = Task(config.game)
@@ -185,7 +220,9 @@ def OC_pixel(**kwargs):
     config.max_steps = int(2e7)
     config.entropy_weight = 0.01
     config.save_interval = config.num_workers * int(1e5)
-    run_steps(OptionCriticAgent(config))
+    agent = OptionCriticAgent(config)
+    agent.load(config.saved_option_net)
+    run_steps(agent)
 
 
 def a2c_pixel(**kwargs):
@@ -216,24 +253,36 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
 
-    select_device(0)
-    batch_atari()
+    # select_device(0)
+    # batch_atari()
 
     # select_device(-1)
     # batch_mujoco()
 
+    game = 'AlienNoFrameskip-v4'
+    # OC_pixel(
+    #     game=game,
+    #     verify=True,
+    # )
+    IO_pixel(
+        game=game,
+        pi_hat_grad='posterior',
+        verify=True
+    )
+
     from examples import *
+
     # a2c_feature(game='LunarLander-v2')
     # option_critic_feature(game='CartPole-v0')
-    IOPG_feature(
-        # game='CartPole-v0',
-        game='LunarLander-v2',
-        # game='Acrobot-v1',
-        # pi_hat_grad='sample',
-        # pi_hat_grad='expected',
-        pi_hat_grad='posterior',
-        beta_grad='direct',
-        # beta_grad='indirect',
-        ent_hat=0.1,
-        beta_reg=0.01,
-    )
+    # IOPG_feature(
+    #     # game='CartPole-v0',
+    #     game='LunarLander-v2',
+    #     # game='Acrobot-v1',
+    #     # pi_hat_grad='sample',
+    #     # pi_hat_grad='expected',
+    #     pi_hat_grad='posterior',
+    #     beta_grad='direct',
+    #     # beta_grad='indirect',
+    #     ent_hat=0.1,
+    #     beta_reg=0.01,
+    # )

@@ -234,8 +234,9 @@ class InterOptionPGNet(nn.Module, BaseNet):
         self.body = body
         self.to(Config.DEVICE)
 
-    def forward(self, x):
-        phi = self.body(tensor(x))
+    def forward(self, x, phi=None):
+        if phi is None:
+            phi = self.body(tensor(x))
         q = self.fc_q(phi)
         beta = F.sigmoid(self.fc_beta(phi))
         pi = self.fc_pi(phi)
@@ -252,4 +253,5 @@ class InterOptionPGNet(nn.Module, BaseNet):
                 'log_pi': log_pi,
                 'pi': pi,
                 'log_inter_pi': log_inter_pi,
-                'inter_pi': inter_pi}
+                'inter_pi': inter_pi,
+                'phi': phi}

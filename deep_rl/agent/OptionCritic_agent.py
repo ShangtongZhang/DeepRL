@@ -85,6 +85,8 @@ class OptionCriticAgent(BaseAgent):
             if self.total_steps // config.num_workers % config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())
 
+        if config.verify: return
+
         with torch.no_grad():
             prediction = self.target_network(self.states)
             storage.placeholder()
