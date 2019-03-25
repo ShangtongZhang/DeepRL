@@ -191,12 +191,12 @@ def dm_control_batch():
     params = []
     for game in reversed(games):
         for r in range(5):
-            # for delay in [0, 5, 10, 20, 40]:
-            for delay in [100, 200, 400]:
+            for delay in [0, 5, 10, 20, 40, 80]:
+            # for delay in [100, 200, 400]:
                 for res in [0, 0.05]:
                     params.append(dict(game=game, run=r, residual=res, delay=delay))
 
-    params = params[:45]
+    params = params[90:]
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
@@ -497,8 +497,8 @@ def residual_ddpg_continuous(**kwargs):
     config = Config()
     config.merge(kwargs)
 
-    config.task_fn = lambda: Task(kwargs['game'])
-    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'], reward_delay=config.delay)
+    config.task_fn = lambda: Task(kwargs['game'], reward_delay=config.delay)
+    config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
     config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
     config.eval_episodes = 20
