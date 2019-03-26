@@ -185,7 +185,8 @@ class Storage:
 
     def add(self, data):
         for k, v in data.items():
-            assert k in self.keys
+            if k not in self.keys:
+                setattr(self, k, [])
             getattr(self, k).append(v)
 
     def placeholder(self):
