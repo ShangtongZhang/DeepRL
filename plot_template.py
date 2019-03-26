@@ -381,8 +381,8 @@ def plot_dm_control():
         # 'delay_40-remark_residual-residual_0\.05-target_net_residual_True-run',
         # 'delay_40-remark_residual-residual_0-target_net_residual_True-run',
 
-        'delay_400-remark_residual-residual_0\.05-target_net_residual_True-run',
-        'delay_400-remark_residual-residual_0-target_net_residual_True-run',
+        'delay_80-remark_residual-residual_0\.05-target_net_residual_True-run',
+        'delay_80-remark_residual-residual_0-target_net_residual_True-run',
     ]
 
     l = len(games)
