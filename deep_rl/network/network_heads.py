@@ -286,20 +286,13 @@ class OptionGaussianActorCriticNet(nn.Module, BaseNet):
         self.action_dim = action_dim
         self.to(Config.DEVICE)
 
-    def forward(self, obs, action=None):
+    def forward(self, obs):
         obs = tensor(obs)
         phi = self.phi_body(obs)
         phi_a = self.actor_body(phi)
         phi_o = self.option_body(phi)
         mean = F.tanh(self.fc_action(phi_a)).view(-1, self.num_options, self.action_dim)
         std = F.softplus(self.std).unsqueeze(0).expand(mean.size(0), -1, -1)
-
-        # v = self.fc_critic(phi_v)
-        # dist = torch.distributions.Normal(mean, F.softplus(self.std))
-        # if action is None:
-        #     action = dist.sample()
-        # log_prob = dist.log_prob(action).sum(-1).unsqueeze(-1)
-        # entropy = dist.entropy().sum(-1).unsqueeze(-1)
 
         q_o = self.fc_q_o(phi_o)
         beta = F.sigmoid(self.fc_beta(phi_o))
