@@ -118,7 +118,7 @@ def batch_atari():
 
 def IOPG_feature(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     kwargs.setdefault('pi_hat_grad', 'posterior')
     kwargs.setdefault('beta_grad', 'indirect')
     kwargs.setdefault('ent_hat', 0)
@@ -141,7 +141,7 @@ def IOPG_feature(**kwargs):
 
 def IOPG_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     kwargs.setdefault('pi_hat_grad', 'posterior')
     kwargs.setdefault('beta_grad', 'indirect')
     kwargs.setdefault('ent_hat', 0)
@@ -167,7 +167,7 @@ def IOPG_pixel(**kwargs):
 
 def IO_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     kwargs.setdefault('pi_hat_grad', 'posterior')
     kwargs.setdefault('ent_hat', 0.01)
     kwargs.setdefault('beta_reg', 0.01)
@@ -201,7 +201,7 @@ def IO_pixel(**kwargs):
 
 def OC_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     kwargs.setdefault('beta_reg', 0.01)
     kwargs.setdefault('verify', False)
     config = Config()
@@ -232,7 +232,7 @@ def OC_pixel(**kwargs):
 
 def a2c_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -254,7 +254,7 @@ def a2c_pixel(**kwargs):
 
 def a_squared_c_ppo_continuous(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     kwargs.setdefault('num_o', 4)
     kwargs.setdefault('learning', 'hb')
     config = Config()
@@ -287,7 +287,7 @@ def a_squared_c_ppo_continuous(**kwargs):
 
 def ppo_continuous(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
