@@ -25,7 +25,7 @@ class Config:
         self.discount = None
         self.target_network_update_freq = None
         self.exploration_steps = None
-        self.logger = None
+        self.log_level = 0
         self.history_length = None
         self.double_q = False
         self.tag = 'vanilla'

@@ -14,26 +14,25 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s: %(message)s'
 from .misc import *
 
 
-def get_logger(tag='default', skip=False, level=logging.INFO):
+def get_logger(tag='default', log_level=0):
     logger = logging.getLogger()
-    logger.setLevel(level)
+    logger.setLevel(logging.INFO)
     if tag is not None:
         fh = logging.FileHandler('./log/%s-%s.txt' % (tag, get_time_str()))
         fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s'))
-        fh.setLevel(level)
+        fh.setLevel(logging.INFO)
         logger.addHandler(fh)
-    return Logger(logger, './tf_log/logger-%s-%s' % (tag, get_time_str()), skip)
+    return Logger(logger, './tf_log/logger-%s-%s' % (tag, get_time_str()), log_level)
 
 
 class Logger(object):
-    def __init__(self, vanilla_logger, log_dir, skip=False):
-        if not skip:
-            self.writer = SummaryWriter(log_dir)
+    def __init__(self, vanilla_logger, log_dir, log_level=0):
+        self.log_level = log_level
+        self.writer = SummaryWriter(log_dir)
         if vanilla_logger is not None:
             self.info = vanilla_logger.info
             self.debug = vanilla_logger.debug
             self.warning = vanilla_logger.warning
-        self.skip = skip
         self.all_steps = {}
 
     def to_numpy(self, v):
@@ -48,8 +47,8 @@ class Logger(object):
         self.all_steps[tag] += 1
         return step
 
-    def add_scalar(self, tag, value, step=None):
-        if self.skip:
+    def add_scalar(self, tag, value, step=None, log_level=0):
+        if log_level > self.log_level:
             return
         value = self.to_numpy(value)
         if step is None:
@@ -58,8 +57,8 @@ class Logger(object):
             value = np.asarray([value])
         self.writer.add_scalar(tag, value, step)
 
-    def add_histogram(self, tag, values, step=None):
-        if self.skip:
+    def add_histogram(self, tag, values, step=None, log_level=0):
+        if log_level > self.log_level:
             return
         values = self.to_numpy(values)
         if step is None:

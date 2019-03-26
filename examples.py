@@ -10,7 +10,7 @@ from deep_rl import *
 # DQN
 def dqn_feature(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -33,13 +33,13 @@ def dqn_feature(**kwargs):
     config.gradient_clip = 5
     config.eval_interval = int(5e3)
     config.max_steps = 1e5
-    # config.async_actor = False
+    config.async_actor = False
     run_steps(DQNAgent(config))
 
 
 def dqn_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -73,7 +73,7 @@ def dqn_pixel(**kwargs):
 # QR DQN
 def quantile_regression_dqn_feature(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -99,7 +99,7 @@ def quantile_regression_dqn_feature(**kwargs):
 
 def quantile_regression_dqn_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -128,7 +128,7 @@ def quantile_regression_dqn_pixel(**kwargs):
 # C51
 def categorical_dqn_feature(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -157,7 +157,7 @@ def categorical_dqn_feature(**kwargs):
 
 def categorical_dqn_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -187,7 +187,7 @@ def categorical_dqn_pixel(**kwargs):
 # A2C
 def a2c_feature(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -208,7 +208,7 @@ def a2c_feature(**kwargs):
 
 def a2c_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -231,7 +231,7 @@ def a2c_pixel(**kwargs):
 
 def a2c_continuous(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -255,7 +255,7 @@ def a2c_continuous(**kwargs):
 # N-Step DQN
 def n_step_dqn_feature(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -274,7 +274,7 @@ def n_step_dqn_feature(**kwargs):
 
 def n_step_dqn_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -297,7 +297,7 @@ def n_step_dqn_pixel(**kwargs):
 # Option-Critic
 def option_critic_feature(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -318,7 +318,7 @@ def option_critic_feature(**kwargs):
 
 def option_critic_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -343,7 +343,7 @@ def option_critic_pixel(**kwargs):
 # PPO
 def ppo_feature(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -367,7 +367,7 @@ def ppo_feature(**kwargs):
 
 def ppo_pixel(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -394,7 +394,7 @@ def ppo_pixel(**kwargs):
 
 def ppo_continuous(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -422,7 +422,7 @@ def ppo_continuous(**kwargs):
 # DDPG
 def ddpg_continuous(**kwargs):
     generate_tag(kwargs)
-    kwargs.setdefault('skip', False)
+    kwargs.setdefault('log_level', 0)
     config = Config()
     config.merge(kwargs)
 

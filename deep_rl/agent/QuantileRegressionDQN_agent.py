@@ -69,7 +69,7 @@ class QuantileRegressionDQNAgent(BaseAgent):
         q = self.network(state).mean(-1)
         action = np.argmax(to_np(q).flatten())
         self.config.state_normalizer.unset_read_only()
-        return action
+        return [action]
 
     def step(self):
         config = self.config
@@ -77,7 +77,6 @@ class QuantileRegressionDQNAgent(BaseAgent):
         experiences = []
         for state, action, reward, next_state, done, info in transitions:
             self.record_online_return(info)
-            self.episode_reward += reward
             self.total_steps += 1
             reward = config.reward_normalizer(reward)
             experiences.append([state, action, reward, next_state, done])

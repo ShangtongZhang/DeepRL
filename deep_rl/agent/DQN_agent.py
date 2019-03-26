@@ -64,7 +64,7 @@ class DQNAgent(BaseAgent):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(state)
         q = self.network(state)
-        action = np.argmax(to_np(q))
+        action = to_np(q.argmax(-1))
         self.config.state_normalizer.unset_read_only()
         return action
 

@@ -14,7 +14,7 @@ from collections import deque
 class BaseAgent:
     def __init__(self, config):
         self.config = config
-        self.logger = get_logger(tag=config.tag, skip=config.skip)
+        self.logger = get_logger(tag=config.tag, log_level=config.log_level)
 
     def close(self):
         close_obj(self.task)

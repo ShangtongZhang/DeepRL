@@ -75,7 +75,7 @@ class CategoricalDQNAgent(BaseAgent):
         q = (prob * self.atoms).sum(-1)
         action = np.argmax(to_np(q).flatten())
         self.config.state_normalizer.unset_read_only()
-        return action
+        return [action]
 
     def step(self):
         config = self.config
