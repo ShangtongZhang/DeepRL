@@ -186,6 +186,7 @@ class Storage:
     def add(self, data):
         for k, v in data.items():
             if k not in self.keys:
+                self.keys.append(k)
                 setattr(self, k, [])
             getattr(self, k).append(v)
 
