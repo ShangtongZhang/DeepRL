@@ -117,7 +117,7 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
         self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
         self.phi_params = list(self.phi_body.parameters())
-        
+
         self.actor_opt = actor_opt_fn(self.actor_params + self.phi_params)
         self.critic_opt = critic_opt_fn(self.critic_params + self.phi_params)
         self.to(Config.DEVICE)
@@ -158,7 +158,7 @@ class GaussianActorCriticNet(nn.Module, BaseNet):
         self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
         self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
         self.phi_params = list(self.phi_body.parameters())
-        
+
         self.std = nn.Parameter(torch.zeros(action_dim))
         self.to(Config.DEVICE)
 
@@ -201,7 +201,7 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
         self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
         self.critic_params = list(self.critic_body.parameters()) + list(self.fc_critic.parameters())
         self.phi_params = list(self.phi_body.parameters())
-        
+
         self.to(Config.DEVICE)
 
     def forward(self, obs, action=None):
@@ -255,3 +255,61 @@ class InterOptionPGNet(nn.Module, BaseNet):
                 'log_inter_pi': log_inter_pi,
                 'inter_pi': inter_pi,
                 'phi': phi}
+
+
+class OptionGaussianActorCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 num_options,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None,
+                 option_body=None):
+        super(OptionGaussianActorCriticNet, self).__init__()
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        if option_body is None: option_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.option_body = option_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim * num_options), 1e-3)
+        self.std = nn.Parameter(torch.zeros((num_options, action_dim)))
+
+        self.fc_pi_o = layer_init(nn.Linear(option_body.feature_dim, num_options), 1e-3)
+        self.fc_beta = layer_init(nn.Linear(option_body.feature_dim, num_options), 1e-3)
+        self.fc_q_o = layer_init(nn.Linear(option_body.feature_dim, num_options + 1), 1e-3)
+
+        self.num_options = num_options
+        self.action_dim = action_dim
+        self.to(Config.DEVICE)
+
+    def forward(self, obs, action=None):
+        obs = tensor(obs)
+        phi = self.phi_body(obs)
+        phi_a = self.actor_body(phi)
+        phi_o = self.option_body(phi)
+        mean = F.tanh(self.fc_action(phi_a)).view(-1, self.num_options, self.action_dim)
+        std = F.softplus(self.std).unsqueeze(0).expand(mean.size(0), -1, -1)
+
+        # v = self.fc_critic(phi_v)
+        # dist = torch.distributions.Normal(mean, F.softplus(self.std))
+        # if action is None:
+        #     action = dist.sample()
+        # log_prob = dist.log_prob(action).sum(-1).unsqueeze(-1)
+        # entropy = dist.entropy().sum(-1).unsqueeze(-1)
+
+        q_o = self.fc_q_o(phi_o)
+        beta = F.sigmoid(self.fc_beta(phi_o))
+        phi_o = self.fc_pi_o(phi_o)
+        pi_o = F.softmax(phi_o, dim=-1)
+        log_pi_o = F.log_softmax(phi_o, dim=-1)
+
+        return {'mean': mean,
+                'std': std,
+                'q_o': q_o,
+                'inter_pi': pi_o,
+                'log_inter_pi': log_pi_o,
+                'beta': beta}
