@@ -32,7 +32,7 @@ class ASquaredCPPOAgent(BaseAgent):
         mask[:, prev_option] = 1
         beta = prediction['beta']
         pi_hat = (1 - beta) * mask + beta * inter_pi
-        is_intial_states = is_intial_states.view(-1, 1).expand(-1 ,inter_pi.size(1))
+        is_intial_states = is_intial_states.view(-1, 1).expand(-1, inter_pi.size(1))
         pi_hat = torch.where(is_intial_states, inter_pi, pi_hat)
         return pi_hat
 
@@ -71,7 +71,6 @@ class ASquaredCPPOAgent(BaseAgent):
                 advantages = advantages * config.gae_tau * config.discount * storage.m[i] + td_error
             storage.adv[i] = advantages.detach()
             storage.ret[i] = ret.detach()
-
 
     def learn(self, storage, mdp):
         config = self.config
@@ -129,7 +128,6 @@ class ASquaredCPPOAgent(BaseAgent):
                 nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
                 self.opt.step()
 
-
     def step(self):
         config = self.config
         storage = Storage(config.rollout_length)
@@ -139,6 +137,10 @@ class ASquaredCPPOAgent(BaseAgent):
             pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
             dist = torch.distributions.Categorical(probs=pi_hat)
             options = dist.sample()
+
+            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=1)
+            self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=1)
+            self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=1)
 
             mean = prediction['mean'][self.worker_index, options]
             std = prediction['std'][self.worker_index, options]

@@ -329,6 +329,7 @@ if __name__ == '__main__':
     a_squared_c_ppo_continuous(
         game=game,
         learning='alt',
+        log_level=1,
     )
 
     # game = 'AlienNoFrameskip-v4'
