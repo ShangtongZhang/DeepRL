@@ -257,6 +257,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('num_o', 4)
     kwargs.setdefault('learning', 'hb')
+    kwargs.setdefault('gate', nn.Tanh())
     config = Config()
     config.merge(kwargs)
 
@@ -266,9 +267,9 @@ def a_squared_c_ppo_continuous(**kwargs):
     config.network_fn = lambda: OptionGaussianActorCriticNet(
         config.state_dim, config.action_dim,
         num_options=config.num_o,
-        actor_body=FCBody(config.state_dim, gate=F.tanh),
-        critic_body=FCBody(config.state_dim, gate=F.tanh),
-        option_body=FCBody(config.state_dim, gate=F.tanh),
+        actor_body=FCBody(config.state_dim, gate=config.gate),
+        critic_body=FCBody(config.state_dim, gate=config.gate),
+        option_body_fn=lambda: FCBody(config.state_dim, config.gate),
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99

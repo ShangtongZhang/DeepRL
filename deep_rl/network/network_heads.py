@@ -257,6 +257,28 @@ class InterOptionPGNet(nn.Module, BaseNet):
                 'phi': phi}
 
 
+class SingleOptionNet(nn.Module):
+    def __init__(self,
+                 action_dim,
+                 body):
+        super(SingleOptionNet, self).__init__()
+        self.body = body
+        self.fc_pi = layer_init(nn.Linear(self.body.feature_dim, action_dim), 1e-3)
+        self.fc_beta = layer_init(nn.Linear(self.body.feature_dim, 1), 1e-3)
+        self.std = nn.Parameter(torch.zeros((1, action_dim)))
+
+    def forward(self, phi):
+        phi = self.body(phi)
+        mean = F.tanh(self.fc_pi(phi))
+        std = F.softplus(self.std).expand(mean.size(0), -1)
+        beta = F.sigmoid(self.fc_beta(phi))
+        return {
+            'mean': mean,
+            'std': std,
+            'beta': beta,
+        }
+
+
 class OptionGaussianActorCriticNet(nn.Module, BaseNet):
     def __init__(self,
                  state_dim,
@@ -265,22 +287,20 @@ class OptionGaussianActorCriticNet(nn.Module, BaseNet):
                  phi_body=None,
                  actor_body=None,
                  critic_body=None,
-                 option_body=None):
+                 option_body_fn=None):
         super(OptionGaussianActorCriticNet, self).__init__()
         if phi_body is None: phi_body = DummyBody(state_dim)
-        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
         if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
-        if option_body is None: option_body = DummyBody(phi_body.feature_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+
         self.phi_body = phi_body
         self.actor_body = actor_body
         self.critic_body = critic_body
-        self.option_body = option_body
-        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim * num_options), 1e-3)
-        self.std = nn.Parameter(torch.zeros((num_options, action_dim)))
 
-        self.fc_pi_o = layer_init(nn.Linear(option_body.feature_dim, num_options), 1e-3)
-        self.fc_beta = layer_init(nn.Linear(option_body.feature_dim, num_options), 1e-3)
-        self.fc_q_o = layer_init(nn.Linear(option_body.feature_dim, num_options + 1), 1e-3)
+        self.options = nn.ModuleList([SingleOptionNet(action_dim, option_body_fn()) for _ in range(num_options)])
+
+        self.fc_pi_o = layer_init(nn.Linear(actor_body.feature_dim, num_options), 1e-3)
+        self.fc_q_o = layer_init(nn.Linear(critic_body.feature_dim, num_options + 1), 1e-3)
 
         self.num_options = num_options
         self.action_dim = action_dim
@@ -289,16 +309,26 @@ class OptionGaussianActorCriticNet(nn.Module, BaseNet):
     def forward(self, obs):
         obs = tensor(obs)
         phi = self.phi_body(obs)
-        phi_a = self.actor_body(phi)
-        phi_o = self.option_body(phi)
-        mean = F.tanh(self.fc_action(phi_a)).view(-1, self.num_options, self.action_dim)
-        std = F.softplus(self.std).unsqueeze(0).expand(mean.size(0), -1, -1)
 
-        q_o = self.fc_q_o(phi_o)
-        beta = F.sigmoid(self.fc_beta(phi_o))
-        phi_o = self.fc_pi_o(phi_o)
-        pi_o = F.softmax(phi_o, dim=-1)
-        log_pi_o = F.log_softmax(phi_o, dim=-1)
+        mean = []
+        std = []
+        beta = []
+        for option in self.options:
+            prediction = option(phi)
+            mean.append(prediction['mean'].unsqueeze(1))
+            std.append(prediction['std'].unsqueeze(1))
+            beta.append(prediction['beta'])
+        mean = torch.cat(mean, dim=1)
+        std = torch.cat(std, dim=1)
+        beta = torch.cat(beta, dim=1)
+
+        phi_a = self.actor_body(phi)
+        phi_a = self.fc_pi_o(phi_a)
+        pi_o = F.softmax(phi_a, dim=-1)
+        log_pi_o = F.log_softmax(phi_a, dim=-1)
+
+        phi_c = self.critic_body(phi)
+        q_o = self.fc_q_o(phi_c)
 
         return {'mean': mean,
                 'std': std,
