@@ -269,7 +269,7 @@ def a_squared_c_ppo_continuous(**kwargs):
         num_options=config.num_o,
         actor_body=FCBody(config.state_dim, gate=config.gate),
         critic_body=FCBody(config.state_dim, gate=config.gate),
-        option_body_fn=lambda: FCBody(config.state_dim, config.gate),
+        option_body_fn=lambda: FCBody(config.state_dim, gate=config.gate),
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99
@@ -326,10 +326,11 @@ if __name__ == '__main__':
     # batch_mujoco()
 
     game = 'HalfCheetah-v2'
+    # game = 'Swimmer-v2'
     # ppo_continuous(game=game)
     a_squared_c_ppo_continuous(
         game=game,
-        learning='alt',
+        learning='hb',
         log_level=1,
     )
 
