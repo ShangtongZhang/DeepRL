@@ -14,16 +14,20 @@ class ResidualA2CAgent(BaseAgent):
         self.config = config
         self.task = config.task_fn()
         self.network = config.network_fn()
+        self.target_network = config.network_fn()
         self.optimizer = config.optimizer_fn(self.network.parameters())
         self.total_steps = 0
         self.states = self.task.reset()
+        self.target_network.load_state_dict(self.network.state_dict())
 
         self.episode_rewards = []
         self.online_rewards = np.zeros(config.num_workers)
 
+        self.worker_index = tensor(np.ones(config.num_workers)).long()
+
     def step(self):
         config = self.config
-        storage = Storage(config.rollout_length)
+        storage = Storage(config.rollout_length, ['d', 'rd'])
         states = self.states
         for _ in range(config.rollout_length):
             prediction = self.network(config.state_normalizer(states))
@@ -36,37 +40,82 @@ class ResidualA2CAgent(BaseAgent):
                     self.online_rewards[i] = 0
             storage.add(prediction)
             storage.add({'r': tensor(rewards).unsqueeze(-1),
-                         'm': tensor(1 - terminals).unsqueeze(-1)})
+                         'm': tensor(1 - terminals).unsqueeze(-1),
+                         's': tensor(states)})
 
             states = next_states
+            self.total_steps += config.num_workers
+            if self.total_steps / config.num_workers % config.target_network_update_freq == 0:
+                self.target_network.load_state_dict(self.network.state_dict())
 
         self.states = states
         prediction = self.network(config.state_normalizer(states))
+        # prediction = self.target_network(config.state_normalizer(states))
         storage.add(prediction)
+        storage.add({
+            's': tensor(states),
+        })
         storage.placeholder()
 
-        advantages = tensor(np.zeros((config.num_workers, 1)))
         returns = prediction['v'].detach()
+        # returns = prediction['q_a'].detach()
         for i in reversed(range(config.rollout_length)):
             returns = storage.r[i] + config.discount * storage.m[i] * returns
-            if not config.use_gae:
-                advantages = returns - storage.v[i].detach()
-            else:
-                td_error = storage.r[i] + config.discount * storage.m[i] * storage.v[i + 1] - storage.v[i]
-                advantages = advantages * config.gae_tau * config.discount * storage.m[i] + td_error
-            storage.adv[i] = advantages.detach()
             storage.ret[i] = returns.detach()
+            storage.adv[i] = (returns - storage.v[i]).detach()
+            # storage.adv[i] = (storage.q_a[i] - storage.v[i]).detach()
 
-        log_prob, value, returns, advantages, entropy = storage.cat(['log_pi_a', 'v', 'ret', 'adv', 'ent'])
-        policy_loss = -(log_prob * advantages).mean()
-        value_loss = 0.5 * (returns - value).pow(2).mean()
+            # storage.adv[i] = (returns - storage.v[i]).detach()
+            # storage.adv[i] = returns
+
+            # if not config.symmetric:
+            #     if config.target_net_residual:
+            #         target_net = self.target_network
+            #     else:
+            #         target_net = self.network
+            #
+            #     with torch.no_grad():
+            #         prediction = target_net(storage.s[i + 1])
+            #         q_next = prediction['q'].gather(1, storage.a[i + 1].unsqueeze(1))
+            #         # q_next = target_net(storage.s[i + 1])['q_a']
+            #         target = storage.r[i] + config.discount * storage.m[i] * q_next
+            #     target = returns
+            #     d_loss = (storage.q_a[i] - target).pow(2).mul(0.5)
+            #
+            #     q_next = self.network(storage.s[i + 1])['q_a']
+            #     target = storage.r[i] + config.discount * storage.m[i] * q_next
+            #     with torch.no_grad():
+            #         q = target_net(storage.s[i], storage.a[i])['q_a']
+            #     rd_loss = (q - target).pow(2).mul(0.5)
+            #
+            #     storage.d[i] = d_loss
+            #     storage.rd[i] = rd_loss
+            # else:
+            #     raise NotImplementedError
+
+        # pi, q, entropy, d_loss, rd_loss, a, ret = storage.cat(['pi', 'q', 'ent', 'd', 'rd', 'a', 'ret'])
+        pi, q, entropy, a, ret = storage.cat(['pi', 'q', 'ent', 'a', 'ret'])
+        log_pi_a, adv, v = storage.cat(['log_pi_a', 'adv', 'v'])
+
+        policy_loss = -(log_pi_a * adv.detach()).mean()
+        value_loss = (v - ret.detach()).pow(2).mean()
+
+        # policy_loss = -(pi * q.detach()).sum(-1).mean()
+        # value_loss = 0.5 * (q.gather(1, a.unsqueeze(-1)) - ret).pow(2).mean()
+
+        # log_prob, advantages, entropy, d_loss, rd_loss = storage.cat(['log_pi_a', 'adv', 'ent', 'd', 'rd'])
+        # policy_loss = -(log_prob * advantages).mean()
+        # value_loss = (d_loss + config.residual * rd_loss).mean()
         entropy_loss = entropy.mean()
+
+        config.logger.add_scalar('v_loss', value_loss.item())
+        config.logger.add_scalar('pi_loss', policy_loss.item())
+        config.logger.add_scalar('pi_ent', entropy_loss.item())
+        # config.logger.add_histogram('q', q)
+        # config.logger.add_histogram('adv', advantages)
 
         self.optimizer.zero_grad()
         (policy_loss - config.entropy_weight * entropy_loss +
          config.value_loss_weight * value_loss).backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
         self.optimizer.step()
-
-        steps = config.rollout_length * config.num_workers
-        self.total_steps += steps

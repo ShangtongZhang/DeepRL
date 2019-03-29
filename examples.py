@@ -178,7 +178,7 @@ def a2c_cart_pole():
         config.state_dim, config.action_dim, FCBody(config.state_dim))
     config.discount = 0.99
     config.logger = get_logger()
-    config.use_gae = True
+    config.use_gae = False
     config.gae_tau = 0.95
     config.entropy_weight = 0.01
     config.rollout_length = 5
@@ -438,13 +438,13 @@ if __name__ == '__main__':
     mkdir('tf_log')
     set_one_thread()
     random_seed()
-    # select_device(-1)
-    select_device(0)
+    select_device(-1)
+    # select_device(0)
 
     # dqn_cart_pole()
     # quantile_regression_dqn_cart_pole()
     # categorical_dqn_cart_pole()
-    # a2c_cart_pole()
+    a2c_cart_pole()
     # a2c_continuous('HalfCheetah-v2')
     # n_step_dqn_cart_pole()
     # option_critic_cart_pole()
@@ -453,7 +453,7 @@ if __name__ == '__main__':
     # ddpg_continuous('HalfCheetah-v2')
 
     game = 'BreakoutNoFrameskip-v4'
-    dqn_pixel_atari(game)
+    # dqn_pixel_atari(game)
     # quantile_regression_dqn_pixel_atari(game)
     # categorical_dqn_pixel_atari(game)
     # a2c_pixel_atari(game)

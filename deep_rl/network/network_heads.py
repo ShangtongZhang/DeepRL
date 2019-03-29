@@ -429,3 +429,47 @@ class BackwardModel(nn.Module, BaseNet):
             raise NotImplementedError
         return r, prev_s
 
+
+class ResidualACNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None):
+        super(ResidualACNet, self).__init__()
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, action_dim), 1e-3)
+        self.fc_v = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
+        self.to(Config.DEVICE)
+
+    def forward(self, obs, action=None):
+        obs = tensor(obs)
+        phi = self.phi_body(obs)
+        phi_a = self.actor_body(phi)
+        phi_q = self.critic_body(phi)
+        q = self.fc_critic(phi_q)
+        v = self.fc_v(phi_q)
+
+        logits = self.fc_action(phi_a)
+        pi = F.softmax(logits, dim=-1)
+        log_pi = F.log_softmax(logits, dim=-1)
+        entropy = -(pi * log_pi).sum(-1).unsqueeze(-1)
+        dist = torch.distributions.Categorical(probs=pi)
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action).unsqueeze(-1)
+        # entropy = dist.entropy().unsqueeze(-1)
+        return {'a': action,
+                'log_pi_a': log_prob,
+                'ent': entropy,
+                'q': q,
+                'v': v,
+                'q_a': q.gather(1, action.unsqueeze(1)),
+                'pi': pi}

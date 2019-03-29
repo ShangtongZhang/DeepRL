@@ -13,3 +13,4 @@ from .DoubleDDPG_agent import *
 from .BackwardModelDDPG_agent import *
 from .OracleDDPG_agent import *
 from .ResidualDDPG_agent import *
+from .ResidualA2C_agent import *

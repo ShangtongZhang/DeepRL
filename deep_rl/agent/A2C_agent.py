@@ -62,6 +62,9 @@ class A2CAgent(BaseAgent):
         value_loss = 0.5 * (returns - value).pow(2).mean()
         entropy_loss = entropy.mean()
 
+        config.logger.add_scalar('ent', entropy_loss)
+        config.logger.add_scalar('v_loss', value_loss.item())
+
         self.optimizer.zero_grad()
         (policy_loss - config.entropy_weight * entropy_loss +
          config.value_loss_weight * value_loss).backward()
