@@ -57,14 +57,13 @@ class ResidualA2CAgent(BaseAgent):
         })
         storage.placeholder()
 
-        returns = prediction['v'].detach()
-        # returns = prediction['q_a'].detach()
+        # returns = prediction['v'].detach()
+        returns = prediction['q_a'].detach()
         for i in reversed(range(config.rollout_length)):
             returns = storage.r[i] + config.discount * storage.m[i] * returns
             storage.ret[i] = returns.detach()
             storage.adv[i] = (returns - storage.v[i]).detach()
             # storage.adv[i] = (storage.q_a[i] - storage.v[i]).detach()
-
             # storage.adv[i] = (returns - storage.v[i]).detach()
             # storage.adv[i] = returns
 
@@ -95,17 +94,14 @@ class ResidualA2CAgent(BaseAgent):
 
         # pi, q, entropy, d_loss, rd_loss, a, ret = storage.cat(['pi', 'q', 'ent', 'd', 'rd', 'a', 'ret'])
         pi, q, entropy, a, ret = storage.cat(['pi', 'q', 'ent', 'a', 'ret'])
-        log_pi_a, adv, v = storage.cat(['log_pi_a', 'adv', 'v'])
 
-        policy_loss = -(log_pi_a * adv.detach()).mean()
-        value_loss = (v - ret.detach()).pow(2).mean()
+        # log_pi_a, adv, v = storage.cat(['log_pi_a', 'adv', 'v'])
+        # policy_loss = -(log_pi_a * adv.detach()).mean()
+        # value_loss = (v - ret.detach()).pow(2).mean()
 
-        # policy_loss = -(pi * q.detach()).sum(-1).mean()
-        # value_loss = 0.5 * (q.gather(1, a.unsqueeze(-1)) - ret).pow(2).mean()
+        policy_loss = -(pi * q.detach()).sum(-1).mean()
+        value_loss = 0.5 * (q.gather(1, a.unsqueeze(-1)) - ret).pow(2).mean()
 
-        # log_prob, advantages, entropy, d_loss, rd_loss = storage.cat(['log_pi_a', 'adv', 'ent', 'd', 'rd'])
-        # policy_loss = -(log_prob * advantages).mean()
-        # value_loss = (d_loss + config.residual * rd_loss).mean()
         entropy_loss = entropy.mean()
 
         config.logger.add_scalar('v_loss', value_loss.item())

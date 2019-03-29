@@ -621,13 +621,13 @@ def residual_a2c_cart_pole(**kwargs):
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
     config.network_fn = lambda: ResidualACNet(
         config.state_dim, config.action_dim,
-        FCBody(config.state_dim),
-        # actor_body=FCBody(config.state_dim),
-        # critic_body=FCBody(config.state_dim),
+        # FCBody(config.state_dim),
+        actor_body=FCBody(config.state_dim),
+        critic_body=FCBody(config.state_dim),
     )
     config.discount = 0.99
     config.logger = get_logger()
-    config.entropy_weight = 0.01
+    config.entropy_weight = 0.1
     config.rollout_length = 5
     config.gradient_clip = 0.5
     config.target_network_update_freq = 200
