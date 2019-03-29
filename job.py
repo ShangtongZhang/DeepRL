@@ -212,20 +212,25 @@ def batch_atari():
     cf.merge()
 
     games = [
-        # 'BreakoutNoFrameskip-v4',
+        'BreakoutNoFrameskip-v4',
         'AlienNoFrameskip-v4',
-        'DemonAttackNoFrameskip-v4',
-        'SeaquestNoFrameskip-v4',
-        'MsPacmanNoFrameskip-v4'
+        # 'DemonAttackNoFrameskip-v4',
+        # 'SeaquestNoFrameskip-v4',
+        # 'MsPacmanNoFrameskip-v4'
     ]
 
     params = []
     for game in games:
-        for r in range(4):
+        for r in range(2):
             # params.append(dict(residual=0, target_net_residual=True, game=game, run=r))
-            params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r))
+            # params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r))
+            params.append(dict(multi_step=True, entropy_weight=0.01, game=game, run=r))
+            params.append(dict(multi_step=True, entropy_weight=0.02, game=game, run=r))
+            params.append(dict(multi_step=True, entropy_weight=0.04, game=game, run=r))
+            params.append(dict(multi_step=True, entropy_weight=0.08, game=game, run=r))
 
-    residual_dqn_pixel_atari(**params[cf.i1])
+    # residual_dqn_pixel_atari(**params[cf.i1])
+    residual_a2c_pixel_atari(**params[cf.i1])
 
     exit()
 
@@ -584,7 +589,6 @@ def residual_a2c_pixel_atari(**kwargs):
     config = Config()
     config.merge(kwargs)
 
-    config.history_length = 4
     config.num_workers = 16
     config.task_fn = lambda: Task(kwargs['game'], num_envs=config.num_workers, log_dir=kwargs['log_dir'])
     config.eval_env = Task(kwargs['game'], episode_life=False)
@@ -593,8 +597,6 @@ def residual_a2c_pixel_atari(**kwargs):
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
-    config.use_gae = True
-    config.gae_tau = 1.0
     config.rollout_length = 5
     config.gradient_clip = 0.5
     config.max_steps = int(1e7)
@@ -641,10 +643,10 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    select_device(-1)
+    # select_device(-1)
     # dm_control_batch()
-    # select_device(0)
-    # batch_atari()
+    select_device(0)
+    batch_atari()
     # batch()
 
     # game = 'HalfCheetah-v2'
@@ -656,15 +658,17 @@ if __name__ == '__main__':
     # game = 'Hopper-v2'
     # game = 'dm-cartpole-swingup'
 
-    residual_a2c_cart_pole(
-        # game='LunarLander-v2',
-    )
+    residual_a2c_pixel_atari(game='BreakoutNoFrameskip-v4')
 
-    residual_ddpg_continuous(game=game,
-                             residual=0.05,
-                             target_net_residual=True,
-                             symmetric=False,
-                             delay=10)
+    # residual_a2c_cart_pole(
+        # game='LunarLander-v2',
+    # )
+
+    # residual_ddpg_continuous(game=game,
+    #                          residual=0.05,
+    #                          target_net_residual=True,
+    #                          symmetric=False,
+    #                          delay=10)
 
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,

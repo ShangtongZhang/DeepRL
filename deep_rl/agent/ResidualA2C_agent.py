@@ -50,7 +50,6 @@ class ResidualA2CAgent(BaseAgent):
 
         self.states = states
         prediction = self.network(config.state_normalizer(states))
-        # prediction = self.target_network(config.state_normalizer(states))
         storage.add(prediction)
         storage.add({
             's': tensor(states),
