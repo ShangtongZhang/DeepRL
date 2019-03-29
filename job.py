@@ -578,6 +578,8 @@ def residual_a2c_pixel_atari(**kwargs):
     kwargs.setdefault('residual', 0)
     kwargs.setdefault('debug', False)
     kwargs.setdefault('symmetric', False)
+    kwargs.setdefault('multi_step', False)
+    kwargs.setdefault('entropy_weight', 0.01)
 
     config = Config()
     config.merge(kwargs)
@@ -593,10 +595,9 @@ def residual_a2c_pixel_atari(**kwargs):
     config.discount = 0.99
     config.use_gae = True
     config.gae_tau = 1.0
-    config.entropy_weight = 0.01
     config.rollout_length = 5
     config.gradient_clip = 0.5
-    config.max_steps = int(2e7)
+    config.max_steps = int(1e7)
     config.target_network_update_freq = 10000
     config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
     run_steps(ResidualA2CAgent(config))
@@ -607,10 +608,11 @@ def residual_a2c_cart_pole(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
     kwargs.setdefault('skip', False)
-    kwargs.setdefault('target_net_residual', False)
-    kwargs.setdefault('residual', 0)
+    kwargs.setdefault('target_net_residual', True)
+    kwargs.setdefault('residual', 0.1)
     kwargs.setdefault('debug', False)
     kwargs.setdefault('symmetric', False)
+    kwargs.setdefault('multi_step', False)
 
     config = Config()
     config.merge(kwargs)
@@ -630,7 +632,7 @@ def residual_a2c_cart_pole(**kwargs):
     config.entropy_weight = 0.1
     config.rollout_length = 5
     config.gradient_clip = 0.5
-    config.target_network_update_freq = 200
+    config.target_network_update_freq = 800
     run_steps(ResidualA2CAgent(config))
 
 

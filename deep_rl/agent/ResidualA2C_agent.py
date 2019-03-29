@@ -57,58 +57,55 @@ class ResidualA2CAgent(BaseAgent):
         })
         storage.placeholder()
 
-        # returns = prediction['v'].detach()
         returns = prediction['q_a'].detach()
         for i in reversed(range(config.rollout_length)):
             returns = storage.r[i] + config.discount * storage.m[i] * returns
             storage.ret[i] = returns.detach()
-            storage.adv[i] = (returns - storage.v[i]).detach()
-            # storage.adv[i] = (storage.q_a[i] - storage.v[i]).detach()
-            # storage.adv[i] = (returns - storage.v[i]).detach()
-            # storage.adv[i] = returns
 
-            # if not config.symmetric:
-            #     if config.target_net_residual:
-            #         target_net = self.target_network
-            #     else:
-            #         target_net = self.network
-            #
-            #     with torch.no_grad():
-            #         prediction = target_net(storage.s[i + 1])
-            #         q_next = prediction['q'].gather(1, storage.a[i + 1].unsqueeze(1))
-            #         # q_next = target_net(storage.s[i + 1])['q_a']
-            #         target = storage.r[i] + config.discount * storage.m[i] * q_next
-            #     target = returns
-            #     d_loss = (storage.q_a[i] - target).pow(2).mul(0.5)
-            #
-            #     q_next = self.network(storage.s[i + 1])['q_a']
-            #     target = storage.r[i] + config.discount * storage.m[i] * q_next
-            #     with torch.no_grad():
-            #         q = target_net(storage.s[i], storage.a[i])['q_a']
-            #     rd_loss = (q - target).pow(2).mul(0.5)
-            #
-            #     storage.d[i] = d_loss
-            #     storage.rd[i] = rd_loss
-            # else:
-            #     raise NotImplementedError
+            if config.multi_step:
+                d_loss = (storage.q_a[i] - returns).pow(2).mul(0.5)
+                storage.d[i] = d_loss
+            elif not config.symmetric:
+                if config.target_net_residual:
+                    target_net = self.target_network
+                else:
+                    target_net = self.network
 
-        # pi, q, entropy, d_loss, rd_loss, a, ret = storage.cat(['pi', 'q', 'ent', 'd', 'rd', 'a', 'ret'])
-        pi, q, entropy, a, ret = storage.cat(['pi', 'q', 'ent', 'a', 'ret'])
+                with torch.no_grad():
+                    prediction = target_net(storage.s[i + 1])
+                    q_next = prediction['q'].gather(1, storage.a[i + 1].unsqueeze(1))
+                    target = storage.r[i] + config.discount * storage.m[i] * q_next
+                d_loss = (storage.q_a[i] - target).pow(2).mul(0.5)
+
+                prediction = self.network(storage.s[i + 1])
+                q_next = prediction['q_a']
+                with torch.no_grad():
+                    q_next_hat = prediction['q'].gather(1, storage.a[i + 1].unsqueeze(1))
+                    q = target_net(storage.s[i], storage.a[i])['q_a']
+                    td_error = storage.r[i] + config.discount * storage.m[i] * q_next_hat - q
+                rd_loss = config.discount * storage.m[i] * td_error * q_next
+
+                storage.d[i] = d_loss
+                storage.rd[i] = rd_loss
+            else:
+                raise NotImplementedError
+
+        pi, q, entropy, d_loss = storage.cat(['pi', 'q', 'ent', 'd'])
+        if config.multi_step:
+            rd_loss = 0
+        else:
+            [rd_loss] = storage.cat(['rd'])
 
         # log_pi_a, adv, v = storage.cat(['log_pi_a', 'adv', 'v'])
         # policy_loss = -(log_pi_a * adv.detach()).mean()
-        # value_loss = (v - ret.detach()).pow(2).mean()
 
         policy_loss = -(pi * q.detach()).sum(-1).mean()
-        value_loss = 0.5 * (q.gather(1, a.unsqueeze(-1)) - ret).pow(2).mean()
-
         entropy_loss = entropy.mean()
+        value_loss = (d_loss + config.residual * rd_loss).mean()
 
         config.logger.add_scalar('v_loss', value_loss.item())
         config.logger.add_scalar('pi_loss', policy_loss.item())
         config.logger.add_scalar('pi_ent', entropy_loss.item())
-        # config.logger.add_histogram('q', q)
-        # config.logger.add_histogram('adv', advantages)
 
         self.optimizer.zero_grad()
         (policy_loss - config.entropy_weight * entropy_loss +
