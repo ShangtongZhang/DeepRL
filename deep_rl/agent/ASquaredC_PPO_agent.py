@@ -29,7 +29,7 @@ class ASquaredCPPOAgent(BaseAgent):
     def compute_pi_hat(self, prediction, prev_option, is_intial_states):
         inter_pi = prediction['inter_pi']
         mask = torch.zeros_like(inter_pi)
-        mask[:, prev_option] = 1
+        mask[self.worker_index, prev_option] = 1
         beta = prediction['beta']
         pi_hat = (1 - beta) * mask + beta * inter_pi
         is_intial_states = is_intial_states.view(-1, 1).expand(-1, inter_pi.size(1))
@@ -45,7 +45,7 @@ class ASquaredCPPOAgent(BaseAgent):
 
     def compute_v(self, q_o, prev_option, is_initial_states):
         v_init = q_o[:, [-1]]
-        v = q_o[self.worker_index, prev_option]
+        v = q_o.gather(1, prev_option)
         v = torch.where(is_initial_states, v_init, v)
         return v
 
@@ -104,7 +104,7 @@ class ASquaredCPPOAgent(BaseAgent):
                 prediction = self.network(sampled_states)
 
                 if mdp == 'hat':
-                    cur_pi_hat = self.compute_pi_hat(prediction, sampled_prev_o, sampled_init)
+                    cur_pi_hat = self.compute_pi_hat(prediction, sampled_prev_o.view(-1), sampled_init.view(-1))
                     log_pi_a = self.compute_log_pi_a(
                         sampled_options, cur_pi_hat, sampled_actions, sampled_mean, sampled_std, mdp)
                 elif mdp == 'bar':

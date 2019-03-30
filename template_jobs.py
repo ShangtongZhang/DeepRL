@@ -324,15 +324,15 @@ if __name__ == '__main__':
     # batch_atari()
 
     select_device(-1)
-    # batch_mujoco()
+    batch_mujoco()
 
-    # game = 'HalfCheetah-v2'
-    game = 'Walker2d-v2'
+    game = 'HalfCheetah-v2'
+    # game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
-    ppo_continuous(
-        game=game,
-        log_level=1,
-    )
+    # ppo_continuous(
+    #     game=game,
+    #     log_level=1,
+    # )
 
     a_squared_c_ppo_continuous(
         game=game,
