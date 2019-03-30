@@ -76,6 +76,16 @@ def plot_atari():
         'entropy_weight_0\.02-multi_step_True-run',
         'entropy_weight_0\.04-multi_step_True-run',
         'entropy_weight_0\.08-multi_step_True-run',
+
+        # 'multi_step_False-residual_0-target_net_residual_False-run',
+        # 'multi_step_False-residual_0\.05-target_net_residual_False-run',
+        # 'multi_step_False-residual_0\.1-target_net_residual_False-run',
+        # 'multi_step_False-residual_0\.2-target_net_residual_False-run',
+
+        # 'multi_step_False-residual_0-target_net_residual_True-run',
+        # 'multi_step_False-residual_0\.05-target_net_residual_True-run',
+        # 'multi_step_False-residual_0\.1-target_net_residual_True-run',
+        # 'multi_step_False-residual_0\.2-target_net_residual_True-run',
     ]
 
     l = len(games)
