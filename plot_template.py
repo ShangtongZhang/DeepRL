@@ -58,19 +58,24 @@ def plot_atari():
     games = [
         'BreakoutNoFrameskip-v4',
         'AlienNoFrameskip-v4',
-        'DemonAttackNoFrameskip-v4',
-        'SeaquestNoFrameskip-v4',
-        'MsPacmanNoFrameskip-v4'
+        # 'DemonAttackNoFrameskip-v4',
+        # 'SeaquestNoFrameskip-v4',
+        # 'MsPacmanNoFrameskip-v4'
     ]
 
     patterns = [
-        'residual_0-target_net_residual_True-run',
+        # 'residual_0-target_net_residual_True-run',
         # 'residual_0\.1-target_net_residual_True-run',
-        'residual_0\.05-target_net_residual_True-run',
+        # 'residual_0\.05-target_net_residual_True-run',
         # 'residual_0\.2-target_net_residual_True-run',
         # 'residual_0\.4-target_net_residual_True-run',
         # 'residual_0\.8-target_net_residual_True-run',
         # 'residual_1-target_net_residual_True-run',
+
+        'entropy_weight_0\.01-multi_step_True-run',
+        'entropy_weight_0\.02-multi_step_True-run',
+        'entropy_weight_0\.04-multi_step_True-run',
+        'entropy_weight_0\.08-multi_step_True-run',
     ]
 
     l = len(games)
@@ -78,7 +83,8 @@ def plot_atari():
     for j, game in enumerate(games):
         plt.subplot(1, l, j + 1)
         for i, p in enumerate(patterns):
-            plot(pattern='.*residual-dqn/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
+            # plot(pattern='.*residual-dqn/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
+            plot(pattern='.*residual-a2c/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
     plt.show()
 
 
@@ -399,5 +405,5 @@ def plot_dm_control():
 
 if __name__ == '__main__':
     # plot_mujoco()
-    # plot_atari()
-    plot_dm_control()
+    plot_atari()
+    # plot_dm_control()

@@ -224,10 +224,21 @@ def batch_atari():
         for r in range(2):
             # params.append(dict(residual=0, target_net_residual=True, game=game, run=r))
             # params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r))
-            params.append(dict(multi_step=True, entropy_weight=0.01, game=game, run=r))
-            params.append(dict(multi_step=True, entropy_weight=0.02, game=game, run=r))
-            params.append(dict(multi_step=True, entropy_weight=0.04, game=game, run=r))
-            params.append(dict(multi_step=True, entropy_weight=0.08, game=game, run=r))
+
+            # params.append(dict(multi_step=True, entropy_weight=0.01, game=game, run=r))
+            # params.append(dict(multi_step=True, entropy_weight=0.02, game=game, run=r))
+            # params.append(dict(multi_step=True, entropy_weight=0.04, game=game, run=r))
+            # params.append(dict(multi_step=True, entropy_weight=0.08, game=game, run=r))
+
+            params.append(dict(multi_step=True, residual=0, game=game, run=r, target_net_residual=True))
+            params.append(dict(multi_step=True, residual=0.05, game=game, run=r, target_net_residual=True))
+            params.append(dict(multi_step=True, residual=0.1, game=game, run=r, target_net_residual=True))
+            params.append(dict(multi_step=True, residual=0.2, game=game, run=r, target_net_residual=True))
+
+            params.append(dict(multi_step=True, residual=0, game=game, run=r, target_net_residual=False))
+            params.append(dict(multi_step=True, residual=0.05, game=game, run=r, target_net_residual=False))
+            params.append(dict(multi_step=True, residual=0.1, game=game, run=r, target_net_residual=False))
+            params.append(dict(multi_step=True, residual=0.2, game=game, run=r, target_net_residual=False))
 
     # residual_dqn_pixel_atari(**params[cf.i1])
     residual_a2c_pixel_atari(**params[cf.i1])
