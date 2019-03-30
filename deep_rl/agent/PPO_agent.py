@@ -77,6 +77,7 @@ class PPOAgent(BaseAgent):
                 policy_loss = -torch.min(obj, obj_clipped).mean() - config.entropy_weight * prediction['ent'].mean()
 
                 value_loss = 0.5 * (sampled_returns - prediction['v']).pow(2).mean()
+                self.logger.add_scalar('v_loss', value_loss.item(), log_level=1)
 
                 self.opt.zero_grad()
                 (policy_loss + value_loss).backward()

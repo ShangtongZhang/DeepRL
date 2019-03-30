@@ -61,59 +61,58 @@ def batch_atari():
     exit()
 
 
-# def batch_mujoco():
-#     cf = Config()
-#     cf.add_argument('--i', type=int, default=0)
-#     cf.add_argument('--j', type=int, default=0)
-#     cf.merge()
-#
-#     games = [
-#         'dm-acrobot-swingup',
-#         'dm-acrobot-swingup_sparse',
-#         'dm-ball_in_cup-catch',
-#         'dm-cartpole-swingup',
-#         'dm-cartpole-swingup_sparse',
-#         'dm-cartpole-balance',
-#         'dm-cartpole-balance_sparse',
-#         'dm-cheetah-run',
-#         'dm-finger-turn_hard',
-#         'dm-finger-spin',
-#         'dm-finger-turn_easy',
-#         'dm-fish-upright',
-#         'dm-fish-swim',
-#         'dm-hopper-stand',
-#         'dm-hopper-hop',
-#         'dm-humanoid-stand',
-#         'dm-humanoid-walk',
-#         'dm-humanoid-run',
-#         'dm-manipulator-bring_ball',
-#         'dm-pendulum-swingup',
-#         'dm-point_mass-easy',
-#         'dm-reacher-easy',
-#         'dm-reacher-hard',
-#         'dm-swimmer-swimmer15',
-#         'dm-swimmer-swimmer6',
-#         'dm-walker-stand',
-#         'dm-walker-walk',
-#         'dm-walker-run',
-#     ]
-#
-#     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
-#
-#     params = []
-#
-#     for game in games:
-#         for r in range(5):
-#             params.append(dict(game=game, run=r))
-#
-#     algos = [
-#         # ppo_continuous,
-#         ddpg_continuous,
-#     ]
-#     algo = algos[cf.i // 25]
-#     algo(**params[cf.i % 25], remark=algo.__name__)
-#
-#     exit()
+def batch_mujoco():
+    cf = Config()
+    cf.add_argument('--i', type=int, default=0)
+    cf.add_argument('--j', type=int, default=0)
+    cf.merge()
+
+    games = [
+        'dm-acrobot-swingup',
+        'dm-acrobot-swingup_sparse',
+        'dm-ball_in_cup-catch',
+        'dm-cartpole-swingup',
+        'dm-cartpole-swingup_sparse',
+        'dm-cartpole-balance',
+        'dm-cartpole-balance_sparse',
+        'dm-cheetah-run',
+        'dm-finger-turn_hard',
+        'dm-finger-spin',
+        'dm-finger-turn_easy',
+        'dm-fish-upright',
+        'dm-fish-swim',
+        'dm-hopper-stand',
+        'dm-hopper-hop',
+        'dm-humanoid-stand',
+        'dm-humanoid-walk',
+        'dm-humanoid-run',
+        'dm-manipulator-bring_ball',
+        'dm-pendulum-swingup',
+        'dm-point_mass-easy',
+        'dm-reacher-easy',
+        'dm-reacher-hard',
+        'dm-swimmer-swimmer15',
+        'dm-swimmer-swimmer6',
+        'dm-walker-stand',
+        'dm-walker-walk',
+        'dm-walker-run',
+    ]
+
+    # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
+    games = ['HalfCheetah-v2', 'Walker2d-v2']
+
+    params = []
+
+    for game in games:
+        for r in range(1):
+            for learning in ['all', 'alt']:
+                for num_o in [1, 2, 4]:
+                    for opt_ep in [5, 10]:
+                        for freeze_v in [False, True]:
+                            params.append(dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep, freeze_v=freeze_v))
+
+    a_squared_c_ppo_continuous(**params[cf.i])
+    exit()
 
 
 def IOPG_feature(**kwargs):
@@ -258,6 +257,8 @@ def a_squared_c_ppo_continuous(**kwargs):
     kwargs.setdefault('num_o', 4)
     kwargs.setdefault('learning', 'hb')
     kwargs.setdefault('gate', nn.Tanh())
+    kwargs.setdefault('freeze_v', False)
+    kwargs.setdefault('opt_ep', 10)
     config = Config()
     config.merge(kwargs)
 
@@ -273,11 +274,11 @@ def a_squared_c_ppo_continuous(**kwargs):
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99
-    config.use_gae = True
+    config.use_gae = False
     config.gae_tau = 0.95
     config.gradient_clip = 0.5
     config.rollout_length = 2048
-    config.optimization_epochs = 10
+    config.optimization_epochs = config.opt_ep
     config.mini_batch_size = 64
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
@@ -325,13 +326,22 @@ if __name__ == '__main__':
     select_device(-1)
     # batch_mujoco()
 
-    game = 'HalfCheetah-v2'
+    # game = 'HalfCheetah-v2'
+    game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
-    # ppo_continuous(game=game)
+    ppo_continuous(
+        game=game,
+        log_level=1,
+    )
+
     a_squared_c_ppo_continuous(
         game=game,
-        learning='hb',
+        learning='all',
         log_level=1,
+        num_o=4,
+        opt_ep=5,
+        freeze_v=False,
+        # gate=nn.ReLU(),
     )
 
     # game = 'AlienNoFrameskip-v4'

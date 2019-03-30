@@ -22,7 +22,7 @@ class ASquaredCPPOAgent(BaseAgent):
         self.states = self.task.reset()
         self.states = config.state_normalizer(self.states)
         self.is_initial_states = tensor(np.ones((config.num_workers))).byte()
-        self.prev_options = self.is_initial_states.clone().long()
+        self.prev_options = tensor(np.zeros(config.num_workers)).long()
 
         self.count = 0
 
@@ -38,7 +38,7 @@ class ASquaredCPPOAgent(BaseAgent):
 
     def compute_pi_bar(self, pi_hat, action, mean, std):
         dist = torch.distributions.Normal(mean, std)
-        pi_bar = dist.log_prob(action).sum(-1).exp()  # [b * n_o]
+        pi_bar = dist.log_prob(action).sum(-1).exp()
         pi_bar = pi_bar * pi_hat.detach()
         pi_bar = pi_bar.sum(-1).unsqueeze(-1)
         return pi_bar
@@ -72,7 +72,7 @@ class ASquaredCPPOAgent(BaseAgent):
             storage.adv[i] = advantages.detach()
             storage.ret[i] = ret.detach()
 
-    def learn(self, storage, mdp):
+    def learn(self, storage, mdp, freeze_v=True):
         config = self.config
         states, actions, options, log_probs_old, returns, advantages, prev_options, inits, pi_hat, mean, std = \
             storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret', 'adv', 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
@@ -121,7 +121,13 @@ class ASquaredCPPOAgent(BaseAgent):
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
                 policy_loss = -torch.min(obj, obj_clipped).mean()
 
+                discarded = (obj > obj_clipped).float().mean()
+                self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=1)
+
                 value_loss = 0.5 * (sampled_returns - v).pow(2).mean()
+                self.logger.add_scalar('v_loss', value_loss.item(), log_level=1)
+                if freeze_v:
+                    value_loss = 0
 
                 self.opt.zero_grad()
                 (policy_loss + value_loss).backward()
@@ -188,12 +194,11 @@ class ASquaredCPPOAgent(BaseAgent):
 
         self.compute_adv(storage)
 
-        if config.learning == 'hb':
-            self.learn(storage, 'hat')
-            self.learn(storage, 'bar')
-        elif config.learning == 'bh':
-            self.learn(storage, 'bar')
-            self.learn(storage, 'hat')
+        if config.learning == 'all':
+            mdps = ['hat', 'bar']
+            np.random.shuffle(mdps)
+            self.learn(storage, mdps[0])
+            self.learn(storage, mdps[1], freeze_v=config.freeze_v)
         elif config.learning == 'alt':
             if self.count % 2:
                 self.learn(storage, 'hat')

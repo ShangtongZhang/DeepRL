@@ -260,18 +260,22 @@ class InterOptionPGNet(nn.Module, BaseNet):
 class SingleOptionNet(nn.Module):
     def __init__(self,
                  action_dim,
-                 body):
+                 body_fn):
         super(SingleOptionNet, self).__init__()
-        self.body = body
-        self.fc_pi = layer_init(nn.Linear(self.body.feature_dim, action_dim), 1e-3)
-        self.fc_beta = layer_init(nn.Linear(self.body.feature_dim, 1), 1e-3)
+        self.pi_body = body_fn()
+        self.beta_body = body_fn()
+        self.fc_pi = layer_init(nn.Linear(self.pi_body.feature_dim, action_dim), 1e-3)
+        self.fc_beta = layer_init(nn.Linear(self.beta_body.feature_dim, 1), 1e-3)
         self.std = nn.Parameter(torch.zeros((1, action_dim)))
 
     def forward(self, phi):
-        phi = self.body(phi)
-        mean = F.tanh(self.fc_pi(phi))
+        phi_pi = self.pi_body(phi)
+        mean = F.tanh(self.fc_pi(phi_pi))
         std = F.softplus(self.std).expand(mean.size(0), -1)
-        beta = F.sigmoid(self.fc_beta(phi))
+
+        phi_beta = self.beta_body(phi)
+        beta = F.sigmoid(self.fc_beta(phi_beta))
+
         return {
             'mean': mean,
             'std': std,
@@ -297,7 +301,7 @@ class OptionGaussianActorCriticNet(nn.Module, BaseNet):
         self.actor_body = actor_body
         self.critic_body = critic_body
 
-        self.options = nn.ModuleList([SingleOptionNet(action_dim, option_body_fn()) for _ in range(num_options)])
+        self.options = nn.ModuleList([SingleOptionNet(action_dim, option_body_fn) for _ in range(num_options)])
 
         self.fc_pi_o = layer_init(nn.Linear(actor_body.feature_dim, num_options), 1e-3)
         self.fc_q_o = layer_init(nn.Linear(critic_body.feature_dim, num_options + 1), 1e-3)
