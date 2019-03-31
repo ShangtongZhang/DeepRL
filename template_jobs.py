@@ -99,21 +99,26 @@ def batch_mujoco():
     ]
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
-    games = ['HalfCheetah-v2', 'Walker2d-v2']
+    # games = ['HalfCheetah-v2', 'Walker2d-v2']
+    games = ['dm-walker']
 
     params = []
 
     for game in games:
-        for r in range(1):
-            for learning in ['all', 'alt']:
-                for num_o in [1, 2, 4]:
+        for r in range(2):
+            for num_o in [2, 4]:
+                for learning in ['all', 'alt']:
                     for opt_ep in [5, 10]:
-                        # for freeze_v in [False, True]:
                         for entropy_weight in [0, 0.01]:
-                            params.append(dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
-                                               freeze_v=False, entropy_weight=entropy_weight))
+                            params.append([a_squared_c_ppo_continuous,
+                                           dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
+                                               freeze_v=False, entropy_weight=entropy_weight, tasks=True)])
+            params.append([ppo_continuous, dict(game=game, run=r, tasks=True)])
 
-    a_squared_c_ppo_continuous(**params[cf.i])
+
+    algo, param = params[cf.i]
+    algo(**param)
+    # a_squared_c_ppo_continuous(**params[cf.i])
     exit()
 
 
@@ -258,12 +263,19 @@ def a_squared_c_ppo_continuous(**kwargs):
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('num_o', 4)
     kwargs.setdefault('learning', 'hb')
-    kwargs.setdefault('gate', nn.Tanh())
+    kwargs.setdefault('gate', nn.ReLU())
     kwargs.setdefault('freeze_v', False)
     kwargs.setdefault('opt_ep', 10)
     kwargs.setdefault('entropy_weight', 0.01)
+    kwargs.setdefault('tasks', False)
     config = Config()
     config.merge(kwargs)
+
+    if config.tasks:
+        tasks = ['stand', 'walk', 'run']
+        games = ['%s-%s' % (config.game, t) for t in tasks]
+        config.tasks = [Task(g) for g in games]
+        config.game = games[0]
 
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
@@ -293,13 +305,14 @@ def a_squared_c_ppo_continuous(**kwargs):
 def ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
-    kwargs.setdefault('gate', nn.Tanh())
-    kwargs.setdefault('tasks', None)
+    kwargs.setdefault('gate', nn.ReLU())
+    kwargs.setdefault('tasks', False)
     config = Config()
     config.merge(kwargs)
 
-    if config.tasks is not None:
-        games = ['%s-%s' % (config.game, t) for t in config.tasks]
+    if config.tasks:
+        tasks = ['stand', 'walk', 'run']
+        games = ['%s-%s' % (config.game, t) for t in tasks]
         config.tasks = [Task(g) for g in games]
         config.game = games[0]
 
@@ -334,8 +347,8 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    # select_device(-1)
-    # batch_mujoco()
+    select_device(-1)
+    batch_mujoco()
 
     # game = 'HalfCheetah-v2'
     game = 'Walker2d-v2'
