@@ -214,9 +214,9 @@ def batch_atari():
     games = [
         'BreakoutNoFrameskip-v4',
         'AlienNoFrameskip-v4',
-        # 'DemonAttackNoFrameskip-v4',
-        # 'SeaquestNoFrameskip-v4',
-        # 'MsPacmanNoFrameskip-v4'
+        'DemonAttackNoFrameskip-v4',
+        'SeaquestNoFrameskip-v4',
+        'MsPacmanNoFrameskip-v4'
     ]
 
     params = []
@@ -225,23 +225,28 @@ def batch_atari():
             # params.append(dict(residual=0, target_net_residual=True, game=game, run=r))
             # params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r))
 
+            params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r, r_aware=True))
+            params.append(dict(residual=0.5, target_net_residual=True, game=game, run=r, r_aware=True))
+            params.append(dict(residual=1, target_net_residual=True, game=game, run=r, r_aware=True))
+
+
             # params.append(dict(multi_step=True, entropy_weight=0.01, game=game, run=r))
             # params.append(dict(multi_step=True, entropy_weight=0.02, game=game, run=r))
             # params.append(dict(multi_step=True, entropy_weight=0.04, game=game, run=r))
             # params.append(dict(multi_step=True, entropy_weight=0.08, game=game, run=r))
 
-            params.append(dict(multi_step=False, residual=0, game=game, run=r, target_net_residual=True))
-            params.append(dict(multi_step=False, residual=0.05, game=game, run=r, target_net_residual=True))
-            params.append(dict(multi_step=False, residual=0.1, game=game, run=r, target_net_residual=True))
-            params.append(dict(multi_step=False, residual=0.2, game=game, run=r, target_net_residual=True))
+            # params.append(dict(multi_step=False, residual=0, game=game, run=r, target_net_residual=True))
+            # params.append(dict(multi_step=False, residual=0.05, game=game, run=r, target_net_residual=True))
+            # params.append(dict(multi_step=False, residual=0.1, game=game, run=r, target_net_residual=True))
+            # params.append(dict(multi_step=False, residual=0.2, game=game, run=r, target_net_residual=True))
 
-            params.append(dict(multi_step=False, residual=0, game=game, run=r, target_net_residual=False))
-            params.append(dict(multi_step=False, residual=0.05, game=game, run=r, target_net_residual=False))
-            params.append(dict(multi_step=False, residual=0.1, game=game, run=r, target_net_residual=False))
-            params.append(dict(multi_step=False, residual=0.2, game=game, run=r, target_net_residual=False))
+            # params.append(dict(multi_step=False, residual=0, game=game, run=r, target_net_residual=False))
+            # params.append(dict(multi_step=False, residual=0.05, game=game, run=r, target_net_residual=False))
+            # params.append(dict(multi_step=False, residual=0.1, game=game, run=r, target_net_residual=False))
+            # params.append(dict(multi_step=False, residual=0.2, game=game, run=r, target_net_residual=False))
 
-    # residual_dqn_pixel_atari(**params[cf.i1])
-    residual_a2c_pixel_atari(**params[cf.i1])
+    residual_dqn_pixel_atari(**params[cf.i1])
+    # residual_a2c_pixel_atari(**params[cf.i1])
 
     exit()
 
@@ -547,6 +552,7 @@ def residual_dqn_pixel_atari(**kwargs):
     kwargs.setdefault('target_net_residual', True)
     kwargs.setdefault('residual', 0)
     kwargs.setdefault('debug', False)
+    kwargs.setdefault('r_aware', False)
 
     config = Config()
     config.merge(kwargs)
@@ -669,7 +675,7 @@ if __name__ == '__main__':
     # game = 'Hopper-v2'
     # game = 'dm-cartpole-swingup'
 
-    residual_a2c_pixel_atari(game='BreakoutNoFrameskip-v4')
+    # residual_a2c_pixel_atari(game='BreakoutNoFrameskip-v4')
 
     # residual_a2c_cart_pole(
         # game='LunarLander-v2',
@@ -703,11 +709,12 @@ if __name__ == '__main__':
     #                       small=True,
     #                       )
 
-    # game = 'BreakoutNoFrameskip-v4'
-    # residual_dqn_pixel_atari(game=game,
-    #                          skip=False,
-    #                          debug=True,
-    #                          residual=0.05)
+    game = 'BreakoutNoFrameskip-v4'
+    residual_dqn_pixel_atari(game=game,
+                             skip=False,
+                             debug=True,
+                             residual=0.05,
+                             r_aware=True)
 
     oracle_ddpg_continuous(game=game,
                            skip=False,

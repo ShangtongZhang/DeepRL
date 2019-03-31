@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 #GPUs=(0 0 1 2 3 4 5 6)
 #GPUs=(0 1 2 3 4 5)
-GPUs=(0 1 2 3 4 5 6 7)
+#GPUs=(0 1 2 3 4 5 6 7)
+GPUs=(0 1 2 3 4 5 6)
 #GPUs=(1 1 2 3 4 5 6 7)
 #for i in $(seq 0 7); do
 #    for j in $(seq 0 1); do
@@ -25,7 +26,7 @@ GPUs=(0 1 2 3 4 5 6 7)
 
 rm -f jobs.txt
 touch jobs.txt
-for i in $(seq 0 31); do
-    echo "$i ${GPUs[$(($i % 8))]}" >> jobs.txt
+for i in $(seq 16 29); do
+    echo "$i ${GPUs[$(($i % 7))]}" >> jobs.txt
 done
 cat jobs.txt | xargs -n 2 -P 40 sh -c 'bash docker_python.sh $1 "job.py --i1 $0"'

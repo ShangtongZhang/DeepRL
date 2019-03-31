@@ -109,9 +109,15 @@ class DQNAgent(BaseAgent):
             with torch.no_grad():
                 q = target_net(states)
                 q = q[self.batch_indices, actions]
-            rd_loss = (q - q_next).pow(2).mul(0.5).mean()
+            rd_loss = (q - q_next).pow(2).mul(0.5)
 
-            loss = config.residual * rd_loss + d_loss
+            if config.r_aware:
+                residual = tensor(np.ones(rd_loss.size())).mul(config.residual)
+                residual = (rewards != 0).float() * residual
+
+            rd_loss = (rd_loss * residual).mean()
+
+            loss = rd_loss + d_loss
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
