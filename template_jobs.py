@@ -293,15 +293,23 @@ def a_squared_c_ppo_continuous(**kwargs):
 def ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('gate', nn.Tanh())
+    kwargs.setdefault('tasks', None)
     config = Config()
     config.merge(kwargs)
+
+    if config.tasks is not None:
+        games = ['%s-%s' % (config.game, t) for t in config.tasks]
+        config.tasks = [Task(g) for g in games]
+        config.game = games[0]
 
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
 
     config.network_fn = lambda: GaussianActorCriticNet(
-        config.state_dim, config.action_dim, actor_body=FCBody(config.state_dim, gate=F.tanh),
-        critic_body=FCBody(config.state_dim, gate=F.tanh))
+        config.state_dim, config.action_dim,
+        actor_body=FCBody(config.state_dim, gate=config.gate),
+        critic_body=FCBody(config.state_dim, gate=config.gate))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99
     config.use_gae = True
@@ -332,20 +340,23 @@ if __name__ == '__main__':
     # game = 'HalfCheetah-v2'
     game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
-    # ppo_continuous(
-    #     game=game,
-    #     log_level=1,
-    # )
-
-    a_squared_c_ppo_continuous(
-        game=game,
-        learning='all',
+    ppo_continuous(
+        # game=game,
+        game='dm-walker',
+        tasks=['stand', 'walk', 'run'],
         log_level=1,
-        num_o=4,
-        opt_ep=10,
-        freeze_v=False,
-        # gate=nn.ReLU(),
+        gate=nn.ReLU(),
     )
+
+    # a_squared_c_ppo_continuous(
+    #     game=game,
+    #     learning='all',
+    #     log_level=1,
+    #     num_o=4,
+    #     opt_ep=10,
+    #     freeze_v=False,
+    #     # gate=nn.ReLU(),
+    # )
 
     # game = 'AlienNoFrameskip-v4'
     # # OC_pixel(
