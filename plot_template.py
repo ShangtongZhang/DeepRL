@@ -58,13 +58,13 @@ def plot_atari():
     games = [
         'BreakoutNoFrameskip-v4',
         'AlienNoFrameskip-v4',
-        # 'DemonAttackNoFrameskip-v4',
-        # 'SeaquestNoFrameskip-v4',
-        # 'MsPacmanNoFrameskip-v4'
+        'DemonAttackNoFrameskip-v4',
+        'SeaquestNoFrameskip-v4',
+        'MsPacmanNoFrameskip-v4'
     ]
 
     patterns = [
-        # 'residual_0-target_net_residual_True-run',
+        'residual_0-target_net_residual_True-run',
         # 'residual_0\.1-target_net_residual_True-run',
         # 'residual_0\.05-target_net_residual_True-run',
         # 'residual_0\.2-target_net_residual_True-run',
@@ -82,10 +82,14 @@ def plot_atari():
         # 'multi_step_False-residual_0\.1-target_net_residual_False-run',
         # 'multi_step_False-residual_0\.2-target_net_residual_False-run',
 
-        'multi_step_False-residual_0-target_net_residual_True-run',
-        'multi_step_False-residual_0\.05-target_net_residual_True-run',
-        'multi_step_False-residual_0\.1-target_net_residual_True-run',
-        'multi_step_False-residual_0\.2-target_net_residual_True-run',
+        # 'multi_step_False-residual_0-target_net_residual_True-run',
+        # 'multi_step_False-residual_0\.05-target_net_residual_True-run',
+        # 'multi_step_False-residual_0\.1-target_net_residual_True-run',
+        # 'multi_step_False-residual_0\.2-target_net_residual_True-run',
+
+        'r_aware_True-residual_0\.05-target_net_residual_True-run',
+        'r_aware_True-residual_0\.5-target_net_residual_True-run',
+        'r_aware_True-residual_1-target_net_residual_True-run',
     ]
 
     l = len(games)
@@ -93,8 +97,8 @@ def plot_atari():
     for j, game in enumerate(games):
         plt.subplot(1, l, j + 1)
         for i, p in enumerate(patterns):
-            # plot(pattern='.*residual-dqn/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
-            plot(pattern='.*residual-a2c/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
+            plot(pattern='.*residual-dqn/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
+            # plot(pattern='.*residual-a2c/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
     plt.show()
 
 
