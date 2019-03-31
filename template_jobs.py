@@ -261,7 +261,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     kwargs.setdefault('gate', nn.Tanh())
     kwargs.setdefault('freeze_v', False)
     kwargs.setdefault('opt_ep', 10)
-    kwargs.setdefault('entropy_weight', 0)
+    kwargs.setdefault('entropy_weight', 0.01)
     config = Config()
     config.merge(kwargs)
 
@@ -326,11 +326,11 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
 
-    game = 'HalfCheetah-v2'
-    # game = 'Walker2d-v2'
+    # game = 'HalfCheetah-v2'
+    game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
     # ppo_continuous(
     #     game=game,
@@ -341,8 +341,8 @@ if __name__ == '__main__':
         game=game,
         learning='all',
         log_level=1,
-        num_o=2,
-        opt_ep=5,
+        num_o=4,
+        opt_ep=10,
         freeze_v=False,
         # gate=nn.ReLU(),
     )
