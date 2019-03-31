@@ -72,7 +72,7 @@ class ASquaredCPPOAgent(BaseAgent):
             storage.adv[i] = advantages.detach()
             storage.ret[i] = ret.detach()
 
-    def learn(self, storage, mdp, freeze_v=True):
+    def learn(self, storage, mdp, freeze_v=False):
         config = self.config
         states, actions, options, log_probs_old, returns, advantages, prev_options, inits, pi_hat, mean, std = \
             storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret', 'adv', 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
@@ -105,11 +105,13 @@ class ASquaredCPPOAgent(BaseAgent):
 
                 if mdp == 'hat':
                     cur_pi_hat = self.compute_pi_hat(prediction, sampled_prev_o.view(-1), sampled_init.view(-1))
+                    entropy = -(cur_pi_hat * cur_pi_hat.add(1e-5).log()).sum(-1).mean()
                     log_pi_a = self.compute_log_pi_a(
                         sampled_options, cur_pi_hat, sampled_actions, sampled_mean, sampled_std, mdp)
                 elif mdp == 'bar':
                     log_pi_a = self.compute_log_pi_a(
                         sampled_options, sampled_pi_hat, sampled_actions, prediction['mean'], prediction['std'], mdp)
+                    entropy = 0
                 else:
                     raise NotImplementedError
 
@@ -119,7 +121,7 @@ class ASquaredCPPOAgent(BaseAgent):
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean()
+                policy_loss = -torch.min(obj, obj_clipped).mean() - config.entropy_weight * entropy
 
                 discarded = (obj > obj_clipped).float().mean()
                 self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=1)

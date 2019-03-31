@@ -108,8 +108,10 @@ def batch_mujoco():
             for learning in ['all', 'alt']:
                 for num_o in [1, 2, 4]:
                     for opt_ep in [5, 10]:
-                        for freeze_v in [False, True]:
-                            params.append(dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep, freeze_v=freeze_v))
+                        # for freeze_v in [False, True]:
+                        for entropy_weight in [0, 0.01]:
+                            params.append(dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
+                                               freeze_v=False, entropy_weight=entropy_weight))
 
     a_squared_c_ppo_continuous(**params[cf.i])
     exit()
@@ -259,6 +261,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     kwargs.setdefault('gate', nn.Tanh())
     kwargs.setdefault('freeze_v', False)
     kwargs.setdefault('opt_ep', 10)
+    kwargs.setdefault('entropy_weight', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -338,7 +341,7 @@ if __name__ == '__main__':
         game=game,
         learning='all',
         log_level=1,
-        num_o=4,
+        num_o=2,
         opt_ep=5,
         freeze_v=False,
         # gate=nn.ReLU(),
