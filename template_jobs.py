@@ -100,7 +100,7 @@ def batch_mujoco():
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
     # games = ['HalfCheetah-v2', 'Walker2d-v2']
-    games = ['dm-walker', 'dm-finger', 'dm-cartpole', 'dm-reacher']
+    games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish', 'dm-hopper', 'dm-acrobot', 'dm-manipulator']
     # games = ['dm-humanoid-stand', 'dm-humanoid-walk', 'dm-humanoid-run']
 
     params = []
@@ -273,6 +273,14 @@ def set_tasks(config):
         tasks = ['easy', 'hard']
     elif config.game == 'dm-cartpole':
         tasks = ['balance', 'balance_sparse']
+    elif config.game == 'dm-fish':
+        tasks = ['upright', 'swim']
+    elif config.game == 'dm-hopper':
+        tasks = ['stand', 'hop']
+    elif config.game == 'dm-acrobot':
+        tasks = ['swingup', 'swingup_sparse']
+    elif config.game == 'dm-manipulator':
+        tasks = ['bring_ball', 'bring_peg']
     else:
         raise NotImplementedError
 
@@ -323,7 +331,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     config.mini_batch_size = 64
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
-    config.max_steps = 1e6
+    config.max_steps = 2e6
     config.state_normalizer = MeanStdNormalizer()
     run_steps(ASquaredCPPOAgent(config))
 
@@ -361,7 +369,7 @@ def ppo_continuous(**kwargs):
     config.mini_batch_size = 64
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
-    config.max_steps = 1e6
+    config.max_steps = 2e6
     config.state_normalizer = MeanStdNormalizer()
     run_steps(PPOAgent(config))
 

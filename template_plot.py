@@ -15,6 +15,9 @@ def plot_ppo():
         # 'Reacher-v2',
 
         'dm-walker',
+        'dm-finger',
+        'dm-cartpole',
+        'dm-reacher',
     ]
 
     patterns = [
