@@ -100,25 +100,26 @@ def batch_mujoco():
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
     # games = ['HalfCheetah-v2', 'Walker2d-v2']
-    games = ['dm-walker']
+    # games = ['dm-walker']
+    games = ['dm-humanoid-stand', 'dm-humanoid-walk', 'dm-humanoid-run']
 
     params = []
 
-    # for game in games:
-    #     for r in range(2):
-    #         for num_o in [2, 4]:
-    #             for learning in ['all', 'alt']:
-    #                 for opt_ep in [5, 10]:
-    #                     for entropy_weight in [0, 0.01]:
-    #                         params.append([a_squared_c_ppo_continuous,
-    #                                        dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
-    #                                            freeze_v=False, entropy_weight=entropy_weight, tasks=True)])
-    #         params.append([ppo_continuous, dict(game=game, run=r, tasks=True)])
-
     for game in games:
-        for r in range(30):
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
-            params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
+        for r in range(2):
+            for num_o in [4]:
+                for learning in ['all']:
+                    for opt_ep in [5, 10]:
+                        for entropy_weight in [0, 0.01]:
+                            params.append([a_squared_c_ppo_continuous,
+                                           dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
+                                                entropy_weight=entropy_weight, tasks=False)])
+            params.append([ppo_continuous, dict(game=game, run=r, tasks=False)])
+
+    # for game in games:
+    #     for r in range(30):
+    #         params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
+    #         params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
 
 
     algo, param = params[cf.i]
@@ -285,6 +286,11 @@ def a_squared_c_ppo_continuous(**kwargs):
         config.tasks = [Task(g) for g in games]
         config.game = games[0]
 
+    if 'dm-humanoid' in config.game:
+        hidden_units = (128, 128)
+    else:
+        hidden_units = (64, 64)
+
 
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
@@ -292,9 +298,9 @@ def a_squared_c_ppo_continuous(**kwargs):
     config.network_fn = lambda: OptionGaussianActorCriticNet(
         config.state_dim, config.action_dim,
         num_options=config.num_o,
-        actor_body=FCBody(config.state_dim, gate=config.gate),
-        critic_body=FCBody(config.state_dim, gate=config.gate),
-        option_body_fn=lambda: FCBody(config.state_dim, gate=config.gate),
+        actor_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        critic_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        option_body_fn=lambda: FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99
@@ -325,13 +331,18 @@ def ppo_continuous(**kwargs):
         config.tasks = [Task(g) for g in games]
         config.game = games[0]
 
+    if 'dm-humanoid' in config.game:
+        hidden_units = (128, 128)
+    else:
+        hidden_units = (64, 64)
+
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
 
     config.network_fn = lambda: GaussianActorCriticNet(
         config.state_dim, config.action_dim,
-        actor_body=FCBody(config.state_dim, gate=config.gate),
-        critic_body=FCBody(config.state_dim, gate=config.gate))
+        actor_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        critic_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99
     config.use_gae = True
