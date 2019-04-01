@@ -262,7 +262,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('num_o', 4)
-    kwargs.setdefault('learning', 'hb')
+    kwargs.setdefault('learning', 'all')
     kwargs.setdefault('gate', nn.ReLU())
     kwargs.setdefault('freeze_v', False)
     kwargs.setdefault('opt_ep', 10)
@@ -289,7 +289,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     )
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99
-    config.use_gae = False
+    config.use_gae = True
     config.gae_tau = 0.95
     config.gradient_clip = 0.5
     config.rollout_length = 2048
@@ -347,29 +347,31 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
 
     # game = 'HalfCheetah-v2'
-    game = 'Walker2d-v2'
+    # game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
-    ppo_continuous(
-        # game=game,
-        game='dm-walker',
-        tasks=['stand', 'walk', 'run'],
+    game = 'dm-walker-walk'
+    # ppo_continuous(
+    #     # game=game,
+    #     game='dm-walker',
+    #     tasks=['stand', 'walk', 'run'],
+    #     log_level=1,
+    #     gate=nn.ReLU(),
+    # )
+
+    a_squared_c_ppo_continuous(
+        game=game,
+        learning='all',
         log_level=1,
+        num_o=4,
+        opt_ep=10,
+        freeze_v=False,
+        tasks=False,
         gate=nn.ReLU(),
     )
-
-    # a_squared_c_ppo_continuous(
-    #     game=game,
-    #     learning='all',
-    #     log_level=1,
-    #     num_o=4,
-    #     opt_ep=10,
-    #     freeze_v=False,
-    #     # gate=nn.ReLU(),
-    # )
 
     # game = 'AlienNoFrameskip-v4'
     # # OC_pixel(
