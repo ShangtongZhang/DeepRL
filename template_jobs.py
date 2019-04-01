@@ -104,16 +104,21 @@ def batch_mujoco():
 
     params = []
 
+    # for game in games:
+    #     for r in range(2):
+    #         for num_o in [2, 4]:
+    #             for learning in ['all', 'alt']:
+    #                 for opt_ep in [5, 10]:
+    #                     for entropy_weight in [0, 0.01]:
+    #                         params.append([a_squared_c_ppo_continuous,
+    #                                        dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
+    #                                            freeze_v=False, entropy_weight=entropy_weight, tasks=True)])
+    #         params.append([ppo_continuous, dict(game=game, run=r, tasks=True)])
+
     for game in games:
-        for r in range(2):
-            for num_o in [2, 4]:
-                for learning in ['all', 'alt']:
-                    for opt_ep in [5, 10]:
-                        for entropy_weight in [0, 0.01]:
-                            params.append([a_squared_c_ppo_continuous,
-                                           dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
-                                               freeze_v=False, entropy_weight=entropy_weight, tasks=True)])
-            params.append([ppo_continuous, dict(game=game, run=r, tasks=True)])
+        for r in range(30):
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
+            params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
 
 
     algo, param = params[cf.i]
@@ -265,17 +270,21 @@ def a_squared_c_ppo_continuous(**kwargs):
     kwargs.setdefault('learning', 'all')
     kwargs.setdefault('gate', nn.ReLU())
     kwargs.setdefault('freeze_v', False)
-    kwargs.setdefault('opt_ep', 10)
+    kwargs.setdefault('opt_ep', 5)
     kwargs.setdefault('entropy_weight', 0.01)
     kwargs.setdefault('tasks', False)
     config = Config()
     config.merge(kwargs)
 
     if config.tasks:
-        tasks = ['stand', 'walk', 'run']
+        if config.game == 'dm-walker':
+            tasks = ['stand', 'walk', 'run']
+        else:
+            raise NotImplementedError
         games = ['%s-%s' % (config.game, t) for t in tasks]
         config.tasks = [Task(g) for g in games]
         config.game = games[0]
+
 
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
@@ -347,8 +356,8 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    # select_device(-1)
-    # batch_mujoco()
+    select_device(-1)
+    batch_mujoco()
 
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
