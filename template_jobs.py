@@ -100,26 +100,26 @@ def batch_mujoco():
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
     # games = ['HalfCheetah-v2', 'Walker2d-v2']
-    # games = ['dm-walker']
-    games = ['dm-humanoid-stand', 'dm-humanoid-walk', 'dm-humanoid-run']
+    games = ['dm-walker', 'dm-finger', 'dm-cartpole', 'dm-reacher']
+    # games = ['dm-humanoid-stand', 'dm-humanoid-walk', 'dm-humanoid-run']
 
     params = []
 
-    for game in games:
-        for r in range(2):
-            for num_o in [4]:
-                for learning in ['all']:
-                    for opt_ep in [5, 10]:
-                        for entropy_weight in [0, 0.01]:
-                            params.append([a_squared_c_ppo_continuous,
-                                           dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
-                                                entropy_weight=entropy_weight, tasks=False)])
-            params.append([ppo_continuous, dict(game=game, run=r, tasks=False)])
-
     # for game in games:
-    #     for r in range(30):
-    #         params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
-    #         params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
+    #     for r in range(2):
+    #         for num_o in [4]:
+    #             for learning in ['all']:
+    #                 for opt_ep in [5, 10]:
+    #                     for entropy_weight in [0, 0.01]:
+    #                         params.append([a_squared_c_ppo_continuous,
+    #                                        dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
+    #                                             entropy_weight=entropy_weight, tasks=False)])
+    #         params.append([ppo_continuous, dict(game=game, run=r, tasks=False)])
+
+    for game in games:
+        for r in range(10):
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
+            params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
 
 
     algo, param = params[cf.i]
@@ -264,6 +264,23 @@ def a2c_pixel(**kwargs):
     run_steps(A2CAgent(config))
 
 
+def set_tasks(config):
+    if config.game == 'dm-walker':
+        tasks = ['walk', 'run']
+    elif config.game == 'dm-finger':
+        tasks = ['turn_easy', 'turn_hard']
+    elif config.game == 'dm-reacher':
+        tasks = ['easy', 'hard']
+    elif config.game == 'dm-cartpole':
+        tasks = ['balance', 'balance_sparse']
+    else:
+        raise NotImplementedError
+
+    games = ['%s-%s' % (config.game, t) for t in tasks]
+    config.tasks = [Task(g) for g in games]
+    config.game = games[0]
+
+
 def a_squared_c_ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -278,13 +295,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     config.merge(kwargs)
 
     if config.tasks:
-        if config.game == 'dm-walker':
-            tasks = ['stand', 'walk', 'run']
-        else:
-            raise NotImplementedError
-        games = ['%s-%s' % (config.game, t) for t in tasks]
-        config.tasks = [Task(g) for g in games]
-        config.game = games[0]
+        set_tasks(config)
 
     if 'dm-humanoid' in config.game:
         hidden_units = (128, 128)
@@ -326,10 +337,7 @@ def ppo_continuous(**kwargs):
     config.merge(kwargs)
 
     if config.tasks:
-        tasks = ['stand', 'walk', 'run']
-        games = ['%s-%s' % (config.game, t) for t in tasks]
-        config.tasks = [Task(g) for g in games]
-        config.game = games[0]
+        set_tasks(config)
 
     if 'dm-humanoid' in config.game:
         hidden_units = (128, 128)

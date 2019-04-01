@@ -8,20 +8,29 @@ from deep_rl import *
 def plot_ppo():
     plotter = Plotter()
     games = [
-        'HalfCheetah-v2',
-        'Walker2d-v2',
-        'Hopper-v2',
-        'Swimmer-v2',
-        'Reacher-v2',
+        # 'HalfCheetah-v2',
+        # 'Walker2d-v2',
+        # 'Hopper-v2',
+        # 'Swimmer-v2',
+        # 'Reacher-v2',
+
+        'dm-walker',
     ]
 
     patterns = [
-        'remark_ppo',
+        # 'remark_ppo',
+        'PPO',
+        'ASC',
     ]
 
     labels = [
-        'PPO'
+        'PPO',
+        'ASC',
     ]
+
+    def top_k_measure(x):
+        return np.mean(x)
+        # return np.mean(x[400: 500])
 
     plotter.plot_games(games=games,
                        patterns=patterns,
@@ -30,14 +39,16 @@ def plot_ppo():
                        labels=labels,
                        right_align=False,
                        tag=plotter.RETURN_TRAIN,
-                       root='./data/benchmark/ppo',
+                       root='./log/ASC',
                        interpolation=100,
-                       window=0,
+                       window=10,
+                       top_k=0,
+                       top_k_measure=top_k_measure,
                        )
 
-    # plt.show()
-    plt.tight_layout()
-    plt.savefig('images/PPO.png', bbox_inches='tight')
+    plt.show()
+    # plt.tight_layout()
+    # plt.savefig('images/PPO.png', bbox_inches='tight')
 
 
 def plot_ddpg():
@@ -151,7 +162,7 @@ def plot_misc():
 
 if __name__ == '__main__':
     mkdir('images')
-    # plot_ppo()
+    plot_ppo()
     # plot_ddpg()
     # plot_atari()
-    plot_misc()
+    # plot_misc()
