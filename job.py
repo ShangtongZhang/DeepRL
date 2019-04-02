@@ -212,23 +212,30 @@ def batch_atari():
     cf.merge()
 
     games = [
-        'BreakoutNoFrameskip-v4',
-        'AlienNoFrameskip-v4',
-        'DemonAttackNoFrameskip-v4',
-        'SeaquestNoFrameskip-v4',
-        'MsPacmanNoFrameskip-v4'
+        # 'BreakoutNoFrameskip-v4',
+        # 'AlienNoFrameskip-v4',
+        # 'DemonAttackNoFrameskip-v4',
+        # 'SeaquestNoFrameskip-v4',
+        # 'MsPacmanNoFrameskip-v4'
+
+        # 'BeamRiderNoFrameskip-v4',
+        # 'SeaquestNoFrameskip-v4',
+        # 'BreakoutNoFrameskip-v4',
+        'PongNoFrameskip-v4',
+        # 'QbertNoFrameskip-v4',
+        # 'SpaceInvadersFrameskip-v4',
     ]
 
     params = []
     for game in games:
-        for r in range(2):
-            # params.append(dict(residual=0, target_net_residual=True, game=game, run=r))
-            # params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r))
+        for r in range(3):
+            params.append(dict(residual=0, target_net_residual=True, game=game, run=r))
 
             params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r, r_aware=True))
-            params.append(dict(residual=0.5, target_net_residual=True, game=game, run=r, r_aware=True))
             params.append(dict(residual=1, target_net_residual=True, game=game, run=r, r_aware=True))
 
+            params.append(dict(residual=0.05, target_net_residual=True, game=game, run=r, r_aware=False))
+            params.append(dict(residual=1, target_net_residual=True, game=game, run=r, r_aware=False))
 
             # params.append(dict(multi_step=True, entropy_weight=0.01, game=game, run=r))
             # params.append(dict(multi_step=True, entropy_weight=0.02, game=game, run=r))
