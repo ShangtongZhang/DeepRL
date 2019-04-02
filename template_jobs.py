@@ -390,8 +390,8 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
 
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
@@ -400,14 +400,16 @@ if __name__ == '__main__':
     # game = 'dm-fish-upright'
     # game = 'dm-fish-swim'
     # game = 'dm-fish'
-    game = 'dm-cartpole-s'
-    # ppo_continuous(
-    #     # game=game,
-    #     game='dm-walker',
-    #     tasks=['stand', 'walk', 'run'],
-    #     log_level=1,
-    #     gate=nn.ReLU(),
-    # )
+    # game = 'dm-cartpole-s'
+    game = 'dm-cheetah-run'
+    # game = 'dm-cheetah-backward'
+    ppo_continuous(
+        game=game,
+        # game='dm-walker',
+        tasks=False,
+        log_level=1,
+        gate=nn.ReLU(),
+    )
 
     a_squared_c_ppo_continuous(
         game=game,
@@ -416,7 +418,7 @@ if __name__ == '__main__':
         num_o=4,
         opt_ep=10,
         freeze_v=False,
-        tasks=True,
+        tasks=False,
         gate=nn.ReLU(),
         max_steps=4e3,
     )

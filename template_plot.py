@@ -13,14 +13,15 @@ def plot_ppo():
         # 'Hopper-v2',
         # 'Swimmer-v2',
         # 'Reacher-v2',
+        # 'dm-finger',
 
         'dm-walker',
-        'dm-finger',
-        'dm-cartpole',
+        'dm-cartpole-b',
+        # 'dm-cartpole-s',
         'dm-reacher',
+        # 'dm-fish',
     ]
 
-    games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish', 'dm-hopper', 'dm-acrobot', 'dm-manipulator']
 
     patterns = [
         # 'remark_ppo',
