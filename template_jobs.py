@@ -103,7 +103,8 @@ def batch_mujoco():
     # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish', 'dm-hopper', 'dm-acrobot', 'dm-manipulator']
     # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish']
     # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish']
-    games = ['dm-cartpole-b', 'dm-cartpole-s', 'dm-fish']
+    # games = ['dm-cartpole-b', 'dm-cartpole-s', 'dm-fish']
+    games = ['dm-fish', 'dm-cheetah']
     # games = ['dm-humanoid-stand', 'dm-humanoid-walk', 'dm-humanoid-run']
 
     params = []
@@ -392,8 +393,8 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    # select_device(-1)
-    # batch_mujoco()
+    select_device(-1)
+    batch_mujoco()
 
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
