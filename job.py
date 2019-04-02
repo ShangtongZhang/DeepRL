@@ -220,8 +220,8 @@ def batch_atari():
 
         # 'BeamRiderNoFrameskip-v4',
         # 'SeaquestNoFrameskip-v4',
-        # 'BreakoutNoFrameskip-v4',
-        'PongNoFrameskip-v4',
+        'BreakoutNoFrameskip-v4',
+        # 'PongNoFrameskip-v4',
         # 'QbertNoFrameskip-v4',
         # 'SpaceInvadersFrameskip-v4',
     ]
@@ -720,8 +720,8 @@ if __name__ == '__main__':
     residual_dqn_pixel_atari(game=game,
                              skip=False,
                              debug=True,
-                             residual=0.05,
-                             r_aware=True)
+                             residual=0,
+                             r_aware=False)
 
     oracle_ddpg_continuous(game=game,
                            skip=False,

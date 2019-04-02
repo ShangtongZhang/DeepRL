@@ -114,6 +114,8 @@ class DQNAgent(BaseAgent):
             if config.r_aware:
                 residual = tensor(np.ones(rd_loss.size())).mul(config.residual)
                 residual = (rewards != 0).float() * residual
+            else:
+                residual = config.residual
 
             rd_loss = (rd_loss * residual).mean()
 
