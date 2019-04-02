@@ -182,25 +182,23 @@ def dm_control_batch():
 
     games = [
         'dm-walker-stand',
-        'dm-walker-walk',
-        'dm-walker-run',
+        # 'dm-walker-walk',
+        # 'dm-walker-run',
     ]
 
-    # residuals = [0, 0.025, 0.05, 0.1, 0.2, 0.4, 0.8, 1.0]
+    residuals = [0, 0.05, 0.1, 0.2, 0.4, 0.8, 1.0]
 
     params = []
     for game in reversed(games):
         for r in range(5):
-            for delay in [0, 5, 10, 20, 40, 80]:
-            # for delay in [100, 200, 400]:
-                for res in [0, 0.05]:
-                    params.append(dict(game=game, run=r, residual=res, delay=delay))
+            for res in residuals:
+                params.append(dict(game=game, run=r, residual=res))
 
-    params = params[90:]
+    # params = params[90:]
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
-    residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True)
+    residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=False, symmetric=False)
 
     exit()
 
@@ -667,10 +665,10 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    # select_device(-1)
-    # dm_control_batch()
-    select_device(0)
-    batch_atari()
+    select_device(-1)
+    dm_control_batch()
+    # select_device(0)
+    # batch_atari()
     # batch()
 
     # game = 'HalfCheetah-v2'
