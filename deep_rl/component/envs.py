@@ -31,7 +31,6 @@ def make_env(env_id, seed, rank, episode_life=True):
             import dm_control2gym
             _, domain, task = env_id.split('-')
             env = dm_control2gym.make(domain_name=domain, task_name=task)
-            env = PaddingObsWrapper(env, domain, task)
         else:
             env = gym.make(env_id)
         is_atari = hasattr(gym.envs, 'atari') and isinstance(

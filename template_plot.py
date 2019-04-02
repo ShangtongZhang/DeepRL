@@ -19,7 +19,8 @@ def plot_ppo():
         'dm-cartpole-b',
         # 'dm-cartpole-s',
         'dm-reacher',
-        # 'dm-fish',
+        'dm-fish',
+        'dm-cheetah',
     ]
 
 

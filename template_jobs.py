@@ -104,7 +104,8 @@ def batch_mujoco():
     # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish']
     # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish']
     # games = ['dm-cartpole-b', 'dm-cartpole-s', 'dm-fish']
-    games = ['dm-fish', 'dm-cheetah']
+    # games = ['dm-fish', 'dm-cheetah']
+    games = ['dm-fish']
     # games = ['dm-humanoid-stand', 'dm-humanoid-walk', 'dm-humanoid-run']
 
     params = []
