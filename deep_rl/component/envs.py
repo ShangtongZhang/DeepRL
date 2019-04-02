@@ -31,6 +31,7 @@ def make_env(env_id, seed, rank, episode_life=True):
             import dm_control2gym
             _, domain, task = env_id.split('-')
             env = dm_control2gym.make(domain_name=domain, task_name=task)
+            env = PaddingObsWrapper(env, domain, task)
         else:
             env = gym.make(env_id)
         is_atari = hasattr(gym.envs, 'atari') and isinstance(
@@ -72,6 +73,37 @@ class OriginalReturnWrapper(gym.Wrapper):
 
     def reset(self):
         return self.env.reset()
+
+
+class PaddingObsWrapper(gym.Wrapper):
+    def __init__(self, env, domain, task):
+        gym.Wrapper.__init__(self, env)
+        self.domain = domain
+        self.task = task
+        if self.domain == 'fish' and self.task == 'upright':
+            # make upright compatible with swim
+            self.observation_space = Box(
+                -float('inf'),
+                float('inf'),
+                (24, ),
+                dtype=np.float32,
+            )
+
+    def pad_obs(self, obs):
+        if self.domain == 'fish' and self.task == 'upright':
+            new_obs = np.zeros((24, ))
+            new_obs[:8] = obs[:8]
+            new_obs[11:] = obs[8:]
+            return new_obs
+        else:
+            return obs
+
+    def step(self, action):
+        obs, reward, done, info = self.env.step(action)
+        return self.pad_obs(obs), reward, done, info
+
+    def reset(self):
+        return self.pad_obs(self.env.reset())
 
 
 class TransposeImage(gym.ObservationWrapper):

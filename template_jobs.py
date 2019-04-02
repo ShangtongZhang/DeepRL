@@ -100,7 +100,10 @@ def batch_mujoco():
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
     # games = ['HalfCheetah-v2', 'Walker2d-v2']
-    games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish', 'dm-hopper', 'dm-acrobot', 'dm-manipulator']
+    # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish', 'dm-hopper', 'dm-acrobot', 'dm-manipulator']
+    # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish']
+    # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish']
+    games = ['dm-cartpole-b', 'dm-cartpole-s', 'dm-fish']
     # games = ['dm-humanoid-stand', 'dm-humanoid-walk', 'dm-humanoid-run']
 
     params = []
@@ -271,8 +274,12 @@ def set_tasks(config):
         tasks = ['turn_easy', 'turn_hard']
     elif config.game == 'dm-reacher':
         tasks = ['easy', 'hard']
-    elif config.game == 'dm-cartpole':
+    elif config.game == 'dm-cartpole-b':
         tasks = ['balance', 'balance_sparse']
+        config.game = 'dm-cartpole'
+    elif config.game == 'dm-cartpole-s':
+        tasks = ['swingup', 'swingup_sparse']
+        config.game = 'dm-cartpole'
     elif config.game == 'dm-fish':
         tasks = ['upright', 'swim']
     elif config.game == 'dm-hopper':
@@ -299,6 +306,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     kwargs.setdefault('opt_ep', 5)
     kwargs.setdefault('entropy_weight', 0.01)
     kwargs.setdefault('tasks', False)
+    kwargs.setdefault('max_steps', 2e6)
     config = Config()
     config.merge(kwargs)
 
@@ -331,7 +339,6 @@ def a_squared_c_ppo_continuous(**kwargs):
     config.mini_batch_size = 64
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
-    config.max_steps = 2e6
     config.state_normalizer = MeanStdNormalizer()
     run_steps(ASquaredCPPOAgent(config))
 
@@ -341,6 +348,7 @@ def ppo_continuous(**kwargs):
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('gate', nn.ReLU())
     kwargs.setdefault('tasks', False)
+    kwargs.setdefault('max_steps', 2e6)
     config = Config()
     config.merge(kwargs)
 
@@ -369,7 +377,6 @@ def ppo_continuous(**kwargs):
     config.mini_batch_size = 64
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
-    config.max_steps = 2e6
     config.state_normalizer = MeanStdNormalizer()
     run_steps(PPOAgent(config))
 
@@ -389,7 +396,11 @@ if __name__ == '__main__':
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
-    game = 'dm-walker-walk'
+    # game = 'dm-walker-walk'
+    # game = 'dm-fish-upright'
+    # game = 'dm-fish-swim'
+    # game = 'dm-fish'
+    game = 'dm-cartpole-s'
     # ppo_continuous(
     #     # game=game,
     #     game='dm-walker',
@@ -405,8 +416,9 @@ if __name__ == '__main__':
         num_o=4,
         opt_ep=10,
         freeze_v=False,
-        tasks=False,
+        tasks=True,
         gate=nn.ReLU(),
+        max_steps=4e3,
     )
 
     # game = 'AlienNoFrameskip-v4'

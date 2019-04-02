@@ -20,6 +20,8 @@ def plot_ppo():
         'dm-reacher',
     ]
 
+    games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish', 'dm-hopper', 'dm-acrobot', 'dm-manipulator']
+
     patterns = [
         # 'remark_ppo',
         'PPO',
@@ -44,7 +46,7 @@ def plot_ppo():
                        tag=plotter.RETURN_TRAIN,
                        root='./log/ASC',
                        interpolation=100,
-                       window=10,
+                       window=20,
                        top_k=0,
                        top_k_measure=top_k_measure,
                        )
