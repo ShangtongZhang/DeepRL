@@ -281,13 +281,15 @@ def set_tasks(config):
         tasks = ['swingup', 'swingup_sparse']
         config.game = 'dm-cartpole'
     elif config.game == 'dm-fish':
-        tasks = ['upright', 'swim']
+        tasks = ['upright', 'downleft']
     elif config.game == 'dm-hopper':
         tasks = ['stand', 'hop']
     elif config.game == 'dm-acrobot':
         tasks = ['swingup', 'swingup_sparse']
     elif config.game == 'dm-manipulator':
         tasks = ['bring_ball', 'bring_peg']
+    elif config.game == 'dm-cheetah':
+        tasks = ['run', 'backward']
     else:
         raise NotImplementedError
 
@@ -401,8 +403,9 @@ if __name__ == '__main__':
     # game = 'dm-fish-swim'
     # game = 'dm-fish'
     # game = 'dm-cartpole-s'
-    game = 'dm-cheetah-run'
+    # game = 'dm-cheetah-run'
     # game = 'dm-cheetah-backward'
+    game = 'dm-fish-downleft'
     ppo_continuous(
         game=game,
         # game='dm-walker',

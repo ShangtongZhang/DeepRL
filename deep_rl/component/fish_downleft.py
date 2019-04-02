@@ -13,7 +13,7 @@
 # limitations under the License.
 # ============================================================================
 
-"""Cheetah Domain."""
+"""Fish Domain."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -29,32 +29,30 @@ from dm_control.suite import base
 from dm_control.suite import common
 from dm_control.utils import containers
 from dm_control.utils import rewards
-from dm_control.suite.cheetah import Cheetah
-from dm_control.suite.cheetah import Physics
-from dm_control.suite.cheetah import SUITE
-from dm_control.suite.cheetah import get_model_and_assets
-from dm_control.suite.cheetah import _DEFAULT_TIME_LIMIT
-from dm_control.suite.cheetah import _RUN_SPEED
+from dm_control.suite.fish import SUITE
+from dm_control.suite.fish import _DEFAULT_TIME_LIMIT
+from dm_control.suite.fish import Physics
+from dm_control.suite.fish import get_model_and_assets
+from dm_control.suite.fish import Upright
+from dm_control.suite.fish import _CONTROL_TIMESTEP
 
 
 @SUITE.add('benchmarking')
-def backward(time_limit=_DEFAULT_TIME_LIMIT, random=None, environment_kwargs=None):
-    """Returns the run task."""
+def downleft(time_limit=_DEFAULT_TIME_LIMIT, random=None,
+            environment_kwargs=None):
+    """Returns the Fish Upright task."""
     physics = Physics.from_xml_string(*get_model_and_assets())
-    task = CheetahBackward(random)
+    task = Downleft(random=random)
     environment_kwargs = environment_kwargs or {}
-    return control.Environment(physics, task, time_limit=time_limit,
-                               **environment_kwargs)
+    return control.Environment(
+        physics, task, control_timestep=_CONTROL_TIMESTEP, time_limit=time_limit,
+        **environment_kwargs)
 
 
-class CheetahBackward(Cheetah):
+class Downleft(Upright):
     def __init__(self, random=None):
-        Cheetah.__init__(self, random)
+        Upright.__init__(self, random)
 
     def get_reward(self, physics):
-        """Returns a reward to the agent."""
-        return rewards.tolerance(-physics.speed(),
-                                 bounds=(_RUN_SPEED, float('inf')),
-                                 margin=_RUN_SPEED,
-                                 value_at_margin=0,
-                                 sigmoid='linear')
+        """Returns a smooth reward."""
+        return rewards.tolerance(-physics.upright(), bounds=(1, 1), margin=1)
