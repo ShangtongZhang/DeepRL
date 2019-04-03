@@ -99,13 +99,13 @@ def batch_mujoco():
     ]
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
-    # games = ['HalfCheetah-v2', 'Walker2d-v2']
+    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
     # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish', 'dm-hopper', 'dm-acrobot', 'dm-manipulator']
     # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish']
     # games = ['dm-walker', 'dm-cartpole', 'dm-reacher', 'dm-fish']
     # games = ['dm-cartpole-b', 'dm-cartpole-s', 'dm-fish']
     # games = ['dm-fish', 'dm-cheetah']
-    games = ['dm-fish']
+    # games = ['dm-fish']
     # games = ['dm-humanoid-stand', 'dm-humanoid-walk', 'dm-humanoid-run']
 
     params = []
@@ -124,7 +124,7 @@ def batch_mujoco():
     for game in games:
         for r in range(10):
             params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
-            params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
+            # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
 
 
     algo, param = params[cf.i]
@@ -398,7 +398,7 @@ if __name__ == '__main__':
     batch_mujoco()
 
     # game = 'HalfCheetah-v2'
-    # game = 'Walker2d-v2'
+    game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
     # game = 'dm-walker-walk'
     # game = 'dm-fish-upright'
@@ -407,7 +407,7 @@ if __name__ == '__main__':
     # game = 'dm-cartpole-s'
     # game = 'dm-cheetah-run'
     # game = 'dm-cheetah-backward'
-    game = 'dm-fish-downleft'
+    # game = 'dm-fish-downleft'
     ppo_continuous(
         game=game,
         # game='dm-walker',
