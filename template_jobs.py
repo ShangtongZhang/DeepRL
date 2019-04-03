@@ -129,6 +129,12 @@ def batch_mujoco():
             # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC', gate=nn.Tanh())])
             params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='A2C', gate=nn.Tanh())])
 
+    params = []
+    for r in range(2):
+        for num_o in [2, 4, 8]:
+            for beta_w in [0, 0.01, 0.1]:
+                params.append([a_squared_c_ppo_continuous, dict(game='dm-cheetah', run=r, tasks=True, remark='vis',
+                                                                num_o=num_o, beta_weight=beta_w)])
 
     algo, param = params[cf.i]
     algo(**param)
@@ -314,6 +320,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     kwargs.setdefault('entropy_weight', 0.01)
     kwargs.setdefault('tasks', False)
     kwargs.setdefault('max_steps', 2e6)
+    kwargs.setdefault('beta_weight', 0)
     config = Config()
     config.merge(kwargs)
 
@@ -463,29 +470,29 @@ if __name__ == '__main__':
     #     gate=nn.ReLU(),
     # )
 
-    a_squared_c_a2c_continuous(
-        game=game,
-        # learning='all',
-        learning='alt',
-        log_level=1,
-        num_o=4,
-        opt_ep=10,
-        freeze_v=False,
-        tasks=False,
-        gate=nn.Tanh(),
-    )
-
-    # a_squared_c_ppo_continuous(
+    # a_squared_c_a2c_continuous(
     #     game=game,
-    #     learning='all',
+    #     # learning='all',
+    #     learning='alt',
     #     log_level=1,
     #     num_o=4,
     #     opt_ep=10,
     #     freeze_v=False,
     #     tasks=False,
-    #     gate=nn.ReLU(),
-    #     max_steps=4e3,
+    #     gate=nn.Tanh(),
     # )
+
+    a_squared_c_ppo_continuous(
+        game=game,
+        learning='all',
+        log_level=1,
+        num_o=4,
+        opt_ep=5,
+        freeze_v=False,
+        tasks=False,
+        gate=nn.ReLU(),
+        # max_steps=4e3,
+    )
 
     # game = 'AlienNoFrameskip-v4'
     # # OC_pixel(

@@ -109,10 +109,12 @@ class ASquaredCPPOAgent(BaseAgent):
                     entropy = -(cur_pi_hat * cur_pi_hat.add(1e-5).log()).sum(-1).mean()
                     log_pi_a = self.compute_log_pi_a(
                         sampled_options, cur_pi_hat, sampled_actions, sampled_mean, sampled_std, mdp)
+                    beta_loss = prediction['beta'].mean()
                 elif mdp == 'bar':
                     log_pi_a = self.compute_log_pi_a(
                         sampled_options, sampled_pi_hat, sampled_actions, prediction['mean'], prediction['std'], mdp)
                     entropy = 0
+                    beta_loss = 0
                 else:
                     raise NotImplementedError
 
@@ -122,7 +124,8 @@ class ASquaredCPPOAgent(BaseAgent):
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean() - config.entropy_weight * entropy
+                policy_loss = -torch.min(obj, obj_clipped).mean() - config.entropy_weight * entropy + \
+                              config.beta_weight * beta_loss
 
                 discarded = (obj > obj_clipped).float().mean()
                 self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=1)
@@ -147,7 +150,8 @@ class ASquaredCPPOAgent(BaseAgent):
             dist = torch.distributions.Categorical(probs=pi_hat)
             options = dist.sample()
 
-            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=1)
+            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=0)
+            self.logger.add_scalar('option', options[0], log_level=0)
             self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=1)
             self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=1)
 
