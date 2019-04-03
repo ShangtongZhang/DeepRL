@@ -56,15 +56,22 @@ def plot_atari():
     }
 
     games = [
-        'BreakoutNoFrameskip-v4',
-        'AlienNoFrameskip-v4',
-        'DemonAttackNoFrameskip-v4',
+        # 'BreakoutNoFrameskip-v4',
+        # 'AlienNoFrameskip-v4',
+        # 'DemonAttackNoFrameskip-v4',
+        # 'SeaquestNoFrameskip-v4',
+        # 'MsPacmanNoFrameskip-v4',
+
+        'BeamRiderNoFrameskip-v4',
         'SeaquestNoFrameskip-v4',
-        'MsPacmanNoFrameskip-v4'
+        'BreakoutNoFrameskip-v4',
+        # 'PongNoFrameskip-v4',
+        # 'QbertNoFrameskip-v4',
+        # 'SpaceInvadersFrameskip-v4',
     ]
 
     patterns = [
-        'residual_0-target_net_residual_True-run',
+        # 'residual_0-target_net_residual_True-run',
         # 'residual_0\.1-target_net_residual_True-run',
         # 'residual_0\.05-target_net_residual_True-run',
         # 'residual_0\.2-target_net_residual_True-run',
@@ -87,8 +94,16 @@ def plot_atari():
         # 'multi_step_False-residual_0\.1-target_net_residual_True-run',
         # 'multi_step_False-residual_0\.2-target_net_residual_True-run',
 
+        # 'r_aware_True-residual_0\.05-target_net_residual_True-run',
+        # 'r_aware_True-residual_0\.5-target_net_residual_True-run',
+        # 'r_aware_True-residual_1-target_net_residual_True-run',
+
+        'residual_0-target_net_residual_True-run',
+
+        'r_aware_False-residual_0\.05-target_net_residual_True-run',
+        'r_aware_False-residual_1-target_net_residual_True-run',
+
         'r_aware_True-residual_0\.05-target_net_residual_True-run',
-        'r_aware_True-residual_0\.5-target_net_residual_True-run',
         'r_aware_True-residual_1-target_net_residual_True-run',
     ]
 
@@ -410,5 +425,5 @@ def plot_dm_control():
 
 if __name__ == '__main__':
     # plot_mujoco()
-    # plot_atari()
-    plot_dm_control()
+    plot_atari()
+    # plot_dm_control()
