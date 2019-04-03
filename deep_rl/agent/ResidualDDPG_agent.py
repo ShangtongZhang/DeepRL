@@ -73,12 +73,12 @@ class ResidualDDPGAgent(BaseAgent):
             terminals = tensor(terminals)
             terminals = 1 - terminals
 
-            if config.symmetric:
-                if config.target_net_residual:
-                    target_net = self.target_network
-                else:
-                    target_net = self.network
+            if config.target_net_residual:
+                target_net = self.target_network
+            else:
+                target_net = self.network
 
+            if config.symmetric:
                 with torch.no_grad():
                     a_next = target_net.actor(next_states)
                     q_next = target_net.critic(next_states, a_next)
@@ -97,8 +97,8 @@ class ResidualDDPGAgent(BaseAgent):
             else:
                 q = self.network.critic(states, actions)
                 with torch.no_grad():
-                    a_next = self.target_network.actor(next_states)
-                    q_next = self.target_network.critic(next_states, a_next)
+                    a_next = target_net.actor(next_states)
+                    q_next = target_net.critic(next_states, a_next)
                     target = rewards + terminals * config.discount * q_next
                     td_error = target - q
                 a_next = self.network.actor(next_states).detach()

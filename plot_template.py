@@ -371,6 +371,14 @@ def plot_dm_control():
         # 'remark_residual-residual_0\.05-target_net_residual_True-run',
         # 'remark_residual-residual_0-target_net_residual_True-run',
 
+        # 'remark_residual-residual_0-symmetric_False-target_net_residual_False-run',
+        # 'remark_residual-residual_0\.05-symmetric_False-target_net_residual_False-run',
+        # 'remark_residual-residual_0\.1-symmetric_False-target_net_residual_False-run',
+        # 'remark_residual-residual_0\.2-symmetric_False-target_net_residual_False-run',
+        # 'remark_residual-residual_0\.4-symmetric_False-target_net_residual_False-run',
+        # 'remark_residual-residual_0\.8-symmetric_False-target_net_residual_False-run',
+        # 'remark_residual-residual_1\.0-symmetric_False-target_net_residual_False-run',
+
         'remark_residual-residual_0-symmetric_False-target_net_residual_True-run',
         'remark_residual-residual_0\.05-symmetric_False-target_net_residual_True-run',
         'remark_residual-residual_0\.1-symmetric_False-target_net_residual_True-run',
