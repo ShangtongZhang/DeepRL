@@ -126,7 +126,8 @@ def batch_mujoco():
             # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
 
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC', gate=nn.Tanh())])
+            # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC', gate=nn.Tanh())])
+            params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='A2C', gate=nn.Tanh())])
 
 
     algo, param = params[cf.i]
@@ -440,8 +441,8 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    # select_device(-1)
-    # batch_mujoco()
+    select_device(-1)
+    batch_mujoco()
 
     game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
