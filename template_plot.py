@@ -5,19 +5,11 @@ import matplotlib.pyplot as plt
 from deep_rl import *
 
 
-def plot_ppo():
+def plot_dm():
     plotter = Plotter()
     games = [
-        # 'HalfCheetah-v2',
-        # 'Walker2d-v2',
-        # 'Hopper-v2',
-        # 'Swimmer-v2',
-        # 'Reacher-v2',
-        # 'dm-finger',
-
         'dm-walker',
         'dm-cartpole-b',
-        # 'dm-cartpole-s',
         'dm-reacher',
         'dm-fish',
         'dm-cheetah',
@@ -25,7 +17,6 @@ def plot_ppo():
 
 
     patterns = [
-        # 'remark_ppo',
         'PPO',
         'ASC',
     ]
@@ -46,7 +37,51 @@ def plot_ppo():
                        labels=labels,
                        right_align=False,
                        tag=plotter.RETURN_TRAIN,
-                       root='./log/ASC',
+                       root='./log/ASquaredC-dm',
+                       # root='./log/ASquaredC-mujoco',
+                       interpolation=100,
+                       window=20,
+                       top_k=0,
+                       top_k_measure=top_k_measure,
+                       )
+
+    plt.show()
+    # plt.tight_layout()
+    # plt.savefig('images/PPO.png', bbox_inches='tight')
+
+
+def plot_mujoco():
+    plotter = Plotter()
+    games = [
+        'HalfCheetah-v2',
+        'Walker2d-v2',
+        'Hopper-v2',
+        'Swimmer-v2',
+    ]
+
+
+    patterns = [
+        'ASC',
+        'A2C',
+    ]
+
+    labels = [
+        'ASC-PPO',
+        'ASC-A2C',
+    ]
+
+    def top_k_measure(x):
+        return np.mean(x)
+        # return np.mean(x[400: 500])
+
+    plotter.plot_games(games=games,
+                       patterns=patterns,
+                       agg='mean',
+                       downsample=0,
+                       labels=labels,
+                       right_align=False,
+                       tag=plotter.RETURN_TRAIN,
+                       root='./log/ASquaredC-mujoco',
                        interpolation=100,
                        window=20,
                        top_k=0,
@@ -169,7 +204,5 @@ def plot_misc():
 
 if __name__ == '__main__':
     mkdir('images')
-    plot_ppo()
-    # plot_ddpg()
-    # plot_atari()
-    # plot_misc()
+    # plot_dm()
+    plot_mujoco()
