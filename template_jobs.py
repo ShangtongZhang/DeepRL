@@ -123,8 +123,10 @@ def batch_mujoco():
 
     for game in games:
         for r in range(10):
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
+            # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
+
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC')])
 
 
     algo, param = params[cf.i]
