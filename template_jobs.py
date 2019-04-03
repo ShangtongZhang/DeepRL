@@ -126,7 +126,7 @@ def batch_mujoco():
             # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
 
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC')])
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC', gate=nn.Tanh())])
 
 
     algo, param = params[cf.i]
