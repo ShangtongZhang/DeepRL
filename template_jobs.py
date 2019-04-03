@@ -349,6 +349,50 @@ def a_squared_c_ppo_continuous(**kwargs):
     run_steps(ASquaredCPPOAgent(config))
 
 
+def a_squared_c_a2c_continuous(**kwargs):
+    generate_tag(kwargs)
+    kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('num_o', 4)
+    kwargs.setdefault('learning', 'all')
+    kwargs.setdefault('gate', nn.ReLU())
+    kwargs.setdefault('freeze_v', False)
+    kwargs.setdefault('opt_ep', 5)
+    kwargs.setdefault('entropy_weight', 0.01)
+    kwargs.setdefault('tasks', False)
+    kwargs.setdefault('max_steps', 2e6)
+    config = Config()
+    config.merge(kwargs)
+
+    if config.tasks:
+        set_tasks(config)
+
+    if 'dm-humanoid' in config.game:
+        hidden_units = (128, 128)
+    else:
+        hidden_units = (64, 64)
+
+
+    config.num_workers = 16
+    config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
+    config.eval_env = Task(config.game)
+
+    config.network_fn = lambda: OptionGaussianActorCriticNet(
+        config.state_dim, config.action_dim,
+        num_options=config.num_o,
+        actor_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        critic_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        option_body_fn=lambda: FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+    )
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    config.discount = 0.99
+    config.use_gae = True
+    config.gae_tau = 0.95
+    config.gradient_clip = 0.5
+    config.rollout_length = 5
+    config.state_normalizer = MeanStdNormalizer()
+    run_steps(ASquaredCA2CAgent(config))
+
+
 def ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -396,11 +440,11 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
 
-    # game = 'HalfCheetah-v2'
-    game = 'Walker2d-v2'
+    game = 'HalfCheetah-v2'
+    # game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
     # game = 'dm-walker-walk'
     # game = 'dm-fish-upright'
@@ -410,25 +454,37 @@ if __name__ == '__main__':
     # game = 'dm-cheetah-run'
     # game = 'dm-cheetah-backward'
     # game = 'dm-fish-downleft'
-    ppo_continuous(
-        game=game,
-        # game='dm-walker',
-        tasks=False,
-        log_level=1,
-        gate=nn.ReLU(),
-    )
+    # ppo_continuous(
+    #     game=game,
+    #     # game='dm-walker',
+    #     tasks=False,
+    #     log_level=1,
+    #     gate=nn.ReLU(),
+    # )
 
-    a_squared_c_ppo_continuous(
+    a_squared_c_a2c_continuous(
         game=game,
-        learning='all',
+        # learning='all',
+        learning='alt',
         log_level=1,
         num_o=4,
         opt_ep=10,
         freeze_v=False,
         tasks=False,
-        gate=nn.ReLU(),
-        max_steps=4e3,
+        gate=nn.Tanh(),
     )
+
+    # a_squared_c_ppo_continuous(
+    #     game=game,
+    #     learning='all',
+    #     log_level=1,
+    #     num_o=4,
+    #     opt_ep=10,
+    #     freeze_v=False,
+    #     tasks=False,
+    #     gate=nn.ReLU(),
+    #     max_steps=4e3,
+    # )
 
     # game = 'AlienNoFrameskip-v4'
     # # OC_pixel(

@@ -74,68 +74,23 @@ class ASquaredCA2CAgent(BaseAgent):
 
     def learn(self, storage, mdp, freeze_v=False):
         config = self.config
-        states, actions, options, log_probs_old, returns, advantages, prev_options, inits, pi_hat, mean, std = \
-            storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret', 'adv', 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
-        actions = actions.detach().unsqueeze(1).expand(-1, pi_hat.size(1), -1)
-        log_probs_old = log_probs_old.detach()
-        pi_hat = pi_hat.detach()
-        mean = mean.detach()
-        std = std.detach()
-        advantages = (advantages - advantages.mean()) / advantages.std()
-        self.logger.add_histogram('adv', advantages, log_level=1)
+        log_prob, v, ret, adv, pi_hat = storage.cat(['log_pi_%s' % (mdp), 'v', 'ret', 'adv', 'pi_hat'])
 
-        for _ in range(config.optimization_epochs):
-            sampler = random_sample(np.arange(states.size(0)), config.mini_batch_size)
-            for batch_indices in sampler:
-                batch_indices = tensor(batch_indices).long()
+        if mdp == 'hat':
+            entropy = -(pi_hat * pi_hat.add(1e-5).log()).sum(-1).mean()
+        elif mdp == 'bar':
+            entropy = 0
+        else:
+            raise NotImplementedError
 
-                sampled_pi_hat = pi_hat[batch_indices]
-                sampled_mean = mean[batch_indices]
-                sampled_std = std[batch_indices]
-                sampled_states = states[batch_indices]
-                sampled_prev_o = prev_options[batch_indices]
-                sampled_init = inits[batch_indices]
+        policy_loss = -(log_prob * adv.detach()).mean() - config.entropy_weight * entropy
+        value_loss = (v - ret.detach()).pow(2).mul(0.5).mean()
 
-                sampled_options = options[batch_indices]
-                sampled_actions = actions[batch_indices]
-                sampled_log_probs_old = log_probs_old[batch_indices]
-                sampled_returns = returns[batch_indices]
-                sampled_advantages = advantages[batch_indices]
+        if freeze_v:
+            value_loss = 0
 
-                prediction = self.network(sampled_states)
-
-                if mdp == 'hat':
-                    cur_pi_hat = self.compute_pi_hat(prediction, sampled_prev_o.view(-1), sampled_init.view(-1))
-                    entropy = -(cur_pi_hat * cur_pi_hat.add(1e-5).log()).sum(-1).mean()
-                    log_pi_a = self.compute_log_pi_a(
-                        sampled_options, cur_pi_hat, sampled_actions, sampled_mean, sampled_std, mdp)
-                elif mdp == 'bar':
-                    log_pi_a = self.compute_log_pi_a(
-                        sampled_options, sampled_pi_hat, sampled_actions, prediction['mean'], prediction['std'], mdp)
-                    entropy = 0
-                else:
-                    raise NotImplementedError
-
-                v = self.compute_v(prediction['q_o'], sampled_prev_o, sampled_init)
-
-                ratio = (log_pi_a - sampled_log_probs_old).exp()
-                obj = ratio * sampled_advantages
-                obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
-                                          1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean() - config.entropy_weight * entropy
-
-                discarded = (obj > obj_clipped).float().mean()
-                self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=1)
-
-                value_loss = 0.5 * (sampled_returns - v).pow(2).mean()
-                self.logger.add_scalar('v_loss', value_loss.item(), log_level=1)
-                if freeze_v:
-                    value_loss = 0
-
-                self.opt.zero_grad()
-                (policy_loss + value_loss).backward()
-                nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
-                self.opt.step()
+        loss = policy_loss + value_loss
+        return loss
 
     def step(self):
         config = self.config
@@ -146,10 +101,6 @@ class ASquaredCA2CAgent(BaseAgent):
             pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
             dist = torch.distributions.Categorical(probs=pi_hat)
             options = dist.sample()
-
-            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=1)
-            self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=1)
-            self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=1)
 
             mean = prediction['mean'][self.worker_index, options]
             std = prediction['std'][self.worker_index, options]
@@ -200,11 +151,19 @@ class ASquaredCA2CAgent(BaseAgent):
         if config.learning == 'all':
             mdps = ['hat', 'bar']
             np.random.shuffle(mdps)
-            self.learn(storage, mdps[0])
-            self.learn(storage, mdps[1], freeze_v=config.freeze_v)
+            loss1 = self.learn(storage, mdps[0])
+            loss2 = self.learn(storage, mdps[1], freeze_v=config.freeze_v)
+            loss = loss1 + loss2
         elif config.learning == 'alt':
             if self.count % 2:
-                self.learn(storage, 'hat')
+                loss = self.learn(storage, 'hat')
             else:
-                self.learn(storage, 'bar')
+                loss = self.learn(storage, 'bar')
             self.count += 1
+        else:
+            raise NotImplementedError
+
+        self.opt.zero_grad()
+        loss.backward()
+        nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
+        self.opt.step()
