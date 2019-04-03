@@ -394,13 +394,13 @@ def plot_dm_control():
         # 'remark_residual-residual_0\.8-symmetric_False-target_net_residual_False-run',
         # 'remark_residual-residual_1\.0-symmetric_False-target_net_residual_False-run',
 
-        'remark_residual-residual_0-symmetric_False-target_net_residual_True-run',
-        'remark_residual-residual_0\.05-symmetric_False-target_net_residual_True-run',
-        'remark_residual-residual_0\.1-symmetric_False-target_net_residual_True-run',
-        'remark_residual-residual_0\.2-symmetric_False-target_net_residual_True-run',
-        'remark_residual-residual_0\.4-symmetric_False-target_net_residual_True-run',
-        'remark_residual-residual_0\.8-symmetric_False-target_net_residual_True-run',
-        'remark_residual-residual_1\.0-symmetric_False-target_net_residual_True-run',
+        # 'remark_residual-residual_0-symmetric_False-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.05-symmetric_False-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.1-symmetric_False-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.2-symmetric_False-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.4-symmetric_False-target_net_residual_True-run',
+        # 'remark_residual-residual_0\.8-symmetric_False-target_net_residual_True-run',
+        # 'remark_residual-residual_1\.0-symmetric_False-target_net_residual_True-run',
 
         # 'remark_residual-residual_0-symmetric_True-target_net_residual_True-run',
         # 'remark_residual-residual_0\.05-symmetric_True-target_net_residual_True-run',
@@ -425,5 +425,5 @@ def plot_dm_control():
 
 if __name__ == '__main__':
     # plot_mujoco()
-    plot_atari()
-    # plot_dm_control()
+    # plot_atari()
+    plot_dm_control()

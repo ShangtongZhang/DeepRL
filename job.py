@@ -181,8 +181,8 @@ def dm_control_batch():
     ]
 
     games = [
-        'dm-walker-stand',
-        # 'dm-walker-walk',
+        # 'dm-walker-stand',
+        'dm-walker-walk',
         # 'dm-walker-run',
     ]
 
@@ -665,8 +665,8 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    select_device(-1)
-    dm_control_batch()
+    # select_device(-1)
+    # dm_control_batch()
     # select_device(0)
     # batch_atari()
     # batch()
@@ -686,11 +686,10 @@ if __name__ == '__main__':
         # game='LunarLander-v2',
     # )
 
-    # residual_ddpg_continuous(game=game,
-    #                          residual=0.05,
-    #                          target_net_residual=True,
-    #                          symmetric=False,
-    #                          delay=10)
+    residual_ddpg_continuous(game=game,
+                             residual=0,
+                             target_net_residual=False,
+                             symmetric=True)
 
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
