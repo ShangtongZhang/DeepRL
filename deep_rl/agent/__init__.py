@@ -9,3 +9,4 @@ from .OptionCritic_agent import *
 from .InterOptionPG_agent import *
 from .InterOption_agent import *
 from .ASquaredC_PPO_agent import *
+from .ASquaredC_A2C_agent import *
