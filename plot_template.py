@@ -425,5 +425,5 @@ def plot_dm_control():
 
 if __name__ == '__main__':
     # plot_mujoco()
-    # plot_atari()
-    plot_dm_control()
+    plot_atari()
+    # plot_dm_control()
