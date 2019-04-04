@@ -181,8 +181,8 @@ def dm_control_batch():
     ]
 
     games = [
-        # 'dm-walker-stand',
-        'dm-walker-walk',
+        'dm-walker-stand',
+        # 'dm-walker-walk',
         # 'dm-walker-run',
     ]
 
@@ -192,13 +192,14 @@ def dm_control_batch():
     for game in reversed(games):
         for r in range(5):
             for res in residuals:
-                params.append(dict(game=game, run=r, residual=res))
+                for net_cfg in ['bi', 'oo', 'to', 'ot', 'tt']:
+                    params.append(dict(game=game, run=r, residual=res, net_cfg=net_cfg))
 
-    # params = params[90:]
+    params = params[100:]
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
-    residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=False, symmetric=False)
+    residual_ddpg_continuous(**params[cf.i1])
 
     exit()
 
@@ -517,13 +518,12 @@ def residual_ddpg_continuous(**kwargs):
     kwargs.setdefault('weight_decay', 0)
     kwargs.setdefault('state_norm', False)
     kwargs.setdefault('skip', True)
-    kwargs.setdefault('residual', 0.1)
-    kwargs.setdefault('symmetric', True)
-    kwargs.setdefault('delay', 0)
+    kwargs.setdefault('residual', None)
+    kwargs.setdefault('net_cfg', None)
     config = Config()
     config.merge(kwargs)
 
-    config.task_fn = lambda: Task(kwargs['game'], reward_delay=config.delay)
+    config.task_fn = lambda: Task(kwargs['game'])
     config.eval_env = Task(kwargs['game'], log_dir=kwargs['log_dir'])
     config.max_steps = int(1e6)
     config.eval_interval = int(1e4)
@@ -665,8 +665,8 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    # select_device(-1)
-    # dm_control_batch()
+    select_device(-1)
+    dm_control_batch()
     # select_device(0)
     # batch_atari()
     # batch()
@@ -687,9 +687,8 @@ if __name__ == '__main__':
     # )
 
     residual_ddpg_continuous(game=game,
-                             residual=0,
-                             target_net_residual=False,
-                             symmetric=True)
+                             residual=0.05,
+                             net_cfg='to')
 
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,

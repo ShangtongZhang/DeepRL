@@ -73,12 +73,8 @@ class ResidualDDPGAgent(BaseAgent):
             terminals = tensor(terminals)
             terminals = 1 - terminals
 
-            if config.target_net_residual:
+            if config.net_cfg == 'bi':
                 target_net = self.target_network
-            else:
-                target_net = self.network
-
-            if config.symmetric:
                 with torch.no_grad():
                     a_next = target_net.actor(next_states)
                     q_next = target_net.critic(next_states, a_next)
@@ -95,12 +91,27 @@ class ResidualDDPGAgent(BaseAgent):
 
                 critic_loss = config.residual * rd_loss + d_loss
             else:
-                q = self.network.critic(states, actions)
+                if config.net_cfg == 'to':
+                    successor_net = self.target_network
+                    predecessor_net = self.network
+                elif config.net_cfg == 'ot':
+                    successor_net = self.network
+                    predecessor_net = self.target_network
+                elif config.net_cfg == 'tt':
+                    successor_net = self.target_network
+                    predecessor_net = self.target_network
+                elif config.net_cfg == 'oo':
+                    successor_net = self.network
+                    predecessor_net = self.network
+                else:
+                    raise NotImplementedError
+
                 with torch.no_grad():
-                    a_next = target_net.actor(next_states)
-                    q_next = target_net.critic(next_states, a_next)
-                    target = rewards + terminals * config.discount * q_next
-                    td_error = target - q
+                    q = predecessor_net.critic(states, actions)
+                    q_next = successor_net.critic(next_states, successor_net.actor(next_states))
+                    td_error = rewards + terminals * config.discount * q_next - q
+
+                q = self.network.critic(states, actions.detach())
                 a_next = self.network.actor(next_states).detach()
                 q_next = self.network.critic(next_states, a_next)
                 critic_loss = (config.residual * config.discount * q_next - q) * td_error
