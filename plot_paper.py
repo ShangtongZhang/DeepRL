@@ -5,6 +5,7 @@ from deep_rl import *
 
 FOLDER = '/Users/Shangtong/Dropbox/Paper/revisiting-residual/img'
 
+
 def plot(**kwargs):
     kwargs.setdefault('average', False)
     # kwargs.setdefault('color', 0)
@@ -125,6 +126,7 @@ def ddpg_plot(**kwargs):
     kwargs.setdefault('max_timesteps', 1e8)
     kwargs.setdefault('max_x_len', None)
     kwargs.setdefault('type', 'mean')
+    kwargs.setdefault('data', False)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
@@ -152,6 +154,9 @@ def ddpg_plot(**kwargs):
         best = list(reversed(np.argsort(scores)))
         best = best[:kwargs['top_k']]
         data = [data[i] for i in best]
+
+    if kwargs['data']:
+        return np.asarray([entry[1] for entry in data])
 
     print('')
 
@@ -326,8 +331,8 @@ def plot_mujoco():
             # ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
             # ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
-            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            ddpg_plot(pattern='.*dyna-ddpg-1st/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
+            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
+            ddpg_plot(pattern='.*dyna-ddpg-1st/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
             # ddpg_plot(pattern='.*dyna-ddpg-2nd/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
     plt.show()
 
@@ -371,7 +376,6 @@ def plot_dm_control():
         'dm-walker-walk',
         'dm-walker-run',
     ]
-
 
     games = [
         'dm-walker-stand',
@@ -498,7 +502,7 @@ def plot_ddpg_variants(type='mean'):
     ]
 
     l = len(cfgs)
-    plt.figure(figsize=(l * 5, 5))
+    plt.figure(figsize=(l * 6, 5))
     plt.rc('text', usetex=True)
     plt.tight_layout()
     for i, cfg in enumerate(cfgs):
@@ -508,17 +512,93 @@ def plot_ddpg_variants(type='mean'):
         plt.title(titles[i], fontsize=30, fontweight="bold")
         plt.ylim([0, 1000])
         plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
-        plt.tick_params(axis='xy', labelsize=30)
-        plt.xlabel('Step', fontsize=30)
+        plt.tick_params(axis='x', labelsize=30)
+        plt.tick_params(axis='y', labelsize=30)
+        plt.xlabel('Steps', fontsize=30)
         if i == 2:
-            plt.legend(fontsize=15, frameon=False)
+            plt.legend(fontsize=17, frameon=False)
         if not i:
             plt.ylabel('Episode Return', fontsize=30)
+        else:
+            plt.tick_params(labelleft=False)
     plt.savefig('%s/ddpg-variants-%s.png' % (FOLDER, type), bbox_inches='tight')
     plt.show()
 
 
+def extract_auc_data():
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True,
+        'max_x_len': 101,
+        'top_k': 0,
+    }
+
+    games = [
+        'dm-acrobot-swingup',
+        'dm-acrobot-swingup_sparse',
+        'dm-ball_in_cup-catch',
+        'dm-cartpole-swingup',
+        'dm-cartpole-swingup_sparse',
+        'dm-cartpole-balance',
+        'dm-cartpole-balance_sparse',
+        'dm-cheetah-run',
+        'dm-finger-turn_hard',
+        'dm-finger-spin',
+        'dm-finger-turn_easy',
+        'dm-fish-upright',
+        'dm-fish-swim',
+        'dm-hopper-stand',
+        'dm-hopper-hop',
+        'dm-humanoid-stand',
+        'dm-humanoid-walk',
+        'dm-humanoid-run',
+        'dm-manipulator-bring_ball',
+        'dm-pendulum-swingup',
+        'dm-point_mass-easy',
+        'dm-reacher-easy',
+        'dm-reacher-hard',
+        'dm-swimmer-swimmer15',
+        'dm-swimmer-swimmer6',
+        'dm-walker-stand',
+        'dm-walker-walk',
+        'dm-walker-run',
+    ]
+
+    patterns = [
+        'remark_residual-residual_0\.05-target_net_residual_True-run',
+        'remark_residual-residual_0-target_net_residual_True-run',
+    ]
+
+    names = []
+    improvements = []
+    for game in games:
+        AUC = []
+        for p in patterns:
+            data = ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), data=True, **kwargs)
+            AUC.append(data.mean(0).sum())
+        improvements.append((AUC[0] - AUC[1]) / AUC[1])
+        names.append(game[3:])
+        print(names[-1], improvements[-1])
+
+    with open('./data/residual/auc.bin', 'wb') as f:
+        pickle.dump([names, improvements], f)
+
+
+def plot_auc_improvements():
+    with open('./data/residual/auc.bin', 'rb') as f:
+        games, improvements = pickle.load(f)
+
+    indices = list(reversed(np.argsort(improvements)))
+    games = [games[i] for i in indices]
+    improvements = [improvements[i] for i in indices]
+
+    for g, i in zip(games, improvements):
+        print(g, i)
+
 
 if __name__ == '__main__':
-    plot_ddpg_variants(type='mean')
-    plot_ddpg_variants(type='median')
+    # extract_auc_data()
+    # plot_ddpg_variants(type='mean')
+    # plot_ddpg_variants(type='median')
+    plot_auc_improvements()
