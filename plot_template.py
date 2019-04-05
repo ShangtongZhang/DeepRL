@@ -386,6 +386,46 @@ def plot_dm_control():
         # 'remark_residual-residual_0\.05-target_net_residual_True-run',
         # 'remark_residual-residual_0-target_net_residual_True-run',
 
+        # 'net_cfg_bi-residual_0-run',
+        # 'net_cfg_bi-residual_0\.05-run',
+        # 'net_cfg_bi-residual_0\.1-run',
+        # 'net_cfg_bi-residual_0\.2-run',
+        # 'net_cfg_bi-residual_0\.4-run',
+        # 'net_cfg_bi-residual_0\.8-run',
+        # 'net_cfg_bi-residual_1-run',
+
+        # 'net_cfg_oo-residual_0-run',
+        # 'net_cfg_oo-residual_0\.05-run',
+        # 'net_cfg_oo-residual_0\.1-run',
+        # 'net_cfg_oo-residual_0\.2-run',
+        # 'net_cfg_oo-residual_0\.4-run',
+        # 'net_cfg_oo-residual_0\.8-run',
+        # 'net_cfg_oo-residual_1-run',
+
+        # 'net_cfg_tt-residual_0-run',
+        # 'net_cfg_tt-residual_0\.05-run',
+        # 'net_cfg_tt-residual_0\.1-run',
+        # 'net_cfg_tt-residual_0\.2-run',
+        # 'net_cfg_tt-residual_0\.4-run',
+        # 'net_cfg_tt-residual_0\.8-run',
+        # 'net_cfg_tt-residual_1-run',
+
+        # 'net_cfg_ot-residual_0-run',
+        # 'net_cfg_ot-residual_0\.05-run',
+        # 'net_cfg_ot-residual_0\.1-run',
+        # 'net_cfg_ot-residual_0\.2-run',
+        # 'net_cfg_ot-residual_0\.4-run',
+        # 'net_cfg_ot-residual_0\.8-run',
+        # 'net_cfg_ot-residual_1-run',
+
+        # 'net_cfg_to-residual_0-run',
+        # 'net_cfg_to-residual_0\.05-run',
+        # 'net_cfg_to-residual_0\.1-run',
+        # 'net_cfg_to-residual_0\.2-run',
+        # 'net_cfg_to-residual_0\.4-run',
+        # 'net_cfg_to-residual_0\.8-run',
+        # 'net_cfg_to-residual_1-run',
+
         # 'remark_residual-residual_0-symmetric_False-target_net_residual_False-run',
         # 'remark_residual-residual_0\.05-symmetric_False-target_net_residual_False-run',
         # 'remark_residual-residual_0\.1-symmetric_False-target_net_residual_False-run',
@@ -425,5 +465,5 @@ def plot_dm_control():
 
 if __name__ == '__main__':
     # plot_mujoco()
-    plot_atari()
-    # plot_dm_control()
+    # plot_atari()
+    plot_dm_control()
