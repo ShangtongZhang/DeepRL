@@ -63,11 +63,13 @@ def plot_mujoco():
     patterns = [
         'ASC',
         'A2C',
+        'AHP',
     ]
 
     labels = [
         'ASC-PPO',
         'ASC-A2C',
+        'AHP',
     ]
 
     def top_k_measure(x):
