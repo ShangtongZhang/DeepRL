@@ -192,10 +192,11 @@ def dm_control_batch():
     for game in reversed(games):
         for r in range(5):
             for res in residuals:
-                for net_cfg in ['bi', 'oo', 'to', 'ot', 'tt']:
+                # for net_cfg in ['bi', 'oo', 'to', 'ot', 'tt']:
+                for net_cfg in ['oo', 'to', 'ot', 'tt']:
                     params.append(dict(game=game, run=r, residual=res, net_cfg=net_cfg))
 
-    params = params[100:]
+    params = params[80:]
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0.05)
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
