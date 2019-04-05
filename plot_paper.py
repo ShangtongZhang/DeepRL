@@ -124,6 +124,7 @@ def ddpg_plot(**kwargs):
     kwargs.setdefault('top_k', 0)
     kwargs.setdefault('max_timesteps', 1e8)
     kwargs.setdefault('max_x_len', None)
+    kwargs.setdefault('type', 'mean')
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
     data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
@@ -159,7 +160,12 @@ def ddpg_plot(**kwargs):
         x = data[0][0]
         y = [entry[1] for entry in data]
         y = np.stack(y)
-        plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        if kwargs['type'] == 'mean':
+            plotter.plot_standard_error(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        elif kwargs['type'] == 'median':
+            plotter.plot_median_std(y, x, label=kwargs['label'], color=Plotter.COLORS[color])
+        else:
+            raise NotImplementedError
     else:
         for i, (x, y) in enumerate(data):
             plt.plot(x, y, color=Plotter.COLORS[color], label=names[i] if i == 0 else '')
@@ -456,13 +462,14 @@ def plot_dm_control():
     plt.show()
 
 
-def plot_ddpg_variants():
+def plot_ddpg_variants(type='mean'):
     kwargs = {
         'x_interval': int(1e4),
         'rep': 20,
         'average': True,
         'max_x_len': 101,
         'top_k': 0,
+        'type': type,
     }
 
     game = 'dm-walker-stand'
@@ -507,10 +514,11 @@ def plot_ddpg_variants():
             plt.legend(fontsize=15, frameon=False)
         if not i:
             plt.ylabel('Episode Return', fontsize=30)
-    plt.savefig('%s/ddpg-variants.png' % (FOLDER), bbox_inches='tight')
+    plt.savefig('%s/ddpg-variants-%s.png' % (FOLDER, type), bbox_inches='tight')
     plt.show()
 
 
 
 if __name__ == '__main__':
-    plot_ddpg_variants()
+    plot_ddpg_variants(type='mean')
+    plot_ddpg_variants(type='median')
