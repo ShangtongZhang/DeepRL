@@ -114,7 +114,7 @@ class ResidualDDPGAgent(BaseAgent):
                 q = self.network.critic(states, actions.detach())
                 a_next = self.network.actor(next_states).detach()
                 q_next = self.network.critic(next_states, a_next)
-                critic_loss = (config.residual * config.discount * q_next - q) * td_error
+                critic_loss = 0.5 * (config.residual * config.discount * terminals * q_next - q) * td_error
                 critic_loss = critic_loss.mean()
 
             config.logger.add_scalar('q_loss', critic_loss)
