@@ -26,37 +26,20 @@ class AHPPPOAgent(BaseAgent):
 
         self.count = 0
 
-    def compute_pi_hat(self, prediction, prev_option, is_intial_states):
-        inter_pi = prediction['inter_pi']
-        mask = torch.zeros_like(inter_pi)
-        mask[self.worker_index, prev_option] = 1
-        beta = prediction['beta']
-        pi_hat = (1 - beta) * mask + beta * inter_pi
-        is_intial_states = is_intial_states.view(-1, 1).expand(-1, inter_pi.size(1))
-        pi_hat = torch.where(is_intial_states, inter_pi, pi_hat)
-        return pi_hat
+    def sample_stop(self, beta):
+        stop = tensor(np.random.rand(*beta.size())) < beta
+        return stop
 
-    def compute_pi_bar(self, pi_hat, action, mean, std):
-        dist = torch.distributions.Normal(mean, std)
-        pi_bar = dist.log_prob(action).sum(-1).exp()
-        pi_bar = pi_bar * pi_hat.detach()
-        pi_bar = pi_bar.sum(-1).unsqueeze(-1)
-        return pi_bar
+    def compute_prob_a(self, prev_o, stop, beta, o, pi_o, pi_a):
+        p_sp = torch.where(stop, beta, 1 - beta)
+        p_op = torch.where(stop, pi_o, (prev_o == o).float().detach())
+        return p_sp * p_op * pi_a
 
     def compute_v(self, q_o, prev_option, is_initial_states):
         v_init = q_o[:, [-1]]
         v = q_o.gather(1, prev_option)
         v = torch.where(is_initial_states, v_init, v)
         return v
-
-    def compute_log_pi_a(self, options, pi_hat, action, mean, std, mdp):
-        if mdp == 'hat':
-            return pi_hat.add(1e-5).log().gather(1, options)
-        elif mdp == 'bar':
-            pi_bar = self.compute_pi_bar(pi_hat, action, mean, std)
-            return pi_bar.add(1e-5).log()
-        else:
-            raise NotImplementedError
 
     def compute_adv(self, storage):
         config = self.config
@@ -72,15 +55,11 @@ class AHPPPOAgent(BaseAgent):
             storage.adv[i] = advantages.detach()
             storage.ret[i] = ret.detach()
 
-    def learn(self, storage, mdp, freeze_v=False):
+    def learn(self, storage):
         config = self.config
-        states, actions, options, log_probs_old, returns, advantages, prev_options, inits, pi_hat, mean, std = \
-            storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret', 'adv', 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
-        actions = actions.detach().unsqueeze(1).expand(-1, pi_hat.size(1), -1)
-        log_probs_old = log_probs_old.detach()
-        pi_hat = pi_hat.detach()
-        mean = mean.detach()
-        std = std.detach()
+        states, actions, options, prob_a, returns, advantages, prev_options, inits, mean, std, stop = \
+            storage.cat(['s', 'a', 'o', 'prob_a', 'ret', 'adv', 'prev_o', 'init', 'mean', 'std', 'stop'])
+        log_probs_old = prob_a.add(1e-5).log().detach()
         advantages = (advantages - advantages.mean()) / advantages.std()
         self.logger.add_histogram('adv', advantages, log_level=1)
 
@@ -89,12 +68,10 @@ class AHPPPOAgent(BaseAgent):
             for batch_indices in sampler:
                 batch_indices = tensor(batch_indices).long()
 
-                sampled_pi_hat = pi_hat[batch_indices]
-                sampled_mean = mean[batch_indices]
-                sampled_std = std[batch_indices]
                 sampled_states = states[batch_indices]
                 sampled_prev_o = prev_options[batch_indices]
                 sampled_init = inits[batch_indices]
+                sampled_stop = stop[batch_indices]
 
                 sampled_options = options[batch_indices]
                 sampled_actions = actions[batch_indices]
@@ -103,37 +80,30 @@ class AHPPPOAgent(BaseAgent):
                 sampled_advantages = advantages[batch_indices]
 
                 prediction = self.network(sampled_states)
-
-                if mdp == 'hat':
-                    cur_pi_hat = self.compute_pi_hat(prediction, sampled_prev_o.view(-1), sampled_init.view(-1))
-                    entropy = -(cur_pi_hat * cur_pi_hat.add(1e-5).log()).sum(-1).mean()
-                    log_pi_a = self.compute_log_pi_a(
-                        sampled_options, cur_pi_hat, sampled_actions, sampled_mean, sampled_std, mdp)
-                    beta_loss = prediction['beta'].mean()
-                elif mdp == 'bar':
-                    log_pi_a = self.compute_log_pi_a(
-                        sampled_options, sampled_pi_hat, sampled_actions, prediction['mean'], prediction['std'], mdp)
-                    entropy = 0
-                    beta_loss = 0
-                else:
-                    raise NotImplementedError
-
+                dist = torch.distributions.Normal(
+                    prediction['mean'][range(sampled_options.size(0)), sampled_options.view(-1)],
+                    prediction['std'][range(sampled_options.size(0)), sampled_options.view(-1)])
+                pi_a = dist.log_prob(sampled_actions).sum(-1).exp().unsqueeze(-1)
+                pi_a = self.compute_prob_a(sampled_prev_o,
+                                           sampled_stop,
+                                           prediction['beta'].gather(1, sampled_options),
+                                           sampled_options,
+                                           prediction['inter_pi'].gather(1, sampled_options),
+                                           pi_a)
+                log_pi_a = pi_a.add(1e-5).log()
                 v = self.compute_v(prediction['q_o'], sampled_prev_o, sampled_init)
 
                 ratio = (log_pi_a - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean() - config.entropy_weight * entropy + \
-                              config.beta_weight * beta_loss
+                policy_loss = -torch.min(obj, obj_clipped).mean()
 
                 discarded = (obj > obj_clipped).float().mean()
-                self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=1)
+                # self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=1)
 
                 value_loss = 0.5 * (sampled_returns - v).pow(2).mean()
                 self.logger.add_scalar('v_loss', value_loss.item(), log_level=1)
-                if freeze_v:
-                    value_loss = 0
 
                 self.opt.zero_grad()
                 (policy_loss + value_loss).backward()
@@ -146,22 +116,32 @@ class AHPPPOAgent(BaseAgent):
         states = self.states
         for _ in range(config.rollout_length):
             prediction = self.network(states)
-            pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
-            dist = torch.distributions.Categorical(probs=pi_hat)
-            options = dist.sample()
+            beta = prediction['beta'][self.worker_index, self.prev_options]
+            stop = self.sample_stop(beta)
+            stop = torch.where(self.is_initial_states, tensor(np.ones(stop.size())).byte(), stop)
 
-            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=0)
-            self.logger.add_scalar('option', options[0], log_level=0)
-            self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=1)
-            self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=1)
+            dist = torch.distributions.Categorical(probs=prediction['inter_pi'])
+            options = dist.sample()
+            options = torch.where(stop, options, self.prev_options)
+
+            # self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=0)
+            # self.logger.add_scalar('option', options[0], log_level=0)
+            # self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=1)
+            # self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=1)
 
             mean = prediction['mean'][self.worker_index, options]
             std = prediction['std'][self.worker_index, options]
             dist = torch.distributions.Normal(mean, std)
             actions = dist.sample()
+            pi_a = dist.log_prob(actions).sum(-1).exp().unsqueeze(-1)
 
-            pi_bar = self.compute_pi_bar(pi_hat, actions.unsqueeze(1).expand(-1, pi_hat.size(1), -1),
-                                         prediction['mean'], prediction['std'])
+            prob_a = self.compute_prob_a(self.prev_options.unsqueeze(-1),
+                                         stop.unsqueeze(-1),
+                                         beta.unsqueeze(-1),
+                                         options.unsqueeze(-1),
+                                         prediction['inter_pi'][self.worker_index, options].unsqueeze(-1),
+                                         pi_a)
+
             v = self.compute_v(prediction['q_o'], self.prev_options.unsqueeze(-1),
                                self.is_initial_states.unsqueeze(-1))
 
@@ -178,9 +158,8 @@ class AHPPPOAgent(BaseAgent):
                          'prev_o': self.prev_options.unsqueeze(-1),
                          's': tensor(states),
                          'init': self.is_initial_states.unsqueeze(-1),
-                         'pi_hat': pi_hat,
-                         'log_pi_hat': pi_hat[self.worker_index, options].add(1e-5).log().unsqueeze(-1),
-                         'log_pi_bar': pi_bar.add(1e-5).log(),
+                         'prob_a': prob_a,
+                         'stop': stop.unsqueeze(-1),
                          'v': v})
 
             self.is_initial_states = tensor(terminals).byte()
@@ -200,15 +179,4 @@ class AHPPPOAgent(BaseAgent):
         storage.placeholder()
 
         self.compute_adv(storage)
-
-        if config.learning == 'all':
-            mdps = ['hat', 'bar']
-            np.random.shuffle(mdps)
-            self.learn(storage, mdps[0])
-            self.learn(storage, mdps[1], freeze_v=config.freeze_v)
-        elif config.learning == 'alt':
-            if self.count % 2:
-                self.learn(storage, 'hat')
-            else:
-                self.learn(storage, 'bar')
-            self.count += 1
+        self.learn(storage)

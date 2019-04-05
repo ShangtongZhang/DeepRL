@@ -127,14 +127,15 @@ def batch_mujoco():
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
 
             # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC', gate=nn.Tanh())])
-            params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='A2C', gate=nn.Tanh())])
+            # params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='A2C', gate=nn.Tanh())])
+            params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
 
-    params = []
-    for r in range(2):
-        for num_o in [2, 4, 8]:
-            for beta_w in [0, 0.01, 0.1]:
-                params.append([a_squared_c_ppo_continuous, dict(game='dm-cheetah', run=r, tasks=True, remark='vis',
-                                                                num_o=num_o, beta_weight=beta_w)])
+    # params = []
+    # for r in range(2):
+    #     for num_o in [2, 4, 8]:
+    #         for beta_w in [0, 0.01, 0.1]:
+    #             params.append([a_squared_c_ppo_continuous, dict(game='dm-cheetah', run=r, tasks=True, remark='vis',
+    #                                                             num_o=num_o, beta_weight=beta_w)])
 
     algo, param = params[cf.i]
     algo(**param)
@@ -439,6 +440,51 @@ def ppo_continuous(**kwargs):
     run_steps(PPOAgent(config))
 
 
+def ahp_ppo_continuous(**kwargs):
+    generate_tag(kwargs)
+    kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('num_o', 4)
+    kwargs.setdefault('gate', nn.ReLU())
+    kwargs.setdefault('opt_ep', 10)
+    kwargs.setdefault('entropy_weight', 0.01)
+    kwargs.setdefault('tasks', False)
+    kwargs.setdefault('max_steps', 2e6)
+    config = Config()
+    config.merge(kwargs)
+
+    if config.tasks:
+        set_tasks(config)
+
+    if 'dm-humanoid' in config.game:
+        hidden_units = (128, 128)
+    else:
+        hidden_units = (64, 64)
+
+
+    config.task_fn = lambda: Task(config.game)
+    config.eval_env = config.task_fn()
+
+    config.network_fn = lambda: OptionGaussianActorCriticNet(
+        config.state_dim, config.action_dim,
+        num_options=config.num_o,
+        actor_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        critic_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        option_body_fn=lambda: FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+    )
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    config.discount = 0.99
+    config.use_gae = True
+    config.gae_tau = 0.95
+    config.gradient_clip = 0.5
+    config.rollout_length = 2048
+    config.optimization_epochs = config.opt_ep
+    config.mini_batch_size = 64
+    config.ppo_ratio_clip = 0.2
+    config.log_interval = 2048
+    config.state_normalizer = MeanStdNormalizer()
+    run_steps(AHPPPOAgent(config))
+
+
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
@@ -482,7 +528,19 @@ if __name__ == '__main__':
     #     gate=nn.Tanh(),
     # )
 
-    a_squared_c_ppo_continuous(
+    # a_squared_c_ppo_continuous(
+    #     game=game,
+    #     learning='all',
+    #     log_level=1,
+    #     num_o=4,
+    #     opt_ep=5,
+    #     freeze_v=False,
+    #     tasks=False,
+    #     gate=nn.ReLU(),
+    #     # max_steps=4e3,
+    # )
+
+    ahp_ppo_continuous(
         game=game,
         learning='all',
         log_level=1,
