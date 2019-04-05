@@ -19,11 +19,13 @@ def plot_dm():
     patterns = [
         'PPO',
         'ASC',
+        'AHP',
     ]
 
     labels = [
         'PPO',
         'ASC',
+        'AHP',
     ]
 
     def top_k_measure(x):
@@ -206,5 +208,5 @@ def plot_misc():
 
 if __name__ == '__main__':
     mkdir('images')
-    # plot_dm()
-    plot_mujoco()
+    plot_dm()
+    # plot_mujoco()
