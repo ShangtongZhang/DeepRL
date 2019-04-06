@@ -39,8 +39,8 @@ def batch_mujoco():
     ]
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
-    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
-    # games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
+    # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
+    games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
 
     params = []
 
@@ -60,11 +60,12 @@ def batch_mujoco():
             # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
+            params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG')])
 
             # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC', gate=nn.Tanh())])
             # params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='A2C', gate=nn.Tanh())])
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
-            params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh())])
+            # params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh())])
 
     # params = []
     # for r in range(2):
@@ -106,7 +107,7 @@ def set_tasks(config):
         raise NotImplementedError
 
     games = ['%s-%s' % (config.game, t) for t in tasks]
-    config.tasks = [Task(g) for g in games]
+    config.tasks = [Task(g, num_envs=config.num_workers) for g in games]
     config.game = games[0]
 
 
@@ -289,6 +290,7 @@ def iopg_continuous(**kwargs):
     kwargs.setdefault('gate', nn.ReLU())
     kwargs.setdefault('tasks', False)
     kwargs.setdefault('max_steps', 2e6)
+    kwargs.setdefault('num_workers', 16)
     config = Config()
     config.merge(kwargs)
 
@@ -300,7 +302,6 @@ def iopg_continuous(**kwargs):
     else:
         hidden_units = (64, 64)
 
-    config.num_workers = 16
     config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
     config.eval_env = Task(config.game)
 
@@ -333,12 +334,12 @@ if __name__ == '__main__':
     batch_mujoco()
 
     # game = 'HalfCheetah-v2'
-    game = 'Walker2d-v2'
+    # game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
     # game = 'dm-walker-walk'
     # game = 'dm-fish-upright'
     # game = 'dm-fish-swim'
-    # game = 'dm-fish'
+    game = 'dm-fish'
     # game = 'dm-cartpole-s'
     # game = 'dm-cheetah-run'
     # game = 'dm-cheetah-backward'
@@ -391,9 +392,9 @@ if __name__ == '__main__':
         game=game,
         log_level=1,
         num_o=4,
-        tasks=False,
+        tasks=True,
         gate=nn.Tanh(),
-        # max_steps=4e3,
+        max_steps=4e3,
     )
 
     # game = 'AlienNoFrameskip-v4'

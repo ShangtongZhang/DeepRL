@@ -66,12 +66,14 @@ def plot_mujoco():
         'ASC',
         'A2C',
         'AHP',
+        'IOPG',
     ]
 
     labels = [
         'ASC-PPO',
         'ASC-A2C',
         'AHP',
+        'IOPG',
     ]
 
     def top_k_measure(x):
@@ -208,5 +210,5 @@ def plot_misc():
 
 if __name__ == '__main__':
     mkdir('images')
-    plot_dm()
-    # plot_mujoco()
+    # plot_dm()
+    plot_mujoco()
