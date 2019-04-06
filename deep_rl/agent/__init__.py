@@ -9,3 +9,4 @@ from .OptionCritic_agent import *
 from .ASquaredC_PPO_agent import *
 from .ASquaredC_A2C_agent import *
 from .AHP_PPO_agent import *
+from .IOPG_agent import *

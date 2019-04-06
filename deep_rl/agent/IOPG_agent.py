@@ -9,22 +9,25 @@ from ..component import *
 from .BaseAgent import *
 
 
-class IOPGAgent(BaseAgent):
-    def __init__(self, config):
-        BaseAgent.__init__(self, config)
-        self.config = config
-        self.task = config.task_fn()
+class IOPGWorker():
+    def __init__(self, config, master_network):
         self.network = config.network_fn()
         self.opt = config.optimizer_fn(self.network.parameters())
-        self.total_steps = 0
+        self.config = config
+        self.master_network = master_network
 
-        self.worker_index = tensor(np.arange(config.num_workers)).long()
-        self.states = self.task.reset()
-        self.states = config.state_normalizer(self.states)
-        self.is_initial_states = tensor(np.ones((config.num_workers))).byte()
-        self.prev_options = tensor(np.zeros(config.num_workers)).long()
+        self.worker_index = tensor([0]).long()
+        self.reset()
 
-        self.count = 0
+    def sync(self):
+        self.network.load_state_dict(self.master_network.state_dict())
+
+    def reset(self):
+        config = self.config
+        self.m = tensor(np.ones((1, config.num_o))) / config.num_o
+        self.is_initial_states = tensor(np.ones((1))).byte()
+        self.prev_options = tensor(np.zeros(1)).long()
+        self.storage = Storage(int(1e6))
 
     def compute_pi_hat(self, prediction, prev_option, is_intial_states):
         inter_pi = prediction['inter_pi']
@@ -36,134 +39,105 @@ class IOPGAgent(BaseAgent):
         pi_hat = torch.where(is_intial_states, inter_pi, pi_hat)
         return pi_hat
 
-    def compute_pi_bar(self, pi_hat, action, mean, std):
+    def pre_step(self, state):
+        config = self.config
+        prediction = self.network(state)
+        pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
+        dist = torch.distributions.Categorical(probs=pi_hat)
+        options = dist.sample()
+
+        mean = prediction['mean'][self.worker_index, options]
+        std = prediction['std'][self.worker_index, options]
         dist = torch.distributions.Normal(mean, std)
-        pi_bar = dist.log_prob(action).sum(-1).exp()
-        pi_bar = pi_bar * pi_hat.detach()
-        pi_bar = pi_bar.sum(-1).unsqueeze(-1)
-        return pi_bar
+        actions = dist.sample()
 
-    def compute_v(self, q_o, prev_option, is_initial_states):
-        v_init = q_o[:, [-1]]
-        v = q_o.gather(1, prev_option)
-        v = torch.where(is_initial_states, v_init, v)
-        return v
+        self.storage.add(prediction)
 
-    def compute_log_pi_a(self, options, pi_hat, action, mean, std, mdp):
-        if mdp == 'hat':
-            return pi_hat.add(1e-5).log().gather(1, options)
-        elif mdp == 'bar':
-            pi_bar = self.compute_pi_bar(pi_hat, action, mean, std)
-            return pi_bar.add(1e-5).log()
-        else:
-            raise NotImplementedError
+        dist = torch.distributions.Normal(prediction['mean'], prediction['std'])
+        a = actions.unsqueeze(1).expand(-1, pi_hat.size(1), -1)
+        pi_o_a = dist.log_prob(a).sum(-1).exp()
+        m_pi_o_a = self.m * pi_o_a
+        c = m_pi_o_a.sum(-1).unsqueeze(-1).pow(-1)
 
-    def compute_adv(self, storage):
+        pi_hat = []
+        for i in range(config.num_o):
+            p = self.compute_pi_hat(prediction, tensor([i]).long(), self.is_initial_states)
+            pi_hat.append(p.unsqueeze(1))
+        pi_hat = torch.cat(pi_hat, dim=1)
+        self.m = c.unsqueeze(-1) * m_pi_o_a.unsqueeze(-1) * pi_hat
+        self.m = self.m.sum(1)
+
+        pre_log = (self.m * pi_o_a).sum(-1).unsqueeze(-1)
+        self.storage.add({'pre_log': pre_log})
+
+        self.prev_options = options
+        return actions
+
+    def learn(self):
         config = self.config
-        ret = storage.v[-1].detach()
-        advantages = tensor(np.zeros((config.num_workers, 1)))
-        for i in reversed(range(config.rollout_length)):
+        storage = self.storage
+        storage.size = len(storage.r)
+        storage.placeholder()
+        ret = tensor([[0]])
+        for i in reversed(range(len(storage.r))):
             ret = storage.r[i] + config.discount * storage.m[i] * ret
-            if not config.use_gae:
-                advantages = ret - storage.v[i].detach()
-            else:
-                td_error = storage.r[i] + config.discount * storage.m[i] * storage.v[i + 1] - storage.v[i]
-                advantages = advantages * config.gae_tau * config.discount * storage.m[i] + td_error
-            storage.adv[i] = advantages.detach()
-            storage.ret[i] = ret.detach()
+            storage.ret[i] = ret
 
-    def learn(self, storage, mdp, freeze_v=False):
-        config = self.config
-        log_prob, v, ret, adv, pi_hat = storage.cat(['log_pi_%s' % (mdp), 'v', 'ret', 'adv', 'pi_hat'])
+        pre_log, q_o, ret = storage.cat(['pre_log', 'q_o', 'ret'])
+        v = q_o[:, [0]]
+        adv = ret - v
 
-        if mdp == 'hat':
-            entropy = -(pi_hat * pi_hat.add(1e-5).log()).sum(-1).mean()
-        elif mdp == 'bar':
-            entropy = 0
-        else:
-            raise NotImplementedError
+        policy_loss = pre_log.add(1e-5).log() * adv.detach()
+        policy_loss = -policy_loss.mean()
+        v_loss = adv.pow(2).mul(0.5).mean()
 
-        policy_loss = -(log_prob * adv.detach()).mean() - config.entropy_weight * entropy
-        value_loss = (v - ret.detach()).pow(2).mul(0.5).mean()
+        self.opt.zero_grad()
+        (policy_loss + v_loss).backward()
 
-        if freeze_v:
-            value_loss = 0
+    def post_step(self, reward, terminal):
+        self.storage.add(dict(r=tensor(reward).view(1, 1),
+                              m=1 - tensor(terminal).view(1, 1)))
+        self.is_initial_states = self.storage.m[-1].byte().view(-1)
+        if terminal:
+            self.learn()
+            self.reset()
 
-        loss = policy_loss + value_loss
-        return loss
+
+class IOPGAgent(BaseAgent):
+    def __init__(self, config):
+        BaseAgent.__init__(self, config)
+        self.config = config
+        self.task = config.task_fn()
+        self.network = config.network_fn()
+        self.workers = [IOPGWorker(config, self.network) for _ in range(config.num_workers)]
+        self.opt = config.optimizer_fn(self.network.parameters())
+        self.total_steps = 0
+
+        self.states = self.task.reset()
+        self.states = config.state_normalizer(self.states)
 
     def step(self):
         config = self.config
-        storage = Storage(config.rollout_length)
-        states = self.states
-        for _ in range(config.rollout_length):
-            prediction = self.network(states)
-            pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
-            dist = torch.distributions.Categorical(probs=pi_hat)
-            options = dist.sample()
+        actions = []
+        for i, worker in enumerate(self.workers):
+            actions.append(worker.pre_step(self.states[[i]]))
+        actions = torch.cat(actions, dim=0)
+        next_states, rewards, terminals, info = self.task.step(to_np(actions))
+        self.record_online_return(info)
+        rewards = config.reward_normalizer(rewards)
+        next_states = config.state_normalizer(next_states)
 
-            mean = prediction['mean'][self.worker_index, options]
-            std = prediction['std'][self.worker_index, options]
-            dist = torch.distributions.Normal(mean, std)
-            actions = dist.sample()
+        for i, worker in enumerate(self.workers):
+            worker.post_step(rewards[i], terminals[i])
+            if terminals[i]:
+                self.opt.zero_grad()
+                sync_grad(self.network, worker.network)
+                nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
+                self.opt.step()
 
-            pi_bar = self.compute_pi_bar(pi_hat, actions.unsqueeze(1).expand(-1, pi_hat.size(1), -1),
-                                         prediction['mean'], prediction['std'])
-            v = self.compute_v(prediction['q_o'], self.prev_options.unsqueeze(-1),
-                               self.is_initial_states.unsqueeze(-1))
+        for i, worker in enumerate(self.workers):
+            if terminals[i]:
+                worker.sync()
 
-            next_states, rewards, terminals, info = self.task.step(to_np(actions))
-            self.record_online_return(info)
-            rewards = config.reward_normalizer(rewards)
-            next_states = config.state_normalizer(next_states)
-            storage.add(prediction)
-
-            storage.add({'r': tensor(rewards).unsqueeze(-1),
-                         'm': tensor(1 - terminals).unsqueeze(-1),
-                         'a': actions,
-                         'o': options.unsqueeze(-1),
-                         'prev_o': self.prev_options.unsqueeze(-1),
-                         's': tensor(states),
-                         'init': self.is_initial_states.unsqueeze(-1),
-                         'pi_hat': pi_hat,
-                         'log_pi_hat': pi_hat[self.worker_index, options].add(1e-5).log().unsqueeze(-1),
-                         'log_pi_bar': pi_bar.add(1e-5).log(),
-                         'v': v})
-
-            self.is_initial_states = tensor(terminals).byte()
-            self.prev_options = options
-
-            states = next_states
-            self.total_steps += config.num_workers
-
-        self.states = states
-        prediction = self.network(states)
-        v = self.compute_v(prediction['q_o'], self.prev_options.unsqueeze(-1),
-                           self.is_initial_states.unsqueeze(-1))
-        storage.add(prediction)
-        storage.add({
-            'v': v
-        })
-        storage.placeholder()
-
-        self.compute_adv(storage)
-
-        if config.learning == 'all':
-            mdps = ['hat', 'bar']
-            np.random.shuffle(mdps)
-            loss1 = self.learn(storage, mdps[0])
-            loss2 = self.learn(storage, mdps[1], freeze_v=config.freeze_v)
-            loss = loss1 + loss2
-        elif config.learning == 'alt':
-            if self.count % 2:
-                loss = self.learn(storage, 'hat')
-            else:
-                loss = self.learn(storage, 'bar')
-            self.count += 1
-        else:
-            raise NotImplementedError
-
-        self.opt.zero_grad()
-        loss.backward()
-        nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
-        self.opt.step()
+        self.states = next_states
+        self.total_steps += config.num_workers
