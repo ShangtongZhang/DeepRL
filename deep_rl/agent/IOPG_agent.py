@@ -9,7 +9,7 @@ from ..component import *
 from .BaseAgent import *
 
 
-class IOPGWorker():
+class IOPGWorker:
     def __init__(self, config, master_network):
         self.network = config.network_fn()
         self.opt = config.optimizer_fn(self.network.parameters())
