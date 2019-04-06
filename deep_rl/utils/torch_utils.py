@@ -60,7 +60,8 @@ def epsilon_greedy(epsilon, x):
 
 def sync_grad(target_network, src_network):
     for param, src_param in zip(target_network.parameters(), src_network.parameters()):
-        param._grad = src_param.grad.clone()
+        if src_param is not None:
+            param._grad = src_param.grad.clone()
 
 
 # adapted from https://github.com/pytorch/pytorch/issues/12160
