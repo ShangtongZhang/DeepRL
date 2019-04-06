@@ -1,66 +1,6 @@
 from deep_rl import *
 
 
-# def batch_atari():
-#     cf = Config()
-#     cf.add_argument('--i', type=int, default=0)
-#     cf.add_argument('--j', type=int, default=0)
-#     cf.merge()
-#
-#     games = [
-#         'BreakoutNoFrameskip-v4',
-#         'AsterixNoFrameskip-v4',
-#         'MsPacmanNoFrameskip-v4',
-#         'AlienNoFrameskip-v4',
-#         # 'DemonAttackNoFrameskip-v4',
-#         # 'SeaquestNoFrameskip-v4',
-#     ]
-#     # game = games[cf.i // 14]
-#
-#     # algos = [
-#     #     IOPG_pixel,
-#     #     # OC_pixel,
-#     #     # a2c_pixel,
-#     # ]
-#     #
-#     # params = [
-#     #     [OC_pixel, dict(game=game, remark='OC', beta_reg=0)],
-#     #     [OC_pixel, dict(game=game, remark='OC', beta_reg=0.01)],
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='sample', beta_grad='direct', ent_hat=0.01, beta_reg=0.01)],
-#     #
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='sample', beta_grad='direct', ent_hat=0.01, beta_reg=0)],
-#     #
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0.01)],
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0.01)],
-#     #
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0)],
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0)],
-#     #
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='posterior', beta_grad='indirect', ent_hat=0.1)],
-#     #     [IOPG_pixel, dict(game=game, remark='IOPG', pi_hat_grad='expected', beta_grad='indirect', ent_hat=0.1)],
-#     #
-#     # ]
-#
-#     params = []
-#     for game in games:
-#         for r in range(1):
-#             for pre in [True, False]:
-#                 for grad in ['sample', 'expected', 'posterior']:
-#                     params.append(
-#                         [IO_pixel, dict(game=game, run=r, pi_hat_grad=grad, pretrained_phi=pre, control_type='pi')])
-#                 params.append([IO_pixel, dict(game=game, run=r, pretrained_phi=pre, control_type='q')])
-#             params.append([IO_pixel, dict(game=game, run=r, random_option=True)])
-#
-#     params = params[cf.i]
-#     params[0](**params[1])
-#
-#     exit()
-
-
 def batch_mujoco():
     cf = Config()
     cf.add_argument('--i', type=int, default=0)
@@ -99,8 +39,8 @@ def batch_mujoco():
     ]
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
-    # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
-    games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
+    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
+    # games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
 
     params = []
 
@@ -119,11 +59,12 @@ def batch_mujoco():
         for r in range(10):
             # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
-            params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
+            # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
 
             # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC', gate=nn.Tanh())])
             # params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='A2C', gate=nn.Tanh())])
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
+            params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh())])
 
     # params = []
     # for r in range(2):
@@ -388,8 +329,8 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    # select_device(-1)
-    # batch_mujoco()
+    select_device(-1)
+    batch_mujoco()
 
     # game = 'HalfCheetah-v2'
     game = 'Walker2d-v2'
