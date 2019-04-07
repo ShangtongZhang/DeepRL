@@ -17,15 +17,15 @@ def plot_dm():
 
 
     patterns = [
-        'PPO',
-        'ASC',
+        'remark_PPO',
+        'ASC-PPO',
         'AHP',
         'IOPG',
     ]
 
     labels = [
         'PPO',
-        'ASC',
+        'ASC-PPO',
         'AHP',
         'IOPG',
     ]
@@ -65,15 +65,13 @@ def plot_mujoco():
 
 
     patterns = [
-        'ASC',
-        'A2C',
+        'ASC-PPO',
         'AHP',
         'IOPG',
     ]
 
     labels = [
         'ASC-PPO',
-        'ASC-A2C',
         'AHP',
         'IOPG',
     ]
@@ -212,5 +210,5 @@ def plot_misc():
 
 if __name__ == '__main__':
     mkdir('images')
-    plot_dm()
-    # plot_mujoco()
+    # plot_dm()
+    plot_mujoco()
