@@ -23,7 +23,8 @@ for i in $(seq 0 79); do
     echo "$i" >> jobs.txt
 done
 #cat jobs.txt | xargs -n 1 -P 50 sh -c 'bash docker_python.sh 0 "job.py --i1 $0"'
-cat jobs.txt | xargs -n 1 -P 40 sh -c 'bash docker_python.sh 0 "job.py --i1 $0"'
+#cat jobs.txt | xargs -n 1 -P 40 sh -c 'bash docker_python.sh 0 "job.py --i1 $0"'
+cat jobs.txt | xargs -n 1 -P 30 sh -c 'bash docker_python.sh 0 "job.py --i1 $0"'
 
 #rm -f jobs.txt
 #touch jobs.txt

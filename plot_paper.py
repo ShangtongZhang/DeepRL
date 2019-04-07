@@ -599,6 +599,6 @@ def plot_auc_improvements():
 
 if __name__ == '__main__':
     # extract_auc_data()
-    # plot_ddpg_variants(type='mean')
-    # plot_ddpg_variants(type='median')
-    plot_auc_improvements()
+    plot_ddpg_variants(type='mean')
+    plot_ddpg_variants(type='median')
+    # plot_auc_improvements()

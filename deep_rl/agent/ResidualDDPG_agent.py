@@ -37,6 +37,18 @@ class ResidualDDPGAgent(BaseAgent):
         self.config.state_normalizer.unset_read_only()
         return to_np(action)
 
+    def get_grads(self, network):
+        grads = {}
+        for name, param in network.named_parameters():
+            if param.grad is not None:
+                grads[name] = param.grad.clone()
+        return grads
+
+    def compare_grads(self, grads1, grads2):
+        for k in grads1.keys():
+            diff = grads1[k] - grads2[k]
+            print(diff.abs().sum())
+
     def step(self):
         config = self.config
         if self.state is None:
@@ -114,7 +126,7 @@ class ResidualDDPGAgent(BaseAgent):
                 q = self.network.critic(states, actions.detach())
                 a_next = self.network.actor(next_states).detach()
                 q_next = self.network.critic(next_states, a_next)
-                critic_loss = 0.5 * (config.residual * config.discount * terminals * q_next - q) * td_error
+                critic_loss = (config.residual * config.discount * terminals * q_next - q) * td_error
                 critic_loss = critic_loss.mean()
 
             config.logger.add_scalar('q_loss', critic_loss)
