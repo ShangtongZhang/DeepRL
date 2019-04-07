@@ -36,11 +36,12 @@ class ASquaredCPPOAgent(BaseAgent):
         pi_hat = torch.where(is_intial_states, inter_pi, pi_hat)
         return pi_hat
 
-    def compute_pi_bar(self, pi_hat, action, mean, std):
+    def compute_pi_bar(self, options, action, mean, std):
+        options = options.unsqueeze(-1).expand(-1, -1, mean.size(-1))
+        mean = mean.gather(1, options).squeeze(1)
+        std = std.gather(1, options).squeeze(1)
         dist = torch.distributions.Normal(mean, std)
-        pi_bar = dist.log_prob(action).sum(-1).exp()
-        pi_bar = pi_bar * pi_hat.detach()
-        pi_bar = pi_bar.sum(-1).unsqueeze(-1)
+        pi_bar = dist.log_prob(action).sum(-1).exp().unsqueeze(-1)
         return pi_bar
 
     def compute_v(self, q_o, prev_option, is_initial_states):
@@ -53,30 +54,34 @@ class ASquaredCPPOAgent(BaseAgent):
         if mdp == 'hat':
             return pi_hat.add(1e-5).log().gather(1, options)
         elif mdp == 'bar':
-            pi_bar = self.compute_pi_bar(pi_hat, action, mean, std)
+            pi_bar = self.compute_pi_bar(options, action, mean, std)
             return pi_bar.add(1e-5).log()
         else:
             raise NotImplementedError
 
-    def compute_adv(self, storage):
+    def compute_adv(self, storage, mdp):
         config = self.config
-        ret = storage.v[-1].detach()
+
+        v = storage.__getattribute__('v_%s' % (mdp))
+        adv = storage.__getattribute__('adv_%s' % (mdp))
+
+        ret = v[-1].detach()
         advantages = tensor(np.zeros((config.num_workers, 1)))
         for i in reversed(range(config.rollout_length)):
             ret = storage.r[i] + config.discount * storage.m[i] * ret
             if not config.use_gae:
-                advantages = ret - storage.v[i].detach()
+                advantages = ret - v[i].detach()
             else:
-                td_error = storage.r[i] + config.discount * storage.m[i] * storage.v[i + 1] - storage.v[i]
+                td_error = storage.r[i] + config.discount * storage.m[i] * v[i + 1] - v[i]
                 advantages = advantages * config.gae_tau * config.discount * storage.m[i] + td_error
-            storage.adv[i] = advantages.detach()
+            adv[i] = advantages.detach()
             storage.ret[i] = ret.detach()
 
     def learn(self, storage, mdp, freeze_v=False):
         config = self.config
         states, actions, options, log_probs_old, returns, advantages, prev_options, inits, pi_hat, mean, std = \
-            storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret', 'adv', 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
-        actions = actions.detach().unsqueeze(1).expand(-1, pi_hat.size(1), -1)
+            storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret', 'adv_%s' % (mdp), 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
+        actions = actions.detach()
         log_probs_old = log_probs_old.detach()
         pi_hat = pi_hat.detach()
         mean = mean.detach()
@@ -118,7 +123,12 @@ class ASquaredCPPOAgent(BaseAgent):
                 else:
                     raise NotImplementedError
 
-                v = self.compute_v(prediction['q_o'], sampled_prev_o, sampled_init)
+                if mdp == 'hat':
+                    v = prediction['q_o'].gather(1, sampled_options)
+                elif mdp == 'bar':
+                    v = (prediction['q_o'][:, :-1] * sampled_pi_hat).sum(-1).unsqueeze(-1)
+                else:
+                    raise NotImplementedError
 
                 ratio = (log_pi_a - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
@@ -142,7 +152,7 @@ class ASquaredCPPOAgent(BaseAgent):
 
     def step(self):
         config = self.config
-        storage = Storage(config.rollout_length)
+        storage = Storage(config.rollout_length, ['adv_bar', 'adv_hat'])
         states = self.states
         for _ in range(config.rollout_length):
             prediction = self.network(states)
@@ -150,8 +160,8 @@ class ASquaredCPPOAgent(BaseAgent):
             dist = torch.distributions.Categorical(probs=pi_hat)
             options = dist.sample()
 
-            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=0)
-            self.logger.add_scalar('option', options[0], log_level=0)
+            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=1)
+            self.logger.add_scalar('option', options[0], log_level=1)
             self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=1)
             self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=1)
 
@@ -160,10 +170,11 @@ class ASquaredCPPOAgent(BaseAgent):
             dist = torch.distributions.Normal(mean, std)
             actions = dist.sample()
 
-            pi_bar = self.compute_pi_bar(pi_hat, actions.unsqueeze(1).expand(-1, pi_hat.size(1), -1),
+            pi_bar = self.compute_pi_bar(options.unsqueeze(-1), actions,
                                          prediction['mean'], prediction['std'])
-            v = self.compute_v(prediction['q_o'], self.prev_options.unsqueeze(-1),
-                               self.is_initial_states.unsqueeze(-1))
+
+            v_bar = prediction['q_o'].gather(1, options.unsqueeze(-1))
+            v_hat = (prediction['q_o'][:, :-1] * pi_hat).sum(-1).unsqueeze(-1)
 
             next_states, rewards, terminals, info = self.task.step(to_np(actions))
             self.record_online_return(info)
@@ -181,7 +192,8 @@ class ASquaredCPPOAgent(BaseAgent):
                          'pi_hat': pi_hat,
                          'log_pi_hat': pi_hat[self.worker_index, options].add(1e-5).log().unsqueeze(-1),
                          'log_pi_bar': pi_bar.add(1e-5).log(),
-                         'v': v})
+                         'v_bar': v_bar,
+                         'v_hat': v_hat})
 
             self.is_initial_states = tensor(terminals).byte()
             self.prev_options = options
@@ -191,21 +203,27 @@ class ASquaredCPPOAgent(BaseAgent):
 
         self.states = states
         prediction = self.network(states)
-        v = self.compute_v(prediction['q_o'], self.prev_options.unsqueeze(-1),
-                           self.is_initial_states.unsqueeze(-1))
+        pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
+        dist = torch.distributions.Categorical(pi_hat)
+        options = dist.sample()
+        v_bar = prediction['q_o'].gather(1, options.unsqueeze(-1))
+        v_hat = (prediction['q_o'][:, :-1] * pi_hat).sum(-1).unsqueeze(-1)
+
         storage.add(prediction)
         storage.add({
-            'v': v
+            'v_bar': v_bar,
+            'v_hat': v_hat,
         })
         storage.placeholder()
 
-        self.compute_adv(storage)
+        self.compute_adv(storage, 'bar')
+        self.compute_adv(storage, 'hat')
 
         if config.learning == 'all':
             mdps = ['hat', 'bar']
             np.random.shuffle(mdps)
             self.learn(storage, mdps[0])
-            self.learn(storage, mdps[1], freeze_v=config.freeze_v)
+            self.learn(storage, mdps[1])
         elif config.learning == 'alt':
             if self.count % 2:
                 self.learn(storage, 'hat')

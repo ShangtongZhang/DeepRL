@@ -39,8 +39,8 @@ def batch_mujoco():
     ]
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
-    # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
-    games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
+    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
+    # games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
 
     params = []
 
@@ -57,12 +57,12 @@ def batch_mujoco():
 
     for game in games:
         for r in range(10):
-            # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC')])
+            # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC-PPO')])
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
-            params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG')])
+            # params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG')])
 
-            # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC', gate=nn.Tanh())])
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC-PPO', gate=nn.Tanh())])
             # params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='A2C', gate=nn.Tanh())])
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
             # params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh())])
@@ -333,13 +333,13 @@ if __name__ == '__main__':
     select_device(-1)
     batch_mujoco()
 
-    # game = 'HalfCheetah-v2'
+    game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
     # game = 'dm-walker-walk'
     # game = 'dm-fish-upright'
     # game = 'dm-fish-swim'
-    game = 'dm-fish'
+    # game = 'dm-fish'
     # game = 'dm-cartpole-s'
     # game = 'dm-cheetah-run'
     # game = 'dm-cheetah-backward'
@@ -364,17 +364,16 @@ if __name__ == '__main__':
     #     gate=nn.Tanh(),
     # )
 
-    # a_squared_c_ppo_continuous(
-    #     game=game,
-    #     learning='all',
-    #     log_level=1,
-    #     num_o=4,
-    #     opt_ep=5,
-    #     freeze_v=False,
-    #     tasks=False,
-    #     gate=nn.ReLU(),
-    #     # max_steps=4e3,
-    # )
+    a_squared_c_ppo_continuous(
+        game=game,
+        learning='all',
+        log_level=1,
+        num_o=4,
+        opt_ep=5,
+        freeze_v=False,
+        tasks=False,
+        gate=nn.Tanh(),
+    )
 
     # ahp_ppo_continuous(
     #     game=game,
