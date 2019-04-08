@@ -593,12 +593,26 @@ def plot_auc_improvements():
     games = [games[i] for i in indices]
     improvements = [improvements[i] for i in indices]
 
+    print(np.median(improvements), np.mean(improvements))
+
     for g, i in zip(games, improvements):
         print(g, i)
+
+    x = np.arange(len(improvements))
+
+    plt.tight_layout()
+    plt.bar(x, improvements)
+    plt.xticks(x, games, rotation=-90)
+    plt.gca().invert_yaxis()
+    yticks = np.arange(-1, 4, 1)
+    plt.yticks(yticks, ['-100%', '0', '100%', '200%', '300%'], rotation=-90, verticalalignment='center')
+    # plt.ylabel('AUC Improvement', rotation=-90)
+    plt.savefig('%s/ddpg-auc.png' % (FOLDER), bbox_inches='tight')
+    plt.show()
 
 
 if __name__ == '__main__':
     # extract_auc_data()
-    plot_ddpg_variants(type='mean')
-    plot_ddpg_variants(type='median')
-    # plot_auc_improvements()
+    # plot_ddpg_variants(type='mean')
+    # plot_ddpg_variants(type='median')
+    plot_auc_improvements()
