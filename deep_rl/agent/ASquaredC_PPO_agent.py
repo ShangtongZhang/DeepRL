@@ -44,12 +44,6 @@ class ASquaredCPPOAgent(BaseAgent):
         pi_bar = dist.log_prob(action).sum(-1).exp().unsqueeze(-1)
         return pi_bar
 
-    def compute_v(self, q_o, prev_option, is_initial_states):
-        v_init = q_o[:, [-1]]
-        v = q_o.gather(1, prev_option)
-        v = torch.where(is_initial_states, v_init, v)
-        return v
-
     def compute_log_pi_a(self, options, pi_hat, action, mean, std, mdp):
         if mdp == 'hat':
             return pi_hat.add(1e-5).log().gather(1, options)
@@ -64,6 +58,7 @@ class ASquaredCPPOAgent(BaseAgent):
 
         v = storage.__getattribute__('v_%s' % (mdp))
         adv = storage.__getattribute__('adv_%s' % (mdp))
+        all_ret = storage.__getattribute__('ret_%s' % (mdp))
 
         ret = v[-1].detach()
         advantages = tensor(np.zeros((config.num_workers, 1)))
@@ -75,12 +70,12 @@ class ASquaredCPPOAgent(BaseAgent):
                 td_error = storage.r[i] + config.discount * storage.m[i] * v[i + 1] - v[i]
                 advantages = advantages * config.gae_tau * config.discount * storage.m[i] + td_error
             adv[i] = advantages.detach()
-            storage.ret[i] = ret.detach()
+            all_ret[i] = ret.detach()
 
     def learn(self, storage, mdp, freeze_v=False):
         config = self.config
         states, actions, options, log_probs_old, returns, advantages, prev_options, inits, pi_hat, mean, std = \
-            storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret', 'adv_%s' % (mdp), 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
+            storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret_%s' % (mdp), 'adv_%s' % (mdp), 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
         actions = actions.detach()
         log_probs_old = log_probs_old.detach()
         pi_hat = pi_hat.detach()
@@ -152,7 +147,7 @@ class ASquaredCPPOAgent(BaseAgent):
 
     def step(self):
         config = self.config
-        storage = Storage(config.rollout_length, ['adv_bar', 'adv_hat'])
+        storage = Storage(config.rollout_length, ['adv_bar', 'adv_hat', 'ret_bar', 'ret_hat'])
         states = self.states
         for _ in range(config.rollout_length):
             prediction = self.network(states)

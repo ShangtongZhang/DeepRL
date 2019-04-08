@@ -40,6 +40,81 @@ def batch_mujoco():
 
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
+
+    params = []
+
+    # for game in games:
+    #     for r in range(2):
+    #         for num_o in [4]:
+    #             for learning in ['all']:
+    #                 for opt_ep in [5, 10]:
+    #                     for entropy_weight in [0, 0.01]:
+    #                         params.append([a_squared_c_ppo_continuous,
+    #                                        dict(game=game, run=r, learning=learning, num_o=num_o, opt_ep=opt_ep,
+    #                                             entropy_weight=entropy_weight, tasks=False)])
+    #         params.append([ppo_continuous, dict(game=game, run=r, tasks=False)])
+
+    for game in games:
+        for r in range(10):
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC-PPO', gate=nn.Tanh())])
+            params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='ASC-A2C', gate=nn.Tanh())])
+            params.append([ppo_continuous, dict(game=game, run=r, tasks=False, remark='PPO', gate=nn.Tanh())])
+
+            # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
+            # params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh())])
+
+    # params = []
+    # for r in range(2):
+    #     for num_o in [2, 4, 8]:
+    #         for beta_w in [0, 0.01, 0.1]:
+    #             params.append([a_squared_c_ppo_continuous, dict(game='dm-cheetah', run=r, tasks=True, remark='vis',
+    #                                                             num_o=num_o, beta_weight=beta_w)])
+
+    algo, param = params[cf.i]
+    algo(**param)
+    # a_squared_c_ppo_continuous(**params[cf.i])
+    exit()
+
+
+def batch_dm():
+    cf = Config()
+    cf.add_argument('--i', type=int, default=0)
+    cf.add_argument('--j', type=int, default=0)
+    cf.merge()
+
+    games = [
+        'dm-acrobot-swingup',
+        'dm-acrobot-swingup_sparse',
+        'dm-ball_in_cup-catch',
+        'dm-cartpole-swingup',
+        'dm-cartpole-swingup_sparse',
+        'dm-cartpole-balance',
+        'dm-cartpole-balance_sparse',
+        'dm-cheetah-run',
+        'dm-finger-turn_hard',
+        'dm-finger-spin',
+        'dm-finger-turn_easy',
+        'dm-fish-upright',
+        'dm-fish-swim',
+        'dm-hopper-stand',
+        'dm-hopper-hop',
+        'dm-humanoid-stand',
+        'dm-humanoid-walk',
+        'dm-humanoid-run',
+        'dm-manipulator-bring_ball',
+        'dm-pendulum-swingup',
+        'dm-point_mass-easy',
+        'dm-reacher-easy',
+        'dm-reacher-hard',
+        'dm-swimmer-swimmer15',
+        'dm-swimmer-swimmer6',
+        'dm-walker-stand',
+        'dm-walker-walk',
+        'dm-walker-run',
+    ]
+
+    # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Reacher-v2']
+    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2']
     # games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
 
     params = []
@@ -62,7 +137,8 @@ def batch_mujoco():
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
             # params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG')])
 
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC-PPO', gate=nn.Tanh())])
+            params.append(
+                [a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC-PPO', gate=nn.Tanh())])
             # params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='A2C', gate=nn.Tanh())])
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
             # params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh())])
@@ -76,7 +152,6 @@ def batch_mujoco():
 
     algo, param = params[cf.i]
     algo(**param)
-    # a_squared_c_ppo_continuous(**params[cf.i])
     exit()
 
 
@@ -330,8 +405,8 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
 
     game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
@@ -352,28 +427,26 @@ if __name__ == '__main__':
     #     gate=nn.ReLU(),
     # )
 
-    # a_squared_c_a2c_continuous(
-    #     game=game,
-    #     # learning='all',
-    #     learning='alt',
-    #     log_level=1,
-    #     num_o=4,
-    #     opt_ep=10,
-    #     freeze_v=False,
-    #     tasks=False,
-    #     gate=nn.Tanh(),
-    # )
-
-    a_squared_c_ppo_continuous(
+    a_squared_c_a2c_continuous(
         game=game,
         learning='all',
         log_level=1,
         num_o=4,
-        opt_ep=5,
         freeze_v=False,
         tasks=False,
         gate=nn.Tanh(),
     )
+
+    # a_squared_c_ppo_continuous(
+    #     game=game,
+    #     learning='all',
+    #     log_level=1,
+    #     num_o=4,
+    #     opt_ep=5,
+    #     freeze_v=False,
+    #     tasks=False,
+    #     gate=nn.Tanh(),
+    # )
 
     # ahp_ppo_continuous(
     #     game=game,
