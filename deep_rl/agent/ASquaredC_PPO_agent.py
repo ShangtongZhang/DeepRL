@@ -121,7 +121,7 @@ class ASquaredCPPOAgent(BaseAgent):
                 if mdp == 'hat':
                     v = prediction['q_o'].gather(1, sampled_options)
                 elif mdp == 'bar':
-                    v = (prediction['q_o'][:, :-1] * sampled_pi_hat).sum(-1).unsqueeze(-1)
+                    v = (prediction['q_o'] * sampled_pi_hat).sum(-1).unsqueeze(-1)
                 else:
                     raise NotImplementedError
 
@@ -169,7 +169,7 @@ class ASquaredCPPOAgent(BaseAgent):
                                          prediction['mean'], prediction['std'])
 
             v_bar = prediction['q_o'].gather(1, options.unsqueeze(-1))
-            v_hat = (prediction['q_o'][:, :-1] * pi_hat).sum(-1).unsqueeze(-1)
+            v_hat = (prediction['q_o'] * pi_hat).sum(-1).unsqueeze(-1)
 
             next_states, rewards, terminals, info = self.task.step(to_np(actions))
             self.record_online_return(info)
@@ -202,7 +202,7 @@ class ASquaredCPPOAgent(BaseAgent):
         dist = torch.distributions.Categorical(pi_hat)
         options = dist.sample()
         v_bar = prediction['q_o'].gather(1, options.unsqueeze(-1))
-        v_hat = (prediction['q_o'][:, :-1] * pi_hat).sum(-1).unsqueeze(-1)
+        v_hat = (prediction['q_o'] * pi_hat).sum(-1).unsqueeze(-1)
 
         storage.add(prediction)
         storage.add({

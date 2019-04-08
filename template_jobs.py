@@ -419,6 +419,7 @@ if __name__ == '__main__':
     # game = 'dm-cheetah-run'
     # game = 'dm-cheetah-backward'
     # game = 'dm-fish-downleft'
+
     # ppo_continuous(
     #     game=game,
     #     # game='dm-walker',
@@ -427,15 +428,15 @@ if __name__ == '__main__':
     #     gate=nn.ReLU(),
     # )
 
-    a_squared_c_a2c_continuous(
-        game=game,
-        learning='all',
-        log_level=1,
-        num_o=4,
-        freeze_v=False,
-        tasks=False,
-        gate=nn.Tanh(),
-    )
+    # a_squared_c_a2c_continuous(
+    #     game=game,
+    #     learning='all',
+    #     log_level=1,
+    #     num_o=4,
+    #     freeze_v=False,
+    #     tasks=False,
+    #     gate=nn.Tanh(),
+    # )
 
     # a_squared_c_ppo_continuous(
     #     game=game,
@@ -453,49 +454,17 @@ if __name__ == '__main__':
     #     learning='all',
     #     log_level=1,
     #     num_o=4,
-    #     opt_ep=5,
+    #     opt_ep=10,
     #     freeze_v=False,
     #     tasks=False,
-    #     gate=nn.ReLU(),
-    #     # max_steps=4e3,
+    #     gate=nn.Tanh(),
     # )
 
-    iopg_continuous(
-        game=game,
-        log_level=1,
-        num_o=4,
-        tasks=True,
-        gate=nn.Tanh(),
-        max_steps=4e3,
-    )
-
-    # game = 'AlienNoFrameskip-v4'
-    # # OC_pixel(
-    # #     game=game,
-    # #     verify=True,
-    # # )
-    # IO_pixel(
+    # iopg_continuous(
     #     game=game,
-    #     pi_hat_grad='posterior',
-    #     verify=False,
-    #     random_option=False,
-    #     control_type='pi',
-    #     pretrained_phi=True,
-    # )
-    #
-    # from examples import *
-
-    # a2c_feature(game='LunarLander-v2')
-    # option_critic_feature(game='CartPole-v0')
-    # IOPG_feature(
-    #     # game='CartPole-v0',
-    #     game='LunarLander-v2',
-    #     # game='Acrobot-v1',
-    #     # pi_hat_grad='sample',
-    #     # pi_hat_grad='expected',
-    #     pi_hat_grad='posterior',
-    #     beta_grad='direct',
-    #     # beta_grad='indirect',
-    #     ent_hat=0.1,
-    #     beta_reg=0.01,
+    #     log_level=1,
+    #     num_o=4,
+    #     tasks=False,
+    #     gate=nn.Tanh(),
+    #     # max_steps=4e3,
     # )

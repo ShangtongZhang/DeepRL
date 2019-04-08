@@ -35,9 +35,9 @@ class AHPPPOAgent(BaseAgent):
         p_op = torch.where(stop, pi_o, (prev_o == o).float().detach())
         return p_sp * p_op * pi_a
 
-    def compute_v(self, q_o, prev_option, is_initial_states):
-        v_init = q_o[:, [-1]]
-        v = q_o.gather(1, prev_option)
+    def compute_v(self, u_o, prev_option, is_initial_states):
+        v_init = u_o[:, [-1]]
+        v = u_o.gather(1, prev_option)
         v = torch.where(is_initial_states, v_init, v)
         return v
 
@@ -91,7 +91,7 @@ class AHPPPOAgent(BaseAgent):
                                            prediction['inter_pi'].gather(1, sampled_options),
                                            pi_a)
                 log_pi_a = pi_a.add(1e-5).log()
-                v = self.compute_v(prediction['q_o'], sampled_prev_o, sampled_init)
+                v = self.compute_v(prediction['u_o'], sampled_prev_o, sampled_init)
 
                 ratio = (log_pi_a - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
@@ -142,7 +142,7 @@ class AHPPPOAgent(BaseAgent):
                                          prediction['inter_pi'][self.worker_index, options].unsqueeze(-1),
                                          pi_a)
 
-            v = self.compute_v(prediction['q_o'], self.prev_options.unsqueeze(-1),
+            v = self.compute_v(prediction['u_o'], self.prev_options.unsqueeze(-1),
                                self.is_initial_states.unsqueeze(-1))
 
             next_states, rewards, terminals, info = self.task.step(to_np(actions))
@@ -170,7 +170,7 @@ class AHPPPOAgent(BaseAgent):
 
         self.states = states
         prediction = self.network(states)
-        v = self.compute_v(prediction['q_o'], self.prev_options.unsqueeze(-1),
+        v = self.compute_v(prediction['u_o'], self.prev_options.unsqueeze(-1),
                            self.is_initial_states.unsqueeze(-1))
         storage.add(prediction)
         storage.add({
