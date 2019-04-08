@@ -56,8 +56,10 @@ def batch_mujoco():
 
     for game in games:
         for r in range(10):
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC-PPO', gate=nn.Tanh())])
-            params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='ASC-A2C', gate=nn.Tanh())])
+            params.append(
+                [a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC-PPO', gate=nn.Tanh())])
+            params.append(
+                [a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='ASC-A2C', gate=nn.Tanh())])
             params.append([ppo_continuous, dict(game=game, run=r, tasks=False, remark='PPO', gate=nn.Tanh())])
 
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
@@ -314,6 +316,48 @@ def ppo_continuous(**kwargs):
     run_steps(PPOAgent(config))
 
 
+def oc_continuous(**kwargs):
+    generate_tag(kwargs)
+    kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('num_o', 4)
+    kwargs.setdefault('learning', 'all')
+    kwargs.setdefault('gate', nn.ReLU())
+    kwargs.setdefault('entropy_weight', 0.01)
+    kwargs.setdefault('tasks', False)
+    kwargs.setdefault('max_steps', 2e6)
+    config = Config()
+    config.merge(kwargs)
+
+    if config.tasks:
+        set_tasks(config)
+
+    if 'dm-humanoid' in config.game:
+        hidden_units = (128, 128)
+    else:
+        hidden_units = (64, 64)
+
+    config.num_workers = 16
+    config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
+    config.eval_env = Task(config.game)
+
+    config.network_fn = lambda: OptionGaussianActorCriticNet(
+        config.state_dim, config.action_dim,
+        num_options=config.num_o,
+        actor_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        critic_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        option_body_fn=lambda: FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+    )
+    config.random_option_prob = LinearSchedule(0.1)
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    config.discount = 0.99
+    config.gradient_clip = 0.5
+    config.rollout_length = 5
+    config.beta_reg = 0.01
+    config.state_normalizer = MeanStdNormalizer()
+    config.target_network_update_freq = int(1e3)
+    run_steps(OCAgent(config))
+
+
 def ahp_ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -468,3 +512,11 @@ if __name__ == '__main__':
     #     gate=nn.Tanh(),
     #     # max_steps=4e3,
     # )
+
+    oc_continuous(
+        game=game,
+        log_level=1,
+        num_o=4,
+        tasks=False,
+        gate=nn.Tanh(),
+    )

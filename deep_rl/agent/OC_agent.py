@@ -28,7 +28,7 @@ class OCAgent(BaseAgent):
 
     def sample_option(self, prediction, epsilon, prev_option, is_intial_states):
         with torch.no_grad():
-            q_option = prediction['q']
+            q_option = prediction['q_o']
             pi_option = torch.zeros_like(q_option).add(epsilon / q_option.size(1))
             greedy_option = q_option.argmax(dim=-1, keepdim=True)
             prob = 1 - epsilon + epsilon / q_option.size(1)
@@ -38,7 +38,6 @@ class OCAgent(BaseAgent):
             mask = torch.zeros_like(q_option)
             mask[:, prev_option] = 1
             beta = prediction['beta']
-            self.logger.add_scalar('beta', beta[0, prev_option[0]])
             pi_hat_option = (1 - beta) * mask + beta * pi_option
 
             dist = torch.distributions.Categorical(probs=pi_option)
@@ -57,11 +56,13 @@ class OCAgent(BaseAgent):
             prediction = self.network(self.states)
             epsilon = config.random_option_prob(config.num_workers)
             options = self.sample_option(prediction, epsilon, self.prev_options, self.is_initial_states)
-            prediction['pi'] = prediction['pi'][self.worker_index, options]
-            prediction['log_pi'] = prediction['log_pi'][self.worker_index, options]
-            dist = torch.distributions.Categorical(probs=prediction['pi'])
+
+            mean = prediction['mean'][self.worker_index, options]
+            std = prediction['std'][self.worker_index, options]
+            dist = torch.distributions.Normal(mean, std)
             actions = dist.sample()
-            entropy = dist.entropy()
+            log_pi = dist.log_prob(actions).sum(-1).unsqueeze(-1)
+            entropy = dist.entropy().sum(-1).unsqueeze(-1)
 
             next_states, rewards, terminals, info = self.task.step(to_np(actions))
             self.record_online_return(info)
@@ -72,9 +73,10 @@ class OCAgent(BaseAgent):
                          'm': tensor(1 - terminals).unsqueeze(-1),
                          'o': options.unsqueeze(-1),
                          'prev_o': self.prev_options.unsqueeze(-1),
-                         'ent': entropy.unsqueeze(-1),
+                         'ent': entropy,
                          'a': actions.unsqueeze(-1),
                          'init': self.is_initial_states.unsqueeze(-1).float(),
+                         'log_pi': log_pi,
                          'eps': epsilon})
 
             self.is_initial_states = tensor(terminals).byte()
@@ -85,31 +87,29 @@ class OCAgent(BaseAgent):
             if self.total_steps // config.num_workers % config.target_network_update_freq == 0:
                 self.target_network.load_state_dict(self.network.state_dict())
 
-        if config.verify: return
-
         with torch.no_grad():
             prediction = self.target_network(self.states)
             storage.placeholder()
             betas = prediction['beta'][self.worker_index, self.prev_options]
-            ret = (1 - betas) * prediction['q'][self.worker_index, self.prev_options] + \
-                  betas * torch.max(prediction['q'], dim=-1)[0]
+            ret = (1 - betas) * prediction['q_o'][self.worker_index, self.prev_options] + \
+                  betas * torch.max(prediction['q_o'], dim=-1)[0]
             ret = ret.unsqueeze(-1)
 
         for i in reversed(range(config.rollout_length)):
             ret = storage.r[i] + config.discount * storage.m[i] * ret
-            adv = ret - storage.q[i].gather(1, storage.o[i])
+            adv = ret - storage.q_o[i].gather(1, storage.o[i])
             storage.ret[i] = ret
             storage.adv[i] = adv
 
-            v = storage.q[i].max(dim=-1, keepdim=True)[0] * (1 - storage.eps[i]) + storage.q[i].mean(-1).unsqueeze(-1) * storage.eps[i]
-            q = storage.q[i].gather(1, storage.prev_o[i])
+            v = storage.q_o[i].max(dim=-1, keepdim=True)[0] * (1 - storage.eps[i]) + storage.q_o[i].mean(-1).unsqueeze(-1) * storage.eps[i]
+            q = storage.q_o[i].gather(1, storage.prev_o[i])
             storage.beta_adv[i] = q - v + config.beta_reg
 
         q, beta, log_pi, ret, adv, beta_adv, ent, option, action, initial_states, prev_o = \
-            storage.cat(['q', 'beta', 'log_pi', 'ret', 'adv', 'beta_adv', 'ent', 'o', 'a', 'init', 'prev_o'])
+            storage.cat(['q_o', 'beta', 'log_pi', 'ret', 'adv', 'beta_adv', 'ent', 'o', 'a', 'init', 'prev_o'])
 
         q_loss = (q.gather(1, option) - ret.detach()).pow(2).mul(0.5).mean()
-        pi_loss = -(log_pi.gather(1, action) * adv.detach()) - config.entropy_weight * ent
+        pi_loss = -(log_pi * adv.detach()) - config.entropy_weight * ent
         pi_loss = pi_loss.mean()
         beta_loss = (beta.gather(1, prev_o) * beta_adv.detach() * (1 - initial_states)).mean()
 
