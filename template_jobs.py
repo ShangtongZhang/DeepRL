@@ -56,10 +56,14 @@ def batch_mujoco():
 
     for game in games:
         for r in range(10):
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC-PPO', gate=nn.Tanh())])
-            params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='ASC-A2C', gate=nn.Tanh())])
-            params.append([ppo_continuous, dict(game=game, run=r, tasks=False, remark='PPO', gate=nn.Tanh())])
-            params.append([oc_continuous, dict(game=game, run=r, tasks=False, remark='OC', gate=nn.Tanh())])
+            # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=False, remark='ASC-PPO', gate=nn.Tanh())])
+            # params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='ASC-A2C', gate=nn.Tanh())])
+            # params.append([ppo_continuous, dict(game=game, run=r, tasks=False, remark='PPO', gate=nn.Tanh())])
+            # params.append([oc_continuous, dict(game=game, run=r, tasks=False, remark='OC', gate=nn.Tanh())])
+
+            params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='ASC-A2C', gate=nn.Tanh(), num_workers=4)])
+            params.append([oc_continuous, dict(game=game, run=r, tasks=False, remark='OC', gate=nn.Tanh(), num_workers=4)])
+            params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh(), num_workers=4)])
 
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
             # params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh())])
@@ -131,11 +135,14 @@ def batch_dm():
 
     for game in games:
         for r in range(10):
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC-PPO')])
-            params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC')])
+            # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC-PPO')])
+            # params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC')])
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
             # params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG')])
+
+            params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC', num_workers=4)])
+            params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG', num_workers=4)])
 
 
     # params = []
@@ -239,6 +246,7 @@ def a_squared_c_a2c_continuous(**kwargs):
     kwargs.setdefault('entropy_weight', 0.01)
     kwargs.setdefault('tasks', False)
     kwargs.setdefault('max_steps', 2e6)
+    kwargs.setdefault('num_workers', 16)
     config = Config()
     config.merge(kwargs)
 
@@ -250,7 +258,6 @@ def a_squared_c_a2c_continuous(**kwargs):
     else:
         hidden_units = (64, 64)
 
-    config.num_workers = 16
     config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
     config.eval_env = Task(config.game)
 
@@ -440,8 +447,8 @@ if __name__ == '__main__':
     set_one_thread()
     select_device(-1)
 
-    # batch_mujoco()
-    batch_dm()
+    batch_mujoco()
+    # batch_dm()
 
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'

@@ -21,14 +21,10 @@ def plot_dm():
         'ASC-PPO',
         'AHP',
         'IOPG',
+        'OC'
     ]
 
-    labels = [
-        'PPO',
-        'ASC-PPO',
-        'AHP',
-        'IOPG',
-    ]
+    labels = patterns
 
     def top_k_measure(x):
         return np.mean(x)
@@ -65,16 +61,15 @@ def plot_mujoco():
 
 
     patterns = [
+        'remark_PPO',
         'ASC-PPO',
+        'ASC-A2C',
         'AHP',
         'IOPG',
+        'OC',
     ]
 
-    labels = [
-        'ASC-PPO',
-        'AHP',
-        'IOPG',
-    ]
+    labels = patterns
 
     def top_k_measure(x):
         return np.mean(x)
@@ -210,5 +205,5 @@ def plot_misc():
 
 if __name__ == '__main__':
     mkdir('images')
-    # plot_dm()
-    plot_mujoco()
+    plot_dm()
+    # plot_mujoco()
