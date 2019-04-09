@@ -14,6 +14,10 @@ def plot_dm():
         'dm-fish',
         'dm-cheetah',
     ]
+    games = [
+        'dm-walker-1',
+        'dm-walker-2',
+    ]
 
 
     patterns = [
@@ -63,10 +67,10 @@ def plot_mujoco():
     patterns = [
         'remark_PPO',
         'ASC-PPO',
-        'ASC-A2C',
+        'num_workers_4-remark_ASC-A2C',
         'AHP',
-        'IOPG',
-        'OC',
+        'num_workers_4-remark_IOPG',
+        'num_workers_4-remark_OC',
     ]
 
     labels = patterns
