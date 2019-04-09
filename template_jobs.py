@@ -160,6 +160,12 @@ def batch_dm():
 def set_tasks(config):
     if config.game == 'dm-walker':
         tasks = ['walk', 'run']
+    elif config.game == 'dm-walker-1':
+        tasks = ['squat', 'stand']
+        config.game = 'dm-walker'
+    elif config.game == 'dm-walker-2':
+        tasks = ['walk', 'backward']
+        config.game = 'dm-walker'
     elif config.game == 'dm-finger':
         tasks = ['turn_easy', 'turn_hard']
     elif config.game == 'dm-reacher':
@@ -447,7 +453,7 @@ if __name__ == '__main__':
     set_one_thread()
     select_device(-1)
 
-    batch_mujoco()
+    # batch_mujoco()
     # batch_dm()
 
     # game = 'HalfCheetah-v2'
@@ -457,19 +463,23 @@ if __name__ == '__main__':
     # game = 'dm-fish-upright'
     # game = 'dm-fish-swim'
     # game = 'dm-fish'
-    # game = 'dm-cartpole-s'
+    # game = 'dm-cartpole-b'
+    game = 'dm-walker-2'
     # game = 'dm-cheetah-run'
-    game = 'dm-cheetah'
+    # game = 'dm-cheetah'
     # game = 'dm-cheetah-backward'
     # game = 'dm-fish-downleft'
+    # game = 'dm-walker-squat'
+    # game = 'dm-walker-backward'
 
-    # ppo_continuous(
-    #     game=game,
-    #     # game='dm-walker',
-    #     tasks=False,
-    #     log_level=1,
-    #     gate=nn.ReLU(),
-    # )
+    ppo_continuous(
+        game=game,
+        # game='dm-walker',
+        tasks=True,
+        log_level=1,
+        gate=nn.ReLU(),
+        max_steps=4e3,
+    )
 
     # a_squared_c_a2c_continuous(
     #     game=game,
