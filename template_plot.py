@@ -20,8 +20,8 @@ def plot_dm():
         'remark_PPO',
         'ASC-PPO',
         'AHP',
-        'IOPG',
-        'OC'
+        'num_workers_4-remark_IOPG',
+        'num_workers_4-remark_OC',
     ]
 
     labels = patterns
