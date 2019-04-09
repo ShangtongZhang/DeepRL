@@ -118,7 +118,8 @@ def batch_dm():
         'dm-walker-run',
     ]
 
-    games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
+    # games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
+    games = ['dm-walker-1', 'dm-walker-2']
 
     params = []
 
@@ -135,10 +136,10 @@ def batch_dm():
 
     for game in games:
         for r in range(10):
-            # params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC-PPO')])
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC-PPO')])
             # params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC')])
-            # params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
-            # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
+            params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
+            params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
             # params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG')])
 
             params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC', num_workers=4)])
@@ -454,7 +455,7 @@ if __name__ == '__main__':
     select_device(-1)
 
     # batch_mujoco()
-    # batch_dm()
+    batch_dm()
 
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
