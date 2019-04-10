@@ -611,8 +611,113 @@ def plot_auc_improvements():
     plt.show()
 
 
+def plot_oracle(type='mean'):
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True,
+        'max_x_len': 101,
+        'top_k': 0,
+        'type': type,
+    }
+    games = [
+        'HalfCheetah-v2',
+        'Walker2d-v2',
+        'Hopper-v2',
+        'Swimmer-v2',
+        'Humanoid-v2',
+    ]
+
+    patterns = [
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
+        'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
+    ]
+
+    labels = [
+        'Dyna-DDPG',
+        'Res-Dyna-DDPG',
+    ]
+
+    l = len(games)
+    plt.figure(figsize=(l * 6, 5))
+    plt.rc('text', usetex=True)
+    plt.tight_layout()
+    for j, game in enumerate(games):
+        plt.subplot(1, l, j + 1)
+        ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, label='DDPG', **kwargs)
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i+1, label=labels[i], **kwargs)
+        plt.title(game, fontsize=30, fontweight="bold")
+        plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
+        plt.tick_params(axis='x', labelsize=30)
+        plt.tick_params(axis='y', labelsize=25)
+        plt.xlabel('Steps', fontsize=30)
+        if not j:
+            plt.ylabel('Episode Return', fontsize=30)
+            plt.legend(fontsize=17, frameon=False)
+    plt.savefig('%s/ddpg-oracle-%s.png' % (FOLDER, type), bbox_inches='tight')
+    plt.show()
+
+
+def plot_dyna(type='mean'):
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True,
+        'max_x_len': 101,
+        'top_k': 0,
+        'type': type,
+    }
+    games = [
+        'HalfCheetah-v2',
+        'Walker2d-v2',
+        'Hopper-v2',
+        'Swimmer-v2',
+        'Humanoid-v2',
+    ]
+
+    patterns = [
+        'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
+        'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
+        'MVE_3-plan_False-skip_False-run',
+    ]
+
+    labels = [
+        'Dyna-DDPG',
+        'Res-Dyna-DDPG',
+        'MVE-DDPG',
+    ]
+
+    l = len(games)
+    plt.figure(figsize=(l * 6, 5))
+    plt.rc('text', usetex=True)
+    plt.tight_layout()
+    for j, game in enumerate(games):
+        plt.subplot(1, l, j + 1)
+        ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, label='DDPG', **kwargs)
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, label=labels[i], **kwargs)
+            ddpg_plot(pattern='.*dyna-ddpg-1st/%s-%s.*' % (game, p), color=i+1, label=labels[i], **kwargs)
+        plt.title(game, fontsize=30, fontweight="bold")
+        plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
+        plt.tick_params(axis='x', labelsize=30)
+        plt.tick_params(axis='y', labelsize=25)
+        plt.xlabel('Steps', fontsize=30)
+        if not j:
+            plt.ylabel('Episode Return', fontsize=30)
+        if j == 1:
+            plt.legend(fontsize=17, frameon=False)
+    plt.savefig('%s/ddpg-dyna-%s.png' % (FOLDER, type), bbox_inches='tight')
+    plt.show()
+
+
+
 if __name__ == '__main__':
     # extract_auc_data()
     # plot_ddpg_variants(type='mean')
     # plot_ddpg_variants(type='median')
-    plot_auc_improvements()
+    # plot_auc_improvements()
+    # plot_oracle(type='mean')
+    # plot_oracle(type='median')
+    # plot_dyna(type='mean')
+    plot_dyna(type='median')
