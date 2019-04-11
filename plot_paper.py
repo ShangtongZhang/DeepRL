@@ -711,6 +711,87 @@ def plot_dyna(type='mean'):
     plt.show()
 
 
+def plot_mf_ddpg(type='mean'):
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True,
+        'max_x_len': 101,
+        'top_k': 0,
+        'type': type,
+    }
+
+    games = [
+        'dm-acrobot-swingup',
+        'dm-acrobot-swingup_sparse',
+        'dm-ball_in_cup-catch',
+        'dm-cartpole-swingup',
+        'dm-cartpole-swingup_sparse',
+        'dm-cartpole-balance',
+        'dm-cartpole-balance_sparse',
+        'dm-cheetah-run',
+        'dm-finger-turn_hard',
+        'dm-finger-spin',
+        'dm-finger-turn_easy',
+        'dm-fish-upright',
+        'dm-fish-swim',
+        'dm-hopper-stand',
+        'dm-hopper-hop',
+        'dm-humanoid-stand',
+        'dm-humanoid-walk',
+        'dm-humanoid-run',
+        'dm-manipulator-bring_ball',
+        'dm-pendulum-swingup',
+        'dm-point_mass-easy',
+        'dm-reacher-easy',
+        'dm-reacher-hard',
+        'dm-swimmer-swimmer15',
+        'dm-swimmer-swimmer6',
+        'dm-walker-stand',
+        'dm-walker-walk',
+        'dm-walker-run',
+    ]
+
+    patterns = [
+        'remark_residual-residual_0-target_net_residual_True-run',
+        'remark_residual-residual_0\.05-target_net_residual_True-run',
+    ]
+
+    labels = [
+        'DDPG',
+        r'Bi-Res-DDPG($\eta=0.05$)',
+    ]
+
+    l = len(games)
+    n_col = 4
+    n_row = l // n_col
+    width = 5
+
+    plt.figure(figsize=(n_col * width, n_row * width))
+    plt.rc('text', usetex=True)
+    plt.tight_layout()
+    for j, game in enumerate(games):
+        plt.subplot(n_row, n_col, j + 1)
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*dm-residual-ddpg/%s-%s.*' % (game, p), color=i, label=labels[i], **kwargs)
+        title = game[3:].replace('_', '\\_')
+        plt.title(title, fontsize=30, fontweight="bold")
+        plt.tick_params(axis='x', labelsize=30)
+        plt.tick_params(axis='y', labelsize=20)
+        if not j:
+            plt.legend(fontsize=17, frameon=False)
+        if j % n_col == 0:
+            plt.ylabel('Episode Return', fontsize=30)
+
+        if j >= l - n_col:
+            plt.xlabel('Steps', fontsize=30)
+            plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
+        else:
+            plt.tick_params(labelbottom=False)
+
+    plt.savefig('%s/ddpg-mf-%s.png' % (FOLDER, type), bbox_inches='tight')
+    plt.show()
+
 
 if __name__ == '__main__':
     # extract_auc_data()
@@ -720,4 +801,5 @@ if __name__ == '__main__':
     # plot_oracle(type='mean')
     # plot_oracle(type='median')
     # plot_dyna(type='mean')
-    plot_dyna(type='median')
+    # plot_dyna(type='median')
+    plot_mf_ddpg(type='mean')
