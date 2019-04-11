@@ -47,78 +47,6 @@ def plot(**kwargs):
     plt.ylabel('episode return')
 
 
-def plot_atari():
-    train_kwargs = {
-        'episode_window': 100,
-        'top_k': 0,
-        'max_timesteps': int(2e7),
-        # 'max_timesteps': int(3e7),
-        'average': False,
-        'x_interval': 100
-    }
-
-    games = [
-        # 'BreakoutNoFrameskip-v4',
-        # 'AlienNoFrameskip-v4',
-        # 'DemonAttackNoFrameskip-v4',
-        # 'SeaquestNoFrameskip-v4',
-        # 'MsPacmanNoFrameskip-v4',
-
-        'BeamRiderNoFrameskip-v4',
-        'SeaquestNoFrameskip-v4',
-        'BreakoutNoFrameskip-v4',
-        # 'PongNoFrameskip-v4',
-        # 'QbertNoFrameskip-v4',
-        # 'SpaceInvadersFrameskip-v4',
-    ]
-
-    patterns = [
-        # 'residual_0-target_net_residual_True-run',
-        # 'residual_0\.1-target_net_residual_True-run',
-        # 'residual_0\.05-target_net_residual_True-run',
-        # 'residual_0\.2-target_net_residual_True-run',
-        # 'residual_0\.4-target_net_residual_True-run',
-        # 'residual_0\.8-target_net_residual_True-run',
-        # 'residual_1-target_net_residual_True-run',
-
-        # 'entropy_weight_0\.01-multi_step_True-run',
-        # 'entropy_weight_0\.02-multi_step_True-run',
-        # 'entropy_weight_0\.04-multi_step_True-run',
-        # 'entropy_weight_0\.08-multi_step_True-run',
-
-        # 'multi_step_False-residual_0-target_net_residual_False-run',
-        # 'multi_step_False-residual_0\.05-target_net_residual_False-run',
-        # 'multi_step_False-residual_0\.1-target_net_residual_False-run',
-        # 'multi_step_False-residual_0\.2-target_net_residual_False-run',
-
-        # 'multi_step_False-residual_0-target_net_residual_True-run',
-        # 'multi_step_False-residual_0\.05-target_net_residual_True-run',
-        # 'multi_step_False-residual_0\.1-target_net_residual_True-run',
-        # 'multi_step_False-residual_0\.2-target_net_residual_True-run',
-
-        # 'r_aware_True-residual_0\.05-target_net_residual_True-run',
-        # 'r_aware_True-residual_0\.5-target_net_residual_True-run',
-        # 'r_aware_True-residual_1-target_net_residual_True-run',
-
-        'residual_0-target_net_residual_True-run',
-
-        'r_aware_False-residual_0\.05-target_net_residual_True-run',
-        'r_aware_False-residual_1-target_net_residual_True-run',
-
-        'r_aware_True-residual_0\.05-target_net_residual_True-run',
-        'r_aware_True-residual_1-target_net_residual_True-run',
-    ]
-
-    l = len(games)
-    plt.figure(figsize=(l * 10, 10))
-    for j, game in enumerate(games):
-        plt.subplot(1, l, j + 1)
-        for i, p in enumerate(patterns):
-            plot(pattern='.*residual-dqn/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
-            # plot(pattern='.*residual-a2c/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
-    plt.show()
-
-
 def ddpg_plot(**kwargs):
     kwargs.setdefault('average', True)
     kwargs.setdefault('color', 0)
@@ -337,135 +265,6 @@ def plot_mujoco():
     plt.show()
 
 
-def plot_dm_control():
-    kwargs = {
-        'x_interval': int(1e4),
-        'rep': 20,
-        'average': True,
-        'max_x_len': 101,
-        'top_k': 0,
-    }
-
-    games = [
-        'dm-acrobot-swingup',
-        'dm-acrobot-swingup_sparse',
-        'dm-ball_in_cup-catch',
-        'dm-cartpole-swingup',
-        'dm-cartpole-swingup_sparse',
-        'dm-cartpole-balance',
-        'dm-cartpole-balance_sparse',
-        'dm-cheetah-run',
-        'dm-finger-turn_hard',
-        'dm-finger-spin',
-        'dm-finger-turn_easy',
-        'dm-fish-upright',
-        'dm-fish-swim',
-        'dm-hopper-stand',
-        'dm-hopper-hop',
-        'dm-humanoid-stand',
-        'dm-humanoid-walk',
-        'dm-humanoid-run',
-        'dm-manipulator-bring_ball',
-        'dm-pendulum-swingup',
-        'dm-point_mass-easy',
-        'dm-reacher-easy',
-        'dm-reacher-hard',
-        'dm-swimmer-swimmer15',
-        'dm-swimmer-swimmer6',
-        'dm-walker-stand',
-        'dm-walker-walk',
-        'dm-walker-run',
-    ]
-
-    games = [
-        'dm-walker-stand',
-        # 'dm-walker-walk',
-        # 'dm-walker-run',
-    ]
-
-    # games = games[-7:]
-
-    patterns = [
-        # 'remark_residual-residual_0\.05-target_net_residual_True-run',
-        # 'remark_residual-residual_0-target_net_residual_True-run',
-
-        # 'net_cfg_bi-residual_0-run',
-        # 'net_cfg_bi-residual_0\.05-run',
-        # 'net_cfg_bi-residual_0\.1-run',
-        # 'net_cfg_bi-residual_0\.2-run',
-        # 'net_cfg_bi-residual_0\.4-run',
-        # 'net_cfg_bi-residual_0\.8-run',
-        # 'net_cfg_bi-residual_1-run',
-
-        # 'net_cfg_oo-residual_0-run',
-        # 'net_cfg_oo-residual_0\.05-run',
-        # 'net_cfg_oo-residual_0\.1-run',
-        # 'net_cfg_oo-residual_0\.2-run',
-        # 'net_cfg_oo-residual_0\.4-run',
-        # 'net_cfg_oo-residual_0\.8-run',
-        # 'net_cfg_oo-residual_1-run',
-
-        # 'net_cfg_tt-residual_0-run',
-        # 'net_cfg_tt-residual_0\.05-run',
-        # 'net_cfg_tt-residual_0\.1-run',
-        # 'net_cfg_tt-residual_0\.2-run',
-        # 'net_cfg_tt-residual_0\.4-run',
-        # 'net_cfg_tt-residual_0\.8-run',
-        # 'net_cfg_tt-residual_1-run',
-
-        # 'net_cfg_ot-residual_0-run',
-        # 'net_cfg_ot-residual_0\.05-run',
-        # 'net_cfg_ot-residual_0\.1-run',
-        # 'net_cfg_ot-residual_0\.2-run',
-        # 'net_cfg_ot-residual_0\.4-run',
-        # 'net_cfg_ot-residual_0\.8-run',
-        # 'net_cfg_ot-residual_1-run',
-
-        # 'net_cfg_to-residual_0-run',
-        # 'net_cfg_to-residual_0\.05-run',
-        # 'net_cfg_to-residual_0\.1-run',
-        # 'net_cfg_to-residual_0\.2-run',
-        # 'net_cfg_to-residual_0\.4-run',
-        # 'net_cfg_to-residual_0\.8-run',
-        # 'net_cfg_to-residual_1-run',
-
-        # 'remark_residual-residual_0-symmetric_False-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.05-symmetric_False-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.1-symmetric_False-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.2-symmetric_False-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.4-symmetric_False-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.8-symmetric_False-target_net_residual_False-run',
-        # 'remark_residual-residual_1\.0-symmetric_False-target_net_residual_False-run',
-
-        # 'remark_residual-residual_0-symmetric_False-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.05-symmetric_False-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.1-symmetric_False-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.2-symmetric_False-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.4-symmetric_False-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.8-symmetric_False-target_net_residual_True-run',
-        # 'remark_residual-residual_1\.0-symmetric_False-target_net_residual_True-run',
-
-        # 'remark_residual-residual_0-symmetric_True-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.05-symmetric_True-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.1-symmetric_True-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.2-symmetric_True-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.4-symmetric_True-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.8-symmetric_True-target_net_residual_True-run',
-        # 'remark_residual-residual_1\.0-symmetric_True-target_net_residual_True-run',
-    ]
-
-    l = len(games)
-    plt.figure(figsize=(l * 15, 15))
-    # plt.figure(figsize=(7 * 10, 4 * 10))
-    for j, game in enumerate(games):
-        plt.subplot(1, l, j + 1)
-        # plt.subplot(4, 7, j+1)
-        for i, p in enumerate(patterns):
-            # ddpg_plot(pattern='.*dm-residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
-            ddpg_plot(pattern='.*residual-params/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
-    plt.show()
-
-
 def plot_ddpg_variants(type='mean'):
     kwargs = {
         'x_interval': int(1e4),
@@ -646,7 +445,7 @@ def plot_oracle(type='mean'):
         plt.subplot(1, l, j + 1)
         ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, label='DDPG', **kwargs)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i+1, label=labels[i], **kwargs)
+            ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i + 1, label=labels[i], **kwargs)
         plt.title(game, fontsize=30, fontweight="bold")
         plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
         plt.tick_params(axis='x', labelsize=30)
@@ -696,8 +495,8 @@ def plot_dyna(type='mean'):
         plt.subplot(1, l, j + 1)
         ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, label='DDPG', **kwargs)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i+1, label=labels[i], **kwargs)
-            ddpg_plot(pattern='.*dyna-ddpg-1st/%s-%s.*' % (game, p), color=i+1, label=labels[i], **kwargs)
+            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i + 1, label=labels[i], **kwargs)
+            ddpg_plot(pattern='.*dyna-ddpg-1st/%s-%s.*' % (game, p), color=i + 1, label=labels[i], **kwargs)
         plt.title(game, fontsize=30, fontweight="bold")
         plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
         plt.tick_params(axis='x', labelsize=30)
@@ -793,6 +592,63 @@ def plot_mf_ddpg(type='mean'):
     plt.show()
 
 
+# def plot_mf_dqn():
+#     train_kwargs = {
+#         'episode_window': 100,
+#         'top_k': 0,
+#         'max_timesteps': int(2e7),
+#         'average': False,
+#         'x_interval': 100
+#     }
+#
+#     games = [
+#         'BeamRiderNoFrameskip-v4',
+#         'SeaquestNoFrameskip-v4',
+#         'BreakoutNoFrameskip-v4',
+#         # 'PongNoFrameskip-v4',
+#         # 'QbertNoFrameskip-v4',
+#         # 'SpaceInvadersFrameskip-v4',
+#     ]
+#
+#     patterns = [
+#         'residual_0-target_net_residual_True-run',
+#         'r_aware_False-residual_0\.05-target_net_residual_True-run',
+#         'r_aware_False-residual_1-target_net_residual_True-run',
+#     ]
+#
+#     labels = [
+#         'DQN',
+#         r'Bi-Res-DQN($\eta=0.05$)',
+#         r'Bi-Res-DQN($\eta=1$)',
+#     ]
+#
+#     l = len(games)
+#     plt.figure(figsize=(l * 5, 5))
+#     plt.rc('text', usetex=True)
+#     plt.tight_layout()
+#     for j, game in enumerate(games):
+#         plt.subplot(1, l, j + 1)
+#         for i, p in enumerate(patterns):
+#             plot(pattern='.*residual-dqn/.*%s.*%s.*' % (game, p), **train_kwargs, figure=j, color=i)
+#
+#         title = game[3:].replace('_', '\\_')
+#         plt.title(title, fontsize=30, fontweight="bold")
+#         plt.tick_params(axis='x', labelsize=30)
+#         plt.tick_params(axis='y', labelsize=20)
+#         if not j:
+#             plt.legend(fontsize=17, frameon=False)
+#         if j % n_col == 0:
+#             plt.ylabel('Episode Return', fontsize=30)
+#
+#         if j >= l - n_col:
+#             plt.xlabel('Steps', fontsize=30)
+#             plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
+#         else:
+#             plt.tick_params(labelbottom=False)
+#
+#     plt.show()
+
+
 if __name__ == '__main__':
     # extract_auc_data()
     # plot_ddpg_variants(type='mean')
@@ -802,4 +658,6 @@ if __name__ == '__main__':
     # plot_oracle(type='median')
     # plot_dyna(type='mean')
     # plot_dyna(type='median')
-    plot_mf_ddpg(type='mean')
+    # plot_mf_ddpg(type='mean')
+    # plot_mf_ddpg(type='median')
+    plot_mf_dqn()
