@@ -1,3 +1,4 @@
+mujoco-py==1.50.1.68
 torch==0.4.0
 gym==0.10.8
 tensorflow==1.12.0
