@@ -10,7 +10,7 @@ def foo(game, **kwargs):
 
 def batch():
     cf = Config()
-    cf.add_argument('--i', type=int, default=0)
+    cf.add_argument('--i1', type=int, default=0)
     cf.merge()
 
     games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Humanoid-v2']
@@ -140,7 +140,7 @@ def batch():
         for r in range(8):
             params.append([oracle_ddpg_continuous, dict(game=game, run=r, plan=False, MVE=3)])
 
-    algo, param = params[cf.i]
+    algo, param = params[cf.i1]
     algo(**param)
 
 
