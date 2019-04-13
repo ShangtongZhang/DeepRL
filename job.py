@@ -610,69 +610,6 @@ def residual_dqn_pixel_atari(**kwargs):
     run_steps(DQNAgent(config))
 
 
-def residual_a2c_pixel_atari(**kwargs):
-    set_tag(kwargs)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('skip', False)
-    kwargs.setdefault('target_net_residual', True)
-    kwargs.setdefault('residual', 0)
-    kwargs.setdefault('debug', False)
-    kwargs.setdefault('symmetric', False)
-    kwargs.setdefault('multi_step', False)
-    kwargs.setdefault('entropy_weight', 0.01)
-
-    config = Config()
-    config.merge(kwargs)
-
-    config.num_workers = 16
-    config.task_fn = lambda: Task(kwargs['game'], num_envs=config.num_workers, log_dir=kwargs['log_dir'])
-    config.eval_env = Task(kwargs['game'], episode_life=False)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda: ResidualACNet(config.state_dim, config.action_dim, NatureConvBody())
-    config.state_normalizer = ImageNormalizer()
-    config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
-    config.rollout_length = 5
-    config.gradient_clip = 0.5
-    config.max_steps = int(1e7)
-    config.target_network_update_freq = 10000
-    config.logger = get_logger(tag=kwargs['tag'], skip=kwargs['skip'])
-    run_steps(ResidualA2CAgent(config))
-
-
-def residual_a2c_cart_pole(**kwargs):
-    kwargs.setdefault('game', 'CartPole-v0')
-    set_tag(kwargs)
-    kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
-    kwargs.setdefault('skip', False)
-    kwargs.setdefault('target_net_residual', True)
-    kwargs.setdefault('residual', 0.1)
-    kwargs.setdefault('debug', False)
-    kwargs.setdefault('symmetric', False)
-    kwargs.setdefault('multi_step', False)
-
-    config = Config()
-    config.merge(kwargs)
-
-    config.num_workers = 5
-    config.task_fn = lambda: Task(kwargs['game'], num_envs=config.num_workers)
-    config.eval_env = Task(kwargs['game'])
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
-    config.network_fn = lambda: ResidualACNet(
-        config.state_dim, config.action_dim,
-        # FCBody(config.state_dim),
-        actor_body=FCBody(config.state_dim),
-        critic_body=FCBody(config.state_dim),
-    )
-    config.discount = 0.99
-    config.logger = get_logger()
-    config.entropy_weight = 0.1
-    config.rollout_length = 5
-    config.gradient_clip = 0.5
-    config.target_network_update_freq = 800
-    run_steps(ResidualA2CAgent(config))
-
-
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
