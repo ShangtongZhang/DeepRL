@@ -659,5 +659,4 @@ if __name__ == '__main__':
     # plot_dyna(type='mean')
     # plot_dyna(type='median')
     # plot_mf_ddpg(type='mean')
-    # plot_mf_ddpg(type='median')
-    plot_mf_dqn()
+    plot_mf_ddpg(type='median')

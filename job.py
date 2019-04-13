@@ -10,11 +10,10 @@ def foo(game, **kwargs):
 
 def batch():
     cf = Config()
-    cf.add_argument('--i1', type=int, default=0)
-    cf.add_argument('--i2', type=int, default=0)
+    cf.add_argument('--i', type=int, default=0)
     cf.merge()
 
-    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Humanoid-v2', 'HumanoidStandup-v2']
+    games = ['HalfCheetah-v2', 'Walker2d-v2', 'Swimmer-v2', 'Hopper-v2', 'Humanoid-v2']
     # games = ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2', 'Humanoid-v2']
     # games = ['Humanoid-v2', 'HumanoidStandup-v2']
     # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
@@ -119,8 +118,8 @@ def batch():
         # dict(action_noise=0.1, plan_steps=3, residual=0.2, target_net_residual=True),
         # dict(action_noise=0.1, plan_steps=3, residual=0.2, target_net_residual=False),
 
-        dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False),
-        dict(action_noise=0.1, plan_steps=1, residual=0),
+        # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False),
+        # dict(action_noise=0.1, plan_steps=1, residual=0),
 
         # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=True, skip=False),
         # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
@@ -133,10 +132,20 @@ def batch():
         # dict(residual=1),
 
         # dict(skip=False, plan=False, MVE=3),
+        # dict(plan=False, MVE=3),
     ]
 
+    params = []
+    for game in games:
+        for r in range(8):
+            params.append([oracle_ddpg_continuous, dict(game=game, run=r, plan=False, MVE=3)])
+
+    algo, param = params[cf.i]
+    algo(**param)
+
+
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
-    model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2], small=True)
+    # model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
     # residual_ddpg_continuous(game=game, run=cf.i2, **params[0], remark='residual', target_net_residual=False)
 
@@ -452,7 +461,7 @@ def oracle_ddpg_continuous(**kwargs):
     kwargs.setdefault('debug', False)
     kwargs.setdefault('num_models', 1)
     kwargs.setdefault('ensemble_size', 5)
-    kwargs.setdefault('bootstrap_prob', 0.5)
+    kwargs.setdefault('bootstrap_prob', 1)
     kwargs.setdefault('model_type', 'D')
     kwargs.setdefault('plan', True)
     kwargs.setdefault('max_uncertainty', 1)
@@ -469,6 +478,8 @@ def oracle_ddpg_continuous(**kwargs):
     kwargs.setdefault('real_updates', 1)
     kwargs.setdefault('prediction_noise', 0)
     kwargs.setdefault('target_net_residual', False)
+    kwargs.setdefault('MVE', 0)
+    kwargs.setdefault('MVE_warm_up', int(1e4))
     config = Config()
     config.merge(kwargs)
 
@@ -508,6 +519,7 @@ def oracle_ddpg_continuous(**kwargs):
     if kwargs['debug']:
         config.agent_warm_up = int(1e3)
         config.plan_warm_up = int(1e3)
+        config.MVE_warm_up = int(1e3)
 
     run_steps(OracleDDPGAgent(config))
 
@@ -667,10 +679,10 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
     select_device(-1)
-    dm_control_batch()
+    # dm_control_batch()
     # select_device(0)
     # batch_atari()
-    # batch()
+    batch()
 
     # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'
@@ -687,9 +699,9 @@ if __name__ == '__main__':
         # game='LunarLander-v2',
     # )
 
-    residual_ddpg_continuous(game=game,
-                             residual=0.05,
-                             net_cfg='to')
+    # residual_ddpg_continuous(game=game,
+    #                          residual=0.05,
+    #                          net_cfg='to')
 
     # ddpg_continuous(game=game)
     # backward_model_ddpg_continuous(game=game,
@@ -713,27 +725,25 @@ if __name__ == '__main__':
     #                       small=True,
     #                       )
 
-    game = 'BreakoutNoFrameskip-v4'
-    residual_dqn_pixel_atari(game=game,
-                             skip=False,
-                             debug=True,
-                             residual=0,
-                             r_aware=False)
+    # game = 'BreakoutNoFrameskip-v4'
+    # residual_dqn_pixel_atari(game=game,
+    #                          skip=False,
+    #                          debug=True,
+    #                          residual=0,
+    #                          r_aware=False)
 
     oracle_ddpg_continuous(game=game,
-                           skip=False,
+                           # skip=False,
                            debug=True,
                            plan=False,
-                           action_noise=0.1,
-                           plan_steps=2,
-                           live_action=False,
-                           plan_actor=True,
-                           residual=0.1,
-                           prediction_noise=0.1,
-                           target_net_residual=True,
-                           analyse=10,
-                           # analyse_net='target',
-                           analyse_net='online',
+                           # action_noise=0.1,
+                           # plan_steps=1,
+                           # live_action=False,
+                           # plan_actor=False,
+                           # residual=0.2,
+                           # prediction_noise=0,
+                           # target_net_residual=True,
+                           MVE=3
                            )
 
     # residual_ddpg_continuous(game=game,

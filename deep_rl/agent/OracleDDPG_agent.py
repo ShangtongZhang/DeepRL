@@ -35,13 +35,6 @@ class OracleDDPGAgent(BaseAgent):
         self.next_s_hat_over_s = []
         self.next_s_hat_over_next_s = []
 
-        if self.config.analyse_net == 'target':
-            self.ana_net = self.target_network
-        elif self.config.analyse_net == 'online':
-            self.ana_net = self.network
-        else:
-            raise NotImplementedError
-
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
             target_param.detach_()
@@ -108,10 +101,49 @@ class OracleDDPGAgent(BaseAgent):
         policy_loss.backward()
         self.network.actor_opt.step()
 
+    def MVE_real_transition(self, transitions):
+        config = self.config
+        states, actions, rewards, next_states, mask, env_next_states = transitions
+
+        trajectory = []
+        next_s = next_states
+        with torch.no_grad():
+            while len(trajectory) < config.MVE:
+                s = next_s
+                a = self.target_network.actor(s)
+                r, next_s, env_next_states = self.model_predict(s, a, env_next_states)
+                m = torch.ones(mask.size(), device=Config.DEVICE)
+                trajectory.append([s, a, r, next_s, m])
+            next_a = self.target_network.actor(next_s)
+            ret = self.target_network.critic(next_s, next_a)
+
+        critic_loss = 0
+        for s, a, r, _, m in reversed(trajectory):
+            q = self.network.critic(s, a)
+            ret = r + config.discount * m * ret
+            critic_loss = critic_loss + huber(q - ret).mean()
+        critic_loss = critic_loss / config.MVE
+
+        config.logger.add_scalar('q_loss_replay', critic_loss)
+        self.network.zero_grad()
+        critic_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
+        self.network.critic_opt.step()
+
+        phi = self.network.feature(states)
+        action = self.network.actor(phi)
+        policy_loss = -self.network.critic(phi.detach(), action).mean()
+        config.logger.add_scalar('pi_loss_replay', policy_loss)
+
+        self.network.zero_grad()
+        policy_loss.backward()
+        torch.nn.utils.clip_grad_norm_(self.network.parameters(), 0.5)
+        self.network.actor_opt.step()
+
     def imaginary_transitions(self, states, actions, env_states):
         config = self.config
         with torch.no_grad():
-            rewards, next_states = self.model_predict(states, actions, env_states)
+            rewards, next_states, _ = self.model_predict(states, actions, env_states)
 
         if config.prediction_noise:
             noise = torch.randn(next_states.size(), device=Config.DEVICE).mul(config.prediction_noise)
@@ -164,12 +196,14 @@ class OracleDDPGAgent(BaseAgent):
         env = self.oracle
         rewards = []
         next_states = []
+        env_next_states = []
         for i in range(s.size(0)):
             env.set_state(env_states[i])
             next_s, r, done, _ = env.step(to_np(a[[i]]))
             rewards.append(r)
             next_states.append(next_s)
-        return tensor(rewards), tensor(next_states).squeeze(1)
+            env_next_states.append(env.get_state())
+        return tensor(rewards), tensor(next_states).squeeze(1), env_next_states
 
     def rollout_from(self, s, env_s):
         env = self.oracle
@@ -248,55 +282,16 @@ class OracleDDPGAgent(BaseAgent):
             rewards = tensor(rewards).unsqueeze(1)
             next_states = tensor(next_states)
             mask = tensor(mask).unsqueeze(1)
+
+            if config.MVE and self.total_steps >= config.MVE_warm_up:
+                self.MVE_real_transition([states, actions, rewards, next_states, mask, env_next_states])
+
             for _ in range(config.real_updates):
                 self.real_transitions([states, actions, rewards, next_states, mask])
-            # r1, s1 = self.model_predict(states, actions, env_states)
+
+            # r1, s1, _ = self.model_predict(states, actions, env_states)
             # print((r1 - rewards).abs().max())
             # print((s1 - next_states).abs().max())
-
-            if config.analyse and self.total_steps % config.analyse == 0:
-                noise = torch.randn((actions.size(0), actions.size(1)), device=Config.DEVICE).mul(config.action_noise)
-                actions = actions + noise
-                actions = actions.clamp(-1, 1)
-
-                for i in range(actions.size(0)):
-                    if mask[i].item() != 1:
-                        continue
-                    s = states[[i]]
-                    env_s = env_states[i]
-                    next_s = next_states[[i]]
-                    env_next_s = env_next_states[i]
-                    a = actions[[i]]
-                    self.oracle.reset()
-                    self.oracle.set_state(env_s)
-                    next_s_hat, _, done, _ = self.oracle.step(to_np(a))
-                    next_s_hat = tensor(next_s_hat)
-                    if done:
-                        break
-                    env_next_s_hat = self.oracle.get_state()
-
-                    s_error = self.compute_error(s, env_s)
-                    next_s_error = self.compute_error(next_s, env_next_s)
-                    next_s_hat_error = self.compute_error(next_s_hat, env_next_s_hat)
-
-                    config.logger.add_scalar('s_error', s_error)
-                    config.logger.add_scalar('next_s_error', next_s_error)
-                    config.logger.add_scalar('next_s_hat_error', next_s_hat_error)
-
-                    self.next_s_over_s.append(next_s_error > s_error)
-                    self.next_s_hat_over_s.append(next_s_hat_error > s_error)
-                    self.next_s_hat_over_next_s.append(next_s_hat_error > next_s_error)
-                    window = 100
-
-                    config.logger.add_scalar('next_s_over_s', next_s_error > s_error)
-                    config.logger.add_scalar('next_s_hat_over_s', next_s_hat_error > s_error)
-                    config.logger.add_scalar('next_s_hat_over_next_s', next_s_hat_error > next_s_error)
-
-                    config.logger.add_scalar('next_s_over_s_window', np.mean(self.next_s_over_s[-window:]))
-                    config.logger.add_scalar('next_s_hat_over_s_window', np.mean(self.next_s_hat_over_s[-window:]))
-                    config.logger.add_scalar('next_s_hat_over_next_s_window', np.mean(self.next_s_hat_over_next_s[-window:]))
-                    break
-
 
             if config.plan:
                 if config.live_action:
