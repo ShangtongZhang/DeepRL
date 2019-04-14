@@ -12,7 +12,7 @@ rm -f jobs.txt
 touch jobs.txt
 #for i in $(seq 0 49); do
 #for i in $(seq 40 59); do
-for i in $(seq 0 99); do
+for i in $(seq 0 29); do
 #for i in $(seq 0 39); do
     echo "$i" >> jobs.txt
 done

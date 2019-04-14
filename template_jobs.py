@@ -134,24 +134,23 @@ def batch_dm():
     #                                             entropy_weight=entropy_weight, tasks=False)])
     #         params.append([ppo_continuous, dict(game=game, run=r, tasks=False)])
 
-    for game in games:
-        for r in range(10):
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC-PPO')])
-            # params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC')])
-            params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
-            params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
-            # params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG')])
+    # for game in games:
+    #     for r in range(10):
+    #         params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC-PPO')])
+    #         # params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC')])
+    #         params.append([ppo_continuous, dict(game=game, run=r, tasks=True, remark='PPO')])
+    #         params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP')])
+    #         # params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG')])
+    #
+    #         params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC', num_workers=4)])
+    #         params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG', num_workers=4)])
 
-            params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC', num_workers=4)])
-            params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG', num_workers=4)])
 
-
-    # params = []
-    # for r in range(2):
-    #     for num_o in [2, 4, 8]:
-    #         for beta_w in [0, 0.01, 0.1]:
-    #             params.append([a_squared_c_ppo_continuous, dict(game='dm-cheetah', run=r, tasks=True, remark='vis',
-    #                                                             num_o=num_o, beta_weight=beta_w)])
+    params = []
+    for r in range(10):
+        for num_o in [2, 4, 8]:
+            params.append([a_squared_c_ppo_continuous, dict(game='dm-walker-2', run=r, tasks=True, remark='abalation',
+                                                                num_o=num_o)])
 
     algo, param = params[cf.i]
     algo(**param)

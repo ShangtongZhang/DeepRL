@@ -82,7 +82,6 @@ class ASquaredCPPOAgent(BaseAgent):
         mean = mean.detach()
         std = std.detach()
         advantages = (advantages - advantages.mean()) / advantages.std()
-        self.logger.add_histogram('adv', advantages, log_level=1)
 
         for _ in range(config.optimization_epochs):
             sampler = random_sample(np.arange(states.size(0)), config.mini_batch_size)
