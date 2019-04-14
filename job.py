@@ -386,6 +386,7 @@ def model_ddpg_continuous(**kwargs):
     kwargs.setdefault('small', False)
     config = Config()
     config.merge(kwargs)
+    config.skip = True
 
     if config.async_replay:
         replay = AsyncReplay
