@@ -147,10 +147,10 @@ def batch_dm():
 
 
     params = []
-    for r in range(10):
-        for num_o in [2, 4, 8]:
-            params.append([a_squared_c_ppo_continuous, dict(game='dm-walker-2', run=r, tasks=True, remark='abalation',
-                                                                num_o=num_o)])
+    for r in range(3):
+        # for num_o in [2, 4, 8]:
+        for algo in [a_squared_c_ppo_continuous, ahp_ppo_continuous]:
+            params.append([algo, dict(game='dm-walker-2', run=r, tasks=True, remark='vis', log_level=1)])
 
     algo, param = params[cf.i]
     algo(**param)
