@@ -61,7 +61,7 @@ class AHPPPOAgent(BaseAgent):
             storage.cat(['s', 'a', 'o', 'prob_a', 'ret', 'adv', 'prev_o', 'init', 'mean', 'std', 'stop'])
         log_probs_old = prob_a.add(1e-5).log().detach()
         advantages = (advantages - advantages.mean()) / advantages.std()
-        self.logger.add_histogram('adv', advantages, log_level=1)
+        self.logger.add_histogram('adv', advantages, log_level=5)
 
         for _ in range(config.optimization_epochs):
             sampler = random_sample(np.arange(states.size(0)), config.mini_batch_size)
@@ -99,11 +99,8 @@ class AHPPPOAgent(BaseAgent):
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
                 policy_loss = -torch.min(obj, obj_clipped).mean()
 
-                discarded = (obj > obj_clipped).float().mean()
-                # self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=1)
-
                 value_loss = 0.5 * (sampled_returns - v).pow(2).mean()
-                self.logger.add_scalar('v_loss', value_loss.item(), log_level=1)
+                self.logger.add_scalar('v_loss', value_loss.item(), log_level=5)
 
                 self.opt.zero_grad()
                 (policy_loss + value_loss).backward()
@@ -124,10 +121,10 @@ class AHPPPOAgent(BaseAgent):
             options = dist.sample()
             options = torch.where(stop, options, self.prev_options)
 
-            # self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=0)
-            # self.logger.add_scalar('option', options[0], log_level=0)
-            # self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=1)
-            # self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=1)
+            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=5)
+            self.logger.add_scalar('option', options[0], log_level=5)
+            self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=5)
+            self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=5)
 
             mean = prediction['mean'][self.worker_index, options]
             std = prediction['std'][self.worker_index, options]
@@ -177,6 +174,10 @@ class AHPPPOAgent(BaseAgent):
             'v': v
         })
         storage.placeholder()
+
+        [o] = storage.cat(['o'])
+        for i in range(config.num_o):
+            self.logger.add_scalar('option_%d' % (i), (o == i).float().mean(), log_level=1)
 
         self.compute_adv(storage)
         self.learn(storage)

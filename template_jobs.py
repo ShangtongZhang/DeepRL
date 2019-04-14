@@ -119,7 +119,8 @@ def batch_dm():
     ]
 
     # games = ['dm-walker', 'dm-cartpole-b', 'dm-reacher', 'dm-fish', 'dm-cheetah']
-    games = ['dm-walker-1', 'dm-walker-2']
+    # games = ['dm-walker-1', 'dm-walker-2']
+    games = ['dm-cheetah', 'dm-walker-2']
 
     params = []
 
@@ -148,9 +149,11 @@ def batch_dm():
 
     params = []
     for r in range(3):
+        for game in games:
         # for num_o in [2, 4, 8]:
-        for algo in [a_squared_c_ppo_continuous, ahp_ppo_continuous]:
-            params.append([algo, dict(game='dm-walker-2', run=r, tasks=True, remark='vis', log_level=1)])
+        # for algo in [a_squared_c_ppo_continuous, ahp_ppo_continuous]:
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC', log_level=1, save_interval=int(1e6 / 2048) * 2048)])
+            params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP', log_level=1, save_interval=int(1e6 / 2048) * 2048)])
 
     algo, param = params[cf.i]
     algo(**param)

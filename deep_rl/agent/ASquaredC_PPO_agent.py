@@ -132,10 +132,10 @@ class ASquaredCPPOAgent(BaseAgent):
                               config.beta_weight * beta_loss
 
                 discarded = (obj > obj_clipped).float().mean()
-                self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=1)
+                self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=5)
 
                 value_loss = 0.5 * (sampled_returns - v).pow(2).mean()
-                self.logger.add_scalar('v_loss', value_loss.item(), log_level=1)
+                self.logger.add_scalar('v_loss', value_loss.item(), log_level=5)
                 if freeze_v:
                     value_loss = 0
 
@@ -154,10 +154,10 @@ class ASquaredCPPOAgent(BaseAgent):
             dist = torch.distributions.Categorical(probs=pi_hat)
             options = dist.sample()
 
-            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=1)
-            self.logger.add_scalar('option', options[0], log_level=1)
-            self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=1)
-            self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=1)
+            self.logger.add_scalar('beta', prediction['beta'][self.worker_index, self.prev_options], log_level=5)
+            self.logger.add_scalar('option', options[0], log_level=5)
+            self.logger.add_scalar('pi_hat_ent', dist.entropy(), log_level=5)
+            self.logger.add_scalar('pi_hat_o', dist.log_prob(options).exp(), log_level=5)
 
             mean = prediction['mean'][self.worker_index, options]
             std = prediction['std'][self.worker_index, options]
@@ -209,6 +209,10 @@ class ASquaredCPPOAgent(BaseAgent):
             'v_hat': v_hat,
         })
         storage.placeholder()
+        
+        [o] = storage.cat(['o'])
+        for i in range(config.num_o):
+            self.logger.add_scalar('option_%d' % (i), (o == i).float().mean(), log_level=1)
 
         self.compute_adv(storage, 'bar')
         self.compute_adv(storage, 'hat')
