@@ -9,9 +9,9 @@ import re
 
 
 class Plotter:
-    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
+    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'black', 'purple', 'gold', 'yellow', 'pink',
               'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
-              'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
+              'darkgreen', 'tan', 'salmon', 'lightpurple', 'darkred', 'darkblue']
 
     RETURN_TRAIN = 'episodic_return_train'
     RETURN_TEST = 'episodic_return_test'
@@ -296,6 +296,82 @@ def plot_mujoco(type='mean'):
     plt.show()
 
 
+def plot_ablation(type='mean'):
+    plotter = Plotter()
+    games = [
+        'dm-walker-2',
+    ]
+
+    patterns = [
+        'num_o_2',
+        'num_o_4',
+        'num_o_8',
+    ]
+
+    labels = [
+        '2 options',
+        '4 options',
+        '8 options',
+    ]
+
+    def plot_games(self, games, **kwargs):
+        kwargs.setdefault('agg', 'mean')
+        import matplotlib.pyplot as plt
+        l = len(games)
+        # plt.figure(figsize=(l * 5, 5))
+        # plt.figure(figsize=(3 * 5, 2 * 5))
+        plt.rc('text', usetex=True)
+        plt.tight_layout()
+        for i, game in enumerate(games):
+            # plt.subplot(1, l, i + 1)
+            # plt.subplot(2, 3, i + 1)
+            for j, p in enumerate(kwargs['patterns']):
+                label = kwargs['labels'][j]
+                color = self.COLORS[j]
+                log_dirs = self.filter_log_dirs(pattern='.*%s.*%s' % (game, p), **kwargs)
+                x, y = self.load_results(log_dirs, **kwargs)
+                if kwargs['downsample']:
+                    indices = np.linspace(0, len(x) - 1, kwargs['downsample']).astype(np.int)
+                    x = x[indices]
+                    y = y[:, indices]
+                if kwargs['agg'] == 'mean':
+                    self.plot_mean_standard_error(y, x, label=label, color=color)
+                elif kwargs['agg'] == 'median':
+                    self.plot_median_std(y, x, label=label, color=color)
+                else:
+                    for k in range(y.shape[0]):
+                        plt.plot(x, y[i], label=label, color=color)
+                        label = None
+            plt.title(r'A$^2$C-PPO Walker2', fontsize=30, fontweight="bold")
+            if i > 2:
+                plt.xlabel('Steps', fontsize=30)
+            plt.xticks([0, int(2e6)], ['0', r'$2\times10^6$'])
+            plt.tick_params(axis='x', labelsize=30)
+            plt.tick_params(axis='y', labelsize=25)
+            if not i:
+                plt.legend(fontsize=13, frameon=False)
+            if i == 0 or i == 3:
+                plt.ylabel('Episode Return', fontsize=30)
+
+    plot_games(self=plotter,
+               games=games,
+               patterns=patterns,
+               agg=type,
+               downsample=0,
+               labels=labels,
+               right_align=False,
+               tag=plotter.RETURN_TRAIN,
+               root='./log/ASquaredC-ablation',
+               interpolation=100,
+               window=20,
+               top_k=0,
+               )
+
+    plt.tight_layout()
+    plt.savefig('%s/ASquaredC-ablation-%s.png' % (FOLDER, type), bbox_inches='tight')
+    plt.show()
+
+
 def plot_ddpg():
     plotter = Plotter()
     games = [
@@ -407,5 +483,6 @@ def plot_misc():
 
 if __name__ == '__main__':
     mkdir('images')
-    plot_dm(type='mean')
+    # plot_dm(type='mean')
     # plot_mujoco(type='mean')
+    plot_ablation(type='mean')
