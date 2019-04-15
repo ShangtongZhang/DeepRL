@@ -143,7 +143,6 @@ def batch():
     algo, param = params[cf.i1]
     algo(**param)
 
-
     # ddpg_continuous(game=game, run=cf.i2, remark='ddpg')
     # model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
     # oracle_ddpg_continuous(game=game, run=cf.i2, **params[cf.i1])
@@ -214,16 +213,16 @@ def dm_control_batch():
     exit()
 
 
-def dm_control_mb_batch():
+def mb_batch():
     cf = Config()
     cf.add_argument('--i1', type=int, default=0)
     cf.add_argument('--i2', type=int, default=0)
     cf.merge()
 
     games = [
-        'dm-walker-stand',
-        'dm-walker-run',
-        'dm-walker-walk',
+        # 'dm-walker-stand',
+        # 'dm-walker-run',
+        # 'dm-walker-walk',
         # 'dm-acrobot-swingup',
         # 'dm-acrobot-swingup_sparse',
         # 'dm-ball_in_cup-catch',
@@ -251,20 +250,22 @@ def dm_control_mb_batch():
         # 'dm-swimmer-swimmer6',
     ]
 
+    games = ['Reacher-v2', 'InvertedDoublePendulum-v2', 'InvertedPendulum-v2']
 
     params = [
-        dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=True, skip=False),
+        dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
         dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
-        dict(skip=False, plan=False, MVE=3),
+
+        # dict(skip=False, plan=False, MVE=3),
     ]
 
-    for param in params:
-        model_ddpg_continuous(game=games[2], run=cf.i1, **param)
+    model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
     # residual_ddpg_continuous(**params[cf.i1])
 
     exit()
+
 
 def batch_atari():
     cf = Config()
@@ -671,7 +672,7 @@ if __name__ == '__main__':
     # select_device(-1)
     # dm_control_batch()
     select_device(0)
-    dm_control_mb_batch()
+    mb_batch()
     # batch_atari()
     # batch()
 
@@ -687,7 +688,7 @@ if __name__ == '__main__':
     # residual_a2c_pixel_atari(game='BreakoutNoFrameskip-v4')
 
     # residual_a2c_cart_pole(
-        # game='LunarLander-v2',
+    # game='LunarLander-v2',
     # )
 
     # residual_ddpg_continuous(game=game,
