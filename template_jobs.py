@@ -449,6 +449,56 @@ def iopg_continuous(**kwargs):
     run_steps(IOPGAgent(config))
 
 
+def visualize_a_squared_c(**kwargs):
+    generate_tag(kwargs)
+    kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('num_o', 4)
+    kwargs.setdefault('learning', 'all')
+    kwargs.setdefault('gate', nn.ReLU())
+    kwargs.setdefault('freeze_v', False)
+    kwargs.setdefault('opt_ep', 5)
+    kwargs.setdefault('entropy_weight', 0.01)
+    kwargs.setdefault('tasks', False)
+    kwargs.setdefault('max_steps', 2e6)
+    kwargs.setdefault('beta_weight', 0)
+    config = Config()
+    config.merge(kwargs)
+
+    if config.tasks:
+        set_tasks(config)
+
+    if 'dm-humanoid' in config.game:
+        hidden_units = (128, 128)
+    else:
+        hidden_units = (64, 64)
+
+    config.task_fn = lambda: Task(config.game)
+    config.eval_env = config.task_fn()
+
+    config.network_fn = lambda: OptionGaussianActorCriticNet(
+        config.state_dim, config.action_dim,
+        num_options=config.num_o,
+        actor_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        critic_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        option_body_fn=lambda: FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+    )
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    config.discount = 0.99
+    config.use_gae = True
+    config.gae_tau = 0.95
+    config.gradient_clip = 0.5
+    config.rollout_length = 2048
+    config.optimization_epochs = config.opt_ep
+    config.mini_batch_size = 64
+    config.ppo_ratio_clip = 0.2
+    config.log_interval = 2048
+    config.state_normalizer = MeanStdNormalizer()
+    agent = ASquaredCPPOAgent(config)
+
+    agent.load('data/ASquaredC/ASquaredCPPOAgent-dm-walker-2-freeze_v_False-learning_all-log_level_1-num_o_4-opt_ep_5-save_interval_999424-tasks_True-run-0-0')
+    agent.record_episode('data/ASquaredC/episode', config.eval_env)
+
+
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
@@ -457,7 +507,7 @@ if __name__ == '__main__':
     select_device(-1)
 
     # batch_mujoco()
-    batch_dm()
+    # batch_dm()
 
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
@@ -475,14 +525,14 @@ if __name__ == '__main__':
     # game = 'dm-walker-squat'
     # game = 'dm-walker-backward'
 
-    ppo_continuous(
-        game=game,
-        # game='dm-walker',
-        tasks=True,
-        log_level=1,
-        gate=nn.ReLU(),
-        max_steps=4e3,
-    )
+    # ppo_continuous(
+    #     game=game,
+    #     # game='dm-walker',
+    #     tasks=True,
+    #     log_level=1,
+    #     gate=nn.ReLU(),
+    #     max_steps=4e3,
+    # )
 
     # a_squared_c_a2c_continuous(
     #     game=game,
@@ -501,8 +551,9 @@ if __name__ == '__main__':
     #     num_o=4,
     #     opt_ep=5,
     #     freeze_v=False,
-    #     tasks=False,
-    #     gate=nn.Tanh(),
+    #     tasks=True,
+    #     # gate=nn.Tanh(),
+    #     save_interval=int(1e6 / 2048) * 2048,
     # )
 
     # ahp_ppo_continuous(
@@ -534,3 +585,13 @@ if __name__ == '__main__':
     #     max_steps=int(4e3),
     #     # gate=nn.Tanh(),
     # )
+
+    visualize_a_squared_c(
+        game=game,
+        learning='all',
+        log_level=1,
+        num_o=4,
+        opt_ep=5,
+        freeze_v=False,
+        tasks=True,
+    )

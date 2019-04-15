@@ -144,6 +144,27 @@ class ASquaredCPPOAgent(BaseAgent):
                 nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
                 self.opt.step()
 
+    def record_step(self, state):
+        config = self.config
+        config.state_normalizer.set_read_only()
+        state = config.state_normalizer(state)
+
+        prediction = self.network(state)
+        pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
+        dist = torch.distributions.Categorical(pi_hat)
+        options = dist.sample()
+
+        mean = prediction['mean'][[0], options]
+        std = prediction['std'][[0], options]
+        dist = torch.distributions.Normal(mean, std)
+        actions = dist.sample()
+
+        self.prev_options = options
+        config.state_normalizer.unset_read_only()
+
+        return to_np(actions)
+
+
     def step(self):
         config = self.config
         storage = Storage(config.rollout_length, ['adv_bar', 'adv_hat', 'ret_bar', 'ret_hat'])
