@@ -57,6 +57,7 @@ class Config:
         self.eval_interval = 0
         self.eval_episodes = 10
         self.async_actor = True
+        self.tasks = False
 
     @property
     def eval_env(self):

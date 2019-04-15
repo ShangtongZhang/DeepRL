@@ -41,6 +41,13 @@ class MeanStdNormalizer(BaseNormalizer):
         return np.clip((x - self.rms.mean) / np.sqrt(self.rms.var + self.epsilon),
                        -self.clip, self.clip)
 
+    def state_dict(self):
+        return {'mean': self.rms.mean,
+                'var': self.rms.var}
+
+    def load_state_dict(self, saved):
+        self.rms.mean = saved['mean']
+        self.rms.var = saved['var']
 
 class RescaleNormalizer(BaseNormalizer):
     def __init__(self, coef=1.0):
