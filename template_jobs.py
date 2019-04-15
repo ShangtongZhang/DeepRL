@@ -507,7 +507,7 @@ if __name__ == '__main__':
     select_device(-1)
 
     # batch_mujoco()
-    # batch_dm()
+    batch_dm()
 
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
