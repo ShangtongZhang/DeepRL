@@ -6,9 +6,9 @@ import os
 import re
 
 class Plotter:
-    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
-              'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
-              'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
+    COLORS = ['blue', 'green', 'red', 'orange', 'black', 'purple', 'pink',
+              'brown', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
+              'darkgreen', 'tan', 'salmon', 'lightpurple', 'darkred', 'darkblue', 'cyan', 'magenta', 'yellow', 'gold']
 
     X_TIMESTEPS = 'timesteps'
     X_EPISODES = 'episodes'

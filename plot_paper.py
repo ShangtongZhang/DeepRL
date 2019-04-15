@@ -55,9 +55,10 @@ def ddpg_plot(**kwargs):
     kwargs.setdefault('max_x_len', None)
     kwargs.setdefault('type', 'mean')
     kwargs.setdefault('data', False)
+    kwargs.setdefault('window', 0)
     plotter = Plotter()
     names = plotter.load_log_dirs(**kwargs)
-    data = plotter.load_results(names, episode_window=0, max_timesteps=kwargs['max_timesteps'])
+    data = plotter.load_results(names, episode_window=kwargs['window'], max_timesteps=kwargs['max_timesteps'])
     if len(data) == 0:
         print('File not found')
         return
@@ -273,6 +274,7 @@ def plot_ddpg_variants(type='mean'):
         'max_x_len': 101,
         'top_k': 0,
         'type': type,
+        'window': 0,
     }
 
     game = 'dm-walker-stand'
@@ -430,11 +432,13 @@ def plot_oracle(type='mean'):
     patterns = [
         'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
         'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
+        'MVE_3-plan_False-run',
     ]
 
     labels = [
         'Dyna-DDPG',
         'Res-Dyna-DDPG',
+        'MVE-DDPG',
     ]
 
     l = len(games)
@@ -651,12 +655,12 @@ def plot_mf_ddpg(type='mean'):
 
 if __name__ == '__main__':
     # extract_auc_data()
-    # plot_ddpg_variants(type='mean')
-    # plot_ddpg_variants(type='median')
+    plot_ddpg_variants(type='mean')
+    plot_ddpg_variants(type='median')
     # plot_auc_improvements()
-    # plot_oracle(type='mean')
-    # plot_oracle(type='median')
-    # plot_dyna(type='mean')
-    # plot_dyna(type='median')
-    # plot_mf_ddpg(type='mean')
+    plot_oracle(type='mean')
+    plot_oracle(type='median')
+    plot_dyna(type='mean')
+    plot_dyna(type='median')
+    plot_mf_ddpg(type='mean')
     plot_mf_ddpg(type='median')
