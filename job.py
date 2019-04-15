@@ -135,10 +135,13 @@ def batch():
         # dict(plan=False, MVE=3),
     ]
 
+    games = ['Reacher-v2', 'InvertedDoublePendulum-v2', 'InvertedPendulum-v2']
     params = []
     for game in games:
         for r in range(8):
             params.append([oracle_ddpg_continuous, dict(game=game, run=r, plan=False, MVE=3)])
+            params.append([oracle_ddpg_continuous, dict(game=game, run=r, action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False)])
+            params.append([oracle_ddpg_continuous, dict(game=game, run=r, action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True)])
 
     algo, param = params[cf.i1]
     algo(**param)
@@ -253,10 +256,9 @@ def mb_batch():
     games = ['Reacher-v2', 'InvertedDoublePendulum-v2', 'InvertedPendulum-v2']
 
     params = [
-        dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
-        dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
-
-        # dict(skip=False, plan=False, MVE=3),
+        # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
+        # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
+        dict(skip=False, plan=False, MVE=3),
     ]
 
     model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
@@ -669,12 +671,12 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    # select_device(-1)
+    select_device(-1)
     # dm_control_batch()
-    select_device(0)
-    mb_batch()
+    # select_device(0)
+    # mb_batch()
     # batch_atari()
-    # batch()
+    batch()
 
     # game = 'HalfCheetah-v2'
     # game = 'Reacher-v2'

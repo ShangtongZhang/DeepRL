@@ -224,7 +224,10 @@ class Task:
                     'Swimmer-v2',
                     'Hopper-v2',
                     'Humanoid-v2',
-                    'Reacher-v2']:
+                    'Reacher-v2',
+                    'InvertedDoublePendulum-v2',
+                    'InvertedPendulum-v2',
+                    ]:
             self.sim = self.get_sim(self.env)
 
     def reset(self):
