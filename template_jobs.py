@@ -498,12 +498,12 @@ def visualize_a_squared_c(**kwargs):
 
     folder = 'data/ASquaredC'
     steps = [999424, 1998848]
-    tasks = ['dm-cheetah-run', 'dm-cheetah-backward']
-    for s, t in zip(steps, tasks):
-        saved = '%s/ASquaredCPPOAgent-dm-cheetah-log_level_1-remark_ASC-save_interval_999424-tasks_True-run-0-%d' % (folder, s)
+    game = kwargs['game']
+    for s, t in zip(steps, config.tasks):
+        saved = '%s/ASquaredCPPOAgent-%s-log_level_1-remark_ASC-save_interval_999424-tasks_True-run-0-%d' % (folder, game, s)
         agent.load(saved)
-        agent.record_episode('%s/episode_%d' % (folder, s), Task(t))
-        subprocess.run(['ffmpeg', '-i', '%s/episode_%d/%%04d.png' % (folder, s), '%s/episode_%d.gif' % (folder, s)])
+        agent.record_episode('%s/%s_episode_%d' % (folder, game, s), t)
+        subprocess.run(['ffmpeg', '-i', '%s/%s_episode_%d/%%04d.png' % (folder, game, s), '%s/%s_episode_%d.gif' % (folder, game, s)])
 
 
 if __name__ == '__main__':
@@ -524,9 +524,9 @@ if __name__ == '__main__':
     # game = 'dm-fish-swim'
     # game = 'dm-fish'
     # game = 'dm-cartpole-b'
-    # game = 'dm-walker-2'
+    game = 'dm-walker-2'
     # game = 'dm-cheetah-run'
-    game = 'dm-cheetah'
+    # game = 'dm-cheetah'
     # game = 'dm-cheetah-backward'
     # game = 'dm-fish-downleft'
     # game = 'dm-walker-squat'
