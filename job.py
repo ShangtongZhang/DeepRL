@@ -256,9 +256,9 @@ def mb_batch():
     games = ['Reacher-v2', 'InvertedDoublePendulum-v2', 'InvertedPendulum-v2']
 
     params = [
-        dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
-        dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
-        # dict(skip=False, plan=False, MVE=3),
+        # dict(action_noise=0.1, plan_steps=1, residual=0.2, target_net_residual=False, skip=False),
+        # dict(action_noise=0.1, plan_steps=1, residual=0, target_net_residual=True, skip=False),
+        dict(skip=False, plan=False, MVE=3),
     ]
 
     model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
