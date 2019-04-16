@@ -7,6 +7,7 @@
 from ..network import *
 from ..component import *
 from .BaseAgent import *
+from skimage import color
 
 
 class ASquaredCPPOAgent(BaseAgent):
@@ -75,7 +76,9 @@ class ASquaredCPPOAgent(BaseAgent):
     def learn(self, storage, mdp, freeze_v=False):
         config = self.config
         states, actions, options, log_probs_old, returns, advantages, prev_options, inits, pi_hat, mean, std = \
-            storage.cat(['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret_%s' % (mdp), 'adv_%s' % (mdp), 'prev_o', 'init', 'pi_hat', 'mean', 'std'])
+            storage.cat(
+                ['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret_%s' % (mdp), 'adv_%s' % (mdp), 'prev_o', 'init', 'pi_hat',
+                 'mean', 'std'])
         actions = actions.detach()
         log_probs_old = log_probs_old.detach()
         pi_hat = pi_hat.detach()
@@ -164,6 +167,24 @@ class ASquaredCPPOAgent(BaseAgent):
 
         return to_np(actions)
 
+    def record_obs(self, env, dir, steps):
+        env = env.env.envs[0]
+        env.env.render_mode_list['rgb_array']['render_kwargs']['width'] = 2048
+        obs = env.render(mode='rgb_array')
+        obs = color.rgb2gray(obs)
+        obs = color.gray2rgb(obs)
+
+        mask = [
+            [1, 0, 0],  # red
+            [0, 1, 0],  # green
+            [0, 0, 1],  # blue
+            [1, 1, 0],  # yellos
+        ]
+
+        o = np.asscalar(to_np(self.prev_options))
+        obs = obs * mask[o]
+
+        imsave('%s/%04d.png' % (dir, steps), obs)
 
     def step(self):
         config = self.config
@@ -230,7 +251,7 @@ class ASquaredCPPOAgent(BaseAgent):
             'v_hat': v_hat,
         })
         storage.placeholder()
-        
+
         [o] = storage.cat(['o'])
         for i in range(config.num_o):
             self.logger.add_scalar('option_%d' % (i), (o == i).float().mean(), log_level=1)

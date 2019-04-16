@@ -1,4 +1,5 @@
 from deep_rl import *
+import subprocess
 
 
 def batch_mujoco():
@@ -495,8 +496,14 @@ def visualize_a_squared_c(**kwargs):
     config.state_normalizer = MeanStdNormalizer()
     agent = ASquaredCPPOAgent(config)
 
-    agent.load('data/ASquaredC/ASquaredCPPOAgent-dm-walker-2-freeze_v_False-learning_all-log_level_1-num_o_4-opt_ep_5-save_interval_999424-tasks_True-run-0-0')
-    agent.record_episode('data/ASquaredC/episode', config.eval_env)
+    folder = 'data/ASquaredC'
+    steps = [999424, 1998848]
+    tasks = ['dm-cheetah-run', 'dm-cheetah-backward']
+    for s, t in zip(steps, tasks):
+        saved = '%s/ASquaredCPPOAgent-dm-cheetah-log_level_1-remark_ASC-save_interval_999424-tasks_True-run-0-%d' % (folder, s)
+        agent.load(saved)
+        agent.record_episode('%s/episode_%d' % (folder, s), Task(t))
+        subprocess.run(['ffmpeg', '-i', '%s/episode_%d/%%04d.png' % (folder, s), '%s/episode_%d.gif' % (folder, s)])
 
 
 if __name__ == '__main__':
@@ -507,7 +514,7 @@ if __name__ == '__main__':
     select_device(-1)
 
     # batch_mujoco()
-    batch_dm()
+    # batch_dm()
 
     # game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
@@ -517,9 +524,9 @@ if __name__ == '__main__':
     # game = 'dm-fish-swim'
     # game = 'dm-fish'
     # game = 'dm-cartpole-b'
-    game = 'dm-walker-2'
+    # game = 'dm-walker-2'
     # game = 'dm-cheetah-run'
-    # game = 'dm-cheetah'
+    game = 'dm-cheetah'
     # game = 'dm-cheetah-backward'
     # game = 'dm-fish-downleft'
     # game = 'dm-walker-squat'

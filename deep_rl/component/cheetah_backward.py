@@ -32,9 +32,16 @@ from dm_control.utils import rewards
 from dm_control.suite.cheetah import Cheetah
 from dm_control.suite.cheetah import Physics
 from dm_control.suite.cheetah import SUITE
-from dm_control.suite.cheetah import get_model_and_assets
 from dm_control.suite.cheetah import _DEFAULT_TIME_LIMIT
 from dm_control.suite.cheetah import _RUN_SPEED
+import dm_control
+
+def get_model_and_assets_():
+  """Returns a tuple containing the model XML string and a dict of assets."""
+  return common.read_model('/Users/Shangtong/GitHub/DeepRL/deep_rl/component/cheetah.xml'), common.ASSETS
+
+dm_control.suite.cheetah.get_model_and_assets = get_model_and_assets_
+from dm_control.suite.cheetah import get_model_and_assets
 
 
 @SUITE.add('benchmarking')

@@ -87,8 +87,8 @@ class BaseAgent:
         steps = 0
         state = env.reset()
         while True:
-            self.record_obs(env, dir, steps)
             action = self.record_step(state)
+            self.record_obs(env, dir, steps)
             state, reward, done, info = env.step(action)
             ret = info[0]['episodic_return']
             steps += 1
