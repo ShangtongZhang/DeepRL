@@ -500,10 +500,14 @@ def visualize_a_squared_c(**kwargs):
     steps = [999424, 1998848]
     game = kwargs['game']
     for s, t in zip(steps, config.tasks):
+        agent.all_options = []
         saved = '%s/ASquaredCPPOAgent-%s-log_level_1-remark_ASC-save_interval_999424-tasks_True-run-0-%d' % (folder, game, s)
         agent.load(saved)
-        agent.record_episode('%s/%s_episode_%d' % (folder, game, s), t)
-        subprocess.run(['ffmpeg', '-i', '%s/%s_episode_%d/%%04d.png' % (folder, game, s), '%s/%s_episode_%d.gif' % (folder, game, s)])
+        sub_folder = '%s/%s_episode_%d' % (folder, game, s)
+        agent.record_episode(sub_folder, t)
+        subprocess.run(['ffmpeg', '-i', '%s/%%04d.png' % (sub_folder), '%s.gif' % (sub_folder)])
+        with open('%s_options.bin' % (sub_folder), 'wb') as f:
+            pickle.dump(agent.all_options, f)
 
 
 if __name__ == '__main__':
@@ -593,12 +597,12 @@ if __name__ == '__main__':
     #     # gate=nn.Tanh(),
     # )
 
-    visualize_a_squared_c(
-        game=game,
-        learning='all',
-        log_level=1,
-        num_o=4,
-        opt_ep=5,
-        freeze_v=False,
-        tasks=True,
-    )
+    # visualize_a_squared_c(
+    #     game=game,
+    #     learning='all',
+    #     log_level=1,
+    #     num_o=4,
+    #     opt_ep=5,
+    #     freeze_v=False,
+    #     tasks=True,
+    # )

@@ -27,6 +27,8 @@ class ASquaredCPPOAgent(BaseAgent):
 
         self.count = 0
 
+        self.all_options = []
+
     def compute_pi_hat(self, prediction, prev_option, is_intial_states):
         inter_pi = prediction['inter_pi']
         mask = torch.zeros_like(inter_pi)
@@ -178,10 +180,11 @@ class ASquaredCPPOAgent(BaseAgent):
             [1, 0, 0],  # red
             [0, 1, 0],  # green
             [0, 0, 1],  # blue
-            [1, 1, 0],  # yellos
+            [1, 1, 0],  # yellow
         ]
 
         o = np.asscalar(to_np(self.prev_options))
+        self.all_options.append(o)
         obs = obs * mask[o]
 
         imsave('%s/%04d.png' % (dir, steps), obs)

@@ -488,10 +488,35 @@ def extract_vis_data():
     print(y)
 
 
+def plot_option_occupancy():
+    colors = ['red', 'green', 'blue', 'yellow']
+    files = [
+        'data/ASquaredC/dm-cheetah_episode_999424_options.bin',
+        'data/ASquaredC/dm-cheetah_episode_1998848_options.bin',
+    ]
+
+    for j, file in enumerate(files):
+        plt.figure(figsize=(10, 0.2))
+        plt.tight_layout()
+        with open(file, 'rb') as f:
+            options = pickle.load(f)
+        options = np.asarray(options)
+        xs = []
+        for i in range(4):
+            xs.append(np.argwhere(options == i).flatten())
+
+        for i, x in enumerate(xs):
+            y = np.ones(len(x))
+            plt.scatter(x, y, color=colors[i], marker='|')
+
+        plt.axis('off')
+        plt.savefig('%s/options-%d.png' % (FOLDER, j), bbox_inches='tight')
+
 
 if __name__ == '__main__':
     mkdir('images')
     # plot_dm(type='mean')
     # plot_mujoco(type='mean')
     # plot_ablation(type='mean')
-    extract_vis_data()
+    # extract_vis_data()
+    plot_option_occupancy()
