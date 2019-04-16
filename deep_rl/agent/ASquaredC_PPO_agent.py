@@ -169,7 +169,7 @@ class ASquaredCPPOAgent(BaseAgent):
 
     def record_obs(self, env, dir, steps):
         env = env.env.envs[0]
-        env.env.render_mode_list['rgb_array']['render_kwargs']['width'] = 2048
+        env.env.render_mode_list['rgb_array']['render_kwargs']['camera_id'] = 'side'
         obs = env.render(mode='rgb_array')
         obs = color.rgb2gray(obs)
         obs = color.gray2rgb(obs)
