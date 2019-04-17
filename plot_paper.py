@@ -481,13 +481,6 @@ def plot_misc():
     plt.savefig('images/Breakout.png', bbox_inches='tight')
 
 
-def extract_vis_data():
-    plotter = Plotter()
-    x, y = plotter.load_results(['./tf_log/logger-dm-walker-2-log_level_1-remark_vis-tasks_True-run-0-190414-093517'],
-                                tag='option')
-    print(y)
-
-
 def plot_option_occupancy():
     colors = ['red', 'green', 'blue', 'yellow']
     files = [
@@ -518,5 +511,4 @@ if __name__ == '__main__':
     # plot_dm(type='mean')
     # plot_mujoco(type='mean')
     # plot_ablation(type='mean')
-    # extract_vis_data()
-    plot_option_occupancy()
+    # plot_option_occupancy()
