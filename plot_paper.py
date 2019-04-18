@@ -655,12 +655,12 @@ def plot_mf_ddpg(type='mean'):
 
 if __name__ == '__main__':
     # extract_auc_data()
-    plot_ddpg_variants(type='mean')
-    plot_ddpg_variants(type='median')
+    # plot_ddpg_variants(type='mean')
+    # plot_ddpg_variants(type='median')
     # plot_auc_improvements()
     plot_oracle(type='mean')
     plot_oracle(type='median')
-    plot_dyna(type='mean')
-    plot_dyna(type='median')
-    plot_mf_ddpg(type='mean')
-    plot_mf_ddpg(type='median')
+    # plot_dyna(type='mean')
+    # plot_dyna(type='median')
+    # plot_mf_ddpg(type='mean')
+    # plot_mf_ddpg(type='median')
