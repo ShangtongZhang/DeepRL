@@ -186,7 +186,7 @@ def plot_dm(type='mean'):
     ]
 
     labels = [
-        r'A$^2$C+PPO',
+        'DAC+PPO',
         'AHP+PPO',
         'PPO',
         'IOPG',
@@ -270,7 +270,7 @@ def plot_mujoco(type='mean'):
     ]
 
     labels = [
-        r'A$^2$C+PPO',
+        'DAC+PPO',
         'AHP+PPO',
         'PPO',
         'IOPG',
@@ -342,7 +342,7 @@ def plot_ablation(type='mean'):
                     for k in range(y.shape[0]):
                         plt.plot(x, y[i], label=label, color=color)
                         label = None
-            plt.title(r'A$^2$C-PPO Walker2', fontsize=30, fontweight="bold")
+            plt.title('DAC-PPO Walker2', fontsize=30, fontweight="bold")
             if i > 2:
                 plt.xlabel('Steps', fontsize=30)
             plt.xticks([0, int(2e6)], ['0', r'$2\times10^6$'])
@@ -508,7 +508,7 @@ def plot_option_occupancy():
 
 if __name__ == '__main__':
     mkdir('images')
-    # plot_dm(type='mean')
-    # plot_mujoco(type='mean')
-    # plot_ablation(type='mean')
+    plot_dm(type='mean')
+    plot_mujoco(type='mean')
+    plot_ablation(type='mean')
     # plot_option_occupancy()
