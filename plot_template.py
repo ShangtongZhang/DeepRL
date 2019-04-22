@@ -194,7 +194,7 @@ def plot_mujoco():
     # games = ['RoboschoolAnt-v1']
     # games = ['Ant-v2', 'HumanoidStandup-v2']
     # games = ['Swimmer-v2']
-    games = ['HalfCheetah-v2']
+    games = ['HalfCheetah-v2', 'Hopper-v2']
 
     patterns = [
         # 'remark_ddpg-run',
