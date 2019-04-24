@@ -105,167 +105,6 @@ def ddpg_plot(**kwargs):
             plt.plot(x, y, color=Plotter.COLORS[color], label=names[i] if i == 0 else '')
 
 
-def plot_mujoco():
-    kwargs = {
-        'x_interval': int(1e4),
-        'rep': 20,
-        'average': True,
-        'max_x_len': 101,
-        'top_k': 0,
-    }
-    games = [
-        'HalfCheetah-v2',
-        'Walker2d-v2',
-        'Hopper-v2',
-        'Swimmer-v2',
-        'Humanoid-v2',
-        # 'HumanoidStandup-v2',
-        # 'Reacher-v2',
-    ]
-    # games = ['RoboschoolHumanoid-v1', 'RoboschoolAnt-v1', 'RoboschoolHumanoidFlagrun-v1', 'RoboschoolHumanoidFlagrunHarder-v1']
-    # games = ['RoboschoolHumanoid-v1']
-    # games = ['RoboschoolAnt-v1']
-    # games = ['Ant-v2', 'HumanoidStandup-v2']
-    # games = ['Swimmer-v2']
-
-    patterns = [
-        # 'remark_ddpg-run',
-        # 'action_noise_0\.1-max_uncertainty_1-random_t_mask_False-run',
-        # 'action_noise_0\.1-max_uncertainty_1-random_t_mask_True-run',
-        # 'action_noise_0-max_uncertainty_1-random_t_mask_False-run',
-        # 'action_noise_0-max_uncertainty_inf-run',
-        # 'action_noise_0\.1-max_uncertainty_inf-run',
-
-        # 'action_noise_0\.2-max_uncertainty_1-random_t_mask_False-run',
-        # 'action_noise_0\.05-max_uncertainty_1-random_t_mask_False-run',
-
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_1-plan_steps_1-run',
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_1-plan_actor_True-plan_steps_1-run',
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_1-plan_steps_2-run',
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_1-plan_steps_4-run',
-
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-plan_steps_1-run',
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_4-plan_steps_1-run',
-
-        # 'action_noise_0.1-live_action_True-max_uncertainty_1-plan_steps_1-run',
-
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_max-plan_steps_2-run',
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_min-plan_steps_2-run',
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_2-run',
-
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
-        # 'action_noise_0\.05-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
-        # 'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_steps_1-run',
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_1-model_agg_mean-plan_steps_2-run',
-
-        # 'action_noise_0-live_action_False-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.2-run',
-        # 'action_noise_0-live_action_False-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.05-run',
-        # 'action_noise_0-live_action_False-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.1-run',
-
-        # 'action_noise_0-live_action_False-max_uncertainty_2-plan_actor_False-plan_steps_1-state_noise_0\.2-run',
-        # 'action_noise_0-live_action_False-max_uncertainty_2-plan_actor_False-plan_steps_1-state_noise_0\.05-run',
-        # 'action_noise_0-live_action_False-max_uncertainty_2-plan_actor_False-plan_steps_1-state_noise_0\.1-run',
-
-        # 'action_noise_0-live_action_True-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.2-run',
-        # 'action_noise_0-live_action_True-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.05-run',
-        # 'action_noise_0-live_action_True-max_uncertainty_2-plan_actor_True-plan_steps_1-state_noise_0\.1-run',
-
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
-        # 'action_noise_0\.2-live_action_False-max_uncertainty_1-model_agg_mean-plan_actor_True-plan_steps_2-run',
-        # 'action_noise_0\.1-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
-        # 'action_noise_0\.2-live_action_False-max_uncertainty_2-model_agg_mean-plan_actor_True-plan_steps_1-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-run',
-        # 'action_noise_0\.1-live_action_True-plan_steps_1-run',
-        # 'action_noise_0\.2-live_action_False-plan_steps_1-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_2-run',
-        # 'plan_False-run',
-        # 'plan_False-real_updates_2-run',
-        # 'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_False-run',
-
-        # 'action_noise_0\.1-live_action_False-plan_actor_False-plan_steps_1-residual_True-run',
-        # 'action_noise_0\.1-live_action_False-plan_actor_True-plan_steps_1-residual_True-run',
-
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.1-target_net_residual_True-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.5-target_net_residual_True-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_1\.0-target_net_residual_True-run',
-
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.05-target_net_residual_True-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_True-run',
-
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.01-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.05-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.1-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-prediction_noise_0\.2-run',
-
-        # 'residual_0\.01-run',
-        # 'residual_0\.1-run',
-        # 'residual_0\.5-run',
-        # 'residual_1-run',
-
-        # learned model
-        # skip=False indicates a learned model
-        'action_noise_0.1-plan_steps_1-residual_0-skip_False-target_net_residual_True-run',
-        'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_False-run',
-        # 'action_noise_0.1-plan_steps_3-residual_0\.2-skip_False-target_net_residual_False-run',
-        # 'action_noise_0.1-plan_steps_5-residual_0\.2-skip_False-target_net_residual_False-run',
-        # 'action_noise_0.1-plan_steps_5-residual_0\.2-skip_False-target_net_residual_True-run',
-        # 'action_noise_0.1-plan_steps_1-residual_0\.2-skip_False-target_net_residual_True-run',
-        # 'action_noise_0\.2-plan_steps_3-residual_0\.2-skip_False-target_net_residual_True-run',
-        # 'action_noise_0\.05-plan_steps_3-residual_0\.2-skip_False-target_net_residual_True-run',
-
-        # oralce model
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0-target_net_residual_True-run',
-        # 'action_noise_0\.1-live_action_False-plan_steps_1-residual_0\.2-target_net_residual_False-run',
-
-        # 'action_noise_0.1-plan_steps_1-residual_0\.05-skip_False-target_net_residual_True-run',
-        # 'action_noise_0.1-plan_steps_1-residual_0\.1-skip_False-target_net_residual_True-run',
-        # 'action_noise_0.1-plan_steps_1-residual_0\.05-skip_False-target_net_residual_False-run',
-        # 'action_noise_0.1-plan_steps_1-residual_0\.1-skip_False-target_net_residual_False-run',
-
-        # 'remark_residual-residual_0\.05-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.1-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.2-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.4-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.8-target_net_residual_False-run',
-        # 'remark_residual-residual_1-target_net_residual_False-run',
-
-        # 'remark_residual-residual_0\.05-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.05-target_net_residual_False-run',
-        # 'remark_residual-residual_0\.1-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.2-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.4-target_net_residual_True-run',
-        # 'remark_residual-residual_0\.8-target_net_residual_True-run',
-        # 'remark_residual-residual_1-target_net_residual_True-run',
-
-        'MVE_3-plan_False-skip_False-run',
-
-        # 'action_noise_0\.1-plan_steps_3-residual_0\.2-target_net_residual_True',
-        # 'action_noise_0\.1-plan_steps_3-residual_0\.2-target_net_residual_False',
-        # 'action_noise_0\.1-plan_steps_1-residual_0\.2-target_net_residual_False-run',
-    ]
-
-    l = len(games)
-    plt.figure(figsize=(l * 15, 15))
-    for j, game in enumerate(games):
-        plt.subplot(1, l, j + 1)
-        ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, name=game, **kwargs)
-        for i, p in enumerate(patterns):
-            # ddpg_plot(pattern='.*oracle-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            # ddpg_plot(pattern='.*dyna-ddpg/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-            # ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
-            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
-            ddpg_plot(pattern='.*dyna-ddpg-1st/%s-%s.*' % (game, p), color=i + 1, name=game, **kwargs)
-            # ddpg_plot(pattern='.*dyna-ddpg-2nd/%s-%s.*' % (game, p), color=i+1, name=game, **kwargs)
-    plt.show()
-
-
 def plot_ddpg_variants(type='mean'):
     kwargs = {
         'x_interval': int(1e4),
@@ -497,10 +336,22 @@ def plot_dyna(type='mean'):
     plt.tight_layout()
     for j, game in enumerate(games):
         plt.subplot(1, l, j + 1)
-        ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, label='DDPG', **kwargs)
+        if j == 0:
+            label = None
+        else:
+            label = 'DDPG'
+        ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, 'remark_ddpg-run'), color=0, label=label, **kwargs)
         for i, p in enumerate(patterns):
-            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i + 1, label=labels[i], **kwargs)
-            ddpg_plot(pattern='.*dyna-ddpg-1st/%s-%s.*' % (game, p), color=i + 1, label=labels[i], **kwargs)
+            if j == 0:
+                label = None
+            else:
+                label = labels[i]
+            ddpg_plot(pattern='.*mve-ddpg/%s-%s.*' % (game, p), color=i + 1, label=label, **kwargs)
+            ddpg_plot(pattern='.*dyna-ddpg-main/%s-%s.*' % (game, p), color=i + 1, label=label, **kwargs)
+        if j == 0:
+            p = 'action_noise_0\.1-plan_steps_1-residual_0\.05-skip_False-target_net_residual_False-run'
+            label = r'Res-Dyna-DDPG($\eta=0.05$)'
+            ddpg_plot(pattern='.*dyna-ddpg-extra/%s-%s.*' % (game, p), color=i + 2, label=label, **kwargs)
         plt.title(game, fontsize=30, fontweight="bold")
         plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
         plt.tick_params(axis='x', labelsize=30)
@@ -508,7 +359,7 @@ def plot_dyna(type='mean'):
         plt.xlabel('Steps', fontsize=30)
         if not j:
             plt.ylabel('Episode Return', fontsize=30)
-        if j == 1:
+        if j == 1 or j == 0:
             plt.legend(fontsize=17, frameon=False)
     plt.savefig('%s/ddpg-dyna-%s.png' % (FOLDER, type), bbox_inches='tight')
     plt.show()
@@ -658,9 +509,9 @@ if __name__ == '__main__':
     # plot_ddpg_variants(type='mean')
     # plot_ddpg_variants(type='median')
     # plot_auc_improvements()
-    plot_oracle(type='mean')
-    plot_oracle(type='median')
-    # plot_dyna(type='mean')
-    # plot_dyna(type='median')
+    # plot_oracle(type='mean')
+    # plot_oracle(type='median')
+    plot_dyna(type='mean')
+    plot_dyna(type='median')
     # plot_mf_ddpg(type='mean')
     # plot_mf_ddpg(type='median')
