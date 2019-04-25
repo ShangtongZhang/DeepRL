@@ -254,7 +254,8 @@ def mb_batch():
     ]
 
     # games = ['Reacher-v2', 'InvertedDoublePendulum-v2', 'InvertedPendulum-v2']
-    games = ['HalfCheetah-v2', 'Hopper-v2']
+    # games = ['HalfCheetah-v2', 'Hopper-v2']
+    games = ['Walker2d-v2']
 
     params = [
         dict(action_noise=0.1, plan_steps=1, residual=0.1, target_net_residual=False, skip=False),
@@ -273,9 +274,18 @@ def mb_batch():
             for res in [0.05, 0.1]:
                 params.append(dict(game=game, run=r, action_noise=0.1, plan_steps=1, residual=res, target_net_residual=False, skip=False))
 
+    params = []
+    for game in games:
+        for r in range(4):
+            for p in [1, 2, 4]:
+                for noise in [0.05, 0.1, 0.2]:
+                    params.append(dict(game=game, run=r, action_noise=noise, plan_steps=p, residual=0, target_net_residual=True))
+
+
     # model_ddpg_continuous(game=games[0], run=cf.i1, **params[cf.i2])
     # model_ddpg_continuous(game=games[0], run=cf.i1 // 4, **params[cf.i1 % 4])
-    model_ddpg_continuous(**params[cf.i1])
+    # model_ddpg_continuous(**params[cf.i1])
+    oracle_ddpg_continuous(**params[cf.i1])
 
     # residual_ddpg_continuous(**params[cf.i1], remark='residual', target_net_residual=True, residual=0)
     # residual_ddpg_continuous(**params[cf.i1])
@@ -685,9 +695,9 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
     set_one_thread()
-    # select_device(-1)
+    select_device(-1)
     # dm_control_batch()
-    select_device(0)
+    # select_device(0)
     mb_batch()
     # batch_atari()
     # batch()
