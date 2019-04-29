@@ -139,7 +139,6 @@ class BaseActor(mp.Process):
 
     def run(self):
         self._set_up()
-        torch.cuda.is_available()
         config = self.config
         self._task = config.task_fn()
 

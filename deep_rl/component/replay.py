@@ -101,7 +101,6 @@ class AsyncReplay(mp.Process):
         self.start()
 
     def run(self):
-        torch.cuda.is_available()
         replay = Replay(self.memory_size, self.batch_size)
         cache = []
         pending_batch = None
