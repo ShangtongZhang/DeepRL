@@ -4,6 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 import numpy as np
+import torch
 from baselines.common.running_mean_std import RunningMeanStd
 
 
@@ -55,7 +56,8 @@ class RescaleNormalizer(BaseNormalizer):
         self.coef = coef
 
     def __call__(self, x):
-        x = np.asarray(x)
+        if not isinstance(x, torch.Tensor):
+            x = np.asarray(x)
         return self.coef * x
 
 

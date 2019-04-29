@@ -28,12 +28,17 @@ def get_logger(tag='default', log_level=0):
 class Logger(object):
     def __init__(self, vanilla_logger, log_dir, log_level=0):
         self.log_level = log_level
-        self.writer = SummaryWriter(log_dir)
+        self.writer = None
         if vanilla_logger is not None:
             self.info = vanilla_logger.info
             self.debug = vanilla_logger.debug
             self.warning = vanilla_logger.warning
         self.all_steps = {}
+        self.log_dir = log_dir
+
+    def lazy_init_writer(self):
+        if self.writer is None:
+            self.writer = SummaryWriter(self.log_dir)
 
     def to_numpy(self, v):
         if isinstance(v, torch.Tensor):
@@ -48,6 +53,7 @@ class Logger(object):
         return step
 
     def add_scalar(self, tag, value, step=None, log_level=0):
+        self.lazy_init_writer()
         if log_level > self.log_level:
             return
         value = self.to_numpy(value)
@@ -58,6 +64,7 @@ class Logger(object):
         self.writer.add_scalar(tag, value, step)
 
     def add_histogram(self, tag, values, step=None, log_level=0):
+        self.lazy_init_writer()
         if log_level > self.log_level:
             return
         values = self.to_numpy(values)
