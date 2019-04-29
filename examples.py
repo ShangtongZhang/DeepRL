@@ -402,8 +402,8 @@ def ppo_continuous(**kwargs):
     config.eval_env = config.task_fn()
 
     config.network_fn = lambda: GaussianActorCriticNet(
-        config.state_dim, config.action_dim, actor_body=FCBody(config.state_dim, gate=F.tanh),
-        critic_body=FCBody(config.state_dim, gate=F.tanh))
+        config.state_dim, config.action_dim, actor_body=FCBody(config.state_dim, gate=torch.tanh),
+        critic_body=FCBody(config.state_dim, gate=torch.tanh))
     config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
     config.discount = 0.99
     config.use_gae = True

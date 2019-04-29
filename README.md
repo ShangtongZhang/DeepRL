@@ -18,7 +18,7 @@ Action Conditional Video Prediction can be found in [v0.4](https://github.com/Sh
 
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
-* PyTorch v0.4.0
+* PyTorch v1.0.1
 * Python 3.6, 3.5
 * OpenAI Baselines (commit 8e56dd)
 * Core dependencies: `pip install -e .`

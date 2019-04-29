@@ -76,15 +76,12 @@ def batch_mujoco():
     params = []
 
     for game in games:
-        for r in range(5):
-            params.append(dict(game=game, run=r))
+        for algo in [ppo_continuous, ddpg_continuous]:
+            for r in range(5):
+                params.append([algo, dict(game=game, run=r)])
 
-    algos = [
-        # ppo_continuous,
-        ddpg_continuous,
-    ]
-    algo = algos[cf.i // 25]
-    algo(**params[cf.i % 25], remark=algo.__name__)
+    algo, param = params[cf.i]
+    algo(**param, remark=algo.__name__)
 
     exit()
 
@@ -95,8 +92,8 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
 
-    # select_device(0)
-    # batch_atari()
+    select_device(0)
+    batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
