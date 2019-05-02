@@ -1,5 +1,7 @@
 # DeepRL
 
+> If you have any question or want to report a bug, please open an issue instead of emailing me directly.
+
 Modularized implementation of popular deep RL algorithms by PyTorch. Easy switch between toy tasks and challenging games.
 
 Implemented algorithms:
@@ -18,23 +20,23 @@ Action Conditional Video Prediction can be found in [v0.4](https://github.com/Sh
 
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
-* PyTorch v1.0.1
+* PyTorch v1.1.0
 * Python 3.6, 3.5
-* OpenAI Baselines (commit 8e56dd)
+* OpenAI Baselines (commit ```8e56dd```)
 * Core dependencies: `pip install -e .`
 
 # Remarks
-* If you have any question about the code or want to report a bug, please **open an issue** instead of emailing me directly.
+* PyTorch v0.4.0 should also work in principle, at least for commit ```80939f```.
 * There is a super fast DQN implementation with an async actor for data generation and an async replay buffer to transfer data to GPU. Enable this implementation by setting `config.async_actor = True` and using `AsyncReplay`. However, with atari games this fast implementation may not work in macOS. Use Ubuntu or Docker instead.
 * Although there is a `setup.py`, which means you can install the repo as a library, this repo is **never** designed to be a high-level library like Keras. Use it as your codebase instead.
 * **Code for my papers** can be found in corresponding branches, which may be good examples for extending this codebase.
-* TensorFlow is used only for logging. Open AI baselines is only used very slightly. If you carefully read the code, you should be able to remove/replace them.
+* TensorFlow is used only for logging. Open AI baselines is used very slightly. If you carefully read the code, you should be able to remove/replace them.
 
 # Usage
 
 ```examples.py``` contains examples for all the implemented algorithms
 
-```Dockerfile``` contains a perfect environment, highly recommended 
+```Dockerfile``` contains the environment for generating the curves below. 
 
 Please use this bibtex if you want to cite this repo
 ```
@@ -48,7 +50,7 @@ Please use this bibtex if you want to cite this repo
 }
 ```
 
-# Curves
+# Curves (commit ```80939f```)
 
 ## BreakoutNoFrameskip-v4
 
