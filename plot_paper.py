@@ -275,7 +275,7 @@ def plot_mujoco(type='mean'):
         'PPO',
         'IOPG',
         'OC',
-        r'A$^2$C+A2C',
+        'DAC+A2C',
     ]
 
     plotter.plot_games(games=games,
@@ -508,7 +508,7 @@ def plot_option_occupancy():
 
 if __name__ == '__main__':
     mkdir('images')
-    plot_dm(type='mean')
+    # plot_dm(type='mean')
     plot_mujoco(type='mean')
-    plot_ablation(type='mean')
+    # plot_ablation(type='mean')
     # plot_option_occupancy()
