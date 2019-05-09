@@ -62,9 +62,12 @@ def batch_mujoco():
             # params.append([ppo_continuous, dict(game=game, run=r, tasks=False, remark='PPO', gate=nn.Tanh())])
             # params.append([oc_continuous, dict(game=game, run=r, tasks=False, remark='OC', gate=nn.Tanh())])
 
-            params.append([a_squared_c_a2c_continuous, dict(game=game, run=r, tasks=False, remark='ASC-A2C', gate=nn.Tanh(), num_workers=4)])
-            params.append([oc_continuous, dict(game=game, run=r, tasks=False, remark='OC', gate=nn.Tanh(), num_workers=4)])
-            params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh(), num_workers=4)])
+            params.append([a_squared_c_a2c_continuous,
+                           dict(game=game, run=r, tasks=False, remark='ASC-A2C', gate=nn.Tanh(), num_workers=4)])
+            params.append(
+                [oc_continuous, dict(game=game, run=r, tasks=False, remark='OC', gate=nn.Tanh(), num_workers=4)])
+            params.append(
+                [iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh(), num_workers=4)])
 
             # params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=False, remark='AHP', gate=nn.Tanh())])
             # params.append([iopg_continuous, dict(game=game, run=r, tasks=False, remark='IOPG', gate=nn.Tanh())])
@@ -147,14 +150,15 @@ def batch_dm():
     #         params.append([oc_continuous, dict(game=game, run=r, tasks=True, remark='OC', num_workers=4)])
     #         params.append([iopg_continuous, dict(game=game, run=r, tasks=True, remark='IOPG', num_workers=4)])
 
-
     params = []
     for r in range(3):
         for game in games:
-        # for num_o in [2, 4, 8]:
-        # for algo in [a_squared_c_ppo_continuous, ahp_ppo_continuous]:
-            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC', log_level=1, save_interval=int(1e6 / 2048) * 2048)])
-            params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP', log_level=1, save_interval=int(1e6 / 2048) * 2048)])
+            # for num_o in [2, 4, 8]:
+            # for algo in [a_squared_c_ppo_continuous, ahp_ppo_continuous]:
+            params.append([a_squared_c_ppo_continuous, dict(game=game, run=r, tasks=True, remark='ASC', log_level=1,
+                                                            save_interval=int(1e6 / 2048) * 2048)])
+            params.append([ahp_ppo_continuous, dict(game=game, run=r, tasks=True, remark='AHP', log_level=1,
+                                                    save_interval=int(1e6 / 2048) * 2048)])
 
     algo, param = params[cf.i]
     algo(**param)
@@ -368,6 +372,50 @@ def oc_continuous(**kwargs):
     run_steps(OCAgent(config))
 
 
+def ppoc_continuous(**kwargs):
+    generate_tag(kwargs)
+    kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('num_o', 4)
+    kwargs.setdefault('gate', nn.ReLU())
+    kwargs.setdefault('entropy_weight', 0.01)
+    kwargs.setdefault('tasks', False)
+    kwargs.setdefault('max_steps', 2e6)
+    config = Config()
+    config.merge(kwargs)
+
+    if config.tasks:
+        set_tasks(config)
+
+    if 'dm-humanoid' in config.game:
+        hidden_units = (128, 128)
+    else:
+        hidden_units = (64, 64)
+
+    config.task_fn = lambda: Task(config.game)
+    config.eval_env = Task(config.game)
+
+    config.network_fn = lambda: OptionGaussianActorCriticNet(
+        config.state_dim, config.action_dim,
+        num_options=config.num_o,
+        actor_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        critic_body=FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+        option_body_fn=lambda: FCBody(config.state_dim, hidden_units=hidden_units, gate=config.gate),
+    )
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    config.beta_reg = 0.01
+    config.discount = 0.99
+    config.use_gae = True
+    config.gae_tau = 0.95
+    config.gradient_clip = 0.5
+    config.rollout_length = 2048
+    config.optimization_epochs = 10
+    config.mini_batch_size = 64
+    config.ppo_ratio_clip = 0.2
+    config.log_interval = 2048
+    config.state_normalizer = MeanStdNormalizer()
+    run_steps(PPOCAgent(config))
+
+
 def ahp_ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -501,7 +549,8 @@ def visualize_a_squared_c(**kwargs):
     game = kwargs['game']
     for s, t in zip(steps, config.tasks):
         agent.all_options = []
-        saved = '%s/ASquaredCPPOAgent-%s-log_level_1-remark_ASC-save_interval_999424-tasks_True-run-0-%d' % (folder, game, s)
+        saved = '%s/ASquaredCPPOAgent-%s-log_level_1-remark_ASC-save_interval_999424-tasks_True-run-0-%d' % (
+        folder, game, s)
         agent.load(saved)
         sub_folder = '%s/%s_episode_%d' % (folder, game, s)
         agent.record_episode(sub_folder, t)
@@ -520,7 +569,7 @@ if __name__ == '__main__':
     # batch_mujoco()
     # batch_dm()
 
-    # game = 'HalfCheetah-v2'
+    game = 'HalfCheetah-v2'
     # game = 'Walker2d-v2'
     # game = 'Swimmer-v2'
     # game = 'dm-walker-walk'
@@ -530,7 +579,7 @@ if __name__ == '__main__':
     # game = 'dm-cartpole-b'
     # game = 'dm-walker-2'
     # game = 'dm-cheetah-run'
-    game = 'dm-cheetah'
+    # game = 'dm-cheetah'
     # game = 'dm-cheetah-backward'
     # game = 'dm-fish-downleft'
     # game = 'dm-walker-squat'
@@ -596,6 +645,16 @@ if __name__ == '__main__':
     #     max_steps=int(4e3),
     #     # gate=nn.Tanh(),
     # )
+
+    ppoc_continuous(
+        game=game,
+        log_level=1,
+        num_o=4,
+        tasks=False,
+        # tasks=True,
+        # max_steps=int(4e3),
+        gate=nn.Tanh(),
+    )
 
     # visualize_a_squared_c(
     #     game=game,

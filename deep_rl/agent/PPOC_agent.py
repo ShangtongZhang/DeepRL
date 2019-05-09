@@ -56,12 +56,12 @@ class PPOCAgent(BaseAgent):
         else:
             raise NotImplementedError
 
-    def compute_adv(self, storage, mdp):
+    def compute_adv(self, storage):
         config = self.config
 
-        v = storage.__getattribute__('v_%s' % (mdp))
-        adv = storage.__getattribute__('adv_%s' % (mdp))
-        all_ret = storage.__getattribute__('ret_%s' % (mdp))
+        v = storage.v
+        adv = storage.adv
+        all_ret = storage.ret
 
         ret = v[-1].detach()
         advantages = tensor(np.zeros((config.num_workers, 1)))
@@ -75,123 +75,58 @@ class PPOCAgent(BaseAgent):
             adv[i] = advantages.detach()
             all_ret[i] = ret.detach()
 
-    def learn(self, storage, mdp, freeze_v=False):
+    def learn(self, storage):
         config = self.config
-        states, actions, options, log_probs_old, returns, advantages, prev_options, inits, pi_hat, mean, std = \
-            storage.cat(
-                ['s', 'a', 'o', 'log_pi_%s' % (mdp), 'ret_%s' % (mdp), 'adv_%s' % (mdp), 'prev_o', 'init', 'pi_hat',
-                 'mean', 'std'])
+
+        states, actions, log_pi_bar_old, options, returns, advantages, inits, prev_options = storage.cat(
+            ['s', 'a', 'log_pi_bar', 'o', 'ret', 'adv', 'init', 'prev_o'])
         actions = actions.detach()
-        log_probs_old = log_probs_old.detach()
-        pi_hat = pi_hat.detach()
-        mean = mean.detach()
-        std = std.detach()
+        log_pi_bar_old = log_pi_bar_old.detach()
         advantages = (advantages - advantages.mean()) / advantages.std()
 
         for _ in range(config.optimization_epochs):
             sampler = random_sample(np.arange(states.size(0)), config.mini_batch_size)
             for batch_indices in sampler:
                 batch_indices = tensor(batch_indices).long()
-
-                sampled_pi_hat = pi_hat[batch_indices]
-                sampled_mean = mean[batch_indices]
-                sampled_std = std[batch_indices]
                 sampled_states = states[batch_indices]
-                sampled_prev_o = prev_options[batch_indices]
-                sampled_init = inits[batch_indices]
-
-                sampled_options = options[batch_indices]
                 sampled_actions = actions[batch_indices]
-                sampled_log_probs_old = log_probs_old[batch_indices]
+                sampled_options = options[batch_indices]
+                sampled_log_pi_bar_old = log_pi_bar_old[batch_indices]
                 sampled_returns = returns[batch_indices]
                 sampled_advantages = advantages[batch_indices]
+                sampled_inits = inits[batch_indices]
+                sampled_prev_options = prev_options[batch_indices]
 
                 prediction = self.network(sampled_states)
-
-                if mdp == 'hat':
-                    cur_pi_hat = self.compute_pi_hat(prediction, sampled_prev_o.view(-1), sampled_init.view(-1))
-                    entropy = -(cur_pi_hat * cur_pi_hat.add(1e-5).log()).sum(-1).mean()
-                    log_pi_a = self.compute_log_pi_a(
-                        sampled_options, cur_pi_hat, sampled_actions, sampled_mean, sampled_std, mdp)
-                    beta_loss = prediction['beta'].mean()
-                elif mdp == 'bar':
-                    log_pi_a = self.compute_log_pi_a(
-                        sampled_options, sampled_pi_hat, sampled_actions, prediction['mean'], prediction['std'], mdp)
-                    entropy = 0
-                    beta_loss = 0
-                else:
-                    raise NotImplementedError
-
-                if mdp == 'hat':
-                    v = prediction['q_o'].gather(1, sampled_options)
-                elif mdp == 'bar':
-                    v = (prediction['q_o'] * sampled_pi_hat).sum(-1).unsqueeze(-1)
-                else:
-                    raise NotImplementedError
-
-                ratio = (log_pi_a - sampled_log_probs_old).exp()
+                pi_bar = self.compute_pi_bar(sampled_options, sampled_actions, prediction['mean'], prediction['std'])
+                log_pi_bar = pi_bar.add(1e-5).log()
+                ratio = (log_pi_bar - sampled_log_pi_bar_old).exp()
                 obj = ratio * sampled_advantages
                 obj_clipped = ratio.clamp(1.0 - self.config.ppo_ratio_clip,
                                           1.0 + self.config.ppo_ratio_clip) * sampled_advantages
-                policy_loss = -torch.min(obj, obj_clipped).mean() - config.entropy_weight * entropy + \
-                              config.beta_weight * beta_loss
+                policy_loss = -torch.min(obj, obj_clipped).mean()
 
-                discarded = (obj > obj_clipped).float().mean()
-                self.logger.add_scalar('clipped_%s' % (mdp), discarded, log_level=5)
+                beta_adv = prediction['q_o'].gather(1, sampled_prev_options) - \
+                           (prediction['q_o'] * prediction['inter_pi']).sum(-1).unsqueeze(-1)
+                beta_adv = beta_adv.detach() + config.beta_reg
+                beta_loss = prediction['beta'].gather(1, sampled_prev_options) * (1 - sampled_inits).float() * beta_adv
+                beta_loss = beta_loss.mean()
 
-                value_loss = 0.5 * (sampled_returns - v).pow(2).mean()
-                self.logger.add_scalar('v_loss', value_loss.item(), log_level=5)
-                if freeze_v:
-                    value_loss = 0
+                q_loss = (prediction['q_o'].gather(1, sampled_options) - sampled_returns.detach()).pow(2).mul(0.5).mean()
+
+                ent = -(prediction['log_inter_pi'] * prediction['inter_pi']).sum(-1).mean()
+                inter_pi_loss = -(prediction['log_inter_pi'].gather(1, sampled_options) * sampled_advantages).mean()\
+                                - config.entropy_weight * ent
 
                 self.opt.zero_grad()
-                (policy_loss + value_loss).backward()
+                (policy_loss + beta_loss + q_loss + inter_pi_loss).backward()
                 nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
                 self.opt.step()
 
-    def record_step(self, state):
-        config = self.config
-        config.state_normalizer.set_read_only()
-        state = config.state_normalizer(state)
-
-        prediction = self.network(state)
-        pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
-        dist = torch.distributions.Categorical(pi_hat)
-        options = dist.sample()
-
-        mean = prediction['mean'][[0], options]
-        std = prediction['std'][[0], options]
-        dist = torch.distributions.Normal(mean, std)
-        actions = dist.sample()
-
-        self.prev_options = options
-        config.state_normalizer.unset_read_only()
-
-        return to_np(actions)
-
-    def record_obs(self, env, dir, steps):
-        env = env.env.envs[0]
-        env.env.render_mode_list['rgb_array']['render_kwargs']['camera_id'] = 'side'
-        obs = env.render(mode='rgb_array')
-        obs = color.rgb2gray(obs)
-        obs = color.gray2rgb(obs)
-
-        mask = [
-            [1, 0, 0],  # red
-            [0, 1, 0],  # green
-            [0, 0, 1],  # blue
-            [1, 1, 0],  # yellow
-        ]
-
-        o = np.asscalar(to_np(self.prev_options))
-        self.all_options.append(o)
-        obs = obs * mask[o]
-
-        imsave('%s/%04d.png' % (dir, steps), obs)
 
     def step(self):
         config = self.config
-        storage = Storage(config.rollout_length, ['adv_bar', 'adv_hat', 'ret_bar', 'ret_hat'])
+        storage = Storage(config.rollout_length)
         states = self.states
         for _ in range(config.rollout_length):
             prediction = self.network(states)
@@ -212,9 +147,6 @@ class PPOCAgent(BaseAgent):
             pi_bar = self.compute_pi_bar(options.unsqueeze(-1), actions,
                                          prediction['mean'], prediction['std'])
 
-            v_bar = prediction['q_o'].gather(1, options.unsqueeze(-1))
-            v_hat = (prediction['q_o'] * pi_hat).sum(-1).unsqueeze(-1)
-
             next_states, rewards, terminals, info = self.task.step(to_np(actions))
             self.record_online_return(info)
             rewards = config.reward_normalizer(rewards)
@@ -228,11 +160,9 @@ class PPOCAgent(BaseAgent):
                          'prev_o': self.prev_options.unsqueeze(-1),
                          's': tensor(states),
                          'init': self.is_initial_states.unsqueeze(-1),
-                         'pi_hat': pi_hat,
-                         'log_pi_hat': pi_hat[self.worker_index, options].add(1e-5).log().unsqueeze(-1),
+                         'v': prediction['q_o'][self.worker_index, options].unsqueeze(-1),
                          'log_pi_bar': pi_bar.add(1e-5).log(),
-                         'v_bar': v_bar,
-                         'v_hat': v_hat})
+                         })
 
             self.is_initial_states = tensor(terminals).byte()
             self.prev_options = options
@@ -245,31 +175,12 @@ class PPOCAgent(BaseAgent):
         pi_hat = self.compute_pi_hat(prediction, self.prev_options, self.is_initial_states)
         dist = torch.distributions.Categorical(pi_hat)
         options = dist.sample()
-        v_bar = prediction['q_o'].gather(1, options.unsqueeze(-1))
-        v_hat = (prediction['q_o'] * pi_hat).sum(-1).unsqueeze(-1)
 
         storage.add(prediction)
         storage.add({
-            'v_bar': v_bar,
-            'v_hat': v_hat,
+            'v': prediction['q_o'][self.worker_index, options].unsqueeze(-1)
         })
         storage.placeholder()
 
-        [o] = storage.cat(['o'])
-        for i in range(config.num_o):
-            self.logger.add_scalar('option_%d' % (i), (o == i).float().mean(), log_level=1)
-
-        self.compute_adv(storage, 'bar')
-        self.compute_adv(storage, 'hat')
-
-        if config.learning == 'all':
-            mdps = ['hat', 'bar']
-            np.random.shuffle(mdps)
-            self.learn(storage, mdps[0])
-            self.learn(storage, mdps[1])
-        elif config.learning == 'alt':
-            if self.count % 2:
-                self.learn(storage, 'hat')
-            else:
-                self.learn(storage, 'bar')
-            self.count += 1
+        self.compute_adv(storage)
+        self.learn(storage)
