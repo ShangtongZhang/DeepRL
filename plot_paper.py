@@ -262,7 +262,8 @@ def plot_mujoco(type='mean'):
 
     patterns = [
         'ASC-PPO',
-        'remark_PPO',
+        'remark_PPO-',
+        'remark_PPOC-',
         'AHP',
         'num_workers_4-remark_IOPG',
         'num_workers_4-remark_OC',
@@ -271,8 +272,9 @@ def plot_mujoco(type='mean'):
 
     labels = [
         'DAC+PPO',
-        'AHP+PPO',
         'PPO',
+        'PPOC',
+        'AHP+PPO',
         'IOPG',
         'OC',
         'DAC+A2C',
@@ -292,7 +294,7 @@ def plot_mujoco(type='mean'):
                        )
 
     plt.tight_layout()
-    plt.savefig('%s/ASquaredC-mujoco-%s.png' % (FOLDER, type), bbox_inches='tight')
+    # plt.savefig('%s/ASquaredC-mujoco-%s.png' % (FOLDER, type), bbox_inches='tight')
     plt.show()
 
 
