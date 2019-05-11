@@ -9,9 +9,13 @@ import re
 
 
 class Plotter:
-    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'black', 'purple', 'gold', 'yellow', 'pink',
-              'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
-              'darkgreen', 'tan', 'salmon', 'lightpurple', 'darkred', 'darkblue']
+    COLORS = ['blue', 'green', 'red', 'orange', 'purple', 'lime', 'lightblue',
+              'lavender',
+              'brown',
+              'coral', 'cyan', 'magenta', 'black', 'gold',
+              'yellow', 'pink',
+              'teal', 'coral', 'lightblue', 'lavender', 'turquoise',
+              'darkgreen', 'tan', 'salmon', 'lightpurple', 'darkred']
 
     RETURN_TRAIN = 'episodic_return_train'
     RETURN_TEST = 'episodic_return_test'
@@ -180,7 +184,8 @@ def plot_dm(type='mean'):
     patterns = [
         'ASC-PPO',
         'AHP',
-        'remark_PPO',
+        'remark_PPOC',
+        'remark_PPO-',
         'num_workers_4-remark_IOPG',
         'num_workers_4-remark_OC',
     ]
@@ -188,6 +193,7 @@ def plot_dm(type='mean'):
     labels = [
         'DAC+PPO',
         'AHP+PPO',
+        'PPOC',
         'PPO',
         'IOPG',
         'OC',
@@ -262,9 +268,9 @@ def plot_mujoco(type='mean'):
 
     patterns = [
         'ASC-PPO',
-        'remark_PPO-',
-        'remark_PPOC-',
         'AHP',
+        'remark_PPOC-',
+        'remark_PPO-',
         'num_workers_4-remark_IOPG',
         'num_workers_4-remark_OC',
         'num_workers_4-remark_ASC-A2C',
@@ -272,9 +278,9 @@ def plot_mujoco(type='mean'):
 
     labels = [
         'DAC+PPO',
-        'PPO',
-        'PPOC',
         'AHP+PPO',
+        'PPOC',
+        'PPO',
         'IOPG',
         'OC',
         'DAC+A2C',
@@ -294,7 +300,7 @@ def plot_mujoco(type='mean'):
                        )
 
     plt.tight_layout()
-    # plt.savefig('%s/ASquaredC-mujoco-%s.png' % (FOLDER, type), bbox_inches='tight')
+    plt.savefig('%s/ASquaredC-mujoco-%s.png' % (FOLDER, type), bbox_inches='tight')
     plt.show()
 
 
@@ -510,7 +516,7 @@ def plot_option_occupancy():
 
 if __name__ == '__main__':
     mkdir('images')
-    # plot_dm(type='mean')
-    plot_mujoco(type='mean')
+    plot_dm(type='mean')
+    # plot_mujoco(type='mean')
     # plot_ablation(type='mean')
     # plot_option_occupancy()
