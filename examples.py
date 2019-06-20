@@ -194,9 +194,9 @@ def a2c_feature(**kwargs):
     config.num_workers = 5
     config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
     config.eval_env = Task(config.game)
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, 0.001)
+    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: CategoricalActorCriticNet(
-        config.state_dim, config.action_dim, FCBody(config.state_dim))
+        config.state_dim, config.action_dim, FCBody(config.state_dim, gate=F.tanh))
     config.discount = 0.99
     config.use_gae = True
     config.gae_tau = 0.95
