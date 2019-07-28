@@ -161,7 +161,7 @@ def plot_ddpg_variants(type='mean'):
             plt.ylabel('Episode Return', fontsize=30)
         else:
             plt.tick_params(labelleft=False)
-    plt.savefig('%s/ddpg-variants-%s.png' % (FOLDER, type), bbox_inches='tight')
+    plt.savefig('%s/ddpg-variants-%s.pdf' % (FOLDER, type), bbox_inches='tight')
     plt.show()
 
 
@@ -447,6 +447,121 @@ def plot_mf_ddpg(type='mean'):
     plt.show()
 
 
+def plot_rebuttal():
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True,
+        'max_x_len': 101,
+        'top_k': 0,
+    }
+
+    games = [
+        'HalfCheetah-v2',
+        'Walker2d-v2',
+        'Hopper-v2',
+        'Swimmer-v2',
+        'Humanoid-v2',
+    ]
+
+    patterns = [
+        'remark_ddpg-run',
+        'remark_residual-residual_0\.05-target_net_residual_True-run',
+    ]
+
+    labels = [
+        'DDPG',
+        r'Bi-Res-DDPG($\eta=0.05$)',
+    ]
+
+    l = len(games)
+    plt.figure(figsize=(l * 6, 5))
+    plt.rc('text', usetex=True)
+    plt.tight_layout()
+    for j, game in enumerate(games):
+        plt.subplot(1, l, j + 1)
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), color=i, name=game, label=labels[i], **kwargs)
+            ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, p), color=i, name=game, label=labels[i], **kwargs)
+        if j == 0:
+            plt.legend()
+        plt.title(game, fontsize=30, fontweight="bold")
+        plt.xticks([0, int(1e6)], ['0', r'$10^6$'])
+        plt.tick_params(axis='x', labelsize=30)
+        plt.tick_params(axis='y', labelsize=25)
+        plt.xlabel('Steps', fontsize=30)
+        if not j:
+            plt.ylabel('Episode Return', fontsize=30)
+    plt.savefig('%s/rebuttal.pdf' % (FOLDER), bbox_inches='tight')
+    plt.show()
+
+
+def extract_auc_data_mujoco():
+    kwargs = {
+        'x_interval': int(1e4),
+        'rep': 20,
+        'average': True,
+        'max_x_len': 101,
+        'top_k': 0,
+    }
+
+    games = [
+        'HalfCheetah-v2',
+        'Walker2d-v2',
+        'Hopper-v2',
+        'Swimmer-v2',
+        'Humanoid-v2',
+    ]
+
+    patterns = [
+        'remark_residual-residual_0\.05-target_net_residual_True-run',
+        'remark_ddpg-run',
+    ]
+
+    names = []
+    improvements = []
+    for game in games:
+        AUC = []
+        for i, p in enumerate(patterns):
+            if i == 0:
+                data = ddpg_plot(pattern='.*residual-ddpg/%s-%s.*' % (game, p), data=True, **kwargs)
+            else:
+                data = ddpg_plot(pattern='.*mujoco-baseline/%s-%s.*' % (game, p), data=True, **kwargs)
+            AUC.append(data.mean(0).sum())
+        improvements.append((AUC[0] - AUC[1]) / AUC[1])
+        names.append(game)
+        print(names[-1], improvements[-1])
+
+    with open('./data/residual/auc_mujoco.bin', 'wb') as f:
+        pickle.dump([names, improvements], f)
+
+
+def plot_auc_improvements_mujoco():
+    with open('./data/residual/auc_mujoco.bin', 'rb') as f:
+        games, improvements = pickle.load(f)
+
+    indices = list(reversed(np.argsort(improvements)))
+    games = [games[i] for i in indices]
+    improvements = [improvements[i] for i in indices]
+
+    print(np.median(improvements), np.mean(improvements))
+
+    for g, i in zip(games, improvements):
+        print(g, i)
+
+    x = np.arange(len(improvements))
+
+    plt.tight_layout()
+    plt.bar(x, improvements)
+    plt.xticks(x, games, rotation=-90)
+    plt.gca().invert_yaxis()
+    yticks = np.arange(-1, 4, 1)
+    plt.yticks(yticks, ['-100%', '0', '100%', '200%', '300%'], rotation=-90, verticalalignment='center')
+    # plt.ylabel('AUC Improvement', rotation=-90)
+    plt.savefig('%s/ddpg-auc_mujoco.pdf' % (FOLDER), bbox_inches='tight')
+    plt.show()
+
+
 # def plot_mf_dqn():
 #     train_kwargs = {
 #         'episode_window': 100,
@@ -511,7 +626,10 @@ if __name__ == '__main__':
     # plot_auc_improvements()
     # plot_oracle(type='mean')
     # plot_oracle(type='median')
-    plot_dyna(type='mean')
-    plot_dyna(type='median')
+    # plot_dyna(type='mean')
+    # plot_dyna(type='median')
     # plot_mf_ddpg(type='mean')
     # plot_mf_ddpg(type='median')
+    # plot_rebuttal()
+    # extract_auc_data_mujoco()
+    plot_auc_improvements_mujoco()
