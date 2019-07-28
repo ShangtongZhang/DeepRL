@@ -247,7 +247,7 @@ def plot_auc_improvements():
     yticks = np.arange(-1, 4, 1)
     plt.yticks(yticks, ['-100%', '0', '100%', '200%', '300%'], rotation=-90, verticalalignment='center')
     # plt.ylabel('AUC Improvement', rotation=-90)
-    plt.savefig('%s/ddpg-auc.png' % (FOLDER), bbox_inches='tight')
+    plt.savefig('%s/ddpg-auc.pdf' % (FOLDER), bbox_inches='tight')
     plt.show()
 
 
@@ -623,7 +623,7 @@ if __name__ == '__main__':
     # extract_auc_data()
     # plot_ddpg_variants(type='mean')
     # plot_ddpg_variants(type='median')
-    # plot_auc_improvements()
+    plot_auc_improvements()
     # plot_oracle(type='mean')
     # plot_oracle(type='median')
     # plot_dyna(type='mean')
@@ -632,4 +632,4 @@ if __name__ == '__main__':
     # plot_mf_ddpg(type='median')
     # plot_rebuttal()
     # extract_auc_data_mujoco()
-    plot_auc_improvements_mujoco()
+    # plot_auc_improvements_mujoco()
