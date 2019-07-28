@@ -455,10 +455,108 @@ def plot_geoff_pac_heatmap(key='J'):
     plt.show()
 
 
+def get_td3_baseline(game):
+    dir = './log/geoff-pac-td3'
+    data = []
+    for seed in range(10):
+        filename = 'TD3_%s_%s.npy' % (game, str(seed))
+        file = '%s/%s' % (dir, filename)
+        data.append(np.load(file))
+    return np.asarray(data)
+
+
+def rebuttal_with_td3(**kwargs):
+    kwargs.setdefault('average', True)
+    kwargs.setdefault('top_k', 0)
+    kwargs.setdefault('type', 'mean')
+    kwargs.setdefault('tag', 'episodic_return')
+    kwargs.setdefault('ddpg', True)
+
+    games = [
+        'HalfCheetah-v2',
+        'Walker2d-v2',
+        'Hopper-v2',
+        'Reacher-v2',
+        'Swimmer-v2',
+    ]
+
+    labels = [
+        'Geoff-PAC',
+        'DDPG',
+        'TD3',
+    ]
+
+    def info(game):
+        with open('data/Geoff-PAC/random_agent_mujoco.bin', 'rb') as f:
+            rnd_perf = pickle.load(f)
+        rnd_perf = rnd_perf[game][kwargs['tag']]
+        if kwargs['ddpg']:
+            patterns = [
+                'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.7-lam2_0\.6-run',
+                'remark_ddpg',
+            ]
+        else:
+            patterns = [
+                'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.7-lam2_0\.6-run',
+                'algo_ace-lam1_0-run',
+                'algo_off-pac-run',
+            ]
+        if game == 'Reacher-v2':
+            x_ticks = [[0, int(2e4)], ['0', r'$2\times10^4$']]
+            rnd_x = np.linspace(0, int(2e4), 100).astype(np.int)
+        elif game == 'Swimmer-v2':
+            x_ticks = [[0, int(5e6)], ['0', r'$5\times10^6$']]
+            rnd_x = np.linspace(0, int(5e6), 100).astype(np.int)
+        else:
+            x_ticks = [[0, int(1e6)], ['0', r'$10^6$']]
+            rnd_x = np.linspace(0, int(1e6), 100).astype(np.int)
+        rnd_y = [rnd_perf] * len(rnd_x)
+        return patterns, x_ticks, rnd_x, rnd_y
+
+    def get_td3_data(game):
+        y = get_td3_baseline(game)
+        if game == 'Reacher-v2':
+            x = np.linspace(0, 2e4, y.shape[1]).astype(np.int)
+        else:
+            x = np.linspace(0, 1e6, y.shape[1]).astype(np.int)
+        return x, y
+
+    l = len(games)
+    plt.figure(figsize=(l * 5, 5))
+    plt.rc('text', usetex=True)
+    for j, game in enumerate(games):
+        plt.subplot(1, l, j + 1)
+        patterns, x_ticks, rnd_x, rnd_y = info(game)
+        for i, p in enumerate(patterns):
+            ddpg_plot(pattern='.*geoff-pac-mujoco/.*%s.*%s.*' % (game, p), color=i, label=labels[i], game=game,
+                      **kwargs)
+        # if not kwargs['ddpg']:
+        plt.plot(rnd_x, rnd_y, color='black', linestyle=':')
+        td3_x, td3_y = get_td3_data(game)
+        plt_ = Plotter()
+        plt_.plot_standard_error(td3_y, td3_x, label='TD3', color='r')
+        plt.xticks(*x_ticks, fontsize=30)
+        plt.tick_params(axis='y', labelsize=30)
+        if j == 0:
+            plt.legend(fontsize=20, frameon=False)
+            if kwargs['tag'] == 'averaged_value':
+                plt.ylabel(r'$J_\pi$', fontsize=30, rotation='horizontal')
+            elif kwargs['tag'] == 'episodic_return':
+                plt.ylabel('Episode Return', fontsize=30)
+            else:
+                raise NotImplementedError
+        if j > -1:
+            plt.xlabel('Steps', fontsize=30)
+        plt.title(game, fontsize=30, fontweight="bold")
+    plt.tight_layout()
+    plt.savefig('%s/rebuttal.png' % (FOLDER), bbox_inches='tight')
+    plt.show()
+
+
 if __name__ == '__main__':
     # two_circle_heatmap()
     # two_circle_learning_curve()
-    plot_parameter_study('mean')
+    # plot_parameter_study('mean')
     # plot_geoff_pac_heatmap('J')
     # plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=False)
     # plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
@@ -467,3 +565,6 @@ if __name__ == '__main__':
 
     # extract_heatmap_data()
     # extract_geoff_pac_heatmap()
+
+    rebuttal_with_td3()
+
