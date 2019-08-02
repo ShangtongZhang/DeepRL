@@ -8,19 +8,19 @@ GPUs=(0 1 2 3 4 5 6 7)
 #done
 
 
-#rm -f jobs.txt
-#touch jobs.txt
-#for i in $(seq 0 49); do
-#    echo "$i" >> jobs.txt
-#done
-#cat jobs.txt | xargs -n 1 -P 50 sh -c 'bash docker_python.sh 0 "template_jobs.py --i $0"'
-#rm -f jobs.txt
-
-
 rm -f jobs.txt
 touch jobs.txt
-for i in $(seq 0 6); do
-    echo "$i ${GPUs[$(($i % 8))]}" >> jobs.txt
+for i in $(seq 0 24); do
+    echo "$i" >> jobs.txt
 done
-cat jobs.txt | xargs -n 2 -P 40 sh -c 'bash docker_python.sh $1 "template_jobs.py --i $0"'
+cat jobs.txt | xargs -n 1 -P 50 sh -c 'bash docker_python.sh 0 "template_jobs.py --i $0"'
 rm -f jobs.txt
+
+
+#rm -f jobs.txt
+#touch jobs.txt
+#for i in $(seq 0 6); do
+#    echo "$i ${GPUs[$(($i % 8))]}" >> jobs.txt
+#done
+#cat jobs.txt | xargs -n 2 -P 40 sh -c 'bash docker_python.sh $1 "template_jobs.py --i $0"'
+#rm -f jobs.txt

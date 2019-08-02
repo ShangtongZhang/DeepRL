@@ -220,3 +220,40 @@ class CategoricalActorCriticNet(nn.Module, BaseNet):
                 'log_pi_a': log_prob,
                 'ent': entropy,
                 'v': v}
+
+
+class TD3Net(nn.Module, BaseNet):
+    def __init__(self,
+                 action_dim,
+                 actor_body_fn,
+                 critic_body_fn,
+                 actor_opt_fn,
+                 critic_opt_fn,
+                 ):
+        super(TD3Net, self).__init__()
+        self.actor_body = actor_body_fn()
+        self.critic_body_1 = critic_body_fn()
+        self.critic_body_2 = critic_body_fn()
+
+        self.fc_action = layer_init(nn.Linear(self.actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic_1 = layer_init(nn.Linear(self.critic_body_1.feature_dim, 1), 1e-3)
+        self.fc_critic_2 = layer_init(nn.Linear(self.critic_body_2.feature_dim, 1), 1e-3)
+
+        self.actor_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters())
+        self.critic_params = list(self.critic_body_1.parameters()) + list(self.fc_critic_1.parameters()) +\
+                             list(self.critic_body_2.parameters()) + list(self.fc_critic_2.parameters())
+
+        self.actor_opt = actor_opt_fn(self.actor_params)
+        self.critic_opt = critic_opt_fn(self.critic_params)
+        self.to(Config.DEVICE)
+
+    def forward(self, obs):
+        obs = tensor(obs)
+        return torch.tanh(self.fc_action(self.actor_body(obs)))
+
+    def q(self, obs, a):
+        obs = tensor(obs)
+        a = tensor(a)
+        q_1 = self.fc_critic_1(self.critic_body_1(obs, a))
+        q_2 = self.fc_critic_2(self.critic_body_2(obs, a))
+        return q_1, q_2

@@ -10,7 +10,7 @@ from .BaseAgent import *
 import torchvision
 
 
-class DDPGAgent(BaseAgent):
+class TD3Agent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -71,26 +71,31 @@ class DDPGAgent(BaseAgent):
             next_states = tensor(next_states)
             mask = tensor(1 - terminals).unsqueeze(-1)
 
-            phi_next = self.target_network.feature(next_states)
-            a_next = self.target_network.actor(phi_next)
-            q_next = self.target_network.critic(phi_next, a_next)
-            q_next = config.discount * mask * q_next
-            q_next.add_(rewards)
-            q_next = q_next.detach()
-            phi = self.network.feature(states)
-            q = self.network.critic(phi, actions)
-            critic_loss = (q - q_next).pow(2).mul(0.5).sum(-1).mean()
+            a_next = self.target_network(next_states)
+            noise = torch.randn_like(a_next).mul(config.td3_noise)
+            noise = noise.clamp(-config.td3_noise_clip, config.td3_noise_clip)
+
+            min_a = float(self.task.action_space.low[0])
+            max_a = float(self.task.action_space.high[0])
+            a_next = (a_next + noise).clamp(min_a, max_a)
+
+            q_1, q_2 = self.target_network.q(next_states, a_next)
+            target = rewards + config.discount * mask * torch.min(q_1, q_2)
+            target = target.detach()
+
+            q_1, q_2 = self.network.q(states, actions)
+            critic_loss = F.mse_loss(q_1, target) + F.mse_loss(q_2, target)
 
             self.network.zero_grad()
             critic_loss.backward()
             self.network.critic_opt.step()
 
-            phi = self.network.feature(states)
-            action = self.network.actor(phi)
-            policy_loss = -self.network.critic(phi.detach(), action).mean()
+            if self.total_steps % config.td3_delay:
+                action = self.network(states)
+                policy_loss = -self.network.q(states, action)[0].mean()
 
-            self.network.zero_grad()
-            policy_loss.backward()
-            self.network.actor_opt.step()
+                self.network.zero_grad()
+                policy_loss.backward()
+                self.network.actor_opt.step()
 
-            self.soft_update(self.target_network, self.network)
+                self.soft_update(self.target_network, self.network)

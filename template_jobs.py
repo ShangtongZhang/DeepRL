@@ -76,7 +76,8 @@ def batch_mujoco():
     params = []
 
     for game in games:
-        for algo in [ppo_continuous, ddpg_continuous]:
+        # for algo in [ppo_continuous, ddpg_continuous]:
+        for algo in [td3_continuous]:
             for r in range(5):
                 params.append([algo, dict(game=game, run=r)])
 
@@ -92,8 +93,8 @@ if __name__ == '__main__':
     random_seed()
     set_one_thread()
 
-    select_device(0)
-    batch_atari()
+    # select_device(0)
+    # batch_atari()
 
-    # select_device(-1)
-    # batch_mujoco()
+    select_device(-1)
+    batch_mujoco()
