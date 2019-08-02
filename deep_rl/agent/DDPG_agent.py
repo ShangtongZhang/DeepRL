@@ -10,7 +10,7 @@ from .BaseAgent import *
 import torchvision
 
 
-class DDPGAgent(BaseAgent):
+class TD3(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
