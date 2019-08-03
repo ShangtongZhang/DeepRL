@@ -254,6 +254,7 @@ class TD3Net(nn.Module, BaseNet):
     def q(self, obs, a):
         obs = tensor(obs)
         a = tensor(a)
-        q_1 = self.fc_critic_1(self.critic_body_1(obs, a))
-        q_2 = self.fc_critic_2(self.critic_body_2(obs, a))
+        x = torch.cat([obs, a], dim=1)
+        q_1 = self.fc_critic_1(self.critic_body_1(x))
+        q_2 = self.fc_critic_2(self.critic_body_2(x))
         return q_1, q_2

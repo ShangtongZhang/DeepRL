@@ -465,9 +465,9 @@ def td3_continuous(**kwargs):
     config.network_fn = lambda: TD3Net(
         config.action_dim,
         actor_body_fn=lambda: FCBody(config.state_dim, (400, 300), gate=F.relu),
-        critic_body_fn=lambda: TwoLayerFCBodyWithAction(
-            config.state_dim, config.action_dim, (400, 300), gate=F.relu),
-        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_body_fn=lambda: FCBody(
+            config.state_dim+config.action_dim, (400, 300), gate=F.relu),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
     config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=100)
@@ -499,11 +499,12 @@ if __name__ == '__main__':
     # option_critic_feature(game=game)
     # ppo_feature(game=game)
 
-    game = 'HalfCheetah-v2'
+    # game = 'HalfCheetah-v2'
+    game = 'Hopper-v2'
     # a2c_continuous(game=game)
     # ppo_continuous(game=game)
     # ddpg_continuous(game=game)
-    # td3_continuous(game=game)
+    td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
     # dqn_pixel(game=game)
