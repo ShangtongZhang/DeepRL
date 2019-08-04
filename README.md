@@ -13,6 +13,7 @@ Implemented algorithms:
 * Deep Deterministic Policy Gradient (DDPG, low-dim-state)
 * (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO, pixel & low-dim-state)
 * The Option-Critic Architecture (OC)
+* Twined Delayed DDPG (TD3)
 
 Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
 Action Conditional Video Prediction can be found in [v0.4](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.4).
@@ -61,8 +62,8 @@ Please use this bibtex if you want to cite this repo
 
 ## Mujoco 
 
-* DDPG evaluation performance.
-![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/DDPG.png)
+* DDPG/TD3 evaluation performance.
+![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/mujoco_eval.png)
 
 
 * PPO online performance. 
@@ -87,4 +88,5 @@ Please use this bibtex if you want to cite this repo
 * [A Distributional Perspective on Reinforcement Learning](https://arxiv.org/abs/1707.06887)
 * [Distributional Reinforcement Learning with Quantile Regression](https://arxiv.org/abs/1710.10044)
 * [The Option-Critic Architecture](https://arxiv.org/abs/1609.05140)
+* [Addressing Function Approximation Error in Actor-Critic Methods](https://arxiv.org/abs/1802.09477)
 * Some hyper-parameters are from [DeepMind Control Suite](https://arxiv.org/abs/1801.00690), [OpenAI Baselines](https://github.com/openai/baselines) and [Ilya Kostrikov](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr)

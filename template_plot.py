@@ -40,7 +40,7 @@ def plot_ppo():
     plt.savefig('images/PPO.png', bbox_inches='tight')
 
 
-def plot_ddpg():
+def plot_ddpg_td3():
     plotter = Plotter()
     games = [
         'HalfCheetah-v2',
@@ -52,10 +52,12 @@ def plot_ddpg():
 
     patterns = [
         'remark_ddpg',
+        'remark_td3',
     ]
 
     labels = [
-        'DDPG'
+        'DDPG',
+        'TD3',
     ]
 
     plotter.plot_games(games=games,
@@ -65,14 +67,14 @@ def plot_ddpg():
                        labels=labels,
                        right_align=False,
                        tag=plotter.RETURN_TEST,
-                       root='./data/benchmark/ddpg',
+                       root='./data/benchmark',
                        interpolation=0,
                        window=0,
                        )
 
-    # plt.show()
+    plt.show()
     plt.tight_layout()
-    plt.savefig('images/DDPG.png', bbox_inches='tight')
+    plt.savefig('images/mujoco_eval.png', bbox_inches='tight')
 
 
 def plot_atari():
@@ -120,6 +122,6 @@ def plot_atari():
 
 if __name__ == '__main__':
     mkdir('images')
-    plot_ppo()
-    plot_ddpg()
-    plot_atari()
+    # plot_ppo()
+    plot_ddpg_td3()
+    # plot_atari()
