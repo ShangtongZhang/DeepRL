@@ -72,7 +72,7 @@ def plot_ddpg_td3():
                        window=0,
                        )
 
-    plt.show()
+    # plt.show()
     plt.tight_layout()
     plt.savefig('images/mujoco_eval.png', bbox_inches='tight')
 
