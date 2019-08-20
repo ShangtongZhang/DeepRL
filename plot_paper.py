@@ -536,9 +536,15 @@ def extract_auc_data_mujoco():
         pickle.dump([names, improvements], f)
 
 
-def plot_auc_improvements_mujoco():
+def plot_auc_improvements_all():
+    with open('./data/residual/auc.bin', 'rb') as f:
+        dm_games, dm_improvements = pickle.load(f)
+
     with open('./data/residual/auc_mujoco.bin', 'rb') as f:
-        games, improvements = pickle.load(f)
+        mj_games, mj_improvements = pickle.load(f)
+
+    games = dm_games + mj_games
+    improvements = dm_improvements + mj_improvements
 
     indices = list(reversed(np.argsort(improvements)))
     games = [games[i] for i in indices]
@@ -558,7 +564,7 @@ def plot_auc_improvements_mujoco():
     yticks = np.arange(-1, 4, 1)
     plt.yticks(yticks, ['-100%', '0', '100%', '200%', '300%'], rotation=-90, verticalalignment='center')
     # plt.ylabel('AUC Improvement', rotation=-90)
-    plt.savefig('%s/ddpg-auc_mujoco.pdf' % (FOLDER), bbox_inches='tight')
+    plt.savefig('%s/ddpg-auc_all.pdf' % (FOLDER), bbox_inches='tight')
     plt.show()
 
 
@@ -623,7 +629,7 @@ if __name__ == '__main__':
     # extract_auc_data()
     # plot_ddpg_variants(type='mean')
     # plot_ddpg_variants(type='median')
-    plot_auc_improvements()
+    # plot_auc_improvements()
     # plot_oracle(type='mean')
     # plot_oracle(type='median')
     # plot_dyna(type='mean')
@@ -633,3 +639,4 @@ if __name__ == '__main__':
     # plot_rebuttal()
     # extract_auc_data_mujoco()
     # plot_auc_improvements_mujoco()
+    plot_auc_improvements_all()
