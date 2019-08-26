@@ -91,7 +91,6 @@ if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
     random_seed()
-    set_one_thread()
 
     # select_device(0)
     # batch_atari()
