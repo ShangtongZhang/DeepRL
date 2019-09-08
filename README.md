@@ -9,6 +9,7 @@ Shangtong Zhang, Borislav Mavrin, Linglong Kong, Bo Liu, Hengshuai Yao (AAAI 201
     ├── dist-ddpg.py                                    # Entrance for the Roboschool experiments
     |   ├── option_ddpg_continuous                      # Entrance of QUOTA
     ├── deep_rl/agent/QuantileOptionDDPG_agent.py       # Implementation of QUOTA with continuous action
+    ├── deep_rl/agent/QuantileDDPG_agent.py             # Implementation of QR-DDPG 
     └── plot_dist-ddpg.py                               # Plotting
 
 > I can send the data for plotting via email upon request.

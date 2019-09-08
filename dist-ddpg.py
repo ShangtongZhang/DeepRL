@@ -1,5 +1,7 @@
 from deep_rl import *
 
+
+# DDPG baseline
 def ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -25,12 +27,12 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
             params, lr=1e-3, weight_decay=config.q_l2_weight)
-        )
+    )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -39,6 +41,8 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(DDPGAgent(config))
 
+
+# QR-DDPG baseline
 def quantile_ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -65,12 +69,12 @@ def quantile_ddpg_continuous(game, log_dir=None, **kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
             params, lr=1e-3, weight_decay=config.q_l2_weight),
-        )
+    )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -78,6 +82,7 @@ def quantile_ddpg_continuous(game, log_dir=None, **kwargs):
     config.target_network_mix = 1e-3
     config.logger = get_logger()
     run_episodes(QuantileDDPGAgent(config))
+
 
 def ucb_ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
@@ -107,12 +112,12 @@ def ucb_ddpg_continuous(game, log_dir=None, **kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
             params, lr=1e-3, weight_decay=config.q_l2_weight),
-        )
+    )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -121,6 +126,8 @@ def ucb_ddpg_continuous(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(QuantileEnsembleDDPGAgent(config))
 
+
+# QUOTA Entrance
 def option_ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -152,12 +159,12 @@ def option_ddpg_continuous(game, log_dir=None, **kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
             params, lr=1e-3, weight_decay=config.q_l2_weight)
-        )
+    )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -166,10 +173,12 @@ def option_ddpg_continuous(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(QuantileOptionDDPGAgent(config))
 
+
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
     log_dir = './log/option-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game, log_dir, tag=tag, **kwargs)
+
 
 @console
 def multi_runs(game, fn, tag, **kwargs):
@@ -186,6 +195,8 @@ def multi_runs(game, fn, tag, **kwargs):
         time.sleep(1)
     for p in ps: p.join()
 
+
+# Start jobs in a batch, containing main flags
 def batch_job():
     cf = Config()
     cf.add_argument('--ind1', type=int, default=0)
@@ -213,6 +224,7 @@ def batch_job():
         multi_runs(game, option_ddpg_continuous, tag='b1e0', parallel=parallel,
                    beta=1, random_option_prob=LinearSchedule(1.0, 0, int(1e6)))
         # multi_runs(game, quantile_ddpg_continuous, tag='q_ddpg', parallel=parallel)
+
 
 if __name__ == '__main__':
     mkdir('data')
