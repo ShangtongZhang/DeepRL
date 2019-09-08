@@ -1,6 +1,6 @@
 This branch is the code for QUOTA with discrete action in the paper
 
-QUOTA: The Quantile Option Architecture for Reinforcement Learning \
+*QUOTA: The Quantile Option Architecture for Reinforcement Learning* \
 Shangtong Zhang, Borislav Mavrin, Linglong Kong, Bo Liu, Hengshuai Yao (AAAI 2019)
 
     .
