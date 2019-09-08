@@ -204,6 +204,7 @@ def set_tasks(config):
     config.game = games[0]
 
 
+# DAC+PPO
 def a_squared_c_ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -251,6 +252,7 @@ def a_squared_c_ppo_continuous(**kwargs):
     run_steps(ASquaredCPPOAgent(config))
 
 
+# DAC+A2C
 def a_squared_c_a2c_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -294,6 +296,7 @@ def a_squared_c_a2c_continuous(**kwargs):
     run_steps(ASquaredCA2CAgent(config))
 
 
+# PPO
 def ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -332,6 +335,7 @@ def ppo_continuous(**kwargs):
     run_steps(PPOAgent(config))
 
 
+# OC
 def oc_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -374,6 +378,7 @@ def oc_continuous(**kwargs):
     run_steps(OCAgent(config))
 
 
+# PPOC
 def ppoc_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -418,6 +423,7 @@ def ppoc_continuous(**kwargs):
     run_steps(PPOCAgent(config))
 
 
+# AHP+PPO
 def ahp_ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -462,6 +468,7 @@ def ahp_ppo_continuous(**kwargs):
     run_steps(AHPPPOAgent(config))
 
 
+# IOPG
 def iopg_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
