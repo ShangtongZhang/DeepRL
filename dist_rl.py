@@ -1,5 +1,6 @@
 from deep_rl import *
 
+
 def quantile_regression_dqn_cart_pole():
     config = Config()
     config.task_fn = lambda: ClassicalControl('CartPole-v0', max_steps=200)
@@ -15,6 +16,7 @@ def quantile_regression_dqn_cart_pole():
     config.logger = get_logger(skip=True)
     config.num_quantiles = 20
     run_episodes(QuantileRegressionDQNAgent(config))
+
 
 @console
 def quantile_option_replay_atari(game, **kwargs):
@@ -42,12 +44,13 @@ def quantile_option_replay_atari(game, **kwargs):
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
     config.target_network_update_freq = 10000
-    config.exploration_steps= 50000
+    config.exploration_steps = 50000
     config.logger = get_logger(file_name=kwargs['tag'])
     config.double_q = False
     config.num_quantiles = 200
     config.sgd_update_frequency = 4
     run_episodes(BootstrappedQRDQN(config))
+
 
 def qr_dqn_cart_pole():
     config = Config()
@@ -65,6 +68,7 @@ def qr_dqn_cart_pole():
     config.logger = get_logger()
     config.num_quantiles = 20
     run_iterations(NStepQRDQNAgent(config))
+
 
 # # replay cliff world
 # def replay_qr_dqn_cliff(**kwargs):
@@ -164,13 +168,14 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
 
     task_fn = lambda log_dir: CliffWalkingTask(random_action_prob=0.1, log_dir=log_dir)
     config.num_workers = 16
-    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir']+'-train', single_process=True)
+    config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers, log_dir=kwargs['log_dir'] + '-train',
+                                              single_process=True)
     if config.clip_reward:
         config.reward_normalizer = SignNormalizer()
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.005)
     config.network_fn = lambda state_dim, action_dim: \
         QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options,
-                                   FCBody(state_dim, hidden_units=(128, ), gate=F.relu), gpu=-1)
+                                   FCBody(state_dim, hidden_units=(128,), gate=F.relu), gpu=-1)
     config.policy_fn = lambda: GreedyPolicy(epsilon=0.1, final_step=config.max_steps, min_epsilon=0.1)
     config.target_network_update_freq = 200
     config.rollout_length = 5
@@ -182,6 +187,7 @@ def bootstrapped_qr_dqn_cliff(**kwargs):
     if kwargs['dry']:
         return agent
     run_iterations(agent)
+
 
 def bootstrapped_qr_dqn_ice(**kwargs):
     kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
@@ -205,10 +211,11 @@ def bootstrapped_qr_dqn_ice(**kwargs):
     task_fn = lambda log_dir: IceCliffWalkingTask(log_dir=log_dir, num_traps=8)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=kwargs['log_dir']+'-train', single_process=True)
+                                              log_dir=kwargs['log_dir'] + '-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, CliffConvBody(in_channels=4), gpu=kwargs['gpu'])
+        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, CliffConvBody(in_channels=4),
+                                   gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(config.q_epsilon)
     config.discount = 0.99
     config.target_network_update_freq = 10000
@@ -217,7 +224,7 @@ def bootstrapped_qr_dqn_ice(**kwargs):
     config.logger = get_logger()
     run_iterations(BootstrappedNStepQRDQNAgent(config))
 
-# n-step atari
+
 def n_step_dqn_pixel_atari(game, **kwargs):
     config = Config()
     kwargs.setdefault('gpu', 0)
@@ -228,7 +235,7 @@ def n_step_dqn_pixel_atari(game, **kwargs):
                                          log_dir=log_dir)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=kwargs['log_dir']+'-train', single_process=True)
+                                              log_dir=kwargs['log_dir'] + '-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: VanillaNet(action_dim, NatureConvBody(), gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(LinearSchedule(1.0, 0.05, 4e6))
@@ -241,6 +248,7 @@ def n_step_dqn_pixel_atari(game, **kwargs):
     config.max_steps = int(4e7)
     config.logger = get_logger()
     run_iterations(NStepDQNAgent(config))
+
 
 def qr_dqn_pixel_atari(game, **kwargs):
     config = Config()
@@ -259,7 +267,8 @@ def qr_dqn_pixel_atari(game, **kwargs):
                                               log_dir=kwargs['log_dir'], single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
+        QuantileNet(action_dim, config.num_quantiles, NatureConvBody(in_channels=config.history_length),
+                    gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(epsilon=1.0, final_step=100000, min_epsilon=0.05)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -272,6 +281,10 @@ def qr_dqn_pixel_atari(game, **kwargs):
     config.merge(kwargs)
     run_iterations(NStepQRDQNAgent(config))
 
+
+# QUOTA Entrance
+# option_type=None => N-Step QR-DQN
+# option_type='constant_beta' => QUOTA
 def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     kwargs.setdefault('tag', bootstrapped_qr_dqn_pixel_atari.__name__)
     kwargs.setdefault('gpu', 0)
@@ -294,13 +307,14 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
 
     config.history_length = kwargs['frame_stack']
     task_fn = lambda log_dir, episode_life=True: PixelAtari(game, frame_skip=4, history_length=config.history_length,
-                                         log_dir=log_dir, episode_life=episode_life)
+                                                            log_dir=log_dir, episode_life=episode_life)
     config.num_workers = 16
     config.task_fn = lambda: ParallelizedTask(task_fn, config.num_workers,
-                                              log_dir=kwargs['log_dir']+'-train', single_process=True)
+                                              log_dir=kwargs['log_dir'] + '-train', single_process=True)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=1e-4, alpha=0.99, eps=1e-5)
     config.network_fn = lambda state_dim, action_dim: \
-        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options, NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
+        QLearningOptionQuantileNet(action_dim, config.num_quantiles, config.num_options,
+                                   NatureConvBody(in_channels=config.history_length), gpu=kwargs['gpu'])
     config.policy_fn = lambda: GreedyPolicy(config.q_epsilon)
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -311,11 +325,12 @@ def bootstrapped_qr_dqn_pixel_atari(game, **kwargs):
     config.logger = get_logger()
     run_iterations(BootstrappedNStepQRDQNAgent(config))
 
-# utility
+
 def single_run(run, game, fn, tag, **kwargs):
     random_seed()
     log_dir = './log/dist_rl-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game=game, log_dir=log_dir, tag=tag, **kwargs)
+
 
 @console
 def multi_runs(game, fn, tag, **kwargs):
@@ -333,6 +348,7 @@ def multi_runs(game, fn, tag, **kwargs):
         p.start()
         time.sleep(1)
     for p in ps: p.join()
+
 
 # def visualize(game, **kwargs):
 #     from skimage import io
@@ -433,6 +449,7 @@ def draw_cliff_world_state(network, task):
     # ax.set_xticks([])
     # ax.set_yticks([])
 
+
 def visualize_cliff_world(**kwargs):
     # np.random.seed(0)
     agent = kwargs['agent']
@@ -453,10 +470,13 @@ def visualize_cliff_world(**kwargs):
             break
     print(total_reward)
 
+
 def test_random_seed(**kwargs):
     random_seed()
     print(np.random.randint(100))
 
+
+# Start jobs in a batch, containing main flags.
 def batch_atari():
     cf = Config()
     cf.add_argument('--ind1', type=int, default=0)
@@ -516,6 +536,7 @@ def batch_atari():
         game += 'NoFrameskip-v4'
         tasks[cf.ind2](game)
 
+
 def batch_ice_cliff():
     parallel = True
     runs = 3
@@ -536,6 +557,7 @@ def batch_ice_cliff():
 
     multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='original', runs=runs, gpu=0, parallel=parallel,
                option_type=None, id=3)
+
 
 def tmp_batch():
     # cf = Config()
@@ -575,6 +597,7 @@ def tmp_batch():
                                  random_option_prob=LinearSchedule(1.0, 0.1, 4e7),
                                  beta=1, id=9)
 
+
 if __name__ == '__main__':
     mkdir('log')
     mkdir('data')
@@ -603,7 +626,6 @@ if __name__ == '__main__':
     # multi_runs('IceCliff', bootstrapped_qr_dqn_ice, tag='t0b0', runs=3, gpu=3, parallel=parallel,
     #            target_beta=0, behavior_beta=0)
 
-
     parallel = False
     runs = np.arange(0, 16)
     # runs = np.arange(8, 16)
@@ -613,7 +635,6 @@ if __name__ == '__main__':
     #            option_type='constant_beta', target_beta=0, behavior_beta=0, smoothed_quantiles=False)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='t0b0s', parallel=parallel, runs=runs,
     #            option_type='constant_beta', target_beta=0, behavior_beta=0, smoothed_quantiles=True)
-
 
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_decay_intro_q',
     #            option_type='per_episode', parallel=parallel, runs=runs,
@@ -630,8 +651,8 @@ if __name__ == '__main__':
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_episode_qr_dqn',
     #            option_type='per_episode', parallel=parallel, runs=runs)
     # multi_runs('CliffWalking', bootstrapped_qr_dqn_cliff, tag='per_step_decay_qr_dqn',
-               # option_type='per_step', parallel=parallel, runs=runs,
-               # random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
+    # option_type='per_step', parallel=parallel, runs=runs,
+    # random_option_prob=LinearSchedule(1.0, 0, int(3e5)))
 
     # replay_qr_dqn_cliff()
     # replay_bootstrapped_qr_dqn_cliff()
@@ -657,7 +678,6 @@ if __name__ == '__main__':
     # option_qr_dqn_cliff(mean_option=True, num_options=5, max_steps=int(3e5))
     # visualize_cliff_world(agent=option_qr_dqn_cliff(dry=True, mean_option=True),
     #                       filename='OptionNStepQRDQNAgent-option_qr_dqn_cliff-model-CliffWalking.bin')
-
 
     # qr_dqn_cliff(max_steps=int(3e5))
     # visualize_cliff_world(agent=qr_dqn_cliff(dry=True, log_dir=None),
@@ -732,10 +752,10 @@ if __name__ == '__main__':
     #     try:
     #         env = gym.make(game)
     #         print(env.action_space.n)
-            # if env.action_space.n <= 6:
-            #     print(game)
-        # except:
-        #     continue
+    # if env.action_space.n <= 6:
+    #     print(game)
+    # except:
+    #     continue
     # visualize(game, num_options=9)
 
     # option_qr_dqn_cart_pole()
