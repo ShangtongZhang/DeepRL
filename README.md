@@ -1,9 +1,16 @@
-This branch is the code for **ACE** in the paper
+This branch is the code for the paper
 
-[ACE: An Actor Ensemble Algorithm for Continuous Control with Tree Search](https://arxiv.org/abs/1811.02696)
+*ACE: An Actor Ensemble Algorithm for Continuous Control with Tree Search* \
+Shangtong Zhang, Hao Chen, Hengshuai Yao (AAAI 2019)
 
-See ```requirements.txt``` and ```Dockerfile``` for dependencies.
+    .
+    ├── Dockerfile                                      # Dependencies
+    ├── requirements.txt                                # Dependencies
+    ├── plan-ddpg.py                                    # Entrance for the Roboschool experiments
+    |   ├── plan_ddpg                                   # Entrance of ACE 
+    ├── deep_rl/agent/PlanDDPG_agent.py.py              # Implementation of ACE 
+    └── plot_ddpg.py                                    # Plotting
 
-```plan-ddpg.py``` is the entrance for the Roboschool experiments. The function ```plan_ddpg``` is the entrance of ACE. ```plot_ddpg.py``` contains functions to generate figures in the paper. Unfortunately I can not upload the raw data for plotting to Github. However I can send it via email upon request.
+> I can send the data for plotting via email upon request.
 
-Disclaimer: This branch is based on the DeepRL codebase and is left unchanged after I completed the ACE paper. Algorithms other than ACE and its baselines are heavily outdated and should never be used.
+> This branch is based on the DeepRL codebase and is left unchanged after I completed the paper. Algorithm implementations not used in the paper may be broken and should never be used. It may take extra effort if you want to rebase/merge the master branch.

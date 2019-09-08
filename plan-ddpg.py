@@ -1,5 +1,6 @@
 from deep_rl import *
 
+# DDPG baseline
 def ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -25,12 +26,12 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
             params, lr=1e-3, weight_decay=config.q_l2_weight)
-        )
+    )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -39,6 +40,8 @@ def ddpg_continuous(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(DDPGAgent(config))
 
+
+# Wide-DDPG baseline
 def larger_ddpg_continuous(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -64,12 +67,12 @@ def larger_ddpg_continuous(game, log_dir=None, **kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
             params, lr=1e-3, weight_decay=config.q_l2_weight)
-        )
+    )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -78,6 +81,8 @@ def larger_ddpg_continuous(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(DDPGAgent(config))
 
+
+# Shared-DDPG baseline
 def ddpg_shared(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -95,18 +100,18 @@ def ddpg_shared(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: DeterministicActorCriticNet(
         state_dim, action_dim,
-        phi_body=FCBody(state_dim, (400, ), gate=config.gate),
-        actor_body=FCBody(400, (300, ), gate=config.gate),
-        critic_body=FCBodyWithAction(400, action_dim, (300, ), gate=config.gate),
+        phi_body=FCBody(state_dim, (400,), gate=config.gate),
+        actor_body=FCBody(400, (300,), gate=config.gate),
+        critic_body=FCBodyWithAction(400, action_dim, (300,), gate=config.gate),
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
         critic_opt_fn=lambda params: torch.optim.Adam(
             params, lr=1e-3, weight_decay=config.q_l2_weight)
-        )
+    )
 
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -115,6 +120,10 @@ def ddpg_shared(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(DDPGAgent(config))
 
+
+# ACE Entrance
+# on_policy=True => ACE-Alt
+# depth=0 => Ensemble-DDPG
 def plan_ddpg(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -138,7 +147,7 @@ def plan_ddpg(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
         state_dim, action_dim,
-        phi_body=FCBody(state_dim, (400, ), gate=F.tanh),
+        phi_body=FCBody(state_dim, (400,), gate=F.tanh),
         num_actors=config.num_actors,
         discount=config.discount,
         detach_action=config.detach_action)
@@ -147,7 +156,7 @@ def plan_ddpg(game, log_dir=None, **kwargs):
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -156,6 +165,8 @@ def plan_ddpg(game, log_dir=None, **kwargs):
     config.logger = get_logger()
     run_episodes(PlanDDPGAgent(config))
 
+
+# TM-ACE baseline
 def naive_model_ddpg(game, log_dir=None, **kwargs):
     config = Config()
     kwargs.setdefault('gate', F.tanh)
@@ -177,7 +188,7 @@ def naive_model_ddpg(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: NaiveModelDDPGNet(
         state_dim, action_dim,
-        phi_body=FCBody(state_dim, (400, ), gate=F.tanh),
+        phi_body=FCBody(state_dim, (400,), gate=F.tanh),
         num_actors=config.num_actors,
         discount=config.discount,
         detach_action=config.detach_action)
@@ -186,7 +197,7 @@ def naive_model_ddpg(game, log_dir=None, **kwargs):
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -194,6 +205,7 @@ def naive_model_ddpg(game, log_dir=None, **kwargs):
     config.target_network_mix = 1e-3
     config.logger = get_logger()
     run_episodes(NaiveModelDDPGAgent(config))
+
 
 def visualize_diversity(game, log_dir=None, **kwargs):
     config = Config()
@@ -218,7 +230,7 @@ def visualize_diversity(game, log_dir=None, **kwargs):
 
     config.network_fn = lambda state_dim, action_dim: PlanEnsembleDeterministicNet(
         state_dim, action_dim,
-        phi_body=FCBody(state_dim, (400, ), gate=F.tanh),
+        phi_body=FCBody(state_dim, (400,), gate=F.tanh),
         num_actors=config.num_actors,
         discount=config.discount,
         detach_action=config.detach_action)
@@ -227,7 +239,7 @@ def visualize_diversity(game, log_dir=None, **kwargs):
     config.replay_fn = lambda: Replay(memory_size=1000000, batch_size=64)
     config.discount = 0.99
     config.reward_normalizer = RescaleNormalizer(kwargs['reward_scale'])
-    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim, ), std=config.std)
+    config.random_process_fn = lambda action_dim: config.noise(size=(action_dim,), std=config.std)
     config.max_steps = 1e6
     config.evaluation_episodes_interval = int(1e4)
     config.evaluation_episodes = 20
@@ -258,6 +270,7 @@ def single_run(run, game, fn, tag, **kwargs):
     # log_dir = './log/baseline-%s/%s/%s-run-%d' % (game, fn.__name__, tag, run)
     fn(game, log_dir, tag=tag, **kwargs)
 
+
 @console
 def multi_runs(game, fn, tag, **kwargs):
     kwargs.setdefault('parallel', False)
@@ -273,6 +286,8 @@ def multi_runs(game, fn, tag, **kwargs):
         time.sleep(1)
     for p in ps: p.join()
 
+
+# Start jobs in a batch, containing main hyper-parameters
 def batch_job():
     cf = Config()
     cf.add_argument('--ind1', type=int, default=0)
@@ -345,6 +360,7 @@ def batch_job():
     # tasks = [task1, task2, task3]
     # tasks[cf.ind2]()
 
+
 if __name__ == '__main__':
     mkdir('data')
     mkdir('data/video')
@@ -401,9 +417,7 @@ if __name__ == '__main__':
     # for game in games:
     #     multi_runs(game, plan_ddpg, tag='on_policy', parallel=True,
     #                depth=2, on_policy=True)
-        # multi_runs(game, plan_ddpg, tag='single_actor', parallel=True,
+    # multi_runs(game, plan_ddpg, tag='single_actor', parallel=True,
     #                depth=2, mask=False, num_actors=1)
     #     multi_runs(game, ddpg_continuous, tag='baseline_ddpg', parallel=True)
-        # multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=True)
-
-
+    # multi_runs(game, larger_ddpg_continuous, tag='larger_ddpg', parallel=True)
