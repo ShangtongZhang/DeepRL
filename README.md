@@ -1,9 +1,16 @@
-This branch is the code for **QUOTA with continuous action** in the paper
+This branch is the code for QUOTA with continuous action in the paper
 
-[QUOTA: The Quantile Option Architecture for Reinforcement Learning](https://arxiv.org/abs/1811.02073)
+*QUOTA: The Quantile Option Architecture for Reinforcement Learning* \
+Shangtong Zhang, Borislav Mavrin, Linglong Kong, Bo Liu, Hengshuai Yao (AAAI 2019)
 
-See ```requirements.txt``` and ```Dockerfile``` for dependencies.
+    .
+    ├── Dockerfile                                      # Dependencies
+    ├── requirements.txt                                # Dependencies
+    ├── dist-ddpg.py                                    # Entrance for the Roboschool experiments
+    |   ├── option_ddpg_continuous                      # Entrance of QUOTA
+    ├── deep_rl/agent/QuantileOptionDDPG_agent.py       # Implementation of QUOTA with continuous action
+    └── plot_dist-ddpg.py                               # Plotting
 
-```dist-ddpg.py``` is the entrance for Roboschool experiments. The function ```option_ddpg_continuous``` is the entrance of QUOTA. ```plot_dist-ddpg.py``` contains functions to generate figures in the paper. Unfortunately I can not upload the raw data for plotting to Github. However I can send it via email upon request.
+> I can send the data for plotting via email upon request.
 
-Disclaimer: This branch is based on the DeepRL codebase and is left unchanged after I completed the QUOTA paper. Algorithms other than QUOTA and its baselines are heavily outdated and should never be used.
+> This branch is based on the DeepRL codebase and is left unchanged after I completed the paper. Algorithm implementations not used in the paper may be broken and should never be used. It may take extra effort if you want to rebase/merge the master branch.
