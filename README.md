@@ -1,14 +1,18 @@
-This branch is the code for **QUOTA with discrete action** in the paper
+This branch is the code for QUOTA with discrete action in the paper
 
-[QUOTA: The Quantile Option Architecture for Reinforcement Learning](https://arxiv.org/abs/1811.02073)
+QUOTA: The Quantile Option Architecture for Reinforcement Learning \
+Shangtong Zhang, Borislav Mavrin, Linglong Kong, Bo Liu, Hengshuai Yao (AAAI 2019)
 
-See ```requirements.txt``` and ```Dockerfile``` for dependencies.
+    .
+    ├── Dockerfile                                      # Dependencies
+    ├── requirements.txt                                # Dependencies
+    ├── MDP.py                                          # Chain 1 and Chain 2 
+    ├── dist_rl.py                                      # Entrance for the Atari game experiments
+    |   ├── batch_atari                                 # Start QUOTA and baseline algorithms
+    |   ├── bootstrapped_qr_dqn_pixel_atari             # Entrance of QUOTA
+    ├── deep_rl/agent/BootstrappedNStepQRDQN_agent.py   # Implementation of QUOTA with discrete action
+    └── plot_dist_rl.py                                 # Plotting
 
+> I can send the data for plotting via email upon request.
 
-```MDP.py``` contains the two chains.
-```dist_rl.py``` is the entrance for the Atari game experiments. The function ```batch_atari``` will start QUOTA and baseline algorithms. 
-Particularly, the function ```bootstrapped_qr_dqn_pixel_atari``` is the entrance of QUOTA. ```plot_dist_rl.py``` contains functions to generate figures in the paper. Unfortunately I can not upload the raw data for plotting to Github. However I can send it via email upon request.
-
-There is also an ice-cliff-world environment, which is not reported in the paper due to the page limit.
-
-Disclaimer: This branch is based on the DeepRL codebase and is left unchanged after I completed the QUOTA paper. Algorithms other than QUOTA and its baselines are heavily outdated and should never be used.
+> This branch is based on the DeepRL codebase and is left unchanged after I completed the paper. Algorithm implementations not used in the paper may be broken and should never be used. It may take extra effort if you want to rebase/merge the master branch.
