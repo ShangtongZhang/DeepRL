@@ -57,6 +57,7 @@ def batch():
     exit()
 
 
+# DDPG baseline
 def ddpg_continuous(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
@@ -122,6 +123,8 @@ def random_agent():
         pickle.dump(perf, f)
 
 
+# Geoff-PAC / ACE / Off-PAC entrance
+# 'algo' in ['geoff-pac', 'off-pac', 'ace']
 def geoff_pac(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
