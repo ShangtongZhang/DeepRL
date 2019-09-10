@@ -1,38 +1,45 @@
-from examples import *
+from deep_rl import *
 
+def td3_continuous(**kwargs):
+    generate_tag(kwargs)
+    kwargs.setdefault('log_level', 0)
+    config = Config()
+    config.merge(kwargs)
 
-def batch_atari():
-    cf = Config()
-    cf.add_argument('--i', type=int, default=0)
-    cf.add_argument('--j', type=int, default=0)
-    cf.merge()
+    if kwargs['game'] in ['HalfCheetah-v2', 'Walker2d-v2', 'Hopper-v2']:
+        config.max_steps = int(1e6)
+        config.eval_interval = int(1e3)
+    elif kwargs['game'] in ['Swimmer-v2']:
+        config.max_steps = int(5e6)
+        config.eval_interval = int(1e3)
+    elif kwargs['game'] in ['Reacher-v2']:
+        config.max_steps = int(2e4)
+        config.eval_interval = int(1e2)
+    else:
+        raise NotImplementedError
 
-    games = [
-        'BreakoutNoFrameskip-v4',
-        # 'AlienNoFrameskip-v4',
-        # 'DemonAttackNoFrameskip-v4',
-        # 'SeaquestNoFrameskip-v4',
-        # 'MsPacmanNoFrameskip-v4'
-    ]
+    config.task_fn = lambda: Task(config.game)
+    config.eval_env = config.task_fn()
+    config.eval_episodes = 10
 
-    algos = [
-        dqn_pixel,
-        quantile_regression_dqn_pixel,
-        categorical_dqn_pixel,
-        a2c_pixel,
-        n_step_dqn_pixel,
-        option_critic_pixel,
-        ppo_pixel,
-    ]
+    config.network_fn = lambda: TD3Net(
+        config.action_dim,
+        actor_body_fn=lambda: FCBody(config.state_dim, (400, 300), gate=F.relu),
+        critic_body_fn=lambda: FCBody(
+            config.state_dim+config.action_dim, (400, 300), gate=F.relu),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3),
+        critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    algo = algos[cf.i]
-
-    for game in games:
-        for r in range(1):
-            algo(game=game, run=r, remark=algo.__name__)
-
-    exit()
-
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=100)
+    config.discount = 0.99
+    config.random_process_fn = lambda: GaussianProcess(
+        size=(config.action_dim,), std=LinearSchedule(0.1))
+    config.td3_noise = 0.2
+    config.td3_noise_clip = 0.5
+    config.td3_delay = 2
+    config.warm_up = int(1e4)
+    config.target_network_mix = 5e-3
+    run_steps(TD3Agent(config))
 
 def batch_mujoco():
     cf = Config()
@@ -76,13 +83,12 @@ def batch_mujoco():
     params = []
 
     for game in games:
-        # for algo in [ppo_continuous, ddpg_continuous]:
         for algo in [td3_continuous]:
-            for r in range(5):
+            for r in range(10):
                 params.append([algo, dict(game=game, run=r)])
 
     algo, param = params[cf.i]
-    algo(**param, remark=algo.__name__)
+    algo(**param, remark='TD3-random')
 
     exit()
 

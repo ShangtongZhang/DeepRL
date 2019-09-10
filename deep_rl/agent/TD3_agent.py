@@ -43,12 +43,13 @@ class TD3Agent(BaseAgent):
             self.state = self.task.reset()
             self.state = config.state_normalizer(self.state)
 
-        if self.total_steps < config.warm_up:
-            action = [self.task.action_space.sample()]
-        else:
-            action = self.network(self.state)
-            action = to_np(action)
-            action += self.random_process.sample()
+        action = [self.task.action_space.sample()]
+        # if self.total_steps < config.warm_up:
+        #     action = [self.task.action_space.sample()]
+        # else:
+        #     action = self.network(self.state)
+        #     action = to_np(action)
+        #     action += self.random_process.sample()
         action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
         next_state, reward, done, info = self.task.step(action)
         next_state = self.config.state_normalizer(next_state)

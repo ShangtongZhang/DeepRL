@@ -38,23 +38,36 @@ class BaseAgent:
     def eval_episode(self):
         env = self.config.eval_env
         state = env.reset()
+        total_rewards = []
         while True:
             action = self.eval_step(state)
             state, reward, done, info = env.step(action)
+            total_rewards.append(reward[0])
             ret = info[0]['episodic_return']
             if ret is not None:
                 break
-        return ret
+        return total_rewards
+
+    def compute_values(self, rewards):
+        config = self.config
+        values = rewards.copy()
+        for i in reversed(range(len(values) - 1)):
+            values[i] = values[i] + config.discount * values[i + 1]
+        return values
 
     def eval_episodes(self):
         episodic_returns = []
+        values = []
         for ep in range(self.config.eval_episodes):
             total_rewards = self.eval_episode()
             episodic_returns.append(np.sum(total_rewards))
+            values.extend(self.compute_values(total_rewards))
+
         self.logger.info('steps %d, episodic_return_test %.2f(%.2f)' % (
             self.total_steps, np.mean(episodic_returns), np.std(episodic_returns) / np.sqrt(len(episodic_returns))
         ))
-        self.logger.add_scalar('episodic_return_test', np.mean(episodic_returns), self.total_steps)
+        self.logger.add_scalar('episodic_return', np.mean(episodic_returns), self.total_steps)
+        self.logger.add_scalar('averaged_value', np.mean(values), self.total_steps)
         return {
             'episodic_return_test': np.mean(episodic_returns),
         }
