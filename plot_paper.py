@@ -135,6 +135,7 @@ def plot_mujoco_learning_curves(**kwargs):
         labels = [
             'Geoff-PAC',
             'DDPG',
+            'TD3',
         ]
     else:
         labels = [
@@ -144,13 +145,14 @@ def plot_mujoco_learning_curves(**kwargs):
         ]
 
     def info(game):
-        with open('data/random_agent_mujoco.bin', 'rb') as f:
+        with open('data/Geoff-PAC/random_agent_mujoco.bin', 'rb') as f:
             rnd_perf = pickle.load(f)
         rnd_perf = rnd_perf[game][kwargs['tag']]
         if kwargs['ddpg']:
             patterns = [
                 'algo_geoff-pac-gamma_hat_0\.2-lam1_0\.7-lam2_0\.6-run',
                 'remark_ddpg',
+                'remark_TD3-random',
             ]
         else:
             patterns = [
@@ -559,12 +561,12 @@ if __name__ == '__main__':
     # plot_parameter_study('mean')
     # plot_geoff_pac_heatmap('J')
     # plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=False)
-    # plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
+    plot_mujoco_learning_curves(type='mean', tag='averaged_value', top_k=0, ddpg=True)
     # plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=False)
-    # plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=True)
+    plot_mujoco_learning_curves(type='mean', tag='episodic_return', top_k=0, ddpg=True)
 
     # extract_heatmap_data()
     # extract_geoff_pac_heatmap()
 
-    rebuttal_with_td3()
+    # rebuttal_with_td3()
 
