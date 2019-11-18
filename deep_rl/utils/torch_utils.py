@@ -204,3 +204,7 @@ class Grads:
             grad.add(g)
         grad.mul(1 / len(self.grads))
         return grad
+
+
+def escape_float(x):
+    return ('%s' % x).replace('.', '\.')

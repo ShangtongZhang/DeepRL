@@ -83,6 +83,8 @@ class Plotter:
         return sorted(names)
 
     def load_log_dirs(self, dirs, **kwargs):
+        kwargs.setdefault('right_align', False)
+        kwargs.setdefault('window', 0)
         xy_list = []
         from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
         for dir in dirs:
@@ -156,3 +158,13 @@ class Plotter:
                 plt.ylabel(kwargs['tag'])
             plt.title(game)
             plt.legend()
+
+    def select_best_parameters(self, patterns, **kwargs):
+        scores = []
+        for pattern in patterns:
+            log_dirs = self.filter_log_dirs(pattern, **kwargs)
+            xy_list = self.load_log_dirs(log_dirs, **kwargs)
+            y = np.asarray([xy[1] for xy in xy_list])
+            scores.append(kwargs['score'](y))
+        indices = np.argsort(-np.asarray(scores))
+        return indices
