@@ -10,6 +10,8 @@ from .BaseAgent import *
 from skimage import color
 
 
+# 'hat' is the high-MDP
+# 'bar' is the low-MDP
 class ASquaredCPPOAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
@@ -122,9 +124,9 @@ class ASquaredCPPOAgent(BaseAgent):
                 else:
                     raise NotImplementedError
 
-                if mdp == 'hat':
+                if mdp == 'bar':
                     v = prediction['q_o'].gather(1, sampled_options)
-                elif mdp == 'bar':
+                elif mdp == 'hat':
                     v = (prediction['q_o'] * sampled_pi_hat).sum(-1).unsqueeze(-1)
                 else:
                     raise NotImplementedError
