@@ -604,6 +604,8 @@ def oracle_ddpg_continuous(**kwargs):
     run_steps(OracleDDPGAgent(config))
 
 
+# 'net_cfg' stands for target network types, e.g., 'to', 'oo', 'ot', 'tt'.
+# 'residual' stands for \eta in the paper.
 def residual_ddpg_continuous(**kwargs):
     set_tag(kwargs)
     kwargs.setdefault('log_dir', get_default_log_dir(kwargs['tag']))
