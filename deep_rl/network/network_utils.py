@@ -11,9 +11,11 @@ import numpy as np
 from ..utils import *
 
 
-class BaseNet:
-    def __init__(self):
-        pass
+class BaseNet(nn.Module):
+    def __init__(self, config=None):
+        super().__init__()
+        self.is_recur = False
+        self.config = config
 
 
 def layer_init(layer, w_scale=1.0):
@@ -21,3 +23,13 @@ def layer_init(layer, w_scale=1.0):
     layer.weight.data.mul_(w_scale)
     nn.init.constant_(layer.bias.data, 0)
     return layer
+
+def lstm_init(lstm, w_scale=1.0):
+    for layer_p in lstm._all_weights:
+        for p in layer_p:
+            if 'weight' in p:
+                nn.init.orthogonal_(lstm.__getattr__(p).data)
+                lstm.__getattr__(p).data.mul_(w_scale)
+            if 'bias' in p:
+                nn.init.constant_(lstm.__getattr__(p).data, 0)
+    return lstm

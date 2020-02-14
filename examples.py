@@ -481,6 +481,78 @@ def td3_continuous(**kwargs):
     config.target_network_mix = 5e-3
     run_steps(TD3Agent(config))
 
+def ppoc_lstm_continuous(**kwargs):
+  config = Config()
+  config.use_gae = False
+  config.rollout_length = 32
+  gstr = 'False'
+  if config.use_gae:
+    gstr = 'True'
+  kwargs['algo_tag'] = 'PPOC_LSTM_GAE_%s_%d' % (gstr, config.rollout_length)
+  generate_tag(kwargs)
+  kwargs.setdefault('log_level', 0)
+  kwargs.setdefault('learning', 'all')
+  kwargs.setdefault('tasks', False)
+  config.merge(kwargs)
+
+  config.num_workers = 9
+  config.single_process = True
+  config.task_fn = lambda: Task(
+      config.game,
+      num_envs=config.num_workers,
+      single_process=config.single_process)
+  config.eval_env = Task(config.game)
+
+  config.num_o = 4
+  if 'dm-humanoid' in config.game:
+    hidden_units = (128, 128)
+  else:
+    hidden_units = (64, 64)
+  config.gate = nn.ReLU()
+
+  # lstm parameters
+  config.debug = False
+  config.hid_dim = 64
+  config.num_lstm_layers = 1
+  config.lstm_to_fc_feat_dim = config.num_lstm_layers * config.hid_dim
+  config.bi_direction = True
+  if config.bi_direction:
+    config.lstm_to_fc_feat_dim = config.lstm_to_fc_feat_dim * 2
+  config.lstm_dropout = 0
+  config.network_fn = lambda: OptionLstmGaussianActorCriticNet(
+      config.state_dim,
+      config.action_dim,
+      num_options=config.num_o,
+      hid_dim=config.hid_dim,
+      phi_body=DummyBody(config.state_dim),
+      option_body_fn=lambda: FCBody(
+          config.state_dim, hidden_units=hidden_units, gate=config.gate),
+      config=config)
+  config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+  config.gradient_clip = 0.5
+
+  config.discount = 0.99
+  config.max_steps = 1e9
+  config.state_normalizer = MeanStdNormalizer()
+  config.log_interval = 2048
+
+  # PPO params
+  # training params
+  config.optimization_epochs = 10
+  config.mini_batch_size = 64
+  # model params
+  config.gae_tau = 0.95
+  config.ppo_ratio_clip = 0.2
+  config.entropy_weight = 0.01
+
+  # OC params
+  config.beta_reg = 0.01
+  config.delib_cost = 0.01
+
+  run_steps(PPOCLSTMAgent(config))
+
+
+
 
 if __name__ == '__main__':
     mkdir('log')
@@ -504,6 +576,8 @@ if __name__ == '__main__':
     # a2c_continuous(game=game)
     # ppo_continuous(game=game)
     # ddpg_continuous(game=game)
+    game = 'LunarLanderContinuous-v2'
+    ppoc_continuous(game=game)
     td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
