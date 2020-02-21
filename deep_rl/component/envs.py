@@ -159,7 +159,7 @@ class Task:
                  episode_life=True,
                  seed=None):
         if seed is None:
-            seed = np.random.randint(int(1e5))
+            seed = np.random.randint(int(1e9))
         if log_dir is not None:
             mkdir(log_dir)
         envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
