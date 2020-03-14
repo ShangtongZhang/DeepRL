@@ -15,7 +15,8 @@ class PPOAgent(BaseAgent):
         self.config = config
         self.task = config.task_fn()
         self.network = config.network_fn()
-        self.opt = config.optimizer_fn(self.network.parameters())
+        self.actor_opt = config.actor_opt_fn(self.network.actor_params)
+        self.critic_opt = config.critic_opt_fn(self.network.critic_params)
         self.total_steps = 0
         self.states = self.task.reset()
         self.states = config.state_normalizer(self.states)
@@ -78,7 +79,12 @@ class PPOAgent(BaseAgent):
 
                 value_loss = 0.5 * (sampled_returns - prediction['v']).pow(2).mean()
 
-                self.opt.zero_grad()
-                (policy_loss + value_loss).backward()
-                nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
-                self.opt.step()
+                self.actor_opt.zero_grad()
+                policy_loss.backward()
+                self.actor_opt.step()
+
+                self.critic_opt.zero_grad()
+                value_loss.backward()
+                self.critic_opt.step()
+
+                # nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)

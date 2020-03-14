@@ -404,7 +404,8 @@ def ppo_continuous(**kwargs):
     config.network_fn = lambda: GaussianActorCriticNet(
         config.state_dim, config.action_dim, actor_body=FCBody(config.state_dim, gate=torch.tanh),
         critic_body=FCBody(config.state_dim, gate=torch.tanh))
-    config.optimizer_fn = lambda params: torch.optim.Adam(params, 3e-4, eps=1e-5)
+    config.actor_opt_fn = lambda params: torch.optim.Adam(params, 3e-4)
+    config.critic_opt_fn = lambda params: torch.optim.Adam(params, 1e-3)
     config.discount = 0.99
     config.use_gae = True
     config.gae_tau = 0.95
@@ -499,12 +500,12 @@ if __name__ == '__main__':
     # option_critic_feature(game=game)
     # ppo_feature(game=game)
 
-    # game = 'HalfCheetah-v2'
-    game = 'Hopper-v2'
+    game = 'HalfCheetah-v2'
+    # game = 'Hopper-v2'
     # a2c_continuous(game=game)
-    # ppo_continuous(game=game)
+    ppo_continuous(game=game)
     # ddpg_continuous(game=game)
-    td3_continuous(game=game)
+    # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
     # dqn_pixel(game=game)
