@@ -415,7 +415,8 @@ def ppo_continuous(**kwargs):
     config.mini_batch_size = 64
     config.ppo_ratio_clip = 0.2
     config.log_interval = 2048
-    config.max_steps = 1e6
+    config.max_steps = 3e6
+    config.target_kl = 0.01
     config.state_normalizer = MeanStdNormalizer()
     run_steps(PPOAgent(config))
 

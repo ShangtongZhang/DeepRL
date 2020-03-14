@@ -79,12 +79,13 @@ class PPOAgent(BaseAgent):
 
                 value_loss = 0.5 * (sampled_returns - prediction['v']).pow(2).mean()
 
-                self.actor_opt.zero_grad()
-                policy_loss.backward()
-                self.actor_opt.step()
+                approx_kl = (sampled_log_probs_old - prediction['log_pi_a']).mean()
+                if approx_kl <= 1.5 * config.target_kl:
+                    self.actor_opt.zero_grad()
+                    policy_loss.backward()
+                    self.actor_opt.step()
 
                 self.critic_opt.zero_grad()
                 value_loss.backward()
                 self.critic_opt.step()
 
-                # nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
