@@ -101,8 +101,8 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
 
-    # select_device(0)
-    # batch_atari()
+    select_device(0)
+    batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
