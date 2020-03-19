@@ -341,57 +341,6 @@ def option_critic_pixel(**kwargs):
 
 
 # PPO
-def ppo_feature(**kwargs):
-    generate_tag(kwargs)
-    kwargs.setdefault('log_level', 0)
-    config = Config()
-    config.merge(kwargs)
-
-    config.num_workers = 5
-    config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
-    config.eval_env = Task(config.game)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, FCBody(config.state_dim))
-    config.discount = 0.99
-    config.use_gae = True
-    config.gae_tau = 0.95
-    config.entropy_weight = 0.01
-    config.gradient_clip = 5
-    config.rollout_length = 128
-    config.optimization_epochs = 10
-    config.mini_batch_size = 32 * 5
-    config.ppo_ratio_clip = 0.2
-    config.log_interval = 128 * 5 * 10
-    run_steps(PPOAgent(config))
-
-
-def ppo_pixel(**kwargs):
-    generate_tag(kwargs)
-    kwargs.setdefault('log_level', 0)
-    config = Config()
-    config.merge(kwargs)
-
-    config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
-    config.eval_env = Task(config.game)
-    config.num_workers = 8
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(params, lr=0.00025, alpha=0.99, eps=1e-5)
-    config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
-    config.state_normalizer = ImageNormalizer()
-    config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
-    config.use_gae = True
-    config.gae_tau = 0.95
-    config.entropy_weight = 0.01
-    config.gradient_clip = 0.5
-    config.rollout_length = 128
-    config.optimization_epochs = 3
-    config.mini_batch_size = 32 * 8
-    config.ppo_ratio_clip = 0.1
-    config.log_interval = 128 * 8
-    config.max_steps = int(2e7)
-    run_steps(PPOAgent(config))
-
-
 def ppo_continuous(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
@@ -499,12 +448,11 @@ if __name__ == '__main__':
     # a2c_feature(game=game)
     # n_step_dqn_feature(game=game)
     # option_critic_feature(game=game)
-    # ppo_feature(game=game)
 
     game = 'HalfCheetah-v2'
     # game = 'Hopper-v2'
     # a2c_continuous(game=game)
-    ppo_continuous(game=game)
+    # ppo_continuous(game=game)
     # ddpg_continuous(game=game)
     # td3_continuous(game=game)
 
@@ -515,4 +463,3 @@ if __name__ == '__main__':
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)
-    # ppo_pixel(game=game)

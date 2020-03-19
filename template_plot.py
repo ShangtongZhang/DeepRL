@@ -89,7 +89,6 @@ def plot_atari():
         'remark_dqn',
         'remark_n_step_dqn',
         'remark_option_critic',
-        'remark_ppo',
         'remark_quantile',
     ]
 
@@ -99,7 +98,6 @@ def plot_atari():
         'DQN',
         'N-Step DQN',
         'OC',
-        'PPO',
         'QR-DQN',
     ]
 
