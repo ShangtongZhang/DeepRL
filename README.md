@@ -10,25 +10,25 @@ Implemented algorithms:
 * Quantile Regression DQN
 * (Continuous/Discrete) Synchronous Advantage Actor Critic (A2C)
 * Synchronous N-Step Q-Learning
-* Deep Deterministic Policy Gradient (DDPG, low-dim-state)
-* (Continuous/Discrete) Synchronous Proximal Policy Optimization (PPO, pixel & low-dim-state)
+* Deep Deterministic Policy Gradient (DDPG)
+* Proximal Policy Optimization (PPO)
 * The Option-Critic Architecture (OC)
 * Twined Delayed DDPG (TD3)
 * [Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
 
 Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
 Action Conditional Video Prediction can be found in [v0.4](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.4).
+Synchronous PPO for Atari games can be found in [v1.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v1.1)
 
 
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
-* PyTorch v1.1.0
+* PyTorch v1.4
 * Python 3.6, 3.5
 * OpenAI Baselines (commit ```8e56dd```)
 * Core dependencies: `pip install -e .`
 
 # Remarks
-* PyTorch v0.4.0 should also work in principle, at least for commit ```80939f```.
 * There is a super fast DQN implementation with an async actor for data generation and an async replay buffer to transfer data to GPU. Enable this implementation by setting `config.async_actor = True` and using `AsyncReplay`. However, with atari games this fast implementation may not work in macOS. Use Ubuntu or Docker instead.
 * Although there is a `setup.py`, which means you can install the repo as a library, this repo is **never** designed to be a high-level library like Keras. Use it as your codebase instead.
 * TensorFlow is used only for logging. Open AI baselines is used very slightly. If you carefully read the code, you should be able to remove/replace them.
