@@ -121,5 +121,5 @@ def plot_atari():
 if __name__ == '__main__':
     mkdir('images')
     # plot_ppo()
-    plot_ddpg_td3()
-    # plot_atari()
+    # plot_ddpg_td3()
+    plot_atari()
