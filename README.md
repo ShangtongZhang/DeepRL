@@ -20,10 +20,9 @@ Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/Sh
 Action Conditional Video Prediction can be found in [v0.4](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.4).
 Synchronous PPO for Atari games can be found in [v1.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v1.1)
 
-
 # Dependency
 * MacOS 10.12 or Ubuntu 16.04
-* PyTorch v1.4
+* PyTorch v1.4.0
 * Python 3.6, 3.5
 * OpenAI Baselines (commit ```8e56dd```)
 * Core dependencies: `pip install -e .`
@@ -51,14 +50,11 @@ Please use this bibtex if you want to cite this repo
 }
 ```
 
-# Curves (commit ```80939f```)
+# Curves (commit ```36aad5```)
 
 ## BreakoutNoFrameskip-v4
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Breakout.png)
-
-* This is my synchronous option-critic implementation, not the original one.
-* The curves are not directly comparable, as many hyper-parameters are different.
 
 ## Mujoco 
 
