@@ -29,7 +29,7 @@ Synchronous PPO for Atari games can be found in [v1.1](https://github.com/Shangt
 
 # Remarks
 * There is a super fast DQN implementation with an async actor for data generation and an async replay buffer to transfer data to GPU. Enable this implementation by setting `config.async_actor = True` and using `AsyncReplay`. However, with atari games this fast implementation may not work in macOS. Use Ubuntu or Docker instead.
-* Although there is a `setup.py`, which means you can install the repo as a library, this repo is **never** designed to be a high-level library like Keras. Use it as your codebase instead.
+* Although there is a `setup.py`, this repo is **never** designed to be a high-level library like Keras. Use it as your codebase instead.
 * TensorFlow is used only for logging. Open AI baselines is used very slightly. If you carefully read the code, you should be able to remove/replace them.
 
 # Usage
@@ -52,7 +52,7 @@ Please use this bibtex if you want to cite this repo
 
 # Curves (commit ```36aad5```)
 
-## BreakoutNoFrameskip-v4
+## BreakoutNoFrameskip-v4 (1 run)
 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/Breakout.png)
 
@@ -60,10 +60,11 @@ Please use this bibtex if you want to cite this repo
 
 * DDPG/TD3 evaluation performance.
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/mujoco_eval.png)
-
+(5 runs, mean + standard error)
 
 * PPO online performance. 
 ![Loading...](https://raw.githubusercontent.com/ShangtongZhang/DeepRL/master/images/PPO.png)
+(5 runs, mean + standard error, smoothed by a window of size 10)
 
 
 # References
