@@ -14,7 +14,7 @@ Implemented algorithms:
 * Proximal Policy Optimization (PPO)
 * The Option-Critic Architecture (OC)
 * Twined Delayed DDPG (TD3)
-* [Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
+* [GradientDICE/Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
 
 Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
 Action Conditional Video Prediction can be found in [v0.4](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.4).
