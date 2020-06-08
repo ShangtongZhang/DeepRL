@@ -59,6 +59,17 @@ class Replay:
         self.data = []
         self.pos = 0
 
+    def full(self):
+        return self.size() == self.memory_size
+
+    def save(self, filename):
+        with open(filename, 'wb') as f:
+            pickle.dump(self.data, f)
+
+    def load(self, filename):
+        with open(filename, 'rb') as f:
+            self.data = pickle.load(f)
+
 
 class SkewedReplay:
     def __init__(self, memory_size, batch_size, criterion):

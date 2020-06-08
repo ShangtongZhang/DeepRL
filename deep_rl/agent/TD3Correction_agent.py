@@ -10,7 +10,7 @@ from .BaseAgent import *
 import torchvision
 
 
-class TD3Agent(BaseAgent):
+class TD3CorrectionAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -22,6 +22,8 @@ class TD3Agent(BaseAgent):
         self.random_process = config.random_process_fn()
         self.total_steps = 0
         self.state = None
+
+        self.DICENet = config.dice_net_fn()
 
     def soft_update(self, target, src):
         for target_param, param in zip(target.parameters(), src.parameters()):
@@ -36,6 +38,16 @@ class TD3Agent(BaseAgent):
         self.config.state_normalizer.unset_read_only()
         return to_np(action)
 
+    def compute_correction(self, states, actions):
+        config = self.config
+        if config.correction == 'no':
+            correction = 1
+        elif config.correction in ['GradientDICE', 'GenDICE']:
+            correction = self.DICENet.tau(states, actions).detach()
+        else:
+            raise NotImplementedError
+        return correction
+
     def step(self):
         config = self.config
         if self.state is None:
@@ -43,12 +55,13 @@ class TD3Agent(BaseAgent):
             self.state = self.task.reset()
             self.state = config.state_normalizer(self.state)
 
-        if self.total_steps < config.warm_up:
-            action = [self.task.action_space.sample()]
-        else:
-            action = self.network(self.state)
-            action = to_np(action)
-            action += self.random_process.sample()
+        action = [self.task.action_space.sample()]
+        # if self.total_steps < config.warm_up:
+        #     action = [self.task.action_space.sample()]
+        # else:
+        #     action = self.network(self.state)
+        #     action = to_np(action)
+        #     action += self.random_process.sample()
         action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
         next_state, reward, done, info = self.task.step(action)
         next_state = self.config.state_normalizer(next_state)
@@ -70,6 +83,7 @@ class TD3Agent(BaseAgent):
             rewards = tensor(rewards).unsqueeze(-1)
             next_states = tensor(next_states)
             mask = tensor(1 - terminals).unsqueeze(-1)
+            self.train_dice(states, actions, next_states, mask)
 
             a_next = self.target_network(next_states)
             noise = torch.randn_like(a_next).mul(config.td3_noise)
@@ -84,7 +98,10 @@ class TD3Agent(BaseAgent):
             target = target.detach()
 
             q_1, q_2 = self.network.q(states, actions)
-            critic_loss = F.mse_loss(q_1, target) + F.mse_loss(q_2, target)
+            # cor = self.compute_correction(states, actions)
+            cor = 1
+            critic_loss = F.mse_loss(cor * q_1, cor * target) +\
+                          F.mse_loss(cor * q_2, cor * target)
 
             self.network.zero_grad()
             critic_loss.backward()
@@ -92,7 +109,9 @@ class TD3Agent(BaseAgent):
 
             if self.total_steps % config.td3_delay:
                 action = self.network(states)
-                policy_loss = -self.network.q(states, action)[0].mean()
+                cor = self.compute_correction(states, action)
+                self.logger.add_histogram('ratio', cor, log_level=5)
+                policy_loss = -self.network.q(states, action)[0].mul(cor).mean()
 
                 self.network.zero_grad()
                 policy_loss.backward()
@@ -100,7 +119,38 @@ class TD3Agent(BaseAgent):
 
                 self.soft_update(self.target_network, self.network)
 
-    def eval_episodes(self):
-        self.save('./data/%s-policy' % self.config.game)
-        self.replay.save('./data/%s-data' % self.config.game)
-        super().eval_episodes()
+    def train_dice(self, states, actions, next_states, masks):
+        config = self.config
+        if config.correction == 'no':
+            return
+
+        next_actions = self.network(next_states).detach()
+        states_0 = tensor(config.sample_init_states())
+        actions_0 = self.network(states_0).detach()
+
+        tau = self.DICENet.tau(states, actions)
+        f = self.DICENet.f(states, actions)
+        f_next = self.DICENet.f(next_states, next_actions)
+        f_0 = self.DICENet.f(states_0, actions_0)
+        u = self.DICENet.u(states.size(0))
+
+        if config.correction == 'GenDICE':
+            J_concave = (1 - config.discount) * f_0 + config.discount * tau.detach() * f_next - \
+                        tau.detach() * (f + 0.25 * f.pow(2)) + config.lam * (u * tau.detach() - u - 0.5 * u.pow(2))
+            J_convex = (1 - config.discount) * f_0.detach() + config.discount * tau * f_next.detach() - \
+                       tau * (f.detach() + 0.25 * f.detach().pow(2)) + \
+                       config.lam * (u.detach() * tau - u.detach() - 0.5 * u.detach().pow(2))
+        elif config.correction == 'GradientDICE':
+            J_concave = (1 - config.discount) * f_0 + config.discount * tau.detach() * f_next - \
+                        tau.detach() * f - 0.5 * f.pow(2) + config.lam * (u * tau.detach() - u - 0.5 * u.pow(2))
+            J_convex = (1 - config.discount) * f_0.detach() + config.discount * tau * f_next.detach() - \
+                       tau * f.detach() - 0.5 * f.detach().pow(2) + \
+                       config.lam * (u.detach() * tau - u.detach() - 0.5 * u.detach().pow(2))
+        else:
+            raise NotImplementedError
+
+        loss = (J_convex - J_concave).mul(masks).mean()
+        # loss = J_convex.mean() - J_concave.mean()
+        self.DICENet.opt.zero_grad()
+        loss.backward()
+        self.DICENet.opt.step()

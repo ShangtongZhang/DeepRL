@@ -10,8 +10,8 @@ import re
 
 
 class Plotter:
-    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
-              'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
+    COLORS = ['blue', 'green', 'red', 'black', 'cyan', 'magenta', 'yellow', 'brown', 'purple', 'pink',
+              'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
               'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
 
     RETURN_TRAIN = 'episodic_return_train'
@@ -83,6 +83,8 @@ class Plotter:
         return sorted(names)
 
     def load_log_dirs(self, dirs, **kwargs):
+        kwargs.setdefault('right_align', False)
+        kwargs.setdefault('window', 0)
         xy_list = []
         from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
         for dir in dirs:
@@ -94,6 +96,9 @@ class Plotter:
             x_max = float('inf')
             for x, y in xy_list:
                 x_max = min(x_max, len(y))
+            xy_list = [[x[:x_max], y[:x_max]] for x, y in xy_list]
+        x_max = kwargs['right_most']
+        if x_max:
             xy_list = [[x[:x_max], y[:x_max]] for x, y in xy_list]
         if kwargs['window']:
             xy_list = [self._window_func(np.asarray(x), np.asarray(y), kwargs['window'], np.mean) for x, y in xy_list]
@@ -156,3 +161,13 @@ class Plotter:
                 plt.ylabel(kwargs['tag'])
             plt.title(game)
             plt.legend()
+
+    def select_best_parameters(self, patterns, **kwargs):
+        scores = []
+        for pattern in patterns:
+            log_dirs = self.filter_log_dirs(pattern, **kwargs)
+            xy_list = self.load_log_dirs(log_dirs, **kwargs)
+            y = np.asarray([xy[1] for xy in xy_list])
+            scores.append(kwargs['score'](y))
+        indices = np.argsort(-np.asarray(scores))
+        return indices

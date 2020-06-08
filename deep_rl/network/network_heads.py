@@ -258,3 +258,82 @@ class TD3Net(nn.Module, BaseNet):
         q_1 = self.fc_critic_1(self.critic_body_1(x))
         q_2 = self.fc_critic_2(self.critic_body_2(x))
         return q_1, q_2
+
+
+class GradientDICENet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 activation,
+                 repr):
+        super(GradientDICENet, self).__init__()
+
+        if repr == 'tabular' or repr == 'linear':
+            self.fc_tau = nn.Linear(state_dim, action_dim, bias=False)
+            self.fc_f = nn.Linear(state_dim, action_dim, bias=False)
+        else:
+            raise NotImplementedError
+        self.param_u = nn.Parameter(torch.Tensor([[0]]))
+        self.activation = activation
+
+    def tau(self, states, actions=None):
+        value = self.fc_tau(states)
+        if self.activation == 'squared':
+            value = value.pow(2)
+        elif self.activation == 'linear':
+            pass
+        else:
+            raise NotImplementedError
+        if actions is None:
+            return value
+        return value.gather(1, actions)
+
+    def f(self, states, actions=None):
+        value = self.fc_f(states)
+        if actions is None:
+            return value
+        return value.gather(1, actions)
+
+    def u(self, batch_size):
+        return self.param_u.expand(batch_size, -1)
+
+    def ridge(self):
+        return self.fc_tau.weight.norm(2).pow(2)
+
+
+class GradientDICEContinuousNet(nn.Module, BaseNet):
+    def __init__(self,
+                 body_tau_fn,
+                 body_f_fn,
+                 opt_fn,
+                 activation='squared',
+                 ):
+        super(GradientDICEContinuousNet, self).__init__()
+
+        self.body_tau = body_tau_fn()
+        self.body_f = body_f_fn()
+        self.activation = activation
+        self.fc_tau = layer_init(nn.Linear(self.body_tau.feature_dim, 1), 1e-3)
+        self.fc_f = layer_init(nn.Linear(self.body_f.feature_dim, 1), 1e-3)
+        self.param_u = nn.Parameter(torch.Tensor([[0]]))
+
+        self.opt = opt_fn(self.parameters())
+
+    def tau(self, states, actions):
+        sa = torch.cat([states, actions], dim=1)
+        value = self.fc_tau(self.body_tau(sa))
+        if self.activation == 'squared':
+            value = value.pow(2)
+        elif self.activation == 'linear':
+            pass
+        else:
+            raise NotImplementedError
+        return value
+
+    def f(self, states, actions):
+        sa = torch.cat([states, actions], dim=1)
+        value = self.fc_f(self.body_f(sa))
+        return value
+
+    def u(self, batch_size):
+        return self.param_u.expand(batch_size, -1)
