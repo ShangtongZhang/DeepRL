@@ -3,6 +3,9 @@ This branch is the code of TD3 with a uniformly random behavior policy for the p
 *Generalized Off-Policy Actor-Critic* \
 Shangtong Zhang, Wendelin Boehmer, Shimon Whiteson (NeurIPS 2019)
 
+*Provably Convergent Two-Timescale Off-Policy Actor-Critic with Function Approximation* \
+Shangtong Zhang, Bo Liu, Hengshuai Yao, Shimon Whiteson (ICML 2020)
+
     .
     ├── Dockerfile                                      # Dependencies
     ├── requirements.txt                                # Dependencies
