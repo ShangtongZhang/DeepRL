@@ -7,3 +7,5 @@ from .QuantileRegressionDQN_agent import *
 from .PPO_agent import *
 from .OptionCritic_agent import *
 from .TD3_agent import *
+from .GEM_agent import *
+from .COFPAC_agent import *

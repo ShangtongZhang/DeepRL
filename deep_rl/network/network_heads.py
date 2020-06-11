@@ -258,3 +258,77 @@ class TD3Net(nn.Module, BaseNet):
         q_1 = self.fc_critic_1(self.critic_body_1(x))
         q_2 = self.fc_critic_2(self.critic_body_2(x))
         return q_1, q_2
+
+
+class ACENet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim):
+        super(ACENet, self).__init__()
+        hidden = 64
+        self.fc1 = nn.Linear(state_dim, hidden)
+        self.fc2 = nn.Linear(hidden, action_dim)
+
+    def forward(self, obs):
+        obs = tensor(obs)
+        phi = F.relu(self.fc1(obs))
+        phi = self.fc2(phi)
+        return F.softmax(phi, dim=-1)
+
+
+class COFPACNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 action_type,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None,
+                 emphasis_body=None):
+        super(COFPACNet, self).__init__()
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        if emphasis_body is None: emphasis_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.emphasis_body = emphasis_body
+        self.action_type = action_type
+
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
+        self.fc_emphasis = layer_init(nn.Linear(emphasis_body.feature_dim, 1), 1e-3)
+        if action_type == 'continuous':
+            self.std = nn.Parameter(torch.zeros(action_dim))
+        self.to(Config.DEVICE)
+
+    def forward(self, obs, action=None):
+        obs = tensor(obs)
+        phi = self.phi_body(obs)
+        phi_a = self.actor_body(phi)
+        phi_v = self.critic_body(phi)
+        phi_m = self.emphasis_body(phi)
+        v = self.fc_critic(phi_v)
+        m = F.softplus(self.fc_emphasis(phi_m))
+
+        if self.action_type == 'continuous':
+            mean = F.tanh(self.fc_action(phi_a))
+            dist = DiagonalNormal(mean, F.softplus(self.std))
+        elif self.action_type == 'discrete':
+            logits = self.fc_action(phi_a)
+            dist = torch.distributions.Categorical(logits=logits)
+        else:
+            raise NotImplementedError
+
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action)
+        prob = log_prob.exp()
+        entropy = dist.entropy()
+        return {'a': action,
+                'log_pi_a': log_prob,
+                'pi_a': prob,
+                'ent': entropy,
+                'v': v,
+                'm': m}

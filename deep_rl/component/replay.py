@@ -12,17 +12,14 @@ from ..utils import *
 
 
 class Replay:
-    def __init__(self, memory_size, batch_size, drop_prob=0, to_np=True):
+    def __init__(self, memory_size, batch_size, cat_fn=lambda x: np.asarray(x)):
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.data = []
         self.pos = 0
-        self.drop_prob = drop_prob
-        self.to_np = to_np
+        self.cat_fn = cat_fn
 
     def feed(self, experience):
-        if np.random.rand() < self.drop_prob:
-            return
         if self.pos >= len(self.data):
             self.data.append(experience)
         else:
@@ -41,23 +38,14 @@ class Replay:
 
         sampled_indices = [np.random.randint(0, len(self.data)) for _ in range(batch_size)]
         sampled_data = [self.data[ind] for ind in sampled_indices]
-        sampled_data = zip(*sampled_data)
-        if self.to_np:
-            sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
-        return sampled_data
+        batch_data = list(map(self.cat_fn, zip(*sampled_data)))
+        return batch_data
 
     def size(self):
         return len(self.data)
 
     def empty(self):
         return not len(self.data)
-
-    def shuffle(self):
-        np.random.shuffle(self.data)
-
-    def clear(self):
-        self.data = []
-        self.pos = 0
 
 
 class SkewedReplay:

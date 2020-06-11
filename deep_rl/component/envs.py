@@ -173,8 +173,10 @@ class Task:
         self.action_space = self.env.action_space
         if isinstance(self.action_space, Discrete):
             self.action_dim = self.action_space.n
+            self.action_type = 'discrete'
         elif isinstance(self.action_space, Box):
             self.action_dim = self.action_space.shape[0]
+            self.action_type = 'continuous'
         else:
             assert 'unknown action space'
 
@@ -186,6 +188,64 @@ class Task:
             actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return self.env.step(actions)
 
+
+class OriginalBaird(gym.Env):
+    def __init__(self):
+        self.action_space = Discrete(2)
+        self.states = np.arange(7)
+
+        self.observation_space = Box(-10, 10, (8, ))
+        self.phi = np.zeros((7, 8))
+        for i in range(6):
+            self.phi[i, i] = 2
+            self.phi[i, -1] = 1
+        self.phi[6, 6] = 1
+        self.phi[6, 7] = 2
+
+    def reset(self):
+        self.state = np.random.choice(self.states)
+        return self.phi[self.state]
+
+    def step(self, action):
+        cur_state = self.state
+        if action == 0:
+            self.state = 6
+            reward = 0
+        elif action == 1:
+            self.state = np.random.randint(6)
+            reward = 1
+        else:
+            raise NotImplementedError
+        return self.phi[self.state], reward, False, \
+               {'s': cur_state,
+                'next_s': self.state}
+
+
+class OneHotBaird(OriginalBaird):
+    def __init__(self):
+        OriginalBaird.__init__(self)
+        self.action_space = Discrete(2)
+
+        self.states = np.arange(7)
+        self.phi = np.eye(7)
+        self.observation_space = Box(-10, 10, (7, ))
+
+
+class ZeroHotBaird(OneHotBaird):
+    def __init__(self):
+        OneHotBaird.__init__(self)
+        self.phi = 1 - self.phi
+
+
+class AliasedBaird(OriginalBaird):
+    def __init__(self):
+        OriginalBaird.__init__(self)
+        self.action_space = Discrete(2)
+
+        self.states = np.arange(7)
+        self.phi[-1, :] = self.phi[-2, :]
+        self.phi = self.phi[:, :-2]
+        self.observation_space = Box(-10, 10, (6, ))
 
 if __name__ == '__main__':
     task = Task('Hopper-v2', 5, single_process=False)
