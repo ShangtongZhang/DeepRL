@@ -1,7 +1,7 @@
 import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# plt.rc('text', usetex=True)
+plt.rc('text', usetex=True)
 from deep_rl import *
 import math
 
@@ -184,17 +184,18 @@ def plot_boyans_chain(game):
 
     titles = [r'$\gamma = %s$' % (gamma) for gamma in gammas]
 
-    fontsize = 22
+    fontsize = 25
     def plot_games(self, titles, **kwargs):
         kwargs.setdefault('agg', 'mean')
         import matplotlib.pyplot as plt
         l = len(titles)
-        plt.figure(figsize=(l * 5, 5))
+        plt.figure(figsize=(3 * 5, 2 * 5))
         for i, title in enumerate(titles):
-            plt.subplot(1, l, i + 1)
+            plt.subplot(2, 3, i + 1)
             for j, p in enumerate(all_patterns[i]):
                 label = all_labels[i][j]
                 color = self.COLORS[j]
+                marker = self.MARKERS[j]
                 log_dirs = self.filter_log_dirs(pattern=p, **kwargs)
                 x, y = self.load_results(log_dirs, **kwargs)
                 if kwargs['downsample']:
@@ -202,25 +203,25 @@ def plot_boyans_chain(game):
                     x = x[indices]
                     y = y[:, indices]
                 if kwargs['agg'] == 'mean':
-                    self.plot_mean(y, x, label=label, color=color, error='se')
+                    self.plot_mean(y, x, label=label, color=color, error='se', marker=marker, markevery=10)
                 elif kwargs['agg'] == 'mean_std':
-                    self.plot_mean(y, x, label=label, color=color, error='std')
+                    self.plot_mean(y, x, label=label, color=color, error='std', marker=marker, markevery=10)
                 elif kwargs['agg'] == 'median':
-                    self.plot_median_std(y, x, label=label, color=color)
+                    self.plot_median_std(y, x, label=label, color=color, marker=marker, markevery=10)
                 else:
                     for k in range(y.shape[0]):
                         plt.plot(x, y[i], label=label, color=color)
                         label = None
-            plt.xlabel('Steps', fontsize=fontsize)
             plt.xticks([0, 100], ['0', r'$3 \times 10^4$'], fontsize=fontsize)
             plt.tick_params(axis='y', labelsize=fontsize)
-            if not i:
-                # plt.ylabel(r'MSE$(\tau)$', rotation='horizontal', fontsize=10)
+            if i in [0, 3]:
                 plt.ylabel(r'MSE$(\tau)$', fontsize=fontsize)
+            if i >= 3:
+                plt.xlabel('Steps', fontsize=fontsize)
             y_min, _ = plt.gca().get_ylim()
             plt.gca().set_ylim(bottom=max(y_min, 0))
             plt.title(title, fontsize=fontsize)
-            plt.legend(fontsize=12)
+            plt.legend(fontsize=15)
 
     plot_games(plotter,
                titles=titles,
@@ -385,17 +386,18 @@ def plot_mujoco_ope(game):
 
     titles = [r'$\gamma = %s$' % (gamma) for gamma in gammas]
 
-    fontsize = 22
+    fontsize = 25
     def plot_games(self, titles, **kwargs):
         kwargs.setdefault('agg', 'mean')
         import matplotlib.pyplot as plt
         l = len(titles)
-        plt.figure(figsize=(l * 5, 5))
+        plt.figure(figsize=(3 * 5, 2 * 5))
         for i, title in enumerate(titles):
-            plt.subplot(1, l, i + 1)
+            plt.subplot(2, 3, i + 1)
             for j, p in enumerate(all_patterns[i]):
                 label = all_labels[i][j]
                 color = self.COLORS[j]
+                marker = self.MARKERS[j]
                 log_dirs = self.filter_log_dirs(pattern=p, **kwargs)
                 x, y = self.load_results(log_dirs, **kwargs)
                 if kwargs['downsample']:
@@ -403,11 +405,11 @@ def plot_mujoco_ope(game):
                     x = x[indices]
                     y = y[:, indices]
                 if kwargs['agg'] == 'mean':
-                    self.plot_mean(y, x, label=label, color=color, error='se')
+                    self.plot_mean(y, x, label=label, color=color, error='se', marker=marker, markevery=10)
                 elif kwargs['agg'] == 'mean_std':
-                    self.plot_mean(y, x, label=label, color=color, error='std')
+                    self.plot_mean(y, x, label=label, color=color, error='std', marker=marker, markevery=10)
                 elif kwargs['agg'] == 'median':
-                    self.plot_median_std(y, x, label=label, color=color)
+                    self.plot_median_std(y, x, label=label, color=color, marker=marker, markevery=10)
                 else:
                     for k in range(y.shape[0]):
                         plt.plot(x, y[i], label=label, color=color)
@@ -421,13 +423,14 @@ def plot_mujoco_ope(game):
             else:
                 y_max = 0.2
             plt.gca().set_ylim(bottom=0, top=y_max)
-            plt.xlabel('Steps', fontsize=fontsize)
             plt.xticks([0, 100], ['0', r'$10^3$'], fontsize=fontsize)
             plt.title(title, fontsize=fontsize)
             plt.tick_params(axis='y', labelsize=fontsize)
-            if not i:
+            if i in [0, 3]:
                 plt.ylabel(r'MSE($\rho$)', fontsize=fontsize)
-            plt.legend(fontsize=14)
+            if i >= 3:
+                plt.xlabel('Steps', fontsize=fontsize)
+            plt.legend(fontsize=15)
 
     plot_games(plotter,
                titles=titles,
@@ -450,5 +453,5 @@ if __name__ == '__main__':
     mkdir('images')
     # plot_boyans_chain('BoyansChainTabular-v0')
     # plot_boyans_chain('BoyansChainLinear-v0')
-    plot_mujoco_ope('Reacher-v2')
+    # plot_mujoco_ope('Reacher-v2')
 
