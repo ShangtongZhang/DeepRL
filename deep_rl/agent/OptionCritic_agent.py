@@ -36,7 +36,7 @@ class OptionCriticAgent(BaseAgent):
             pi_option.scatter_(1, greedy_option, prob)
 
             mask = torch.zeros_like(q_option)
-            mask[:, prev_option] = 1
+            mask[self.worker_index, prev_option] = 1
             beta = prediction['beta']
             self.logger.add_scalar('beta', beta[0, prev_option[0]])
             pi_hat_option = (1 - beta) * mask + beta * pi_option
