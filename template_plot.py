@@ -1,7 +1,7 @@
 import matplotlib
 # matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-# plt.rc('text', usetex=True)
+plt.rc('text', usetex=True)
 from deep_rl import *
 
 
@@ -210,6 +210,7 @@ def emphasis_figures():
             title=title,
         )
 
+    fontsize = 30
     import matplotlib.pyplot as plt
     pi = [0.1, 0.3]
     l = len(pi)
@@ -230,7 +231,7 @@ def emphasis_figures():
             indices = np.linspace(0, len(x) - 1, 100).astype(np.int)
             x = x[indices]
             y = y[:, indices]
-            plotter.plot_mean(y, x, label=info['labels'][i], color=plotter.COLORS[i], error='std')
+            plotter.plot_mean(y, x, label=info['labels'][i], color=plotter.COLORS[i], error='std', marker=plotter.MARKERS[i], markevery=10)
 
         x, y = plotter.load_results(
             log_dirs,
@@ -240,14 +241,14 @@ def emphasis_figures():
         indices = np.linspace(0, len(x) - 1, 100).astype(np.int)
         x = x[indices]
         y = y[:, indices]
-        plotter.plot_mean(y, x, label='followon trace', color=plotter.COLORS[i + 1], error='std')
+        plotter.plot_mean(y, x, label='followon trace', color=plotter.COLORS[i + 1], error='std', marker=plotter.MARKERS[i + 1], markevery=10)
 
-        plt.xlabel('steps', fontsize=30)
+        plt.xlabel('steps', fontsize=fontsize)
         ylim = [0, 140]
         plt.ylim(ylim)
         if not j:
-            plt.ylabel('emphasis error', fontsize=30)
-            plt.yticks(ylim, ylim, fontsize=30)
+            plt.ylabel('emphasis error', fontsize=fontsize)
+            plt.yticks(ylim, ylim, fontsize=fontsize)
         else:
             plt.tick_params(
                 axis='y',  # changes apply to the x-axis
@@ -255,9 +256,9 @@ def emphasis_figures():
                 left=False,  # ticks along the bottom edge are off
                 right=False,  # ticks along the top edge are off
                 labelleft=False)  # labels along the bottom edge are off
-        plt.xticks(*info['xticks'], fontsize=30)
-        plt.legend(fontsize=12)
-        plt.title(info['title'], fontsize=30)
+        plt.xticks(*info['xticks'], fontsize=fontsize)
+        plt.legend(fontsize=15)
+        plt.title(info['title'], fontsize=fontsize)
 
     plt.tight_layout()
     plt.savefig('%s/emphasis_error.pdf' % (PATH), bbox_inches='tight')
@@ -316,6 +317,7 @@ def gem_etd_figures():
 
     data = get_data()
 
+    fontsize = 30
     import matplotlib.pyplot as plt
     l = len(games)
     plt.figure(figsize=(l * 4.5, 5))
@@ -331,21 +333,22 @@ def gem_etd_figures():
             else:
                 label = r'ETD(0)($\alpha=0.1\times 2^{-%d}$)' % (lr_strs[lr])
             color = plotter.COLORS[j]
-            plotter.plot_mean(y, x, label=label, color=color, error='std')
+            marker = plotter.MARKERS[j]
+            plotter.plot_mean(y, x, label=label, color=color, error='std', marker=marker, markevery=10)
 
             if m == 'gem':
                 lr, x, y = data[game][m][ranks[i]]
                 color = plotter.COLORS[len(m_types)]
                 label = r'Gem-ETD(0)($\alpha_2=0.1\times 2^{-%d}$)' % (lr_strs[lr])
-                plotter.plot_mean(y, x, label=label, color=color, error='std', linestyle=':')
+                plotter.plot_mean(y, x, label=label, color=color, error='std', linestyle=':', marker=None, markevery=1)
 
-        plt.xlabel('steps', fontsize=30)
-        plt.xticks([0, 100], ['0', r'$10^5$'], fontsize=30)
+        plt.xlabel('steps', fontsize=fontsize)
+        plt.xticks([0, 100], ['0', r'$10^5$'], fontsize=fontsize)
         if not i:
             # plt.ylabel('RMSVE', rotation='horizontal', fontsize=30)
-            plt.ylabel('RMSVE', fontsize=30)
+            plt.ylabel('RMSVE', fontsize=fontsize)
             plt.ylim([0, 300])
-            plt.yticks([0, 300], [0, 300], fontsize=30)
+            plt.yticks([0, 300], [0, 300], fontsize=fontsize)
         else:
             plt.tick_params(
                 axis='y',  # changes apply to the x-axis
@@ -353,8 +356,8 @@ def gem_etd_figures():
                 left=False,  # ticks along the bottom edge are off
                 right=False,  # ticks along the top edge are off
                 labelleft=False)  # labels along the bottom edge are off
-        plt.title(titles[i], fontsize=30)
-        plt.legend(fontsize=12)
+        plt.title(titles[i], fontsize=fontsize)
+        plt.legend(fontsize=15)
 
     # plt.show()
     plt.tight_layout()
@@ -387,6 +390,7 @@ def plot_mujoco():
             for j, p in enumerate(kwargs['patterns']):
                 label = kwargs['labels'][j]
                 color = self.COLORS[j]
+                marker = self.MARKERS[j]
                 log_dirs = self.filter_log_dirs(pattern='.*%s.*%s' % (game, p), **kwargs)
                 if j == 2:
                     kwargs['tag'] = 'episodic_return'
@@ -398,24 +402,25 @@ def plot_mujoco():
                 x = x[:50]
                 y = y[:, :50]
                 if kwargs['agg'] == 'mean':
-                    self.plot_mean(y, x, label=label, color=color, error='se')
+                    self.plot_mean(y, x, label=label, color=color, error='se', marker=marker, markevery=10)
                 elif kwargs['agg'] == 'mean_std':
-                    self.plot_mean(y, x, label=label, color=color, error='std')
+                    self.plot_mean(y, x, label=label, color=color, error='std', marker=marker, markevery=10)
                 elif kwargs['agg'] == 'median':
-                    self.plot_median_std(y, x, label=label, color=color)
+                    self.plot_median_std(y, x, label=label, color=color, marker=marker, markevery=10)
                 else:
                     for k in range(y.shape[0]):
                         plt.plot(x, y[i], label=label, color=color)
                         label = None
-            plt.xlabel('steps', fontsize=30)
-            plt.xticks([0, int(5e4)], ['0', r'$5\times 10^4$'], fontsize=30)
+            fontsize = 30
+            plt.xlabel('steps', fontsize=fontsize)
+            plt.xticks([0, int(5e4)], ['0', r'$5\times 10^4$'], fontsize=fontsize)
             if not i:
-                plt.ylabel(r'$J(\pi)$', rotation='horizontal', fontsize=30)
+                plt.ylabel(r'$J(\pi)$', rotation='horizontal', fontsize=fontsize)
                 ylim = [-20, -3]
                 plt.ylim(ylim)
-                plt.yticks(ylim, ylim, fontsize=30)
-            plt.title(game, fontsize=30)
-            plt.legend(fontsize=12)
+                plt.yticks(ylim, ylim, fontsize=fontsize)
+            plt.title(game, fontsize=fontsize)
+            plt.legend(fontsize=15)
 
     kwargs = dict(
         patterns=patterns,
@@ -443,5 +448,5 @@ if __name__ == '__main__':
     # plot_atari()
 
     # emphasis_figures()
-    # gem_etd_figures()
-    plot_mujoco()
+    gem_etd_figures()
+    # plot_mujoco()
