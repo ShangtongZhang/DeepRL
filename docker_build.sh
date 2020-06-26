@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-nohup docker build -t deep_rl/v1.4 . &
+docker build --build-arg UID=$UID -t deep_rl:v1.4 .

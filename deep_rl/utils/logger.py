@@ -4,7 +4,7 @@
 # declaration at the top                                              #
 #######################################################################
 
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 import os
 import numpy as np
 import torch
