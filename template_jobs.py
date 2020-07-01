@@ -84,7 +84,11 @@ def batch_mujoco():
     params = []
 
     for game in games:
-        for algo in [ppo_continuous, ddpg_continuous, td3_continuous]:
+        if 'Humanoid' in game:
+            algos = [ppo_continuous]
+        else:
+            algos = [ppo_continuous, ddpg_continuous, td3_continuous]
+        for algo in algos:
             for r in range(5):
                 params.append([algo, dict(game=game, run=r)])
 

@@ -13,7 +13,7 @@ touch jobs.txt
 for i in $(seq 0 120); do
     echo "$i" >> jobs.txt
 done
-cat jobs.txt | xargs -n 1 -P 40 sh -c 'bash docker_python.sh 0 "template_jobs.py --i $0"'
+cat jobs.txt | xargs -n 1 -P 50 sh -c 'bash docker_python.sh 0 "template_jobs.py --i $0"'
 rm -f jobs.txt
 
 

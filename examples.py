@@ -386,17 +386,16 @@ def ddpg_continuous(**kwargs):
     config.network_fn = lambda: DeterministicActorCriticNet(
         config.state_dim, config.action_dim,
         actor_body=FCBody(config.state_dim, (400, 300), gate=F.relu),
-        critic_body=TwoLayerFCBodyWithAction(
-            config.state_dim, config.action_dim, (400, 300), gate=F.relu),
-        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-4),
+        critic_body=FCBody(config.state_dim+config.action_dim, (400, 300), gate=F.relu),
+        actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=64)
+    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=100)
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
     config.warm_up = int(1e4)
-    config.target_network_mix = 1e-3
+    config.target_network_mix = 5e-3
     run_steps(DDPGAgent(config))
 
 

@@ -135,7 +135,7 @@ class DeterministicActorCriticNet(nn.Module, BaseNet):
         return torch.tanh(self.fc_action(self.actor_body(phi)))
 
     def critic(self, phi, a):
-        return self.fc_critic(self.critic_body(phi, a))
+        return self.fc_critic(self.critic_body(torch.cat([phi, a], dim=1)))
 
 
 class GaussianActorCriticNet(nn.Module, BaseNet):
