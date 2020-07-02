@@ -100,15 +100,14 @@ class RainbowAgent(BaseAgent):
             states = self.config.state_normalizer(states)
             next_states = self.config.state_normalizer(next_states)
 
-            prob_next, _ = self.target_network(next_states)
-            prob_next = prob_next.detach()
-            q_next = (prob_next * self.atoms).sum(-1)
-            if config.double_q:
-                with torch.no_grad():
+            with torch.no_grad():
+                prob_next, _ = self.target_network(next_states)
+                q_next = (prob_next * self.atoms).sum(-1)
+                if config.double_q:
                     a_next = torch.argmax((self.network(next_states)[0] * self.atoms).sum(-1), dim=-1)
-            else:
-                a_next = torch.argmax(q_next, dim=-1)
-            prob_next = prob_next[self.batch_indices, a_next, :]
+                else:
+                    a_next = torch.argmax(q_next, dim=-1)
+                prob_next = prob_next[self.batch_indices, a_next, :]
 
             rewards = tensor(rewards).unsqueeze(-1)
             terminals = tensor(terminals).unsqueeze(-1)
@@ -140,7 +139,7 @@ class RainbowAgent(BaseAgent):
             loss = KL.mul(weights).mean()
             self.optimizer.zero_grad()
             loss.backward()
-            nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
+            # nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
             with config.lock:
                 self.optimizer.step()
 

@@ -54,6 +54,26 @@ class CategoricalNet(nn.Module, BaseNet):
         return prob, log_prob
 
 
+class RainbowNet(nn.Module, BaseNet):
+    def __init__(self, action_dim, num_atoms, body):
+        super(RainbowNet, self).__init__()
+        self.fc_value = layer_init(nn.Linear(body.feature_dim, num_atoms))
+        self.fc_advantage = layer_init(nn.Linear(body.feature_dim, action_dim * num_atoms))
+        self.action_dim = action_dim
+        self.num_atoms = num_atoms
+        self.body = body
+        self.to(Config.DEVICE)
+
+    def forward(self, x):
+        phi = self.body(tensor(x))
+        value = self.fc_value(phi).view((-1, 1, self.num_atoms))
+        advantage = self.fc_advantage(phi).view(-1, self.action_dim, self.num_atoms)
+        q = value + (advantage - advantage.mean(1, keepdim=True))
+        prob = F.softmax(q, dim=-1)
+        log_prob = F.log_softmax(q, dim=-1)
+        return prob, log_prob
+
+
 class QuantileNet(nn.Module, BaseNet):
     def __init__(self, action_dim, num_quantiles, body):
         super(QuantileNet, self).__init__()

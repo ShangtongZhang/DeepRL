@@ -196,13 +196,12 @@ def rainbow_feature(**kwargs):
 
     config.max_steps = 1e5
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    # config.network_fn = lambda: DuelingNet(config.action_dim, FCBody(config.state_dim))
-    # config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e4), batch_size=10)
-    config.network_fn = lambda: CategoricalNet(config.action_dim, config.categorical_n_atoms, FCBody(config.state_dim))
+    config.network_fn = lambda: RainbowNet(config.action_dim, config.categorical_n_atoms, FCBody(config.state_dim))
     config.categorical_v_max = 100
     config.categorical_v_min = -100
     config.categorical_n_atoms = 50
 
+    # config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e4), batch_size=10)
     config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10, replay_type='prioritized')
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
@@ -232,12 +231,12 @@ def rainbow_pixel(**kwargs):
     config.eval_env = config.task_fn()
 
     config.max_steps = int(2e7)
-    config.optimizer_fn = lambda params: torch.optim.RMSprop(
-        params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
-    config.network_fn = lambda: CategoricalNet(config.action_dim, config.categorical_n_atoms, NatureConvBody())
-    config.categorical_v_max = 100
-    config.categorical_v_min = -100
-    config.categorical_n_atoms = 50
+    config.optimizer_fn = lambda params: torch.optim.Adam(
+        params, lr=0.000625, eps=1.5e-4)
+    config.network_fn = lambda: RainbowNet(config.action_dim, config.categorical_n_atoms, NatureConvBody())
+    config.categorical_v_max = 10
+    config.categorical_v_min = -10
+    config.categorical_n_atoms = 51
 
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
 
@@ -251,13 +250,12 @@ def rainbow_pixel(**kwargs):
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.discount = 0.99
-    config.target_network_update_freq = 10000
-    # config.exploration_steps = 50000
-    config.exploration_steps = 500
+    config.target_network_update_freq = 2000
+    config.exploration_steps = 20000
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     config.history_length = 4
-    config.double_q = False
+    config.double_q = True
     config.n_step = 3
     run_steps(RainbowAgent(config))
 
