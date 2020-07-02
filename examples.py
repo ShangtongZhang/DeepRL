@@ -238,7 +238,7 @@ def rainbow_pixel(**kwargs):
     config.categorical_v_min = -10
     config.categorical_n_atoms = 51
 
-    config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
+    config.random_action_prob = LinearSchedule(1.0, 0.01, int(25e4))
 
     # config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e6), batch_size=32)
     config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, replay_type='prioritized')
@@ -513,8 +513,8 @@ if __name__ == '__main__':
     mkdir('tf_log')
     set_one_thread()
     random_seed()
-    select_device(-1)
-    # select_device(0)
+    # select_device(-1)
+    select_device(0)
 
     game = 'CartPole-v0'
     # dqn_feature(game=game)
