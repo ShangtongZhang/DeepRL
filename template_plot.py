@@ -33,7 +33,7 @@ def plot_ppo():
                        labels=labels,
                        right_align=False,
                        tag=plotter.RETURN_TRAIN,
-                       root='./data/benchmark/ppo',
+                       root='./data/benchmark/mujoco',
                        interpolation=100,
                        window=10,
                        )
@@ -52,8 +52,6 @@ def plot_ddpg_td3():
         'Swimmer-v2',
         'Reacher-v2',
         'Ant-v2',
-        # 'Humanoid-v2',
-        # 'HumanoidStandup-v2',
     ]
 
     patterns = [
@@ -73,7 +71,7 @@ def plot_ddpg_td3():
                        labels=labels,
                        right_align=False,
                        tag=plotter.RETURN_TEST,
-                       root='./data/benchmark',
+                       root='./data/benchmark/mujoco',
                        interpolation=0,
                        window=0,
                        )
@@ -126,6 +124,6 @@ def plot_atari():
 
 if __name__ == '__main__':
     mkdir('images')
-    plot_ppo()
-    plot_ddpg_td3()
-    # plot_atari()
+    # plot_ppo()
+    # plot_ddpg_td3()
+    plot_atari()
