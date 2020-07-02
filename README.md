@@ -1,8 +1,9 @@
 # DeepRL
 
-> If you have any question or want to report a bug, please open an issue instead of emailing me directly.
+> If you have any question or want to report a bug, please open an issue instead of emailing me directly.  
 
-Modularized implementation of popular deep RL algorithms by PyTorch. Easy switch between toy tasks and challenging games.
+Modularized implementation of popular deep RL algorithms in PyTorch.  
+Easy switch between toy tasks and challenging games.
 
 Implemented algorithms:
 * (Double/Dueling) Deep Q-Learning (DQN)
@@ -16,39 +17,18 @@ Implemented algorithms:
 * Twined Delayed DDPG (TD3)
 * [COF-PAC/GradientDICE/Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
 
-Asynchronous algorithms (e.g., A3C) can be found in [v0.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.1).
-Action Conditional Video Prediction can be found in [v0.4](https://github.com/ShangtongZhang/DeepRL/releases/tag/v0.4).
-Synchronous PPO for Atari games can be found in [v1.1](https://github.com/ShangtongZhang/DeepRL/releases/tag/v1.1)
+The DQN agent, as well as C51 and QRDQN, has an asynchronous actor for data generation and an asynchronous replay buffer for transfering data to GPU. 
+Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps withing 6 hours.
 
 # Dependency
-* MacOS 10.12 or Ubuntu 16.04
 * PyTorch v1.4.0
-* Python 3.6, 3.5
-* OpenAI Baselines (commit ```8e56dd```)
-* Core dependencies: `pip install -e .`
-
-# Remarks
-* There is a super fast DQN implementation with an async actor for data generation and an async replay buffer to transfer data to GPU. Enable this implementation by setting `config.async_actor = True` and using `AsyncReplay`. However, with atari games this fast implementation may not work in macOS. Use Ubuntu or Docker instead.
-* Although there is a `setup.py`, this repo is **never** designed to be a high-level library like Keras. Use it as your codebase instead.
-* TensorFlow is used only for logging. Open AI baselines is used very slightly. If you carefully read the code, you should be able to remove/replace them.
+* See ```Dockerfile``` and ```requirements.txt``` for more details
 
 # Usage
 
-```examples.py``` contains examples for all the implemented algorithms
-
-```Dockerfile``` contains the environment for generating the curves below. 
-
-Please use this bibtex if you want to cite this repo
-```
-@misc{deeprl,
-  author = {Shangtong, Zhang},
-  title = {Modularized Implementation of Deep RL Algorithms in PyTorch},
-  year = {2018},
-  publisher = {GitHub},
-  journal = {GitHub Repository},
-  howpublished = {\url{https://github.com/ShangtongZhang/DeepRL}},
-}
-```
+```examples.py``` contains examples for all the implemented algorithms.  
+```Dockerfile``` contains the environment for generating the curves below.  
+Please cite any of the papers [here](#code-of-my-papers) if you want to cite this repo.
 
 # Curves (commit ```36aad5```)
 
