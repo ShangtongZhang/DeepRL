@@ -101,7 +101,7 @@ class RainbowAgent(BaseAgent):
             priorities = td_error.abs().add(config.replay_eps).pow(config.replay_alpha)
             self.replay.update_priorities(zip(to_np(idxs), to_np(priorities)))
             sampling_probs = tensor(sampling_probs)
-            weights = sampling_probs.mul(sampling_probs.size(0)).add(1e-6).pow(-config.replay_beta)
+            weights = sampling_probs.mul(sampling_probs.size(0)).add(1e-6).pow(-config.replay_beta())
             weights = weights / weights.max()
             loss = td_error.pow(2).mul(0.5).mul(weights).mean()
             self.optimizer.zero_grad()
