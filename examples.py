@@ -196,12 +196,16 @@ def rainbow_feature(**kwargs):
 
     config.max_steps = 1e5
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda: VanillaNet(config.action_dim, FCBody(config.state_dim))
     # config.network_fn = lambda: DuelingNet(config.action_dim, FCBody(config.state_dim))
     # config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e4), batch_size=10)
+    config.network_fn = lambda: CategoricalNet(config.action_dim, config.categorical_n_atoms, FCBody(config.state_dim))
+    config.categorical_v_max = 100
+    config.categorical_v_min = -100
+    config.categorical_n_atoms = 50
+
     config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10, replay_type='prioritized')
     config.replay_eps = 0.01
-    config.replay_alpha = 0.6
+    config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
 
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
@@ -230,14 +234,17 @@ def rainbow_pixel(**kwargs):
     config.max_steps = int(2e7)
     config.optimizer_fn = lambda params: torch.optim.RMSprop(
         params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
-    config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
-    # config.network_fn = lambda: DuelingNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
+    config.network_fn = lambda: CategoricalNet(config.action_dim, config.categorical_n_atoms, NatureConvBody())
+    config.categorical_v_max = 100
+    config.categorical_v_min = -100
+    config.categorical_n_atoms = 50
+
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
 
     # config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e6), batch_size=32)
     config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, replay_type='prioritized')
     config.replay_eps = 0.01
-    config.replay_alpha = 0.6
+    config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
 
     config.batch_size = 32
@@ -515,7 +522,7 @@ if __name__ == '__main__':
     # dqn_feature(game=game)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
-    rainbow_feature(game=game)
+    # rainbow_feature(game=game)
     # a2c_feature(game=game)
     # n_step_dqn_feature(game=game)
     # option_critic_feature(game=game)
@@ -531,7 +538,7 @@ if __name__ == '__main__':
     # dqn_pixel(game=game)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
-    # rainbow_pixel(game=game)
+    rainbow_pixel(game=game)
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)

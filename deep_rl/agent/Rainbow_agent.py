@@ -21,8 +21,10 @@ class RainbowActor(BaseActor):
         if self._state is None:
             self._state = self._task.reset()
         config = self.config
-        with config.lock:
-            q_values = self._network(config.state_normalizer(self._state))
+        with torch.no_grad():
+            with config.lock:
+                probs, _ = self._network(config.state_normalizer(self._state))
+        q_values = (probs * self.config.atoms).sum(-1)
         q_values = to_np(q_values).flatten()
         if self._total_steps < config.exploration_steps \
                 or np.random.rand() < config.random_action_prob():
@@ -41,6 +43,8 @@ class RainbowAgent(BaseAgent):
         BaseAgent.__init__(self, config)
         self.config = config
         config.lock = mp.Lock()
+        config.atoms = np.linspace(config.categorical_v_min,
+                                   config.categorical_v_max, config.categorical_n_atoms)
 
         self.replay = config.replay_fn()
         self.actor = RainbowActor(config)
@@ -56,6 +60,8 @@ class RainbowAgent(BaseAgent):
         self.n_step_cache = deque(maxlen=config.n_step)
         self.total_steps = 0
         self.batch_indices = range_tensor(self.replay.batch_size)
+        self.atoms = tensor(config.atoms)
+        self.delta_atom = (config.categorical_v_max - config.categorical_v_min) / float(config.categorical_n_atoms - 1)
 
     def close(self):
         close_obj(self.replay)
@@ -64,10 +70,11 @@ class RainbowAgent(BaseAgent):
     def eval_step(self, state):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(state)
-        q = self.network(state)
-        action = to_np(q.argmax(-1))
+        prob, _ = self.network(state)
+        q = (prob * self.atoms).sum(-1)
+        action = np.argmax(to_np(q).flatten())
         self.config.state_normalizer.unset_read_only()
-        return action
+        return [action]
 
     def step(self):
         config = self.config
@@ -92,26 +99,45 @@ class RainbowAgent(BaseAgent):
             states, actions, rewards, next_states, terminals, sampling_probs, idxs = experiences
             states = self.config.state_normalizer(states)
             next_states = self.config.state_normalizer(next_states)
-            q_next = self.target_network(next_states).detach()
-            if self.config.double_q:
-                best_actions = torch.argmax(self.network(next_states), dim=-1)
-                q_next = q_next[self.batch_indices, best_actions]
+
+            prob_next, _ = self.target_network(next_states)
+            prob_next = prob_next.detach()
+            q_next = (prob_next * self.atoms).sum(-1)
+            if config.double_q:
+                with torch.no_grad():
+                    a_next = torch.argmax((self.network(next_states)[0] * self.atoms).sum(-1), dim=-1)
             else:
-                q_next = q_next.max(1)[0]
-            terminals = tensor(terminals)
-            rewards = tensor(rewards)
-            idxs = tensor(idxs).long()
-            q_target = rewards + self.config.discount * q_next * (1 - terminals)
+                a_next = torch.argmax(q_next, dim=-1)
+            prob_next = prob_next[self.batch_indices, a_next, :]
+
+            rewards = tensor(rewards).unsqueeze(-1)
+            terminals = tensor(terminals).unsqueeze(-1)
+            atoms_next = rewards + self.config.discount * (1 - terminals) * self.atoms.view(1, -1)
+
+            atoms_next.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
+            b = (atoms_next - self.config.categorical_v_min) / self.delta_atom
+            l = b.floor()
+            u = b.ceil()
+            d_m_l = (u + (l == u).float() - b) * prob_next
+            d_m_u = (b - l) * prob_next
+            target_prob = tensor(np.zeros(prob_next.size()))
+            for i in range(target_prob.size(0)):
+                target_prob[i].index_add_(0, l[i].long(), d_m_l[i])
+                target_prob[i].index_add_(0, u[i].long(), d_m_u[i])
+
+            _, log_prob = self.network(states)
             actions = tensor(actions).long()
-            q = self.network(states)
-            q = q[self.batch_indices, actions]
-            td_error = q_target - q
-            priorities = td_error.abs().add(config.replay_eps).pow(config.replay_alpha)
+            log_prob = log_prob[self.batch_indices, actions, :]
+            KL = (target_prob * target_prob.add(1e-5).log() - target_prob * log_prob).sum(-1)
+            priorities = KL.abs().add(config.replay_eps).pow(config.replay_alpha)
+            idxs = tensor(idxs).long()
             self.replay.update_priorities(zip(to_np(idxs), to_np(priorities)))
+
             sampling_probs = tensor(sampling_probs)
             weights = sampling_probs.mul(sampling_probs.size(0)).add(1e-6).pow(-config.replay_beta())
             weights = weights / weights.max()
-            loss = td_error.pow(2).mul(0.5).mul(weights).mean()
+
+            loss = KL.mul(weights).mean()
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
