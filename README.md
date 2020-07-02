@@ -7,18 +7,18 @@ Easy switch between toy tasks and challenging games.
 
 Implemented algorithms:
 * (Double/Dueling) Deep Q-Learning (DQN)
-* Categorical DQN (C51, Distributional DQN with KL Distance)
-* Quantile Regression DQN
+* Categorical DQN (C51)
+* Quantile Regression DQN (QR-DQN)
 * (Continuous/Discrete) Synchronous Advantage Actor Critic (A2C)
-* Synchronous N-Step Q-Learning
+* Synchronous N-Step Q-Learning (N-Step DQN)
 * Deep Deterministic Policy Gradient (DDPG)
 * Proximal Policy Optimization (PPO)
 * The Option-Critic Architecture (OC)
 * Twined Delayed DDPG (TD3)
 * [COF-PAC/GradientDICE/Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
 
-The DQN agent, as well as C51 and QRDQN, has an asynchronous actor for data generation and an asynchronous replay buffer for transfering data to GPU. 
-Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps withing 6 hours.
+The DQN agent, as well as C51 and QR-DQN, has an asynchronous actor for data generation and an asynchronous replay buffer for transferring data to GPU.
+Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames, 2.5M gradient updates) within 6 hours.
 
 # Dependency
 * PyTorch v1.4.0
