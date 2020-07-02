@@ -30,7 +30,7 @@ Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames,
 ```Dockerfile``` contains the environment for generating the curves below.  
 Please cite any of the papers [here](#code-of-my-papers) if you want to cite this repo.
 
-# Curves (commit ```36aad5```)
+# Curves (commit ```cd6c30```)
 
 ## BreakoutNoFrameskip-v4 (1 run)
 
