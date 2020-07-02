@@ -63,6 +63,7 @@ class RainbowAgent(BaseAgent):
         self.n_step_cache = deque(maxlen=config.n_step)
         self.total_steps = 0
         self.batch_indices = range_tensor(self.replay.batch_size)
+        self.atoms = tensor(config.atoms)
         self.delta_atom = (config.categorical_v_max - config.categorical_v_min) / float(config.categorical_n_atoms - 1)
 
     def close(self):
