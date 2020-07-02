@@ -9,6 +9,7 @@ import numpy as np
 import torch.multiprocessing as mp
 from collections import deque
 from ..utils import *
+import random
 
 
 class Replay:
@@ -86,24 +87,91 @@ class SkewedReplay:
         return data
 
 
+class PrioritizedReplay:
+    def __init__(self, memory_size, batch_size):
+        self.tree = SumTree(memory_size)
+        self.memory_size = memory_size
+        self.batch_size = batch_size
+        self.max_priority = 1
+
+    def feed(self, experience):
+        self.tree.add(self.max_priority, experience)
+
+    def feed_batch(self, experience):
+            for exp in experience:
+                self.feed(exp)
+
+    def sample(self, batch_size=None):
+        if batch_size is None:
+            batch_size = self.batch_size
+
+        batch = []
+        idxs = []
+        segment = self.tree.total() / batch_size
+        priorities = []
+
+        for i in range(batch_size):
+            a = segment * i
+            b = segment * (i + 1)
+            s = random.uniform(a, b)
+            (idx, p, data) = self.tree.get(s)
+            priorities.append(p)
+            batch.append(data)
+            idxs.append(idx)
+
+        sampling_probabilities = np.asarray(priorities) / self.tree.total()
+
+        sampled_data = []
+        for i in range(batch_size):
+            exp = []
+            exp.extend(batch[i])
+            exp.append(sampling_probabilities[i])
+            exp.append(idxs[i])
+            sampled_data.append(exp)
+
+        sampled_data = zip(*sampled_data)
+        sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
+        return sampled_data
+
+    def update_priorities(self, info):
+        for idx, priority in info:
+            self.max_priority = max(self.max_priority, priority)
+            self.tree.update(idx, priority)
+
+
 class AsyncReplay(mp.Process):
     FEED = 0
     SAMPLE = 1
     EXIT = 2
     FEED_BATCH = 3
+    UPDATE_PRIORITIES = 4
 
-    def __init__(self, memory_size, batch_size):
+    def __init__(self, memory_size, batch_size, replay_type='default'):
         mp.Process.__init__(self)
         self.pipe, self.worker_pipe = mp.Pipe()
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.cache_len = 2
+        self.replay_type = replay_type
         self.start()
 
     def run(self):
-        replay = Replay(self.memory_size, self.batch_size)
+        if self.replay_type == 'default':
+            replay = Replay(self.memory_size, self.batch_size)
+        elif self.replay_type == 'prioritized':
+            replay = PrioritizedReplay(self.memory_size, self.batch_size)
+        else:
+            raise NotImplementedError
+
         cache = []
         pending_batch = None
+        pending_priorities = []
+
+        def update_priorities():
+            if self.replay_type != 'prioritized':
+                return
+            for info in pending_priorities:
+                replay.update_priorities(info)
 
         first = True
         cur_cache = 0
@@ -146,6 +214,10 @@ class AsyncReplay(mp.Process):
                     for transition in pending_batch:
                         replay.feed(transition)
                     pending_batch = None
+                update_priorities()
+            elif op == self.UPDATE_PRIORITIES:
+                pending_priorities.append(data)
+                update_priorities()
             elif op == self.EXIT:
                 self.worker_pipe.close()
                 return
@@ -164,6 +236,9 @@ class AsyncReplay(mp.Process):
         if data is not None:
             self.cache = data
         return self.cache[cache_id]
+
+    def update_priorities(self, info):
+        self.pipe.send([self.UPDATE_PRIORITIES, info])
 
     def close(self):
         self.pipe.send([self.EXIT, None])
