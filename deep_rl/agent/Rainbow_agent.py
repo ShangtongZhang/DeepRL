@@ -53,6 +53,7 @@ class RainbowAgent(BaseAgent):
 
         self.actor.set_network(self.network)
 
+        self.n_step_cache = deque(maxlen=config.n_step)
         self.total_steps = 0
         self.batch_indices = range_tensor(self.replay.batch_size)
 
@@ -76,7 +77,14 @@ class RainbowAgent(BaseAgent):
             self.record_online_return(info)
             self.total_steps += 1
             reward = config.reward_normalizer(reward)
-            experiences.append([state, action, reward, next_state, done])
+            self.n_step_cache.append([state, action, reward, next_state, done])
+            if len(self.n_step_cache) == config.n_step:
+                cum_r = 0
+                cum_done = 0
+                for s, a, r, next_s, done in reversed(self.n_step_cache):
+                    cum_r = r + config.discount * (1 - done) * cum_r
+                    cum_done = done or cum_done
+                experiences.append([s, a, cum_r, next_state, cum_done])
         self.replay.feed_batch(experiences)
 
         if self.total_steps > self.config.exploration_steps:

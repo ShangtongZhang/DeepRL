@@ -213,6 +213,7 @@ def rainbow_feature(**kwargs):
     config.gradient_clip = 5
     config.eval_interval = int(5e3)
     config.async_actor = False
+    config.n_step = 3
 
     run_steps(RainbowAgent(config))
 
@@ -250,6 +251,7 @@ def rainbow_pixel(**kwargs):
     config.gradient_clip = 5
     config.history_length = 4
     config.double_q = False
+    config.n_step = 3
     run_steps(RainbowAgent(config))
 
 
