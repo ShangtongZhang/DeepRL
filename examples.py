@@ -255,7 +255,7 @@ def rainbow_pixel(**kwargs):
     else:
         config.random_action_prob = LinearSchedule(1, 0.01, 25e4)
 
-    config.replay_type = Config.DEFAULT_REPLAY
+    config.replay_type = Config.PRIORITIZED_REPLAY
     config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, replay_type=config.replay_type)
     config.replay_eps = 0.01
     config.replay_alpha = 0.5

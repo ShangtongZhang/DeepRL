@@ -19,10 +19,10 @@ def batch_atari():
         dqn_pixel,
         quantile_regression_dqn_pixel,
         categorical_dqn_pixel,
+        rainbow_pixel,
         a2c_pixel,
         n_step_dqn_pixel,
         option_critic_pixel,
-        rainbow_pixel,
     ]
 
     algo = algos[cf.i]

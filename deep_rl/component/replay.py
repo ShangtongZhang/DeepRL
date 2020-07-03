@@ -165,13 +165,6 @@ class AsyncReplay(mp.Process):
 
         cache = []
         pending_batch = None
-        pending_priorities = []
-
-        def update_priorities():
-            if self.replay_type != Config.PRIORITIZED_REPLAY:
-                return
-            for info in pending_priorities:
-                replay.update_priorities(info)
 
         first = True
         cur_cache = 0
@@ -214,10 +207,8 @@ class AsyncReplay(mp.Process):
                     for transition in pending_batch:
                         replay.feed(transition)
                     pending_batch = None
-                update_priorities()
             elif op == self.UPDATE_PRIORITIES:
-                pending_priorities.append(data)
-                update_priorities()
+                replay.update_priorities(data)
             elif op == self.EXIT:
                 self.worker_pipe.close()
                 return
