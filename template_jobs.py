@@ -22,6 +22,7 @@ def batch_atari():
         a2c_pixel,
         n_step_dqn_pixel,
         option_critic_pixel,
+        rainbow_pixel,
     ]
 
     algo = algos[cf.i]

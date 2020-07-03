@@ -250,10 +250,13 @@ def rainbow_pixel(**kwargs):
     config.categorical_v_min = -10
     config.categorical_n_atoms = 51
 
-    config.random_action_prob = LinearSchedule(0)
+    if config.noisy_linear:
+        config.random_action_prob = LinearSchedule(0)
+    else:
+        config.random_action_prob = LinearSchedule(1, 0.01, 25e4)
 
-    # config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e6), batch_size=32)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, replay_type='prioritized')
+    config.replay_type = Config.DEFAULT_REPLAY
+    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, replay_type=config.replay_type)
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)

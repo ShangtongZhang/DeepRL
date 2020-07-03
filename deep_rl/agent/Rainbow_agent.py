@@ -100,7 +100,11 @@ class RainbowAgent(BaseAgent):
 
         if self.total_steps > self.config.exploration_steps:
             experiences = self.replay.sample()
-            states, actions, rewards, next_states, terminals, sampling_probs, idxs = experiences
+            if config.replay_type == Config.PRIORITIZED_REPLAY:
+                states, actions, rewards, next_states, terminals, sampling_probs, idxs = experiences
+            elif config.replay_type == Config.DEFAULT_REPLAY:
+                states, actions, rewards, next_states, terminals = experiences
+
             states = self.config.state_normalizer(states)
             next_states = self.config.state_normalizer(next_states)
 
@@ -135,14 +139,17 @@ class RainbowAgent(BaseAgent):
             log_prob = log_prob[self.batch_indices, actions, :]
             KL = (target_prob * target_prob.add(1e-5).log() - target_prob * log_prob).sum(-1)
             priorities = KL.abs().add(config.replay_eps).pow(config.replay_alpha)
-            idxs = tensor(idxs).long()
-            self.replay.update_priorities(zip(to_np(idxs), to_np(priorities)))
+            if config.replay_type == Config.PRIORITIZED_REPLAY:
+                idxs = tensor(idxs).long()
+                self.replay.update_priorities(zip(to_np(idxs), to_np(priorities)))
 
-            sampling_probs = tensor(sampling_probs)
-            weights = sampling_probs.mul(sampling_probs.size(0)).add(1e-6).pow(-config.replay_beta())
-            weights = weights / weights.max()
+            if config.replay_type == Config.PRIORITIZED_REPLAY:
+                sampling_probs = tensor(sampling_probs)
+                weights = sampling_probs.mul(sampling_probs.size(0)).add(1e-6).pow(-config.replay_beta())
+                weights = weights / weights.max()
+                KL = KL.mul(weights)
 
-            loss = KL.mul(weights).mean()
+            loss = KL.mean()
             self.optimizer.zero_grad()
             loss.backward()
             with config.lock:

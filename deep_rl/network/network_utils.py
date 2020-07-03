@@ -44,6 +44,10 @@ class NoisyLinear(nn.Module):
         self.bias_sigma = nn.Parameter(torch.zeros(out_features), requires_grad=True)
         self.register_buffer('bias_epsilon', torch.zeros(out_features))
 
+        self.register_buffer('noise_in', torch.zeros(in_features))
+        self.register_buffer('noise_out_weight', torch.zeros(out_features))
+        self.register_buffer('noise_out_bias', torch.zeros(out_features))
+
         self.reset_parameters()
         self.reset_noise()
 
@@ -67,13 +71,13 @@ class NoisyLinear(nn.Module):
         self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.bias_sigma.size(0)))
 
     def reset_noise(self):
-        epsilon_in = self._scale_noise(self.in_features)
-        epsilon_out = self._scale_noise(self.out_features)
+        self.noise_in.normal_(std=Config.NOISE_LAYER_STD)
+        self.noise_out_weight.normal_(std=Config.NOISE_LAYER_STD)
+        self.noise_out_bias.normal_(std=Config.NOISE_LAYER_STD)
 
-        self.weight_epsilon.copy_(epsilon_out.ger(epsilon_in))
-        self.bias_epsilon.copy_(self._scale_noise(self.out_features))
+        self.weight_epsilon.copy_(self.transform_noise(self.noise_out_weight).ger(
+            self.transform_noise(self.noise_in)))
+        self.bias_epsilon.copy_(self.transform_noise(self.noise_out_bias))
 
-    def _scale_noise(self, size):
-        x = torch.randn(size, device=Config.DEVICE) * Config.NOISE_LAYER_STD
-        x = x.sign().mul(x.abs().sqrt())
-        return x
+    def transform_noise(self, x):
+        return x.sign().mul(x.abs().sqrt())

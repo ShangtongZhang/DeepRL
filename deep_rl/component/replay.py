@@ -146,7 +146,7 @@ class AsyncReplay(mp.Process):
     FEED_BATCH = 3
     UPDATE_PRIORITIES = 4
 
-    def __init__(self, memory_size, batch_size, replay_type='default'):
+    def __init__(self, memory_size, batch_size, replay_type=Config.DEFAULT_REPLAY):
         mp.Process.__init__(self)
         self.pipe, self.worker_pipe = mp.Pipe()
         self.memory_size = memory_size
@@ -156,9 +156,9 @@ class AsyncReplay(mp.Process):
         self.start()
 
     def run(self):
-        if self.replay_type == 'default':
+        if self.replay_type == Config.DEFAULT_REPLAY:
             replay = Replay(self.memory_size, self.batch_size)
-        elif self.replay_type == 'prioritized':
+        elif self.replay_type == Config.PRIORITIZED_REPLAY:
             replay = PrioritizedReplay(self.memory_size, self.batch_size)
         else:
             raise NotImplementedError
@@ -168,7 +168,7 @@ class AsyncReplay(mp.Process):
         pending_priorities = []
 
         def update_priorities():
-            if self.replay_type != 'prioritized':
+            if self.replay_type != Config.PRIORITIZED_REPLAY:
                 return
             for info in pending_priorities:
                 replay.update_priorities(info)
