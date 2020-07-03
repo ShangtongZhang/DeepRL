@@ -10,6 +10,7 @@ import torch
 
 class Config:
     DEVICE = torch.device('cpu')
+    NOISE_LAYER_STD = 0.1
 
     def __init__(self):
         self.parser = argparse.ArgumentParser()

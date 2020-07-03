@@ -196,24 +196,29 @@ def rainbow_feature(**kwargs):
 
     config.max_steps = 1e5
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
-    config.network_fn = lambda: RainbowNet(config.action_dim, config.categorical_n_atoms, FCBody(config.state_dim))
+    config.noisy_linear = True
+    config.network_fn = lambda: RainbowNet(
+        config.action_dim,
+        config.categorical_n_atoms,
+        FCBody(config.state_dim, noisy_linear=config.noisy_linear),
+        noisy_linear=config.noisy_linear
+    )
     config.categorical_v_max = 100
     config.categorical_v_min = -100
     config.categorical_n_atoms = 50
 
-    # config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e4), batch_size=10)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10, replay_type='prioritized')
+    config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e4), batch_size=10)
+    # config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10, replay_type='prioritized')
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
-    config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
+    config.replay_beta = LinearSchedule(0.4, 1, config.max_steps)
 
-    config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
+    config.random_action_prob = LinearSchedule(0)
     config.discount = 0.99
     config.target_network_update_freq = 200
     config.exploration_steps = 1000
     config.double_q = True
     config.sgd_update_frequency = 4
-    config.gradient_clip = 5
     config.eval_interval = int(5e3)
     config.async_actor = False
     config.n_step = 3
@@ -227,18 +232,25 @@ def rainbow_pixel(**kwargs):
     config = Config()
     config.merge(kwargs)
 
+    Config.NOISE_LAYER_STD = 0.1
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
 
     config.max_steps = int(2e7)
+    config.noisy_linear = True
     config.optimizer_fn = lambda params: torch.optim.Adam(
         params, lr=0.000625, eps=1.5e-4)
-    config.network_fn = lambda: RainbowNet(config.action_dim, config.categorical_n_atoms, NatureConvBody())
+    config.network_fn = lambda: RainbowNet(
+        config.action_dim,
+        config.categorical_n_atoms,
+        NatureConvBody(noisy_linear=config.noisy_linear),
+        noisy_linear=config.noisy_linear,
+    )
     config.categorical_v_max = 10
     config.categorical_v_min = -10
     config.categorical_n_atoms = 51
 
-    config.random_action_prob = LinearSchedule(1.0, 0.01, int(25e4))
+    config.random_action_prob = LinearSchedule(0)
 
     # config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e6), batch_size=32)
     config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, replay_type='prioritized')
@@ -253,10 +265,10 @@ def rainbow_pixel(**kwargs):
     config.target_network_update_freq = 2000
     config.exploration_steps = 20000
     config.sgd_update_frequency = 4
-    config.gradient_clip = 5
     config.history_length = 4
     config.double_q = True
     config.n_step = 3
+    config.async_actor = True
     run_steps(RainbowAgent(config))
 
 

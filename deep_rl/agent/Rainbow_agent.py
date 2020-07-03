@@ -26,6 +26,7 @@ class RainbowActor(BaseActor):
         config = self.config
         with torch.no_grad():
             with config.lock:
+                self._network.reset_noise()
                 probs, _ = self._network(config.state_normalizer(self._state))
         q_values = (probs * self.config.atoms).sum(-1)
         q_values = to_np(q_values).flatten()
@@ -103,6 +104,8 @@ class RainbowAgent(BaseAgent):
             states = self.config.state_normalizer(states)
             next_states = self.config.state_normalizer(next_states)
 
+            self.target_network.reset_noise()
+            self.network.reset_noise()
             with torch.no_grad():
                 prob_next, _ = self.target_network(next_states)
                 q_next = (prob_next * self.atoms).sum(-1)
@@ -142,7 +145,6 @@ class RainbowAgent(BaseAgent):
             loss = KL.mul(weights).mean()
             self.optimizer.zero_grad()
             loss.backward()
-            # nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
             with config.lock:
                 self.optimizer.step()
 

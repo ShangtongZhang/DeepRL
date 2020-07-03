@@ -55,14 +55,26 @@ class CategoricalNet(nn.Module, BaseNet):
 
 
 class RainbowNet(nn.Module, BaseNet):
-    def __init__(self, action_dim, num_atoms, body):
+    def __init__(self, action_dim, num_atoms, body, noisy_linear):
         super(RainbowNet, self).__init__()
-        self.fc_value = layer_init(nn.Linear(body.feature_dim, num_atoms))
-        self.fc_advantage = layer_init(nn.Linear(body.feature_dim, action_dim * num_atoms))
+        if noisy_linear:
+            self.fc_value = NoisyLinear(body.feature_dim, num_atoms)
+            self.fc_advantage = NoisyLinear(body.feature_dim, action_dim * num_atoms)
+        else:
+            self.fc_value = layer_init(nn.Linear(body.feature_dim, num_atoms))
+            self.fc_advantage = layer_init(nn.Linear(body.feature_dim, action_dim * num_atoms))
+
         self.action_dim = action_dim
         self.num_atoms = num_atoms
         self.body = body
+        self.noisy_linear = noisy_linear
         self.to(Config.DEVICE)
+
+    def reset_noise(self):
+        if self.noisy_linear:
+            self.fc_value.reset_noise()
+            self.fc_advantage.reset_noise()
+            self.body.reset_noise()
 
     def forward(self, x):
         phi = self.body(tensor(x))
