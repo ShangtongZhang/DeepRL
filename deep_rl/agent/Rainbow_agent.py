@@ -121,7 +121,7 @@ class RainbowAgent(BaseAgent):
 
             rewards = tensor(rewards).unsqueeze(-1)
             terminals = tensor(terminals).unsqueeze(-1)
-            atoms_next = rewards + self.config.discount * (1 - terminals) * self.atoms.view(1, -1)
+            atoms_next = rewards + self.config.discount ** config.n_step * (1 - terminals) * self.atoms.view(1, -1)
 
             atoms_next.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
             b = (atoms_next - self.config.categorical_v_min) / self.delta_atom
