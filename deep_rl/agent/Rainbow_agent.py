@@ -142,8 +142,6 @@ class RainbowAgent(BaseAgent):
             if config.replay_type == Config.PRIORITIZED_REPLAY:
                 idxs = tensor(idxs).long()
                 self.replay.update_priorities(zip(to_np(idxs), to_np(priorities)))
-
-            if config.replay_type == Config.PRIORITIZED_REPLAY:
                 sampling_probs = tensor(sampling_probs)
                 weights = sampling_probs.mul(sampling_probs.size(0)).add(1e-6).pow(-config.replay_beta())
                 weights = weights / weights.max()

@@ -207,8 +207,8 @@ def rainbow_feature(**kwargs):
     config.categorical_v_min = -100
     config.categorical_n_atoms = 50
 
-    config.replay_fn = lambda: PrioritizedReplay(memory_size=int(1e4), batch_size=10)
-    # config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10, replay_type='prioritized')
+    config.replay_type = Config.PRIORITIZED_REPLAY
+    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10, replay_type=config.replay_type)
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1, config.max_steps)
@@ -232,12 +232,12 @@ def rainbow_pixel(**kwargs):
     config = Config()
     config.merge(kwargs)
 
-    Config.NOISE_LAYER_STD = 0.1
     config.task_fn = lambda: Task(config.game)
     config.eval_env = config.task_fn()
 
     config.max_steps = int(2e7)
     config.noisy_linear = True
+    Config.NOISY_LAYER_STD = 0.5
     config.optimizer_fn = lambda params: torch.optim.Adam(
         params, lr=0.000625, eps=1.5e-4)
     config.network_fn = lambda: RainbowNet(
@@ -547,11 +547,12 @@ if __name__ == '__main__':
     # ddpg_continuous(game=game)
     # td3_continuous(game=game)
 
-    game = 'BreakoutNoFrameskip-v4'
+    # game = 'BreakoutNoFrameskip-v4'
+    game = 'PongNoFrameskip-v4'
     # dqn_pixel(game=game)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
-    rainbow_pixel(game=game)
+    rainbow_pixel(game=game, tag='per_noisy_3step')
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)

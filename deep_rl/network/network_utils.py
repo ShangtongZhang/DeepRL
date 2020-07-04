@@ -71,9 +71,9 @@ class NoisyLinear(nn.Module):
         self.bias_sigma.data.fill_(self.std_init / math.sqrt(self.bias_sigma.size(0)))
 
     def reset_noise(self):
-        self.noise_in.normal_(std=Config.NOISE_LAYER_STD)
-        self.noise_out_weight.normal_(std=Config.NOISE_LAYER_STD)
-        self.noise_out_bias.normal_(std=Config.NOISE_LAYER_STD)
+        self.noise_in.normal_(std=Config.NOISY_LAYER_STD)
+        self.noise_out_weight.normal_(std=Config.NOISY_LAYER_STD)
+        self.noise_out_bias.normal_(std=Config.NOISY_LAYER_STD)
 
         self.weight_epsilon.copy_(self.transform_noise(self.noise_out_weight).ger(
             self.transform_noise(self.noise_in)))

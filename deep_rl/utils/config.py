@@ -10,7 +10,7 @@ import torch
 
 class Config:
     DEVICE = torch.device('cpu')
-    NOISE_LAYER_STD = 0.1
+    NOISY_LAYER_STD = 0.1
     DEFAULT_REPLAY = 0
     PRIORITIZED_REPLAY = 1
 
