@@ -564,8 +564,8 @@ if __name__ == '__main__':
     game = 'CartPole-v0'
     # dqn_feature(game=game)
     # quantile_regression_dqn_feature(game=game)
-    # categorical_dqn_feature(game=game)
-    rainbow_feature(game=game)
+    categorical_dqn_feature(game=game)
+    # rainbow_feature(game=game)
     # a2c_feature(game=game)
     # n_step_dqn_feature(game=game)
     # option_critic_feature(game=game)
