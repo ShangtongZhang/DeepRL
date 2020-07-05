@@ -94,6 +94,7 @@ def plot_atari():
         'remark_n_step_dqn',
         'remark_option_critic',
         'remark_quantile',
+        'remark_ppo',
     ]
 
     labels = [
@@ -103,6 +104,7 @@ def plot_atari():
         'N-Step DQN',
         'OC',
         'QR-DQN',
+        'PPO',
     ]
 
     plotter.plot_games(games=games,
