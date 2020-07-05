@@ -144,6 +144,7 @@ class RainbowAgent(BaseAgent):
             loss = KL.mean()
             self.optimizer.zero_grad()
             loss.backward()
+            nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
             with config.lock:
                 self.optimizer.step()
 
