@@ -222,6 +222,7 @@ def rainbow_feature(**kwargs):
     config.eval_interval = int(5e3)
     config.async_actor = False
     config.n_step = 3
+    config.gradient_clip = 10
 
     run_steps(RainbowAgent(config))
 
@@ -564,7 +565,7 @@ if __name__ == '__main__':
     # dqn_feature(game=game)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
-    # rainbow_feature(game=game)
+    rainbow_feature(game=game)
     # a2c_feature(game=game)
     # n_step_dqn_feature(game=game)
     # option_critic_feature(game=game)
@@ -584,4 +585,4 @@ if __name__ == '__main__':
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)
-    ppo_pixel(game=game)
+    # ppo_pixel(game=game)

@@ -49,6 +49,8 @@ class RainbowAgent(BaseAgent):
         config.lock = mp.Lock()
         config.atoms = np.linspace(config.categorical_v_min,
                                    config.categorical_v_max, config.categorical_n_atoms)
+        self.terminal_prob = np.zeros(config.atoms.shape)
+        self.terminal_prob[np.argmin(np.abs(config.atoms))] = 1
 
         self.replay = config.replay_fn()
         self.actor = RainbowActor(config)
@@ -65,6 +67,7 @@ class RainbowAgent(BaseAgent):
         self.total_steps = 0
         self.batch_indices = range_tensor(self.replay.batch_size)
         self.atoms = tensor(config.atoms)
+        self.terminal_prob = tensor(self.terminal_prob)
         self.delta_atom = (config.categorical_v_max - config.categorical_v_min) / float(config.categorical_n_atoms - 1)
 
     def close(self):
@@ -124,8 +127,11 @@ class RainbowAgent(BaseAgent):
             atoms_target = rewards + self.config.discount ** config.n_step * (1 - terminals) * self.atoms.view(1, -1)
             atoms_target.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
             atoms_target = atoms_target.unsqueeze(1)
+            prob_next = torch.where(terminals.expand(-1, config.categorical_n_atoms) == 1,
+                                    self.terminal_prob.view(1, -1), prob_next)
+
             target_prob = (1 - (atoms_target - self.atoms.view(1, -1, 1)).abs() / self.delta_atom).clamp(0, 1) * \
-                          prob_next.unsqueeze(-1)
+                          prob_next.unsqueeze(1)
             target_prob = target_prob.sum(-1)
 
             _, log_prob = self.network(states)
