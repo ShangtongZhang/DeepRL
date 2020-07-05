@@ -15,11 +15,16 @@ class PPOAgent(BaseAgent):
         self.config = config
         self.task = config.task_fn()
         self.network = config.network_fn()
-        self.actor_opt = config.actor_opt_fn(self.network.actor_params)
-        self.critic_opt = config.critic_opt_fn(self.network.critic_params)
+        if config.shared_repr:
+            self.opt = config.optimizer_fn(self.network.parameters())
+        else:
+            self.actor_opt = config.actor_opt_fn(self.network.actor_params)
+            self.critic_opt = config.critic_opt_fn(self.network.critic_params)
         self.total_steps = 0
         self.states = self.task.reset()
         self.states = config.state_normalizer(self.states)
+        if config.shared_repr:
+            self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(self.opt, lambda step: 1 - step / config.max_steps)
 
     def step(self):
         config = self.config
@@ -60,6 +65,9 @@ class PPOAgent(BaseAgent):
         log_probs_old = log_probs_old.detach()
         advantages = (advantages - advantages.mean()) / advantages.std()
 
+        if config.shared_repr:
+            self.lr_scheduler.step(self.total_steps)
+
         for _ in range(config.optimization_epochs):
             sampler = random_sample(np.arange(states.size(0)), config.mini_batch_size)
             for batch_indices in sampler:
@@ -80,12 +88,17 @@ class PPOAgent(BaseAgent):
                 value_loss = 0.5 * (sampled_returns - prediction['v']).pow(2).mean()
 
                 approx_kl = (sampled_log_probs_old - prediction['log_pi_a']).mean()
-                if approx_kl <= 1.5 * config.target_kl:
-                    self.actor_opt.zero_grad()
-                    policy_loss.backward()
-                    self.actor_opt.step()
-
-                self.critic_opt.zero_grad()
-                value_loss.backward()
-                self.critic_opt.step()
+                if config.shared_repr:
+                    self.opt.zero_grad()
+                    (policy_loss + value_loss).backward()
+                    nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)
+                    self.opt.step()
+                else:
+                    if approx_kl <= 1.5 * config.target_kl:
+                        self.actor_opt.zero_grad()
+                        policy_loss.backward()
+                        self.actor_opt.step()
+                    self.critic_opt.zero_grad()
+                    value_loss.backward()
+                    self.critic_opt.step()
 

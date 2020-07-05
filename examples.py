@@ -229,7 +229,7 @@ def rainbow_feature(**kwargs):
 def rainbow_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
-    kwargs.setdefault('n_step', 3)
+    kwargs.setdefault('n_step', 1)
     config = Config()
     config.merge(kwargs)
 
@@ -461,6 +461,34 @@ def ppo_continuous(**kwargs):
     run_steps(PPOAgent(config))
 
 
+def ppo_pixel(**kwargs):
+    generate_tag(kwargs)
+    kwargs.setdefault('skip', False)
+    config = Config()
+    config.merge(kwargs)
+
+    config.task_fn = lambda: Task(config.game, num_envs=config.num_workers)
+    config.eval_env = Task(config.game)
+    config.num_workers = 8
+    config.optimizer_fn = lambda params: torch.optim.Adam(params, lr=2.5e-4)
+    config.network_fn = lambda: CategoricalActorCriticNet(config.state_dim, config.action_dim, NatureConvBody())
+    config.state_normalizer = ImageNormalizer()
+    config.reward_normalizer = SignNormalizer()
+    config.discount = 0.99
+    config.use_gae = True
+    config.gae_tau = 0.95
+    config.entropy_weight = 0.01
+    config.gradient_clip = 0.5
+    config.rollout_length = 128
+    config.optimization_epochs = 4
+    config.mini_batch_size = config.rollout_length * config.num_workers // 4
+    config.ppo_ratio_clip = 0.1
+    config.log_interval = config.rollout_length * config.num_workers
+    config.shared_repr = True
+    config.max_steps = int(2e7)
+    run_steps(PPOAgent(config))
+
+
 # DDPG
 def ddpg_continuous(**kwargs):
     generate_tag(kwargs)
@@ -528,8 +556,8 @@ if __name__ == '__main__':
     mkdir('tf_log')
     set_one_thread()
     random_seed()
-    select_device(-1)
-    # select_device(0)
+    # select_device(-1)
+    select_device(0)
 
     game = 'CartPole-v0'
     # dqn_feature(game=game)
@@ -555,3 +583,4 @@ if __name__ == '__main__':
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)
+    ppo_pixel(game=game)

@@ -62,6 +62,8 @@ class Config:
         self.async_actor = True
         self.tasks = False
         self.replay_type = Config.DEFAULT_REPLAY
+        self.decaying_lr = False
+        self.shared_repr = False
 
     @property
     def eval_env(self):
