@@ -229,6 +229,7 @@ def rainbow_feature(**kwargs):
 def rainbow_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('n_step', 3)
     config = Config()
     config.merge(kwargs)
 
@@ -270,7 +271,6 @@ def rainbow_pixel(**kwargs):
     config.sgd_update_frequency = 4
     config.history_length = 4
     config.double_q = True
-    config.n_step = 3
     config.async_actor = True
     run_steps(RainbowAgent(config))
 
@@ -528,8 +528,8 @@ if __name__ == '__main__':
     mkdir('tf_log')
     set_one_thread()
     random_seed()
-    # select_device(-1)
-    select_device(0)
+    select_device(-1)
+    # select_device(0)
 
     game = 'CartPole-v0'
     # dqn_feature(game=game)
@@ -547,12 +547,11 @@ if __name__ == '__main__':
     # ddpg_continuous(game=game)
     # td3_continuous(game=game)
 
-    # game = 'BreakoutNoFrameskip-v4'
-    game = 'PongNoFrameskip-v4'
+    game = 'BreakoutNoFrameskip-v4'
     # dqn_pixel(game=game)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
-    rainbow_pixel(game=game, tag='per_noisy_3step')
+    # rainbow_pixel(game=game)
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)

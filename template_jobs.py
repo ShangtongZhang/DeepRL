@@ -9,10 +9,9 @@ def batch_atari():
 
     games = [
         'BreakoutNoFrameskip-v4',
-        # 'AlienNoFrameskip-v4',
-        # 'DemonAttackNoFrameskip-v4',
-        # 'SeaquestNoFrameskip-v4',
-        # 'MsPacmanNoFrameskip-v4'
+        'AlienNoFrameskip-v4',
+        'DemonAttackNoFrameskip-v4',
+        'MsPacmanNoFrameskip-v4'
     ]
 
     algos = [
@@ -25,12 +24,15 @@ def batch_atari():
         option_critic_pixel,
     ]
 
-    algo = algos[cf.i]
+    params = []
 
     for game in games:
         for r in range(1):
-            algo(game=game, run=r, remark=algo.__name__)
-
+            for n_step in [1, 3]:
+                params.append(
+                    dict(game=game, run=r, n_step=n_step)
+                )
+    rainbow_pixel(**params[cf.i])
     exit()
 
 
@@ -104,8 +106,8 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
 
-    # select_device(0)
-    # batch_atari()
+    select_device(0)
+    batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
