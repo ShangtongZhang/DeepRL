@@ -34,8 +34,8 @@ def batch_atari():
                     [rainbow_pixel, dict(game=game, run=r, n_step=n_step, remark=rainbow_pixel.__name__)]
                 )
             params.append(
-                [categorical_dqn_pixel, dict(game=game, run=r, remark=categorical_dqn_pixel.__name__)]
-            )
+                [categorical_dqn_pixel, dict(game=game, run=r, remark=categorical_dqn_pixel.__name__)]),
+            params.append([dqn_pixel, dict(game=game, run=r, remark=dqn_pixel.__name__)])
 
     algo, param = params[cf.i]
     algo(**param)
