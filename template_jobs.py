@@ -9,9 +9,9 @@ def batch_atari():
 
     games = [
         'BreakoutNoFrameskip-v4',
-        'AlienNoFrameskip-v4',
+        # 'AlienNoFrameskip-v4',
         'DemonAttackNoFrameskip-v4',
-        'MsPacmanNoFrameskip-v4'
+        # 'MsPacmanNoFrameskip-v4'
     ]
 
     algos = [
@@ -31,9 +31,14 @@ def batch_atari():
         for r in range(1):
             for n_step in [1, 3]:
                 params.append(
-                    dict(game=game, run=r, n_step=n_step)
+                    [rainbow_pixel, dict(game=game, run=r, n_step=n_step, remark=rainbow_pixel.__name__)]
                 )
-    rainbow_pixel(**params[cf.i])
+            params.append(
+                [categorical_dqn_pixel, dict(game=game, run=r, remark=categorical_dqn_pixel.__name__)]
+            )
+
+    algo, param = params[cf.i]
+    algo(**param)
     exit()
 
 

@@ -556,8 +556,8 @@ if __name__ == '__main__':
     mkdir('tf_log')
     set_one_thread()
     random_seed()
-    # select_device(-1)
-    select_device(0)
+    select_device(-1)
+    # select_device(0)
 
     game = 'CartPole-v0'
     # dqn_feature(game=game)

@@ -102,18 +102,12 @@ class CategoricalDQNAgent(BaseAgent):
 
             rewards = tensor(rewards).unsqueeze(-1)
             terminals = tensor(terminals).unsqueeze(-1)
-            atoms_next = rewards + self.config.discount * (1 - terminals) * self.atoms.view(1, -1)
-
-            atoms_next.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
-            b = (atoms_next - self.config.categorical_v_min) / self.delta_atom
-            l = b.floor()
-            u = b.ceil()
-            d_m_l = (u + (l == u).float() - b) * prob_next
-            d_m_u = (b - l) * prob_next
-            target_prob = tensor(np.zeros(prob_next.size()))
-            for i in range(target_prob.size(0)):
-                target_prob[i].index_add_(0, l[i].long(), d_m_l[i])
-                target_prob[i].index_add_(0, u[i].long(), d_m_u[i])
+            atoms_target = rewards + self.config.discount * (1 - terminals) * self.atoms.view(1, -1)
+            atoms_target.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
+            atoms_target = atoms_target.unsqueeze(1)
+            target_prob = (1 - (atoms_target - self.atoms.view(1, -1, 1)).abs() / self.delta_atom).clamp(0, 1) * \
+                          prob_next.unsqueeze(-1)
+            target_prob = target_prob.sum(-1)
 
             _, log_prob = self.network(states)
             actions = tensor(actions).long()
