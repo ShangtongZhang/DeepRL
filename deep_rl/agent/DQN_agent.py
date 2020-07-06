@@ -97,7 +97,7 @@ class DQNAgent(BaseAgent):
             actions = tensor(actions).long()
             q = self.network(states)
             q = q[self.batch_indices, actions]
-            loss = huber(q_next - q).mean()
+            loss = (q_next - q).pow(2).mul(0.5).mean()
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
