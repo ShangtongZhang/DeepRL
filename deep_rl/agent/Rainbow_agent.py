@@ -96,6 +96,8 @@ class RainbowAgent(BaseAgent):
                     cum_r = r + config.discount * (1 - done) * cum_r
                     cum_done = done or cum_done
                 experiences.append([s, a, cum_r, next_state, cum_done])
+                if cum_done:
+                    self.n_step_cache.clear()
         self.replay.feed_batch(experiences)
 
         if self.total_steps > self.config.exploration_steps:
