@@ -19,6 +19,7 @@ class RainbowActor(BaseActor):
 
     def _set_up(self):
         self.config.atoms = tensor(self.config.atoms)
+        self.n_step_cache = deque(maxlen=self.config.n_step)
 
     def _transition(self):
         if self._state is None:
@@ -39,7 +40,13 @@ class RainbowActor(BaseActor):
         entry = [self._state[0], action, reward[0], next_state[0], int(done[0]), info]
         self._total_steps += 1
         self._state = next_state
-        return entry
+        self.n_step_cache.append(entry)
+        cum_r = 0
+        cum_done = 0
+        for s, a, r, next_s, done, _ in reversed(self.n_step_cache):
+            cum_r = config.reward_normalizer(r) + config.discount * (1 - done) * cum_r
+            cum_done = done or cum_done
+        return [s, a, cum_r, next_state[0], cum_done, info]
 
 
 class RainbowAgent(BaseAgent):
@@ -87,17 +94,7 @@ class RainbowAgent(BaseAgent):
         for state, action, reward, next_state, done, info in transitions:
             self.record_online_return(info)
             self.total_steps += 1
-            reward = config.reward_normalizer(reward)
-            self.n_step_cache.append([state, action, reward, next_state, done])
-            if len(self.n_step_cache) == config.n_step:
-                cum_r = 0
-                cum_done = 0
-                for s, a, r, next_s, done in reversed(self.n_step_cache):
-                    cum_r = r + config.discount * (1 - done) * cum_r
-                    cum_done = done or cum_done
-                experiences.append([s, a, cum_r, next_state, cum_done])
-                if cum_done:
-                    self.n_step_cache.clear()
+            experiences.append([state, action, reward, next_state, done])
         self.replay.feed_batch(experiences)
 
         if self.total_steps > self.config.exploration_steps:

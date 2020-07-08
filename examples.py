@@ -220,7 +220,7 @@ def rainbow_feature(**kwargs):
     config.double_q = True
     config.sgd_update_frequency = 4
     config.eval_interval = int(5e3)
-    config.async_actor = False
+    config.async_actor = True
     config.n_step = 3
     config.gradient_clip = 10
 
@@ -230,7 +230,7 @@ def rainbow_feature(**kwargs):
 def rainbow_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
-    kwargs.setdefault('n_step', 1)
+    kwargs.setdefault('n_step', 3)
     config = Config()
     config.merge(kwargs)
 
