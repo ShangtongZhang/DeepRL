@@ -230,7 +230,6 @@ def rainbow_feature(**kwargs):
 def rainbow_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
-    kwargs.setdefault('n_step', 3)
     config = Config()
     config.merge(kwargs)
 
@@ -274,6 +273,7 @@ def rainbow_pixel(**kwargs):
     config.double_q = True
     config.async_actor = True
     config.gradient_clip = 10
+    config.n_step = 3
     run_steps(RainbowAgent(config))
 
 
