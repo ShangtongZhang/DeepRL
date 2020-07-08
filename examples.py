@@ -272,7 +272,7 @@ def rainbow_pixel(**kwargs):
     config.sgd_update_frequency = 4
     config.history_length = 4
     config.double_q = True
-    config.async_actor = True
+    config.async_actor = False
     config.gradient_clip = 10
     run_steps(RainbowAgent(config))
 

@@ -46,6 +46,8 @@ class RainbowActor(BaseActor):
         for s, a, r, next_s, done, _ in reversed(self.n_step_cache):
             cum_r = config.reward_normalizer(r) + config.discount * (1 - done) * cum_r
             cum_done = done or cum_done
+        if cum_done:
+            self.n_step_cache.clear()
         return [s, a, cum_r, next_state[0], cum_done, info]
 
 

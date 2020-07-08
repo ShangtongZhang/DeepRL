@@ -134,7 +134,9 @@ class BaseActor(mp.Process):
     def _sample(self):
         transitions = []
         for _ in range(self.config.sgd_update_frequency):
-            transitions.append(self._transition())
+            transition = self._transition()
+            if transition is not None:
+                transitions.append(transition)
         return transitions
 
     def run(self):
