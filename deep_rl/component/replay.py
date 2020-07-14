@@ -13,13 +13,61 @@ import random
 
 
 class Replay:
-    def __init__(self, memory_size, batch_size, drop_prob=0, to_np=True):
+    def __init__(self, memory_size, batch_size, n_step=1, discount=1, keys=None):
+        if keys is None:
+            keys = []
+        keys = keys + ['state', 'action', 'reward', 'mask',
+                       'v', 'q', 'pi', 'log_pi', 'entropy',
+                       'advantage', 'return', 'q_a', 'log_pi_a',
+                       'mean', 'next_state']
+        self.keys = keys
+        self.memory_size = memory_size
+        self.batch_size = batch_size
+        self.n_step = n_step
+        self.discount = discount
+        self.pos = 0
+        self.reset()
+
+    def feed(self, data):
+        for k, vs in data.items():
+            if k not in self.keys:
+                raise RuntimeError('Undefined key')
+            storage = getattr(self, k)
+            pos = self.pos
+            for v in vs:
+                if pos >= len(storage):
+                    storage.append(v)
+                else:
+                    storage[self.pos] = v
+                pos = (pos + 1) % self.memory_size
+        self.pos = pos
+
+    def placeholder(self):
+        for k in self.keys:
+            v = getattr(self, k)
+            if len(v) == 0:
+                setattr(self, k, [None] * self.memory_size)
+
+    def reset(self):
+        for key in self.keys:
+            setattr(self, key, [])
+        self.pos = 0
+
+    def cat(self, keys):
+        data = [getattr(self, k)[:self.size] for k in keys]
+        return map(lambda x: torch.cat(x, dim=0), data)
+
+
+class Replay:
+    def __init__(self, memory_size, batch_size, n_step=1, discount=1, keys=None):
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.data = []
         self.pos = 0
-        self.drop_prob = drop_prob
         self.to_np = to_np
+        self.frame_stack = 4
+        self.n_step = n_step
+        self.discount = np.power(0.99, np.arange(self.n_step))
 
     def feed(self, experience):
         if np.random.rand() < self.drop_prob:
@@ -40,12 +88,42 @@ class Replay:
         if batch_size is None:
             batch_size = self.batch_size
 
-        sampled_indices = [np.random.randint(0, len(self.data)) for _ in range(batch_size)]
-        sampled_data = [self.data[ind] for ind in sampled_indices]
+        sampled_data = []
+        while len(sampled_data) < batch_size:
+            transition = self.retrive_transition(np.random.randint(0, len(self.data)))
+            if transition is not None:
+                sampled_data.append(transition)
         sampled_data = zip(*sampled_data)
         if self.to_np:
             sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
         return sampled_data
+
+    def retrive_transition(self, index):
+        s_start = index - self.frame_stack + 1
+        s_end = index
+        if s_start < 0:
+            return None
+        next_s_start = s_start + self.n_step
+        next_s_end = s_end + self.n_step
+        if s_end < self.pos and next_s_end >= self.pos:
+            return None
+
+        def safe_index(i):
+            return i % self.memory_size
+
+        state = [self.data[safe_index(i)][0] for i in range(s_start, s_end + 1)]
+        next_state = [self.data[safe_index(i)][0] for i in range(next_s_start, next_s_end + 1)]
+        action = self.data[s_end][1]
+        reward = [self.data[safe_index(i)][2] for i in range(s_end, s_end + self.n_step)]
+        done = [self.data[safe_index(i)][3] for i in range(s_end, s_end + self.n_step)]
+        state = np.asarray(state)
+        next_state = np.asarray(next_state)
+        cum_r = 0
+        cum_done = 0
+        for i in reversed(np.arange(self.n_step)):
+            cum_r = reward[i] + (1 - done[i]) * 0.99 * cum_r
+            cum_done = cum_done or done[i]
+        return [state, action, cum_r, next_state, cum_done]
 
     def size(self):
         return len(self.data)
@@ -61,32 +139,6 @@ class Replay:
         self.pos = 0
 
 
-class SkewedReplay:
-    def __init__(self, memory_size, batch_size, criterion):
-        self.replay1 = Replay(memory_size // 2, batch_size // 2)
-        self.replay2 = Replay(memory_size // 2, batch_size // 2)
-        self.criterion = criterion
-
-    def feed(self, experience):
-        if self.criterion(experience):
-            self.replay1.feed(experience)
-        else:
-            self.replay2.feed(experience)
-
-    def feed_batch(self, experience):
-        for exp in experience:
-            self.feed(exp)
-
-    def sample(self):
-        data1 = self.replay1.sample()
-        data2 = self.replay2.sample()
-        if data2 is not None:
-            data = list(map(lambda x: np.concatenate(x, axis=0), zip(data1, data2)))
-        else:
-            data = data1
-        return data
-
-
 class PrioritizedReplay:
     def __init__(self, memory_size, batch_size):
         self.tree = SumTree(memory_size)
@@ -98,8 +150,8 @@ class PrioritizedReplay:
         self.tree.add(self.max_priority, experience)
 
     def feed_batch(self, experience):
-            for exp in experience:
-                self.feed(exp)
+        for exp in experience:
+            self.feed(exp)
 
     def sample(self, batch_size=None):
         if batch_size is None:
@@ -146,18 +198,19 @@ class AsyncReplay(mp.Process):
     FEED_BATCH = 3
     UPDATE_PRIORITIES = 4
 
-    def __init__(self, memory_size, batch_size, replay_type=Config.DEFAULT_REPLAY):
+    def __init__(self, memory_size, batch_size, n_step, replay_type=Config.DEFAULT_REPLAY):
         mp.Process.__init__(self)
         self.pipe, self.worker_pipe = mp.Pipe()
         self.memory_size = memory_size
         self.batch_size = batch_size
         self.cache_len = 2
         self.replay_type = replay_type
+        self.n_step = n_step
         self.start()
 
     def run(self):
         if self.replay_type == Config.DEFAULT_REPLAY:
-            replay = Replay(self.memory_size, self.batch_size)
+            replay = Replay(self.memory_size, self.batch_size, self.n_step)
         elif self.replay_type == Config.PRIORITIZED_REPLAY:
             replay = PrioritizedReplay(self.memory_size, self.batch_size)
         else:

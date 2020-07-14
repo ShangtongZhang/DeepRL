@@ -11,6 +11,7 @@ from deep_rl import *
 def dqn_feature(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('n_step', 3)
     config = Config()
     config.merge(kwargs)
 
@@ -40,6 +41,7 @@ def dqn_feature(**kwargs):
 def dqn_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('n_step', 3)
     config = Config()
     config.merge(kwargs)
 
@@ -53,7 +55,7 @@ def dqn_pixel(**kwargs):
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
 
     # config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32)
+    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, n_step=config.n_step)
 
     config.batch_size = 32
     config.state_normalizer = ImageNormalizer()
@@ -61,6 +63,7 @@ def dqn_pixel(**kwargs):
     config.discount = 0.99
     config.target_network_update_freq = 10000
     config.exploration_steps = 50000
+    # config.exploration_steps = 100
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     config.history_length = 4
@@ -272,7 +275,7 @@ def rainbow_pixel(**kwargs):
     config.sgd_update_frequency = 4
     config.history_length = 4
     config.double_q = True
-    config.async_actor = False
+    config.async_actor = True
     config.gradient_clip = 10
     run_steps(RainbowAgent(config))
 
@@ -562,10 +565,10 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'CartPole-v0'
-    # dqn_feature(game=game)
+    # dqn_feature(game=game, n_step=3)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
-    rainbow_feature(game=game)
+    # rainbow_feature(game=game)
     # a2c_feature(game=game)
     # n_step_dqn_feature(game=game)
     # option_critic_feature(game=game)
@@ -578,7 +581,7 @@ if __name__ == '__main__':
     # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    # dqn_pixel(game=game)
+    dqn_pixel(game=game, n_step=1)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)

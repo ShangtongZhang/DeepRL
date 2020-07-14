@@ -55,6 +55,7 @@ class DQNAgent(BaseAgent):
 
         self.total_steps = 0
         self.batch_indices = range_tensor(self.replay.batch_size)
+        self.n_step_cache = []
 
     def close(self):
         close_obj(self.replay)
@@ -76,7 +77,16 @@ class DQNAgent(BaseAgent):
             self.record_online_return(info)
             self.total_steps += 1
             reward = config.reward_normalizer(reward)
-            experiences.append([state, action, reward, next_state, done])
+            # self.n_step_cache.append([state, action, reward, next_state, done])
+            experiences.append([state[-1], action, reward, done])
+            # if len(self.n_step_cache) == config.n_step:
+            #     cum_r = 0
+            #     cum_done = 0
+            #     for s, a, r, _, done in reversed(self.n_step_cache):
+            #         cum_r = r + (1 - done) * config.discount * cum_r
+            #         cum_done = done or cum_done
+            #     experiences.append([s, a, cum_r, next_state, cum_done])
+            #     self.n_step_cache.pop(0)
         self.replay.feed_batch(experiences)
 
         if self.total_steps > self.config.exploration_steps:
@@ -92,7 +102,7 @@ class DQNAgent(BaseAgent):
                 q_next = q_next.max(1)[0]
             terminals = tensor(terminals)
             rewards = tensor(rewards)
-            q_next = self.config.discount * q_next * (1 - terminals)
+            q_next = self.config.discount ** config.n_step * q_next * (1 - terminals)
             q_next.add_(rewards)
             actions = tensor(actions).long()
             q = self.network(states)

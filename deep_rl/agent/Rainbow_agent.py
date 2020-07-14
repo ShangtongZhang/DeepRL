@@ -19,7 +19,6 @@ class RainbowActor(BaseActor):
 
     def _set_up(self):
         self.config.atoms = tensor(self.config.atoms)
-        self.n_step_cache = deque(maxlen=self.config.n_step)
 
     def _transition(self):
         if self._state is None:
@@ -40,15 +39,7 @@ class RainbowActor(BaseActor):
         entry = [self._state[0], action, reward[0], next_state[0], int(done[0]), info]
         self._total_steps += 1
         self._state = next_state
-        self.n_step_cache.append(entry)
-        cum_r = 0
-        cum_done = 0
-        for s, a, r, next_s, done, _ in reversed(self.n_step_cache):
-            cum_r = config.reward_normalizer(r) + config.discount * (1 - done) * cum_r
-            cum_done = done or cum_done
-        if cum_done:
-            self.n_step_cache.clear()
-        return [s, a, cum_r, next_state[0], cum_done, info]
+        return entry
 
 
 class RainbowAgent(BaseAgent):
@@ -75,6 +66,7 @@ class RainbowAgent(BaseAgent):
         self.batch_indices = range_tensor(self.replay.batch_size)
         self.atoms = tensor(config.atoms)
         self.delta_atom = (config.categorical_v_max - config.categorical_v_min) / float(config.categorical_n_atoms - 1)
+        self.n_step_cache = []
 
     def close(self):
         close_obj(self.replay)
@@ -96,7 +88,16 @@ class RainbowAgent(BaseAgent):
         for state, action, reward, next_state, done, info in transitions:
             self.record_online_return(info)
             self.total_steps += 1
-            experiences.append([state, action, reward, next_state, done])
+            reward = config.reward_normalizer(reward)
+            self.n_step_cache.append([state, action, reward, next_state, done])
+            if len(self.n_step_cache) == config.n_step:
+                cum_r = 0
+                cum_done = 0
+                for s, a, r, _, done in reversed(self.n_step_cache):
+                    cum_r = r + (1 - done) * config.discount * cum_r
+                    cum_done = done or cum_done
+                experiences.append([s, a, cum_r, next_state, cum_done])
+                self.n_step_cache.pop(0)
         self.replay.feed_batch(experiences)
 
         if self.total_steps > self.config.exploration_steps:
