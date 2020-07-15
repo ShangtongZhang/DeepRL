@@ -55,21 +55,26 @@ class TD3Agent(BaseAgent):
         self.record_online_return(info)
         reward = self.config.reward_normalizer(reward)
 
-        experiences = list(zip(self.state, action, reward, next_state, done))
-        self.replay.feed_batch(experiences)
+        self.replay.feed(dict(
+            state=self.state,
+            action=action,
+            reward=reward,
+            next_state=next_state,
+            mask=1-np.asarray(done, dtype=np.int32),
+        ))
+
         if done[0]:
             self.random_process.reset_states()
         self.state = next_state
         self.total_steps += 1
 
         if self.replay.size() >= config.warm_up:
-            experiences = self.replay.sample()
-            states, actions, rewards, next_states, terminals = experiences
-            states = tensor(states)
-            actions = tensor(actions)
-            rewards = tensor(rewards).unsqueeze(-1)
-            next_states = tensor(next_states)
-            mask = tensor(1 - terminals).unsqueeze(-1)
+            transitions = self.replay.sample()
+            states = tensor(transitions.state).squeeze(1)
+            actions = tensor(transitions.action)
+            rewards = tensor(transitions.reward).unsqueeze(-1)
+            next_states = tensor(transitions.next_state).squeeze(1)
+            mask = tensor(transitions.mask).unsqueeze(-1)
 
             a_next = self.target_network(next_states)
             noise = torch.randn_like(a_next).mul(config.td3_noise)

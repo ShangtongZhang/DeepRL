@@ -86,7 +86,7 @@ class Replay:
             if transition is not None:
                 sampled_data.append(transition)
         sampled_data = zip(*sampled_data)
-        sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
+        sampled_data = list(map(lambda x: np.array(x), sampled_data))
         return Transition(*sampled_data)
 
     def valid_index(self, index):
