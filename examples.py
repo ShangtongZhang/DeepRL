@@ -34,8 +34,8 @@ def dqn_feature(**kwargs):
         discount=config.discount,
         history_length=config.history_length)
 
-    # config.replay_fn = lambda: AsyncReplay(replay_kwargs=replay_kwargs, replay_type=Config.DEFAULT_REPLAY)
-    config.replay_fn = lambda: Replay(**replay_kwargs)
+    config.replay_fn = lambda: AsyncReplay(replay_kwargs=replay_kwargs, replay_type=Config.DEFAULT_REPLAY)
+    # config.replay_fn = lambda: Replay(**replay_kwargs)
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
@@ -87,8 +87,8 @@ def dqn_pixel(**kwargs):
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
     config.target_network_update_freq = 10000
-    # config.exploration_steps = 50000
-    config.exploration_steps = 100
+    config.exploration_steps = 50000
+    # config.exploration_steps = 100
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     config.double_q = False
@@ -588,7 +588,7 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'CartPole-v0'
-    dqn_feature(game=game, n_step=1)
+    dqn_feature(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
     # rainbow_feature(game=game)
@@ -604,7 +604,7 @@ if __name__ == '__main__':
     # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    dqn_pixel(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
+    # dqn_pixel(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)

@@ -24,11 +24,8 @@ class DQNActor(BaseActor):
         with config.lock:
             q_values = self._network(config.state_normalizer(self._state))
         q_values = to_np(q_values)
-        if self._total_steps < config.exploration_steps \
-                or np.random.rand() < config.random_action_prob():
-            action = np.random.randint(0, q_values.shape[1], size=q_values.shape[0])
-        else:
-            action = np.argmax(q_values, axis=1)
+        epsilon = 1 if self._total_steps < config.exploration_steps else config.random_action_prob()
+        action = epsilon_greedy(epsilon, q_values)
         next_state, reward, done, info = self._task.step(action)
         entry = [self._state, action, reward, next_state, done, info]
         self._total_steps += 1
@@ -52,10 +49,7 @@ class DQNAgent(BaseAgent):
         self.optimizer = config.optimizer_fn(self.network.parameters())
 
         self.actor.set_network(self.network)
-
         self.total_steps = 0
-        self.batch_indices = range_tensor(config.batch_size)
-        self.n_step_cache = []
 
     def close(self):
         close_obj(self.replay)
@@ -69,6 +63,9 @@ class DQNAgent(BaseAgent):
         self.config.state_normalizer.unset_read_only()
         return action
 
+    def reduce_loss(self, loss):
+        return loss.pow(2).mul(0.5).mean()
+
     def step(self):
         config = self.config
         transitions = self.actor.step()
@@ -79,28 +76,37 @@ class DQNAgent(BaseAgent):
                 state=[s[-1] if isinstance(s, LazyFrames) else s for s in states],
                 action=actions,
                 reward=[config.reward_normalizer(r) for r in rewards],
-                mask=1-np.asarray(dones, dtype=np.int32),
+                mask=1 - np.asarray(dones, dtype=np.int32),
             ))
 
         if self.total_steps > self.config.exploration_steps:
-            experiences = self.replay.sample()
-            states, actions, rewards, next_states, masks = experiences
-            states = self.config.state_normalizer(states)
-            next_states = self.config.state_normalizer(next_states)
-            q_next = self.target_network(next_states).detach()
-            if self.config.double_q:
-                best_actions = torch.argmax(self.network(next_states), dim=-1)
-                q_next = q_next[self.batch_indices, best_actions]
-            else:
-                q_next = q_next.max(1)[0]
-            masks = tensor(masks)
-            rewards = tensor(rewards)
-            q_next = self.config.discount ** config.n_step * q_next * masks
-            q_next.add_(rewards)
-            actions = tensor(actions).long()
+            transitions = self.replay.sample()
+            states = self.config.state_normalizer(transitions.state)
+            next_states = self.config.state_normalizer(transitions.next_state)
+            with torch.no_grad():
+                q_next = self.target_network(next_states).detach()
+                if self.config.double_q:
+                    best_actions = torch.argmax(self.network(next_states), dim=-1)
+                    q_next = q_next.gather(1, best_actions.unsqueeze(-1))
+                else:
+                    q_next = q_next.max(1)[0]
+            masks = tensor(transitions.mask)
+            rewards = tensor(transitions.reward)
+            q_target = rewards + self.config.discount ** config.n_step * q_next * masks
+            actions = tensor(transitions.action).long()
             q = self.network(states)
-            q = q[self.batch_indices, actions]
-            loss = (q_next - q).pow(2).mul(0.5).mean()
+            q = q.gather(1, actions.unsqueeze(-1)).squeeze(-1)
+            loss = q_target - q
+            if isinstance(transitions, PrioritizedTransition):
+                priorities = loss.abs().add(config.replay_eps).pow(config.replay_alpha)
+                idxs = tensor(transitions.idx).long()
+                self.replay.update_priorities(zip(to_np(idxs), to_np(priorities)))
+                sampling_probs = tensor(transitions.sampling_prob)
+                weights = sampling_probs.mul(sampling_probs.size(0)).add(1e-6).pow(-config.replay_beta())
+                weights = weights / weights.max()
+                loss = loss.mul(weights)
+
+            loss = self.reduce_loss(loss)
             self.optimizer.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)

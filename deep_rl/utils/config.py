@@ -11,8 +11,8 @@ import torch
 class Config:
     DEVICE = torch.device('cpu')
     NOISY_LAYER_STD = 0.1
-    DEFAULT_REPLAY = 0
-    PRIORITIZED_REPLAY = 1
+    DEFAULT_REPLAY = 'replay'
+    PRIORITIZED_REPLAY = 'prioritized_replay'
 
     def __init__(self):
         self.parser = argparse.ArgumentParser()

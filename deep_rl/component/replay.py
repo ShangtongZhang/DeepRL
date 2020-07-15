@@ -153,6 +153,9 @@ class PrioritizedReplay(Replay):
                 sampling_prob=p / self.tree.total(),
                 idx=idx,
             ))
+        while len(sampled_data) < batch_size:
+            # This should rarely happen
+            sampled_data.append(np.random.choice(sampled_data))
 
         sampled_data = zip(*sampled_data)
         sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
