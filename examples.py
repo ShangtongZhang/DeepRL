@@ -588,7 +588,7 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'CartPole-v0'
-    dqn_feature(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
+    # dqn_feature(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
     # rainbow_feature(game=game)
@@ -604,7 +604,7 @@ if __name__ == '__main__':
     # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    # dqn_pixel(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
+    dqn_pixel(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)

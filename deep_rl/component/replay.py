@@ -155,7 +155,7 @@ class PrioritizedReplay(Replay):
             ))
         while len(sampled_data) < batch_size:
             # This should rarely happen
-            sampled_data.append(np.random.choice(sampled_data))
+            sampled_data.append(random.choice(sampled_data))
 
         sampled_data = zip(*sampled_data)
         sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
