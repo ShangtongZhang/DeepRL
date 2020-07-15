@@ -23,14 +23,14 @@ class DQNActor(BaseActor):
         config = self.config
         with config.lock:
             q_values = self._network(config.state_normalizer(self._state))
-        q_values = to_np(q_values).flatten()
+        q_values = to_np(q_values)
         if self._total_steps < config.exploration_steps \
                 or np.random.rand() < config.random_action_prob():
-            action = np.random.randint(0, len(q_values))
+            action = np.random.randint(0, q_values.shape[1], size=q_values.shape[0])
         else:
-            action = np.argmax(q_values)
-        next_state, reward, done, info = self._task.step([action])
-        entry = [self._state[0], action, reward[0], next_state[0], int(done[0]), info]
+            action = np.argmax(q_values, axis=1)
+        next_state, reward, done, info = self._task.step(action)
+        entry = [self._state, action, reward, next_state, done, info]
         self._total_steps += 1
         self._state = next_state
         return entry
@@ -54,7 +54,7 @@ class DQNAgent(BaseAgent):
         self.actor.set_network(self.network)
 
         self.total_steps = 0
-        self.batch_indices = range_tensor(self.replay.batch_size)
+        self.batch_indices = range_tensor(config.batch_size)
         self.n_step_cache = []
 
     def close(self):
@@ -72,26 +72,19 @@ class DQNAgent(BaseAgent):
     def step(self):
         config = self.config
         transitions = self.actor.step()
-        experiences = []
-        for state, action, reward, next_state, done, info in transitions:
+        for states, actions, rewards, next_states, dones, info in transitions:
             self.record_online_return(info)
             self.total_steps += 1
-            reward = config.reward_normalizer(reward)
-            # self.n_step_cache.append([state, action, reward, next_state, done])
-            experiences.append([state[-1], action, reward, done])
-            # if len(self.n_step_cache) == config.n_step:
-            #     cum_r = 0
-            #     cum_done = 0
-            #     for s, a, r, _, done in reversed(self.n_step_cache):
-            #         cum_r = r + (1 - done) * config.discount * cum_r
-            #         cum_done = done or cum_done
-            #     experiences.append([s, a, cum_r, next_state, cum_done])
-            #     self.n_step_cache.pop(0)
-        self.replay.feed_batch(experiences)
+            self.replay.feed(dict(
+                state=[s[-1] if isinstance(s, LazyFrames) else s for s in states],
+                action=actions,
+                reward=[config.reward_normalizer(r) for r in rewards],
+                mask=1-np.asarray(dones, dtype=np.int32),
+            ))
 
         if self.total_steps > self.config.exploration_steps:
             experiences = self.replay.sample()
-            states, actions, rewards, next_states, terminals = experiences
+            states, actions, rewards, next_states, masks = experiences
             states = self.config.state_normalizer(states)
             next_states = self.config.state_normalizer(next_states)
             q_next = self.target_network(next_states).detach()
@@ -100,9 +93,9 @@ class DQNAgent(BaseAgent):
                 q_next = q_next[self.batch_indices, best_actions]
             else:
                 q_next = q_next.max(1)[0]
-            terminals = tensor(terminals)
+            masks = tensor(masks)
             rewards = tensor(rewards)
-            q_next = self.config.discount ** config.n_step * q_next * (1 - terminals)
+            q_next = self.config.discount ** config.n_step * q_next * masks
             q_next.add_(rewards)
             actions = tensor(actions).long()
             q = self.network(states)

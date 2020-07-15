@@ -11,7 +11,7 @@ from deep_rl import *
 def dqn_feature(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
-    kwargs.setdefault('n_step', 3)
+    kwargs.setdefault('n_step', 1)
     config = Config()
     config.merge(kwargs)
 
@@ -21,11 +21,20 @@ def dqn_feature(**kwargs):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: VanillaNet(config.action_dim, FCBody(config.state_dim))
     # config.network_fn = lambda: DuelingNet(config.action_dim, FCBody(config.state_dim))
-    # config.replay_fn = lambda: Replay(memory_size=int(1e4), batch_size=10)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10)
+    config.history_length = 1
+    config.batch_size = 10
+    config.discount = 0.99
+    replay_params = dict(
+        memory_size=int(1e4),
+        batch_size=config.batch_size,
+        n_step=config.n_step,
+        discount=config.discount,
+        history_length=config.history_length)
+
+    # config.replay_fn = lambda: AsyncReplay(replay_params=replay_params, replay_type=Config.DEFAULT_REPLAY)
+    config.replay_fn = lambda: Replay(**replay_params)
 
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
-    config.discount = 0.99
     config.target_network_update_freq = 200
     config.exploration_steps = 1000
     # config.double_q = True
@@ -51,24 +60,29 @@ def dqn_pixel(**kwargs):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(
         params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
     config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
-    # config.network_fn = lambda: DuelingNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
-
-    # config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, n_step=config.n_step)
-
     config.batch_size = 32
+    config.discount = 0.99
+    config.history_length = 4
+    replay_params=dict(
+        memory_size=int(1e6),
+        batch_size=config.batch_size,
+        n_step=config.n_step,
+        discount=config.discount,
+        history_length=config.history_length,
+    )
+    config.replay_fn = lambda: Replay(**replay_params)
+    # config.replay_fn = lambda: AsyncReplay(replay_params=replay_params, replay_type=Config.DEFAULT_REPLAY)
+
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
     config.target_network_update_freq = 10000
-    config.exploration_steps = 50000
-    # config.exploration_steps = 100
+    # config.exploration_steps = 50000
+    config.exploration_steps = 100
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
-    config.history_length = 4
-    # config.double_q = True
     config.double_q = False
+    config.async_actor = False
     config.max_steps = int(2e7)
     run_steps(DQNAgent(config))
 
@@ -565,7 +579,7 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'CartPole-v0'
-    # dqn_feature(game=game, n_step=3)
+    dqn_feature(game=game, n_step=1)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
     # rainbow_feature(game=game)
@@ -581,7 +595,7 @@ if __name__ == '__main__':
     # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    dqn_pixel(game=game, n_step=1)
+    # dqn_pixel(game=game, n_step=3)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)

@@ -13,7 +13,7 @@ import random
 
 
 class Replay:
-    def __init__(self, memory_size, batch_size, n_step=1, discount=1, keys=None):
+    def __init__(self, memory_size, batch_size, n_step=1, discount=1, history_length=1, keys=None):
         if keys is None:
             keys = []
         keys = keys + ['state', 'action', 'reward', 'mask',
@@ -26,7 +26,15 @@ class Replay:
         self.n_step = n_step
         self.discount = discount
         self.pos = 0
+        self.history_length = history_length
+        self._size = 0
         self.reset()
+
+    def size(self):
+        return self._size
+
+    def full(self):
+        return self._size == self.memory_size
 
     def feed(self, data):
         for k, vs in data.items():
@@ -34,13 +42,16 @@ class Replay:
                 raise RuntimeError('Undefined key')
             storage = getattr(self, k)
             pos = self.pos
+            size = self.size()
             for v in vs:
                 if pos >= len(storage):
                     storage.append(v)
+                    size += 1
                 else:
                     storage[self.pos] = v
                 pos = (pos + 1) % self.memory_size
         self.pos = pos
+        self._size = size
 
     def placeholder(self):
         for k in self.keys:
@@ -52,54 +63,26 @@ class Replay:
         for key in self.keys:
             setattr(self, key, [])
         self.pos = 0
-
-    def cat(self, keys):
-        data = [getattr(self, k)[:self.size] for k in keys]
-        return map(lambda x: torch.cat(x, dim=0), data)
-
-
-class Replay:
-    def __init__(self, memory_size, batch_size, n_step=1, discount=1, keys=None):
-        self.memory_size = memory_size
-        self.batch_size = batch_size
-        self.data = []
-        self.pos = 0
-        self.to_np = to_np
-        self.frame_stack = 4
-        self.n_step = n_step
-        self.discount = np.power(0.99, np.arange(self.n_step))
-
-    def feed(self, experience):
-        if np.random.rand() < self.drop_prob:
-            return
-        if self.pos >= len(self.data):
-            self.data.append(experience)
-        else:
-            self.data[self.pos] = experience
-        self.pos = (self.pos + 1) % self.memory_size
-
-    def feed_batch(self, experience):
-        for exp in experience:
-            self.feed(exp)
+        self._size = 0
 
     def sample(self, batch_size=None):
-        if self.empty():
-            return None
         if batch_size is None:
             batch_size = self.batch_size
 
         sampled_data = []
         while len(sampled_data) < batch_size:
-            transition = self.retrive_transition(np.random.randint(0, len(self.data)))
+            transition = self.retrive_transition(np.random.randint(0, self.size()))
             if transition is not None:
                 sampled_data.append(transition)
         sampled_data = zip(*sampled_data)
-        if self.to_np:
-            sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
+        sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
         return sampled_data
 
+    def safe_index(self, i):
+        return i % self.memory_size
+
     def retrive_transition(self, index):
-        s_start = index - self.frame_stack + 1
+        s_start = index - self.history_length + 1
         s_end = index
         if s_start < 0:
             return None
@@ -108,35 +91,19 @@ class Replay:
         if s_end < self.pos and next_s_end >= self.pos:
             return None
 
-        def safe_index(i):
-            return i % self.memory_size
-
-        state = [self.data[safe_index(i)][0] for i in range(s_start, s_end + 1)]
-        next_state = [self.data[safe_index(i)][0] for i in range(next_s_start, next_s_end + 1)]
-        action = self.data[s_end][1]
-        reward = [self.data[safe_index(i)][2] for i in range(s_end, s_end + self.n_step)]
-        done = [self.data[safe_index(i)][3] for i in range(s_end, s_end + self.n_step)]
+        state = [self.state[self.safe_index(i)] for i in range(s_start, s_end + 1)]
+        next_state = [self.state[self.safe_index(i)] for i in range(next_s_start, next_s_end + 1)]
+        action = self.action[s_end]
+        reward = [self.reward[self.safe_index(i)] for i in range(s_end, s_end + self.n_step)]
+        mask = [self.mask[self.safe_index(i)] for i in range(s_end, s_end + self.n_step)]
         state = np.asarray(state)
         next_state = np.asarray(next_state)
         cum_r = 0
-        cum_done = 0
+        cum_mask = 1
         for i in reversed(np.arange(self.n_step)):
-            cum_r = reward[i] + (1 - done[i]) * 0.99 * cum_r
-            cum_done = cum_done or done[i]
-        return [state, action, cum_r, next_state, cum_done]
-
-    def size(self):
-        return len(self.data)
-
-    def empty(self):
-        return not len(self.data)
-
-    def shuffle(self):
-        np.random.shuffle(self.data)
-
-    def clear(self):
-        self.data = []
-        self.pos = 0
+            cum_r = reward[i] + mask[i] * self.discount * cum_r
+            cum_mask = cum_mask and mask[i]
+        return [state, action, cum_r, next_state, cum_mask]
 
 
 class PrioritizedReplay:
@@ -195,29 +162,26 @@ class AsyncReplay(mp.Process):
     FEED = 0
     SAMPLE = 1
     EXIT = 2
-    FEED_BATCH = 3
-    UPDATE_PRIORITIES = 4
+    UPDATE_PRIORITIES = 3
 
-    def __init__(self, memory_size, batch_size, n_step, replay_type=Config.DEFAULT_REPLAY):
+    def __init__(self, replay_params, replay_type=Config.DEFAULT_REPLAY):
         mp.Process.__init__(self)
         self.pipe, self.worker_pipe = mp.Pipe()
-        self.memory_size = memory_size
-        self.batch_size = batch_size
+        self.replay_params = replay_params
         self.cache_len = 2
         self.replay_type = replay_type
-        self.n_step = n_step
         self.start()
 
     def run(self):
         if self.replay_type == Config.DEFAULT_REPLAY:
-            replay = Replay(self.memory_size, self.batch_size, self.n_step)
+            replay = Replay(**self.replay_params)
         elif self.replay_type == Config.PRIORITIZED_REPLAY:
-            replay = PrioritizedReplay(self.memory_size, self.batch_size)
+            replay = PrioritizedReplay(**self.replay_params)
         else:
             raise NotImplementedError
 
         cache = []
-        pending_batch = None
+        pending_data = None
 
         first = True
         cur_cache = 0
@@ -240,13 +204,10 @@ class AsyncReplay(mp.Process):
         while True:
             op, data = self.worker_pipe.recv()
             if op == self.FEED:
-                replay.feed(data)
-            elif op == self.FEED_BATCH:
                 if not first:
-                    pending_batch = data
+                    pending_data = data
                 else:
-                    for transition in data:
-                        replay.feed(transition)
+                    replay.feed(data)
             elif op == self.SAMPLE:
                 if first:
                     set_up_cache()
@@ -256,10 +217,9 @@ class AsyncReplay(mp.Process):
                     self.worker_pipe.send([cur_cache, None])
                 cur_cache = (cur_cache + 1) % 2
                 sample(cur_cache)
-                if pending_batch is not None:
-                    for transition in pending_batch:
-                        replay.feed(transition)
-                    pending_batch = None
+                if pending_data is not None:
+                    replay.feed(pending_data)
+                    pending_data = None
             elif op == self.UPDATE_PRIORITIES:
                 replay.update_priorities(data)
             elif op == self.EXIT:
@@ -270,9 +230,6 @@ class AsyncReplay(mp.Process):
 
     def feed(self, exp):
         self.pipe.send([self.FEED, exp])
-
-    def feed_batch(self, exps):
-        self.pipe.send([self.FEED_BATCH, exps])
 
     def sample(self):
         self.pipe.send([self.SAMPLE, None])
