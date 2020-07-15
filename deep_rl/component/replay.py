@@ -10,6 +10,11 @@ import torch.multiprocessing as mp
 from collections import deque
 from ..utils import *
 import random
+from collections import namedtuple
+
+
+Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'mask'])
+PrioritizedTransition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'mask', 'sampling_prob', 'idx'])
 
 
 class Replay:
@@ -65,37 +70,49 @@ class Replay:
         self.pos = 0
         self._size = 0
 
+    def compute_valid_indices(self):
+        indices = []
+        indices.extend(list(range(self.history_length - 1, self.pos - self.n_step)))
+        indices.extend(list(range(self.pos + self.history_length - 1, self.size() - self.n_step)))
+        return np.asarray(indices)
+
     def sample(self, batch_size=None):
         if batch_size is None:
             batch_size = self.batch_size
 
         sampled_data = []
         while len(sampled_data) < batch_size:
-            transition = self.retrive_transition(np.random.randint(0, self.size()))
+            transition = self.construct_transition(np.random.randint(0, self.size()))
             if transition is not None:
                 sampled_data.append(transition)
         sampled_data = zip(*sampled_data)
         sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
-        return sampled_data
+        return Transition(*sampled_data)
 
-    def safe_index(self, i):
-        return i % self.memory_size
+    def valid_index(self, index):
+        if index - self.history_length + 1 >= 0 and index + self.n_step < self.pos:
+            return True
+        if index - self.history_length + 1 >= self.pos and index + self.n_step < self.size():
+            return True
+        return False
 
-    def retrive_transition(self, index):
+    def construct_transition(self, index):
+        if not self.valid_index(index):
+            return None
         s_start = index - self.history_length + 1
         s_end = index
         if s_start < 0:
-            return None
+            raise RuntimeError('Invalid index')
         next_s_start = s_start + self.n_step
         next_s_end = s_end + self.n_step
         if s_end < self.pos and next_s_end >= self.pos:
-            return None
+            raise RuntimeError('Invalid index')
 
-        state = [self.state[self.safe_index(i)] for i in range(s_start, s_end + 1)]
-        next_state = [self.state[self.safe_index(i)] for i in range(next_s_start, next_s_end + 1)]
+        state = [self.state[i] for i in range(s_start, s_end + 1)]
+        next_state = [self.state[i] for i in range(next_s_start, next_s_end + 1)]
         action = self.action[s_end]
-        reward = [self.reward[self.safe_index(i)] for i in range(s_end, s_end + self.n_step)]
-        mask = [self.mask[self.safe_index(i)] for i in range(s_end, s_end + self.n_step)]
+        reward = [self.reward[i] for i in range(s_end, s_end + self.n_step)]
+        mask = [self.mask[i] for i in range(s_end, s_end + self.n_step)]
         state = np.asarray(state)
         next_state = np.asarray(next_state)
         cum_r = 0
@@ -103,53 +120,43 @@ class Replay:
         for i in reversed(np.arange(self.n_step)):
             cum_r = reward[i] + mask[i] * self.discount * cum_r
             cum_mask = cum_mask and mask[i]
-        return [state, action, cum_r, next_state, cum_mask]
+        return Transition(state=state, action=action, reward=cum_r, next_state=next_state, mask=cum_mask)
 
 
-class PrioritizedReplay:
-    def __init__(self, memory_size, batch_size):
+class PrioritizedReplay(Replay):
+    def __init__(self, memory_size, batch_size, n_step=1, discount=1, history_length=1, keys=None):
+        super(PrioritizedReplay, self).__init__(memory_size, batch_size, n_step, discount, history_length, keys)
         self.tree = SumTree(memory_size)
-        self.memory_size = memory_size
-        self.batch_size = batch_size
         self.max_priority = 1
 
-    def feed(self, experience):
-        self.tree.add(self.max_priority, experience)
-
-    def feed_batch(self, experience):
-        for exp in experience:
-            self.feed(exp)
+    def feed(self, data):
+        super().feed(data)
+        self.tree.add(self.max_priority, None)
 
     def sample(self, batch_size=None):
         if batch_size is None:
             batch_size = self.batch_size
 
-        batch = []
-        idxs = []
         segment = self.tree.total() / batch_size
-        priorities = []
 
+        sampled_data = []
         for i in range(batch_size):
             a = segment * i
             b = segment * (i + 1)
             s = random.uniform(a, b)
-            (idx, p, data) = self.tree.get(s)
-            priorities.append(p)
-            batch.append(data)
-            idxs.append(idx)
-
-        sampling_probabilities = np.asarray(priorities) / self.tree.total()
-
-        sampled_data = []
-        for i in range(batch_size):
-            exp = []
-            exp.extend(batch[i])
-            exp.append(sampling_probabilities[i])
-            exp.append(idxs[i])
-            sampled_data.append(exp)
+            (idx, p, data_index) = self.tree.get(s)
+            transition = super().construct_transition(data_index)
+            if transition is None:
+                continue
+            sampled_data.append(PrioritizedTransition(
+                *transition,
+                sampling_prob=p / self.tree.total(),
+                idx=idx,
+            ))
 
         sampled_data = zip(*sampled_data)
         sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
+        sampled_data = PrioritizedTransition(*sampled_data)
         return sampled_data
 
     def update_priorities(self, info):
@@ -164,19 +171,19 @@ class AsyncReplay(mp.Process):
     EXIT = 2
     UPDATE_PRIORITIES = 3
 
-    def __init__(self, replay_params, replay_type=Config.DEFAULT_REPLAY):
+    def __init__(self, replay_kwargs, replay_type=Config.DEFAULT_REPLAY):
         mp.Process.__init__(self)
         self.pipe, self.worker_pipe = mp.Pipe()
-        self.replay_params = replay_params
+        self.replay_kwargs = replay_kwargs
         self.cache_len = 2
         self.replay_type = replay_type
         self.start()
 
     def run(self):
         if self.replay_type == Config.DEFAULT_REPLAY:
-            replay = Replay(**self.replay_params)
+            replay = Replay(**self.replay_kwargs)
         elif self.replay_type == Config.PRIORITIZED_REPLAY:
-            replay = PrioritizedReplay(**self.replay_params)
+            replay = PrioritizedReplay(**self.replay_kwargs)
         else:
             raise NotImplementedError
 
@@ -236,7 +243,13 @@ class AsyncReplay(mp.Process):
         cache_id, data = self.pipe.recv()
         if data is not None:
             self.cache = data
-        return self.cache[cache_id]
+        if self.replay_type == Config.DEFAULT_REPLAY:
+            TransitionCLS = Transition
+        elif self.replay_type == Config.PRIORITIZED_REPLAY:
+            TransitionCLS = PrioritizedTransition
+        else:
+            raise NotImplementedError
+        return TransitionCLS(*self.cache[cache_id])
 
     def update_priorities(self, info):
         self.pipe.send([self.UPDATE_PRIORITIES, info])

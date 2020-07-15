@@ -12,6 +12,7 @@ def dqn_feature(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('n_step', 1)
+    kwargs.setdefault('replay_type', Config.DEFAULT_REPLAY)
     config = Config()
     config.merge(kwargs)
 
@@ -24,15 +25,20 @@ def dqn_feature(**kwargs):
     config.history_length = 1
     config.batch_size = 10
     config.discount = 0.99
-    replay_params = dict(
+    config.max_steps = 1e5
+
+    replay_kwargs = dict(
         memory_size=int(1e4),
         batch_size=config.batch_size,
         n_step=config.n_step,
         discount=config.discount,
         history_length=config.history_length)
 
-    # config.replay_fn = lambda: AsyncReplay(replay_params=replay_params, replay_type=Config.DEFAULT_REPLAY)
-    config.replay_fn = lambda: Replay(**replay_params)
+    # config.replay_fn = lambda: AsyncReplay(replay_kwargs=replay_kwargs, replay_type=Config.DEFAULT_REPLAY)
+    config.replay_fn = lambda: Replay(**replay_kwargs)
+    config.replay_eps = 0.01
+    config.replay_alpha = 0.5
+    config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
 
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
     config.target_network_update_freq = 200
@@ -42,7 +48,6 @@ def dqn_feature(**kwargs):
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     config.eval_interval = int(5e3)
-    config.max_steps = 1e5
     config.async_actor = False
     run_steps(DQNAgent(config))
 
@@ -51,6 +56,7 @@ def dqn_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('n_step', 3)
+    kwargs.setdefault('replay_type', Config.DEFAULT_REPLAY)
     config = Config()
     config.merge(kwargs)
 
@@ -64,15 +70,19 @@ def dqn_pixel(**kwargs):
     config.batch_size = 32
     config.discount = 0.99
     config.history_length = 4
-    replay_params=dict(
+    config.max_steps = int(2e7)
+    replay_kwargs=dict(
         memory_size=int(1e6),
         batch_size=config.batch_size,
         n_step=config.n_step,
         discount=config.discount,
         history_length=config.history_length,
     )
-    config.replay_fn = lambda: Replay(**replay_params)
-    # config.replay_fn = lambda: AsyncReplay(replay_params=replay_params, replay_type=Config.DEFAULT_REPLAY)
+    # config.replay_fn = lambda: Replay(**replay_kwargs)
+    config.replay_fn = lambda: AsyncReplay(replay_kwargs=replay_kwargs, replay_type=config.replay_type)
+    config.replay_eps = 0.01
+    config.replay_alpha = 0.5
+    config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
 
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -82,8 +92,7 @@ def dqn_pixel(**kwargs):
     config.sgd_update_frequency = 4
     config.gradient_clip = 5
     config.double_q = False
-    config.async_actor = False
-    config.max_steps = int(2e7)
+    config.async_actor = True
     run_steps(DQNAgent(config))
 
 
@@ -595,7 +604,7 @@ if __name__ == '__main__':
     # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    # dqn_pixel(game=game, n_step=3)
+    dqn_pixel(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)
