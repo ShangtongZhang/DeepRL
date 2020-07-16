@@ -17,42 +17,60 @@ PrioritizedTransition = namedtuple('Transition',
                                    ['state', 'action', 'reward', 'next_state', 'mask', 'sampling_prob', 'idx'])
 
 
-class ReplayBase:
-    def sample(self, batch_size):
-        raise NotImplementedError
-
-    def update_priorities(self, info):
-        raise NotImplementedError
-
-    def feed(self, data):
-        raise NotImplementedError
-
-
-class Replay(ReplayBase):
-    TransitionCLS = Transition
-
-    def __init__(self, memory_size, batch_size, n_step=1, discount=1, history_length=1, keys=None):
+class Storage:
+    def __init__(self, memory_size, keys=None):
         if keys is None:
             keys = []
         keys = keys + ['state', 'action', 'reward', 'mask',
                        'v', 'q', 'pi', 'log_pi', 'entropy',
-                       'advantage', 'return', 'q_a', 'log_pi_a',
+                       'advantage', 'ret', 'q_a', 'log_pi_a',
                        'mean', 'next_state']
         self.keys = keys
         self.memory_size = memory_size
+        self.reset()
+
+    def feed(self, data):
+        for k, v in data.items():
+            if k not in self.keys:
+                raise RuntimeError('Undefined key')
+            getattr(self, k).append(v)
+
+    def placeholder(self):
+        for k in self.keys:
+            v = getattr(self, k)
+            if len(v) == 0:
+                setattr(self, k, [None] * self.memory_size)
+
+    def reset(self):
+        for key in self.keys:
+            setattr(self, key, [])
+        self.pos = 0
+        self._size = 0
+
+    def extract(self, keys):
+        data = [getattr(self, k)[:self.memory_size] for k in keys]
+        data = map(lambda x: torch.cat(x, dim=0), data)
+        Entry = namedtuple('Entry', keys)
+        return Entry(*list(data)), Entry
+
+
+class UniformReplay(Storage):
+    TransitionCLS = Transition
+
+    def __init__(self, memory_size, batch_size, n_step=1, discount=1, history_length=1, keys=None):
+        super(UniformReplay, self).__init__(memory_size, keys)
         self.batch_size = batch_size
         self.n_step = n_step
         self.discount = discount
-        self.pos = 0
         self.history_length = history_length
+        self.pos = 0
         self._size = 0
-        self.reset()
 
-    def size(self):
-        return self._size
-
-    def full(self):
-        return self._size == self.memory_size
+    def compute_valid_indices(self):
+        indices = []
+        indices.extend(list(range(self.history_length - 1, self.pos - self.n_step)))
+        indices.extend(list(range(self.pos + self.history_length - 1, self.size() - self.n_step)))
+        return np.asarray(indices)
 
     def feed(self, data):
         for k, vs in data.items():
@@ -70,24 +88,6 @@ class Replay(ReplayBase):
                 pos = (pos + 1) % self.memory_size
         self.pos = pos
         self._size = size
-
-    def placeholder(self):
-        for k in self.keys:
-            v = getattr(self, k)
-            if len(v) == 0:
-                setattr(self, k, [None] * self.memory_size)
-
-    def reset(self):
-        for key in self.keys:
-            setattr(self, key, [])
-        self.pos = 0
-        self._size = 0
-
-    def compute_valid_indices(self):
-        indices = []
-        indices.extend(list(range(self.history_length - 1, self.pos - self.n_step)))
-        indices.extend(list(range(self.pos + self.history_length - 1, self.size() - self.n_step)))
-        return np.asarray(indices)
 
     def sample(self, batch_size=None):
         if batch_size is None:
@@ -126,6 +126,10 @@ class Replay(ReplayBase):
         action = self.action[s_end]
         reward = [self.reward[i] for i in range(s_end, s_end + self.n_step)]
         mask = [self.mask[i] for i in range(s_end, s_end + self.n_step)]
+        if self.history_length == 1:
+            # eliminate the extra dimension if no frame stack
+            state = state[0]
+            next_state = next_state[0]
         state = np.array(state)
         next_state = np.array(next_state)
         cum_r = 0
@@ -135,8 +139,16 @@ class Replay(ReplayBase):
             cum_mask = cum_mask and mask[i]
         return Transition(state=state, action=action, reward=cum_r, next_state=next_state, mask=cum_mask)
 
+    def size(self):
+        return self._size
 
-class PrioritizedReplay(Replay):
+    def full(self):
+        return self._size == self.memory_size
+
+    def update_priorities(self, info):
+        raise NotImplementedError
+
+class PrioritizedReplay(UniformReplay):
     TransitionCLS = PrioritizedTransition
 
     def __init__(self, memory_size, batch_size, n_step=1, discount=1, history_length=1, keys=None):
@@ -265,36 +277,35 @@ class ReplayWrapper(mp.Process):
         self.pipe.send([self.EXIT, None])
         self.pipe.close()
 
-
-class Storage:
-    def __init__(self, size, keys=None):
-        if keys is None:
-            keys = []
-        keys = keys + ['s', 'a', 'r', 'm',
-                       'v', 'q', 'pi', 'log_pi', 'ent',
-                       'adv', 'ret', 'q_a', 'log_pi_a',
-                       'mean']
-        self.keys = keys
-        self.size = size
-        self.reset()
-
-    def add(self, data):
-        for k, v in data.items():
-            if k not in self.keys:
-                self.keys.append(k)
-                setattr(self, k, [])
-            getattr(self, k).append(v)
-
-    def placeholder(self):
-        for k in self.keys:
-            v = getattr(self, k)
-            if len(v) == 0:
-                setattr(self, k, [None] * self.size)
-
-    def reset(self):
-        for key in self.keys:
-            setattr(self, key, [])
-
-    def cat(self, keys):
-        data = [getattr(self, k)[:self.size] for k in keys]
-        return map(lambda x: torch.cat(x, dim=0), data)
+# class Storage:
+#     def __init__(self, size, keys=None):
+#         if keys is None:
+#             keys = []
+#         keys = keys + ['s', 'a', 'r', 'm',
+#                        'v', 'q', 'pi', 'log_pi', 'ent',
+#                        'adv', 'ret', 'q_a', 'log_pi_a',
+#                        'mean']
+#         self.keys = keys
+#         self.size = size
+#         self.reset()
+#
+#     def add(self, data):
+#         for k, v in data.items():
+#             if k not in self.keys:
+#                 self.keys.append(k)
+#                 setattr(self, k, [])
+#             getattr(self, k).append(v)
+#
+#     def placeholder(self):
+#         for k in self.keys:
+#             v = getattr(self, k)
+#             if len(v) == 0:
+#                 setattr(self, k, [None] * self.size)
+#
+#     def reset(self):
+#         for key in self.keys:
+#             setattr(self, key, [])
+#
+#     def cat(self, keys):
+#         data = [getattr(self, k)[:self.size] for k in keys]
+#         return map(lambda x: torch.cat(x, dim=0), data)

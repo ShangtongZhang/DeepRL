@@ -30,7 +30,7 @@ def batch_atari():
     for game in games:
         for r in range(1):
             for n_step in [1, 3]:
-                for rp in [Replay, PrioritizedReplay]:
+                for rp in [UniformReplay, PrioritizedReplay]:
                     for async in [False, True]:
                         params.append(
                             [dqn_pixel,

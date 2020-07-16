@@ -12,7 +12,7 @@ def dqn_feature(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('n_step', 1)
-    kwargs.setdefault('replay_cls', Replay)
+    kwargs.setdefault('replay_cls', UniformReplay)
     kwargs.setdefault('async_replay', True)
     config = Config()
     config.merge(kwargs)
@@ -56,7 +56,7 @@ def dqn_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('n_step', 3)
-    kwargs.setdefault('replay_cls', Replay)
+    kwargs.setdefault('replay_cls', UniformReplay)
     kwargs.setdefault('async_replay', False)
     config = Config()
     config.merge(kwargs)
@@ -537,7 +537,7 @@ def ddpg_continuous(**kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=100)
+    config.replay_fn = lambda: UniformReplay(memory_size=int(1e6), batch_size=100)
     config.discount = 0.99
     config.random_process_fn = lambda: OrnsteinUhlenbeckProcess(
         size=(config.action_dim,), std=LinearSchedule(0.2))
@@ -572,7 +572,7 @@ def td3_continuous(**kwargs):
         batch_size=100,
     )
 
-    config.replay_fn = lambda: ReplayWrapper(Replay, replay_kwargs)
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs)
     config.discount = 0.99
     config.random_process_fn = lambda: GaussianProcess(
         size=(config.action_dim,), std=LinearSchedule(0.1))
@@ -609,7 +609,7 @@ if __name__ == '__main__':
     # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    dqn_pixel(game=game, n_step=1, replay_cls=Replay, async_replay=True)
+    # dqn_pixel(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)
