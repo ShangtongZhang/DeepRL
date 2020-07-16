@@ -17,12 +17,9 @@ class DQNActor(BaseActor):
         self.config = config
         self.start()
 
-    def compute_action(self, prediction):
-        config = self.config
+    def compute_q(self, prediction):
         q_values = to_np(prediction['q'])
-        epsilon = 1 if self._total_steps < config.exploration_steps else config.random_action_prob()
-        action = epsilon_greedy(epsilon, q_values)
-        return action
+        return q_values
 
     def _transition(self):
         if self._state is None:
@@ -32,7 +29,15 @@ class DQNActor(BaseActor):
             self._network.reset_noise()
         with config.lock:
             prediction = self._network(config.state_normalizer(self._state))
-        action = self.compute_action(prediction)
+        q_values = self.compute_q(prediction)
+
+        if config.noisy_linear:
+            epsilon = 0
+        elif self._total_steps < config.exploration_steps:
+            epsilon = 1
+        else:
+            epsilon = config.random_action_prob()
+        action = epsilon_greedy(epsilon, q_values)
         next_state, reward, done, info = self._task.step(action)
         entry = [self._state, action, reward, next_state, done, info]
         self._total_steps += 1

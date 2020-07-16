@@ -214,6 +214,9 @@ def categorical_dqn_pixel(**kwargs):
 def rainbow_feature(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('n_step', 3)
+    kwargs.setdefault('replay_cls', PrioritizedReplay)
+    kwargs.setdefault('async_replay', True)
     config = Config()
     config.merge(kwargs)
 
@@ -233,30 +236,40 @@ def rainbow_feature(**kwargs):
     config.categorical_v_min = -100
     config.categorical_n_atoms = 50
 
-    config.replay_type = Config.PRIORITIZED_REPLAY
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10, replay_type=config.replay_type)
+    config.discount = 0.99
+    config.batch_size = 32
+    replay_kwargs = dict(
+        memory_size=int(1e4),
+        batch_size=config.batch_size,
+        n_step=config.n_step,
+        discount=config.discount,
+        history_length=1)
+
+    config.replay_fn = lambda: ReplayWrapper(config.replay_cls, replay_kwargs, config.async_replay)
+
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1, config.max_steps)
+    config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
 
-    config.random_action_prob = LinearSchedule(0)
-    config.discount = 0.99
     config.target_network_update_freq = 200
     config.exploration_steps = 1000
     config.double_q = True
     config.sgd_update_frequency = 4
     config.eval_interval = int(5e3)
     config.async_actor = True
-    config.n_step = 3
     config.gradient_clip = 10
 
-    run_steps(RainbowAgent(config))
+    run_steps(CategoricalDQNAgent(config))
 
 
 def rainbow_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('n_step', 3)
+    kwargs.setdefault('replay_cls', PrioritizedReplay)
+    kwargs.setdefault('async_replay', True)
+    kwargs.setdefault('noisy_linear', True)
     config = Config()
     config.merge(kwargs)
 
@@ -264,7 +277,6 @@ def rainbow_pixel(**kwargs):
     config.eval_env = config.task_fn()
 
     config.max_steps = int(2e7)
-    config.noisy_linear = True
     Config.NOISY_LAYER_STD = 0.5
     config.optimizer_fn = lambda params: torch.optim.Adam(
         params, lr=0.000625, eps=1.5e-4)
@@ -278,29 +290,33 @@ def rainbow_pixel(**kwargs):
     config.categorical_v_min = -10
     config.categorical_n_atoms = 51
 
-    if config.noisy_linear:
-        config.random_action_prob = LinearSchedule(0)
-    else:
-        config.random_action_prob = LinearSchedule(1, 0.01, 25e4)
+    config.random_action_prob = LinearSchedule(1, 0.01, 25e4)
 
-    config.replay_type = Config.PRIORITIZED_REPLAY
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32, replay_type=config.replay_type)
+    config.batch_size = 32
+    config.discount = 0.99
+    config.history_length = 4
+    replay_kwargs = dict(
+        memory_size=int(1e6),
+        batch_size=config.batch_size,
+        n_step=config.n_step,
+        discount=config.discount,
+        history_length=config.history_length,
+    )
+    config.replay_fn = lambda: ReplayWrapper(config.replay_cls, replay_kwargs, config.async_replay)
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
 
-    config.batch_size = 32
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
-    config.discount = 0.99
     config.target_network_update_freq = 2000
     config.exploration_steps = 20000
+    # config.exploration_steps = 200
     config.sgd_update_frequency = 4
-    config.history_length = 4
     config.double_q = True
     config.async_actor = True
     config.gradient_clip = 10
-    run_steps(RainbowAgent(config))
+    run_steps(CategoricalDQNAgent(config))
 
 
 # A2C
@@ -593,10 +609,10 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'CartPole-v0'
-    dqn_feature(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True, noisy_linear=True)
+    # dqn_feature(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True, noisy_linear=True)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
-    # rainbow_feature(game=game)
+    rainbow_feature(game=game)
     # a2c_feature(game=game)
     # n_step_dqn_feature(game=game)
     # option_critic_feature(game=game)

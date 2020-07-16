@@ -83,7 +83,7 @@ class RainbowNet(nn.Module, BaseNet):
         q = value + (advantage - advantage.mean(1, keepdim=True))
         prob = F.softmax(q, dim=-1)
         log_prob = F.log_softmax(q, dim=-1)
-        return prob, log_prob
+        return dict(prob=prob, log_prob=log_prob)
 
 
 class QuantileNet(nn.Module, BaseNet):

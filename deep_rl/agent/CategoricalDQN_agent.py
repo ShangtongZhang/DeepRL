@@ -9,38 +9,22 @@ from ..component import *
 from ..utils import *
 import time
 from .BaseAgent import *
+from .DQN_agent import *
 
 
-class CategoricalDQNActor(BaseActor):
+class CategoricalDQNActor(DQNActor):
     def __init__(self, config):
-        BaseActor.__init__(self, config)
-        self.config = config
-        self.start()
+        super().__init__(config)
 
     def _set_up(self):
         self.config.atoms = tensor(self.config.atoms)
 
-    def _transition(self):
-        if self._state is None:
-            self._state = self._task.reset()
-        config = self.config
-        with config.lock:
-            probs, _ = self._network(config.state_normalizer(self._state))
-        q_values = (probs * self.config.atoms).sum(-1)
-        q_values = to_np(q_values).flatten()
-        if self._total_steps < config.exploration_steps \
-                or np.random.rand() < config.random_action_prob():
-            action = np.random.randint(0, len(q_values))
-        else:
-            action = np.argmax(q_values)
-        next_state, reward, done, info = self._task.step([action])
-        entry = [self._state[0], action, reward[0], next_state[0], int(done[0]), info]
-        self._total_steps += 1
-        self._state = next_state
-        return entry
+    def compute_q(self, prediction):
+        q_values = (prediction['prob'] * self.config.atoms).sum(-1)
+        return to_np(q_values)
 
 
-class CategoricalDQNAgent(BaseAgent):
+class CategoricalDQNAgent(DQNAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -60,66 +44,46 @@ class CategoricalDQNAgent(BaseAgent):
         self.actor.set_network(self.network)
 
         self.total_steps = 0
-        self.batch_indices = range_tensor(self.replay.batch_size)
+        self.batch_indices = range_tensor(config.batch_size)
         self.atoms = tensor(config.atoms)
         self.delta_atom = (config.categorical_v_max - config.categorical_v_min) / float(config.categorical_n_atoms - 1)
-
-    def close(self):
-        close_obj(self.replay)
-        close_obj(self.actor)
 
     def eval_step(self, state):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(state)
-        prob, _ = self.network(state)
-        q = (prob * self.atoms).sum(-1)
-        action = np.argmax(to_np(q).flatten())
+        prediction = self.network(state)
+        q = (prediction['prob'] * self.atoms).sum(-1)
+        action = to_np(q.argmax(-1))
         self.config.state_normalizer.unset_read_only()
-        return [action]
+        return action
 
-    def step(self):
+    def compute_loss(self, transitions):
         config = self.config
-        transitions = self.actor.step()
-        experiences = []
-        for state, action, reward, next_state, done, info in transitions:
-            self.record_online_return(info)
-            self.total_steps += 1
-            reward = config.reward_normalizer(reward)
-            experiences.append([state, action, reward, next_state, done])
-        self.replay.feed_batch(experiences)
-
-        if self.total_steps > self.config.exploration_steps:
-            experiences = self.replay.sample()
-            states, actions, rewards, next_states, terminals = experiences
-            states = self.config.state_normalizer(states)
-            next_states = self.config.state_normalizer(next_states)
-
-            with torch.no_grad():
-                prob_next, _ = self.target_network(next_states)
+        states = self.config.state_normalizer(transitions.state)
+        next_states = self.config.state_normalizer(transitions.next_state)
+        with torch.no_grad():
+            prob_next = self.target_network(next_states)['prob']
             q_next = (prob_next * self.atoms).sum(-1)
-            a_next = torch.argmax(q_next, dim=-1)
+            if config.double_q:
+                a_next = torch.argmax((self.network(next_states)['prob'] * self.atoms).sum(-1), dim=-1)
+            else:
+                a_next = torch.argmax(q_next, dim=-1)
             prob_next = prob_next[self.batch_indices, a_next, :]
 
-            rewards = tensor(rewards).unsqueeze(-1)
-            terminals = tensor(terminals).unsqueeze(-1)
-            atoms_target = rewards + self.config.discount * (1 - terminals) * self.atoms.view(1, -1)
-            atoms_target.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
-            atoms_target = atoms_target.unsqueeze(1)
-            target_prob = (1 - (atoms_target - self.atoms.view(1, -1, 1)).abs() / self.delta_atom).clamp(0, 1) * \
-                          prob_next.unsqueeze(1)
-            target_prob = target_prob.sum(-1)
+        rewards = tensor(transitions.reward).unsqueeze(-1)
+        masks = tensor(transitions.mask).unsqueeze(-1)
+        atoms_target = rewards + self.config.discount ** config.n_step * masks * self.atoms.view(1, -1)
+        atoms_target.clamp_(self.config.categorical_v_min, self.config.categorical_v_max)
+        atoms_target = atoms_target.unsqueeze(1)
+        target_prob = (1 - (atoms_target - self.atoms.view(1, -1, 1)).abs() / self.delta_atom).clamp(0, 1) * \
+                      prob_next.unsqueeze(1)
+        target_prob = target_prob.sum(-1)
 
-            _, log_prob = self.network(states)
-            actions = tensor(actions).long()
-            log_prob = log_prob[self.batch_indices, actions, :]
-            loss = -(target_prob * log_prob).sum(-1).mean()
+        log_prob = self.network(states)['log_prob']
+        actions = tensor(transitions.action).long()
+        log_prob = log_prob[self.batch_indices, actions, :]
+        KL = (target_prob * target_prob.add(1e-5).log() - target_prob * log_prob).sum(-1)
+        return KL
 
-            self.optimizer.zero_grad()
-            loss.backward()
-            nn.utils.clip_grad_norm_(self.network.parameters(), self.config.gradient_clip)
-            with config.lock:
-                self.optimizer.step()
-
-        if self.total_steps / self.config.sgd_update_frequency % \
-                self.config.target_network_update_freq == 0:
-            self.target_network.load_state_dict(self.network.state_dict())
+    def reduce_loss(self, loss):
+        return loss.mean()
