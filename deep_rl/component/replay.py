@@ -12,12 +12,25 @@ from ..utils import *
 import random
 from collections import namedtuple
 
-
 Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'mask'])
-PrioritizedTransition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'mask', 'sampling_prob', 'idx'])
+PrioritizedTransition = namedtuple('Transition',
+                                   ['state', 'action', 'reward', 'next_state', 'mask', 'sampling_prob', 'idx'])
 
 
-class Replay:
+class ReplayBase:
+    def sample(self, batch_size):
+        raise NotImplementedError
+
+    def update_priorities(self, info):
+        raise NotImplementedError
+
+    def feed(self, data):
+        raise NotImplementedError
+
+
+class Replay(ReplayBase):
+    TransitionCLS = Transition
+
     def __init__(self, memory_size, batch_size, n_step=1, discount=1, history_length=1, keys=None):
         if keys is None:
             keys = []
@@ -86,7 +99,7 @@ class Replay:
             if transition is not None:
                 sampled_data.append(transition)
         sampled_data = zip(*sampled_data)
-        sampled_data = list(map(lambda x: np.array(x), sampled_data))
+        sampled_data = list(map(lambda x: np.asarray(x), sampled_data))
         return Transition(*sampled_data)
 
     def valid_index(self, index):
@@ -113,8 +126,8 @@ class Replay:
         action = self.action[s_end]
         reward = [self.reward[i] for i in range(s_end, s_end + self.n_step)]
         mask = [self.mask[i] for i in range(s_end, s_end + self.n_step)]
-        state = np.asarray(state)
-        next_state = np.asarray(next_state)
+        state = np.array(state)
+        next_state = np.array(next_state)
         cum_r = 0
         cum_mask = 1
         for i in reversed(np.arange(self.n_step)):
@@ -124,6 +137,8 @@ class Replay:
 
 
 class PrioritizedReplay(Replay):
+    TransitionCLS = PrioritizedTransition
+
     def __init__(self, memory_size, batch_size, n_step=1, discount=1, history_length=1, keys=None):
         super(PrioritizedReplay, self).__init__(memory_size, batch_size, n_step, discount, history_length, keys)
         self.tree = SumTree(memory_size)
@@ -168,27 +183,28 @@ class PrioritizedReplay(Replay):
             self.tree.update(idx, priority)
 
 
-class AsyncReplay(mp.Process):
+class ReplayWrapper(mp.Process):
     FEED = 0
     SAMPLE = 1
     EXIT = 2
     UPDATE_PRIORITIES = 3
 
-    def __init__(self, replay_kwargs, replay_type=Config.DEFAULT_REPLAY):
+    def __init__(self, replay_cls, replay_kwargs, async=True):
         mp.Process.__init__(self)
-        self.pipe, self.worker_pipe = mp.Pipe()
         self.replay_kwargs = replay_kwargs
+        self.replay_cls = replay_cls
         self.cache_len = 2
-        self.replay_type = replay_type
-        self.start()
+        if async:
+            self.pipe, self.worker_pipe = mp.Pipe()
+            self.start()
+        else:
+            replay = replay_cls(**replay_kwargs)
+            self.sample = replay.sample
+            self.feed = replay.feed
+            self.update_priorities = replay.update_priorities
 
     def run(self):
-        if self.replay_type == Config.DEFAULT_REPLAY:
-            replay = Replay(**self.replay_kwargs)
-        elif self.replay_type == Config.PRIORITIZED_REPLAY:
-            replay = PrioritizedReplay(**self.replay_kwargs)
-        else:
-            raise NotImplementedError
+        replay = self.replay_cls(**self.replay_kwargs)
 
         cache = []
         pending_data = None
@@ -246,13 +262,7 @@ class AsyncReplay(mp.Process):
         cache_id, data = self.pipe.recv()
         if data is not None:
             self.cache = data
-        if self.replay_type == Config.DEFAULT_REPLAY:
-            TransitionCLS = Transition
-        elif self.replay_type == Config.PRIORITIZED_REPLAY:
-            TransitionCLS = PrioritizedTransition
-        else:
-            raise NotImplementedError
-        return TransitionCLS(*self.cache[cache_id])
+        return self.replay_cls.TransitionCLS(*self.cache[cache_id])
 
     def update_priorities(self, info):
         self.pipe.send([self.UPDATE_PRIORITIES, info])

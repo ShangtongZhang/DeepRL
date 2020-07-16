@@ -12,7 +12,8 @@ def dqn_feature(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('n_step', 1)
-    kwargs.setdefault('replay_type', Config.DEFAULT_REPLAY)
+    kwargs.setdefault('replay_cls', Replay)
+    kwargs.setdefault('async_replay', True)
     config = Config()
     config.merge(kwargs)
 
@@ -34,8 +35,7 @@ def dqn_feature(**kwargs):
         discount=config.discount,
         history_length=config.history_length)
 
-    config.replay_fn = lambda: AsyncReplay(replay_kwargs=replay_kwargs, replay_type=Config.DEFAULT_REPLAY)
-    # config.replay_fn = lambda: Replay(**replay_kwargs)
+    config.replay_fn = lambda: ReplayWrapper(config.replay_cls, replay_kwargs, config.async_replay)
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
@@ -56,7 +56,8 @@ def dqn_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
     kwargs.setdefault('n_step', 3)
-    kwargs.setdefault('replay_type', Config.DEFAULT_REPLAY)
+    kwargs.setdefault('replay_cls', Replay)
+    kwargs.setdefault('async_replay', False)
     config = Config()
     config.merge(kwargs)
 
@@ -78,11 +79,7 @@ def dqn_pixel(**kwargs):
         discount=config.discount,
         history_length=config.history_length,
     )
-    # if config.replay_type == Config.DEFAULT_REPLAY:
-    #     config.replay_fn = lambda: Replay(**replay_kwargs)
-    # else:
-    #     config.replay_fn = lambda: PrioritizedReplay(**replay_kwargs)
-    config.replay_fn = lambda: AsyncReplay(replay_kwargs=replay_kwargs, replay_type=config.replay_type)
+    config.replay_fn = lambda: ReplayWrapper(config.replay_cls, replay_kwargs, config.async_replay)
     config.replay_eps = 0.01
     config.replay_alpha = 0.5
     config.replay_beta = LinearSchedule(0.4, 1.0, config.max_steps)
@@ -570,7 +567,12 @@ def td3_continuous(**kwargs):
         actor_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3),
         critic_opt_fn=lambda params: torch.optim.Adam(params, lr=1e-3))
 
-    config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=100)
+    replay_kwargs = dict(
+        memory_size=int(1e6),
+        batch_size=100,
+    )
+
+    config.replay_fn = lambda: ReplayWrapper(Replay, replay_kwargs)
     config.discount = 0.99
     config.random_process_fn = lambda: GaussianProcess(
         size=(config.action_dim,), std=LinearSchedule(0.1))
@@ -591,7 +593,7 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'CartPole-v0'
-    # dqn_feature(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
+    # dqn_feature(game=game, n_step=1, replay_cls=PrioritizedReplay, async_replay=True)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
     # rainbow_feature(game=game)
@@ -604,10 +606,10 @@ if __name__ == '__main__':
     # a2c_continuous(game=game)
     # ppo_continuous(game=game)
     # ddpg_continuous(game=game)
-    td3_continuous(game=game)
+    # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    dqn_pixel(game=game, n_step=1, replay_type=Config.PRIORITIZED_REPLAY)
+    dqn_pixel(game=game, n_step=1, replay_cls=PrioritizedReplay, async_replay=True)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)

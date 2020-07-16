@@ -68,7 +68,7 @@ class TD3Agent(BaseAgent):
         self.state = next_state
         self.total_steps += 1
 
-        if self.replay.size() >= config.warm_up:
+        if self.total_steps >= config.warm_up:
             transitions = self.replay.sample()
             states = tensor(transitions.state).squeeze(1)
             actions = tensor(transitions.action)

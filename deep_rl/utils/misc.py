@@ -60,6 +60,13 @@ def random_sample(indices, batch_size):
         yield indices[-r:]
 
 
+def is_plain_type(x):
+    for t in [str, int, float, bool]:
+        if isinstance(x, t):
+            return True
+    return False
+
+
 def generate_tag(params):
     if 'tag' in params.keys():
         return
@@ -68,7 +75,7 @@ def generate_tag(params):
     run = params['run']
     del params['game']
     del params['run']
-    str = ['%s_%s' % (k, v) for k, v in sorted(params.items())]
+    str = ['%s_%s' % (k, v if is_plain_type(v) else v.__name__) for k, v in sorted(params.items())]
     tag = '%s-%s-run-%d' % (game, '-'.join(str), run)
     params['tag'] = tag
     params['game'] = game
