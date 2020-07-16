@@ -51,7 +51,7 @@ class CategoricalNet(nn.Module, BaseNet):
         pre_prob = self.fc_categorical(phi).view((-1, self.action_dim, self.num_atoms))
         prob = F.softmax(pre_prob, dim=-1)
         log_prob = F.log_softmax(pre_prob, dim=-1)
-        return prob, log_prob
+        return dict(prob=prob, log_prob=log_prob)
 
 
 class RainbowNet(nn.Module, BaseNet):
@@ -99,7 +99,7 @@ class QuantileNet(nn.Module, BaseNet):
         phi = self.body(tensor(x))
         quantiles = self.fc_quantiles(phi)
         quantiles = quantiles.view((-1, self.action_dim, self.num_quantiles))
-        return quantiles
+        return dict(quantile=quantiles)
 
 
 class OptionCriticNet(nn.Module, BaseNet):

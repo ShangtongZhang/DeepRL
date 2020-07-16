@@ -65,6 +65,7 @@ class Config:
         self.decaying_lr = False
         self.shared_repr = False
         self.noisy_linear = False
+        self.n_step = 1
 
     @property
     def eval_env(self):

@@ -108,8 +108,11 @@ def quantile_regression_dqn_feature(**kwargs):
     config.optimizer_fn = lambda params: torch.optim.RMSprop(params, 0.001)
     config.network_fn = lambda: QuantileNet(config.action_dim, config.num_quantiles, FCBody(config.state_dim))
 
-    # config.replay_fn = lambda: Replay(memory_size=int(1e4), batch_size=10)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e4), batch_size=10)
+    config.batch_size = 10
+    replay_kwargs = dict(
+        memory_size=int(1e4),
+        batch_size=config.batch_size)
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs, async=True)
 
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
     config.discount = 0.99
@@ -136,8 +139,13 @@ def quantile_regression_dqn_pixel(**kwargs):
     config.network_fn = lambda: QuantileNet(config.action_dim, config.num_quantiles, NatureConvBody())
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
 
-    # config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32)
+    config.batch_size = 32
+    replay_kwargs = dict(
+        memory_size=int(1e6),
+        batch_size=config.batch_size,
+        history_length=4,
+    )
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs, async=True)
 
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -164,8 +172,11 @@ def categorical_dqn_feature(**kwargs):
     config.network_fn = lambda: CategoricalNet(config.action_dim, config.categorical_n_atoms, FCBody(config.state_dim))
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
 
-    # config.replay_fn = lambda: Replay(memory_size=10000, batch_size=10)
-    config.replay_fn = lambda: AsyncReplay(memory_size=10000, batch_size=10)
+    config.batch_size = 10
+    replay_kwargs = dict(
+        memory_size=int(1e4),
+        batch_size=config.batch_size)
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs, async=True)
 
     config.discount = 0.99
     config.target_network_update_freq = 200
@@ -193,8 +204,13 @@ def categorical_dqn_pixel(**kwargs):
     config.network_fn = lambda: CategoricalNet(config.action_dim, config.categorical_n_atoms, NatureConvBody())
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
 
-    # config.replay_fn = lambda: Replay(memory_size=int(1e6), batch_size=32)
-    config.replay_fn = lambda: AsyncReplay(memory_size=int(1e6), batch_size=32)
+    config.batch_size = 32
+    replay_kwargs = dict(
+        memory_size=int(1e6),
+        batch_size=config.batch_size,
+        history_length=4,
+    )
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs, async=True)
 
     config.discount = 0.99
     config.state_normalizer = ImageNormalizer()
@@ -605,6 +621,7 @@ if __name__ == '__main__':
     mkdir('tf_log')
     set_one_thread()
     random_seed()
+    # -1 is CPU, a positive integer is the index of GPU
     select_device(-1)
     # select_device(0)
 
@@ -627,7 +644,7 @@ if __name__ == '__main__':
     game = 'BreakoutNoFrameskip-v4'
     # dqn_pixel(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True)
     # quantile_regression_dqn_pixel(game=game)
-    # categorical_dqn_pixel(game=game)
+    categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
