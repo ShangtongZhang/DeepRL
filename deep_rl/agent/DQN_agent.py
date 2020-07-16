@@ -22,8 +22,8 @@ class DQNActor(BaseActor):
             self._state = self._task.reset()
         config = self.config
         with config.lock:
-            q_values = self._network(config.state_normalizer(self._state))
-        q_values = to_np(q_values)
+            prediction = self._network(config.state_normalizer(self._state))
+        q_values = to_np(prediction['q'])
         epsilon = 1 if self._total_steps < config.exploration_steps else config.random_action_prob()
         action = epsilon_greedy(epsilon, q_values)
         next_state, reward, done, info = self._task.step(action)
@@ -58,7 +58,7 @@ class DQNAgent(BaseAgent):
     def eval_step(self, state):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(state)
-        q = self.network(state)
+        q = self.network(state)['q']
         action = to_np(q.argmax(-1))
         self.config.state_normalizer.unset_read_only()
         return action
@@ -84,9 +84,9 @@ class DQNAgent(BaseAgent):
             states = self.config.state_normalizer(transitions.state)
             next_states = self.config.state_normalizer(transitions.next_state)
             with torch.no_grad():
-                q_next = self.target_network(next_states).detach()
+                q_next = self.target_network(next_states)['q'].detach()
                 if self.config.double_q:
-                    best_actions = torch.argmax(self.network(next_states), dim=-1)
+                    best_actions = torch.argmax(self.network(next_states)['q'], dim=-1)
                     q_next = q_next.gather(1, best_actions.unsqueeze(-1))
                 else:
                     q_next = q_next.max(1)[0]
@@ -94,7 +94,7 @@ class DQNAgent(BaseAgent):
             rewards = tensor(transitions.reward)
             q_target = rewards + self.config.discount ** config.n_step * q_next * masks
             actions = tensor(transitions.action).long()
-            q = self.network(states)
+            q = self.network(states)['q']
             q = q.gather(1, actions.unsqueeze(-1)).squeeze(-1)
             loss = q_target - q
             if isinstance(transitions, PrioritizedTransition):

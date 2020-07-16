@@ -17,8 +17,8 @@ class VanillaNet(nn.Module, BaseNet):
 
     def forward(self, x):
         phi = self.body(tensor(x))
-        y = self.fc_head(phi)
-        return y
+        q = self.fc_head(phi)
+        return dict(q=q)
 
 
 class DuelingNet(nn.Module, BaseNet):
@@ -34,7 +34,7 @@ class DuelingNet(nn.Module, BaseNet):
         value = self.fc_value(phi)
         advantange = self.fc_advantage(phi)
         q = value.expand_as(advantange) + (advantange - advantange.mean(1, keepdim=True).expand_as(advantange))
-        return q
+        return dict(q=q)
 
 
 class CategoricalNet(nn.Module, BaseNet):

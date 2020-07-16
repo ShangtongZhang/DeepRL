@@ -68,7 +68,6 @@ class FCBody(nn.Module):
                 layer.reset_noise()
 
     def forward(self, x):
-        x = x.view(x.size(0), -1)
         for layer in self.layers:
             x = self.gate(layer(x))
         return x

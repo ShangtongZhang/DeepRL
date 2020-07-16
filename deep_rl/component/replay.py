@@ -243,7 +243,6 @@ class ReplayWrapper(mp.Process):
             if op == self.FEED:
                 replay.feed(data)
             elif op == self.SAMPLE:
-                print(replay.size())
                 if cache_initialized:
                     self.worker_pipe.send([cur_cache, None])
                 else:
