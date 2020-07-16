@@ -70,10 +70,10 @@ class TD3Agent(BaseAgent):
 
         if self.total_steps >= config.warm_up:
             transitions = self.replay.sample()
-            states = tensor(transitions.state).squeeze(1)
+            states = tensor(transitions.state)
             actions = tensor(transitions.action)
             rewards = tensor(transitions.reward).unsqueeze(-1)
-            next_states = tensor(transitions.next_state).squeeze(1)
+            next_states = tensor(transitions.next_state)
             mask = tensor(transitions.mask).unsqueeze(-1)
 
             a_next = self.target_network(next_states)

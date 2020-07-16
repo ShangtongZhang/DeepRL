@@ -60,7 +60,8 @@ class PPOAgent(BaseAgent):
             storage.advantage[i] = advantages.detach()
             storage.ret[i] = returns.detach()
 
-        entries, EntryCLS = storage.extract(['state', 'action', 'log_pi_a', 'ret', 'advantage'])
+        entries = storage.extract(['state', 'action', 'log_pi_a', 'ret', 'advantage'])
+        EntryCLS = entries.__class__
         entries = EntryCLS(*list(map(lambda x: x.detach(), entries)))
         entries.advantage.copy_((entries.advantage - entries.advantage.mean()) / entries.advantage.std())
 

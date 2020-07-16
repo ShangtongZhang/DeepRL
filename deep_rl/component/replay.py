@@ -51,7 +51,7 @@ class Storage:
         data = [getattr(self, k)[:self.memory_size] for k in keys]
         data = map(lambda x: torch.cat(x, dim=0), data)
         Entry = namedtuple('Entry', keys)
-        return Entry(*list(data)), Entry
+        return Entry(*list(data))
 
 
 class UniformReplay(Storage):

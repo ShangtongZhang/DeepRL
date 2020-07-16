@@ -29,7 +29,7 @@ class NStepDQNAgent(BaseAgent):
 
         states = self.states
         for _ in range(config.rollout_length):
-            q = self.network(self.config.state_normalizer(states))
+            q = self.network(self.config.state_normalizer(states))['q']
 
             epsilon = config.random_action_prob(config.num_workers)
             actions = epsilon_greedy(epsilon, to_np(q))
@@ -38,10 +38,10 @@ class NStepDQNAgent(BaseAgent):
             self.record_online_return(info)
             rewards = config.reward_normalizer(rewards)
 
-            storage.add({'q': q,
-                         'a': tensor(actions).unsqueeze(-1).long(),
-                         'r': tensor(rewards).unsqueeze(-1),
-                         'm': tensor(1 - terminals).unsqueeze(-1)})
+            storage.feed({'q': q,
+                          'action': tensor(actions).unsqueeze(-1).long(),
+                          'reward': tensor(rewards).unsqueeze(-1),
+                          'mask': tensor(1 - terminals).unsqueeze(-1)})
 
             states = next_states
 
@@ -53,14 +53,14 @@ class NStepDQNAgent(BaseAgent):
 
         storage.placeholder()
 
-        ret = self.target_network(config.state_normalizer(states)).detach()
+        ret = self.target_network(config.state_normalizer(states))['q'].detach()
         ret = torch.max(ret, dim=1, keepdim=True)[0]
         for i in reversed(range(config.rollout_length)):
-            ret = storage.r[i] + config.discount * storage.m[i] * ret
+            ret = storage.reward[i] + config.discount * storage.mask[i] * ret
             storage.ret[i] = ret
 
-        q, action, ret = storage.cat(['q', 'a', 'ret'])
-        loss = 0.5 * (q.gather(1, action) - ret).pow(2).mean()
+        entries = storage.extract(['q', 'action', 'ret'])
+        loss = 0.5 * (entries.q.gather(1, entries.action) - entries.ret).pow(2).mean()
         self.optimizer.zero_grad()
         loss.backward()
         nn.utils.clip_grad_norm_(self.network.parameters(), config.gradient_clip)

@@ -50,7 +50,7 @@ class OptionCriticAgent(BaseAgent):
 
     def step(self):
         config = self.config
-        storage = Storage(config.rollout_length, ['beta', 'o', 'beta_adv', 'prev_o', 'init', 'eps'])
+        storage = Storage(config.rollout_length, ['beta', 'option', 'beta_advantage', 'prev_option', 'init_state', 'eps'])
 
         for _ in range(config.rollout_length):
             prediction = self.network(self.states)
@@ -66,15 +66,15 @@ class OptionCriticAgent(BaseAgent):
             self.record_online_return(info)
             next_states = config.state_normalizer(next_states)
             rewards = config.reward_normalizer(rewards)
-            storage.add(prediction)
-            storage.add({'r': tensor(rewards).unsqueeze(-1),
-                         'm': tensor(1 - terminals).unsqueeze(-1),
-                         'o': options.unsqueeze(-1),
-                         'prev_o': self.prev_options.unsqueeze(-1),
-                         'ent': entropy.unsqueeze(-1),
-                         'a': actions.unsqueeze(-1),
-                         'init': self.is_initial_states.unsqueeze(-1).float(),
-                         'eps': epsilon})
+            storage.feed(prediction)
+            storage.feed({'reward': tensor(rewards).unsqueeze(-1),
+                          'mask': tensor(1 - terminals).unsqueeze(-1),
+                          'option': options.unsqueeze(-1),
+                          'prev_option': self.prev_options.unsqueeze(-1),
+                          'entropy': entropy.unsqueeze(-1),
+                          'action': actions.unsqueeze(-1),
+                          'init_state': self.is_initial_states.unsqueeze(-1).float(),
+                          'eps': epsilon})
 
             self.is_initial_states = tensor(terminals).byte()
             self.prev_options = options
@@ -93,22 +93,24 @@ class OptionCriticAgent(BaseAgent):
             ret = ret.unsqueeze(-1)
 
         for i in reversed(range(config.rollout_length)):
-            ret = storage.r[i] + config.discount * storage.m[i] * ret
-            adv = ret - storage.q[i].gather(1, storage.o[i])
+            ret = storage.reward[i] + config.discount * storage.mask[i] * ret
+            adv = ret - storage.q[i].gather(1, storage.option[i])
             storage.ret[i] = ret
-            storage.adv[i] = adv
+            storage.advantage[i] = adv
 
-            v = storage.q[i].max(dim=-1, keepdim=True)[0] * (1 - storage.eps[i]) + storage.q[i].mean(-1).unsqueeze(-1) * storage.eps[i]
-            q = storage.q[i].gather(1, storage.prev_o[i])
-            storage.beta_adv[i] = q - v + config.termination_regularizer
+            v = storage.q[i].max(dim=-1, keepdim=True)[0] * (1 - storage.eps[i]) + storage.q[i].mean(-1).unsqueeze(-1) * \
+                storage.eps[i]
+            q = storage.q[i].gather(1, storage.prev_option[i])
+            storage.beta_advantage[i] = q - v + config.termination_regularizer
 
-        q, beta, log_pi, ret, adv, beta_adv, ent, option, action, initial_states, prev_o = \
-            storage.cat(['q', 'beta', 'log_pi', 'ret', 'adv', 'beta_adv', 'ent', 'o', 'a', 'init', 'prev_o'])
+        entries = storage.extract(
+            ['q', 'beta', 'log_pi', 'ret', 'advantage', 'beta_advantage', 'entropy', 'option', 'action', 'init_state', 'prev_option'])
 
-        q_loss = (q.gather(1, option) - ret.detach()).pow(2).mul(0.5).mean()
-        pi_loss = -(log_pi.gather(1, action) * adv.detach()) - config.entropy_weight * ent
+        q_loss = (entries.q.gather(1, entries.option) - entries.ret.detach()).pow(2).mul(0.5).mean()
+        pi_loss = -(entries.log_pi.gather(1,
+                                          entries.action) * entries.advantage.detach()) - config.entropy_weight * entries.entropy
         pi_loss = pi_loss.mean()
-        beta_loss = (beta.gather(1, prev_o) * beta_adv.detach() * (1 - initial_states)).mean()
+        beta_loss = (entries.beta.gather(1, entries.prev_option) * entries.beta_advantage.detach() * (1 - entries.init_state)).mean()
 
         self.optimizer.zero_grad()
         (pi_loss + q_loss + beta_loss).backward()

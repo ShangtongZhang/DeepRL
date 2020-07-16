@@ -70,10 +70,10 @@ class DDPGAgent(BaseAgent):
 
         if self.replay.size() >= config.warm_up:
             transitions = self.replay.sample()
-            states = tensor(transitions.state).squeeze(1)
+            states = tensor(transitions.state)
             actions = tensor(transitions.action)
             rewards = tensor(transitions.reward).unsqueeze(-1)
-            next_states = tensor(transitions.next_state).squeeze(1)
+            next_states = tensor(transitions.next_state)
             mask = tensor(transitions.mask).unsqueeze(-1)
 
             phi_next = self.target_network.feature(next_states)
