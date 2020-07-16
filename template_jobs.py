@@ -10,8 +10,8 @@ def batch_atari():
     games = [
         # 'BreakoutNoFrameskip-v4',
         # 'AlienNoFrameskip-v4',
-        'DemonAttackNoFrameskip-v4',
-        # 'MsPacmanNoFrameskip-v4'
+        # 'DemonAttackNoFrameskip-v4',
+        'MsPacmanNoFrameskip-v4'
     ]
 
     algos = [
@@ -30,14 +30,12 @@ def batch_atari():
     for game in games:
         for r in range(1):
             for n_step in [1, 2, 3]:
-                for rp in [PrioritizedReplay]:
-                    for async in [True]:
-                        for nl in [True, False]:
-                            params.append(
-                                # [dqn_pixel,
-                                #  dict(game=game, run=r, n_step=n_step, replay_cls=rp, async_replay=async, remark=dqn_pixel.__name__)]
-                                [rainbow_pixel, dict(game=game, run=r, n_step=n_step, noisy_linear=nl, remark=rainbow_pixel.__name__)]
-                            )
+                params.extend([
+                    [dqn_pixel,
+                     dict(game=game, run=r, n_step=n_step, replay_cls=PrioritizedReplay, remark=dqn_pixel.__name__)],
+                    [rainbow_pixel,
+                     dict(game=game, run=r, n_step=n_step, noisy_linear=False, remark=rainbow_pixel.__name__)]
+                ])
             # params.append(
             #     [categorical_dqn_pixel, dict(game=game, run=r, remark=categorical_dqn_pixel.__name__)]),
             # params.append([dqn_pixel, dict(game=game, run=r, remark=dqn_pixel.__name__)])
