@@ -593,7 +593,7 @@ if __name__ == '__main__':
     # select_device(0)
 
     game = 'CartPole-v0'
-    dqn_feature(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True)
+    dqn_feature(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True, noisy_linear=True)
     # quantile_regression_dqn_feature(game=game)
     # categorical_dqn_feature(game=game)
     # rainbow_feature(game=game)

@@ -17,15 +17,22 @@ class DQNActor(BaseActor):
         self.config = config
         self.start()
 
+    def compute_action(self, prediction):
+        config = self.config
+        q_values = to_np(prediction['q'])
+        epsilon = 1 if self._total_steps < config.exploration_steps else config.random_action_prob()
+        action = epsilon_greedy(epsilon, q_values)
+        return action
+
     def _transition(self):
         if self._state is None:
             self._state = self._task.reset()
         config = self.config
+        if config.noisy_linear:
+            self._network.reset_noise()
         with config.lock:
             prediction = self._network(config.state_normalizer(self._state))
-        q_values = to_np(prediction['q'])
-        epsilon = 1 if self._total_steps < config.exploration_steps else config.random_action_prob()
-        action = epsilon_greedy(epsilon, q_values)
+        action = self.compute_action(prediction)
         next_state, reward, done, info = self._task.step(action)
         entry = [self._state, action, reward, next_state, done, info]
         self._total_steps += 1
@@ -66,6 +73,26 @@ class DQNAgent(BaseAgent):
     def reduce_loss(self, loss):
         return loss.pow(2).mul(0.5).mean()
 
+    def compute_loss(self, transitions):
+        config = self.config
+        states = self.config.state_normalizer(transitions.state)
+        next_states = self.config.state_normalizer(transitions.next_state)
+        with torch.no_grad():
+            q_next = self.target_network(next_states)['q'].detach()
+            if self.config.double_q:
+                best_actions = torch.argmax(self.network(next_states)['q'], dim=-1)
+                q_next = q_next.gather(1, best_actions.unsqueeze(-1))
+            else:
+                q_next = q_next.max(1)[0]
+        masks = tensor(transitions.mask)
+        rewards = tensor(transitions.reward)
+        q_target = rewards + self.config.discount ** config.n_step * q_next * masks
+        actions = tensor(transitions.action).long()
+        q = self.network(states)['q']
+        q = q.gather(1, actions.unsqueeze(-1)).squeeze(-1)
+        loss = q_target - q
+        return loss
+
     def step(self):
         config = self.config
         transitions = self.actor.step()
@@ -81,22 +108,10 @@ class DQNAgent(BaseAgent):
 
         if self.total_steps > self.config.exploration_steps:
             transitions = self.replay.sample()
-            states = self.config.state_normalizer(transitions.state)
-            next_states = self.config.state_normalizer(transitions.next_state)
-            with torch.no_grad():
-                q_next = self.target_network(next_states)['q'].detach()
-                if self.config.double_q:
-                    best_actions = torch.argmax(self.network(next_states)['q'], dim=-1)
-                    q_next = q_next.gather(1, best_actions.unsqueeze(-1))
-                else:
-                    q_next = q_next.max(1)[0]
-            masks = tensor(transitions.mask)
-            rewards = tensor(transitions.reward)
-            q_target = rewards + self.config.discount ** config.n_step * q_next * masks
-            actions = tensor(transitions.action).long()
-            q = self.network(states)['q']
-            q = q.gather(1, actions.unsqueeze(-1)).squeeze(-1)
-            loss = q_target - q
+            if config.noisy_linear:
+                self.target_network.reset_noise()
+                self.network.reset_noise()
+            loss = self.compute_loss(transitions)
             if isinstance(transitions, PrioritizedTransition):
                 priorities = loss.abs().add(config.replay_eps).pow(config.replay_alpha)
                 idxs = tensor(transitions.idx).long()

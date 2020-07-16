@@ -64,6 +64,7 @@ class Config:
         self.replay_type = Config.DEFAULT_REPLAY
         self.decaying_lr = False
         self.shared_repr = False
+        self.noisy_linear = False
 
     @property
     def eval_env(self):
