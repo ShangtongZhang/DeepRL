@@ -609,7 +609,7 @@ if __name__ == '__main__':
     # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    dqn_pixel(game=game, n_step=1, replay_cls=PrioritizedReplay, async_replay=True)
+    dqn_pixel(game=game, n_step=1, replay_cls=Replay, async_replay=True)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
     # rainbow_pixel(game=game)

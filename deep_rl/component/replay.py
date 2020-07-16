@@ -207,9 +207,8 @@ class ReplayWrapper(mp.Process):
         replay = self.replay_cls(**self.replay_kwargs)
 
         cache = []
-        pending_data = None
 
-        first = True
+        cache_initialized = False
         cur_cache = 0
 
         def set_up_cache():
@@ -230,22 +229,17 @@ class ReplayWrapper(mp.Process):
         while True:
             op, data = self.worker_pipe.recv()
             if op == self.FEED:
-                if not first:
-                    pending_data = data
-                else:
-                    replay.feed(data)
+                replay.feed(data)
             elif op == self.SAMPLE:
-                if first:
-                    set_up_cache()
-                    first = False
-                    self.worker_pipe.send([cur_cache, cache])
-                else:
+                print(replay.size())
+                if cache_initialized:
                     self.worker_pipe.send([cur_cache, None])
+                else:
+                    set_up_cache()
+                    cache_initialized = True
+                    self.worker_pipe.send([cur_cache, cache])
                 cur_cache = (cur_cache + 1) % 2
                 sample(cur_cache)
-                if pending_data is not None:
-                    replay.feed(pending_data)
-                    pending_data = None
             elif op == self.UPDATE_PRIORITIES:
                 replay.update_priorities(data)
             elif op == self.EXIT:

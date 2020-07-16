@@ -8,7 +8,7 @@ def batch_atari():
     cf.merge()
 
     games = [
-        'BreakoutNoFrameskip-v4',
+        # 'BreakoutNoFrameskip-v4',
         # 'AlienNoFrameskip-v4',
         'DemonAttackNoFrameskip-v4',
         # 'MsPacmanNoFrameskip-v4'
@@ -30,11 +30,13 @@ def batch_atari():
     for game in games:
         for r in range(1):
             for n_step in [1, 3]:
-                for rp in [Config.DEFAULT_REPLAY, Config.PRIORITIZED_REPLAY]:
-                    params.append(
-                        [dqn_pixel, dict(game=game, run=r, n_step=n_step, replay_type=rp, remark=dqn_pixel.__name__)]
-                        # [rainbow_pixel, dict(game=game, run=r, n_step=n_step, remark=rainbow_pixel.__name__)]
-                    )
+                for rp in [Replay, PrioritizedReplay]:
+                    for async in [False, True]:
+                        params.append(
+                            [dqn_pixel,
+                             dict(game=game, run=r, n_step=n_step, replay_cls=rp, async_replay=async, remark=dqn_pixel.__name__)]
+                            # [rainbow_pixel, dict(game=game, run=r, n_step=n_step, remark=rainbow_pixel.__name__)]
+                        )
             # params.append(
             #     [categorical_dqn_pixel, dict(game=game, run=r, remark=categorical_dqn_pixel.__name__)]),
             # params.append([dqn_pixel, dict(game=game, run=r, remark=dqn_pixel.__name__)])
