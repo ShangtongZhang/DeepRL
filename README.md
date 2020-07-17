@@ -22,7 +22,7 @@ The DQN agent, as well as C51, QR-DQN and Rainbow, has an asynchronous actor for
 Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames, 2.5M gradient updates) for Breakout within 6 hours.
 
 # Dependency
-* PyTorch v1.4.0
+* PyTorch v1.5.1
 * See ```Dockerfile``` and ```requirements.txt``` for more details
 
 # Usage

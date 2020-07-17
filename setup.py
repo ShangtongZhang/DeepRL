@@ -13,4 +13,4 @@ setup(name='deep_rl',
       author="Shangtong Zhang",
       url='https://github.com/ShangtongZhang/DeepRL',
       author_email="zhangshangtong.cpp@gmail.com",
-      version="1.4")
+      version="1.5")

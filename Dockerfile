@@ -38,6 +38,7 @@ ENV LD_LIBRARY_PATH /home/user/.mujoco/mjpro150/bin:${LD_LIBRARY_PATH}
 ENV LD_LIBRARY_PATH /home/user/.mujoco/mjpro200_linux/bin:${LD_LIBRARY_PATH}
 
 RUN conda install -y python=3.6
+RUN conda install mpi4py
 COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 RUN pip install glfw Cython imageio lockfile
