@@ -8,9 +8,9 @@ def batch_atari():
     cf.merge()
 
     games = [
-        'BreakoutNoFrameskip-v4',
+        # 'BreakoutNoFrameskip-v4',
         # 'AlienNoFrameskip-v4',
-        # 'DemonAttackNoFrameskip-v4',
+        'DemonAttackNoFrameskip-v4',
         # 'MsPacmanNoFrameskip-v4'
     ]
 
@@ -29,15 +29,17 @@ def batch_atari():
 
     for game in games:
         for r in range(1):
-            for algo in algos:
-                params.append([algo, dict(game=game, run=r, remark=algo.__name__)])
-            # for n_step in [1, 2, 3]:
-            #     params.extend([
-            #         [dqn_pixel,
-            #          dict(game=game, run=r, n_step=n_step, replay_cls=PrioritizedReplay, remark=dqn_pixel.__name__)],
-            #         [rainbow_pixel,
-            #          dict(game=game, run=r, n_step=n_step, noisy_linear=False, remark=rainbow_pixel.__name__)]
-            #     ])
+            # for algo in algos:
+            #     params.append([algo, dict(game=game, run=r, remark=algo.__name__)])
+            for n_step in [1, 2, 3]:
+                for double_q in [True, False]:
+                    params.extend([
+                        [dqn_pixel,
+                         dict(game=game, run=r, n_step=n_step, replay_cls=PrioritizedReplay, double_q=double_q,
+                              remark=dqn_pixel.__name__)],
+                        # [rainbow_pixel,
+                        #  dict(game=game, run=r, n_step=n_step, noisy_linear=False, remark=rainbow_pixel.__name__)]
+                    ])
             # params.append(
             #     [categorical_dqn_pixel, dict(game=game, run=r, remark=categorical_dqn_pixel.__name__)]),
             # params.append([dqn_pixel, dict(game=game, run=r, remark=dqn_pixel.__name__)])
@@ -117,8 +119,8 @@ if __name__ == '__main__':
     mkdir('data')
     random_seed()
 
-    # select_device(0)
-    # batch_atari()
+    select_device(0)
+    batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
