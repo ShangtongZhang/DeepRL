@@ -55,7 +55,7 @@ def dqn_feature(**kwargs):
 def dqn_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
-    kwargs.setdefault('n_step', 3)
+    kwargs.setdefault('n_step', 1)
     kwargs.setdefault('replay_cls', UniformReplay)
     kwargs.setdefault('async_replay', True)
     config = Config()
@@ -66,8 +66,8 @@ def dqn_pixel(**kwargs):
 
     config.optimizer_fn = lambda params: torch.optim.RMSprop(
         params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
-    # config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
-    config.network_fn = lambda: DuelingNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
+    config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
+    # config.network_fn = lambda: DuelingNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
     config.batch_size = 32
     config.discount = 0.99
@@ -283,7 +283,7 @@ def rainbow_feature(**kwargs):
 def rainbow_pixel(**kwargs):
     generate_tag(kwargs)
     kwargs.setdefault('log_level', 0)
-    kwargs.setdefault('n_step', 3)
+    kwargs.setdefault('n_step', 1)
     kwargs.setdefault('replay_cls', PrioritizedReplay)
     kwargs.setdefault('async_replay', True)
     kwargs.setdefault('noisy_linear', True)
@@ -643,10 +643,10 @@ if __name__ == '__main__':
     # td3_continuous(game=game)
 
     game = 'BreakoutNoFrameskip-v4'
-    # dqn_pixel(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True)
+    dqn_pixel(game=game, n_step=1, replay_cls=UniformReplay, async_replay=False)
     # quantile_regression_dqn_pixel(game=game)
     # categorical_dqn_pixel(game=game)
-    rainbow_pixel(game=game, async_replay=False)
+    # rainbow_pixel(game=game, async_replay=False)
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)
