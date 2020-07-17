@@ -105,7 +105,7 @@ class DQNAgent(BaseAgent):
             self.record_online_return(info)
             self.total_steps += 1
             self.replay.feed(dict(
-                state=[s[-1] if isinstance(s, LazyFrames) else s for s in states],
+                state=np.array([s[-1] if isinstance(s, LazyFrames) else s for s in states]),
                 action=actions,
                 reward=[config.reward_normalizer(r) for r in rewards],
                 mask=1 - np.asarray(dones, dtype=np.int32),
