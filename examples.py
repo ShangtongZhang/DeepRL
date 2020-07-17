@@ -66,7 +66,8 @@ def dqn_pixel(**kwargs):
 
     config.optimizer_fn = lambda params: torch.optim.RMSprop(
         params, lr=0.00025, alpha=0.95, eps=0.01, centered=True)
-    config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
+    # config.network_fn = lambda: VanillaNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
+    config.network_fn = lambda: DuelingNet(config.action_dim, NatureConvBody(in_channels=config.history_length))
     config.random_action_prob = LinearSchedule(1.0, 0.01, 1e6)
     config.batch_size = 32
     config.discount = 0.99
@@ -644,8 +645,8 @@ if __name__ == '__main__':
     game = 'BreakoutNoFrameskip-v4'
     # dqn_pixel(game=game, n_step=1, replay_cls=UniformReplay, async_replay=True)
     # quantile_regression_dqn_pixel(game=game)
-    categorical_dqn_pixel(game=game)
-    # rainbow_pixel(game=game)
+    # categorical_dqn_pixel(game=game)
+    rainbow_pixel(game=game, async_replay=False)
     # a2c_pixel(game=game)
     # n_step_dqn_pixel(game=game)
     # option_critic_pixel(game=game)
