@@ -86,7 +86,7 @@ class DQNAgent(BaseAgent):
             q_next = self.target_network(next_states)['q'].detach()
             if self.config.double_q:
                 best_actions = torch.argmax(self.network(next_states)['q'], dim=-1)
-                q_next = q_next.gather(1, best_actions.unsqueeze(-1))
+                q_next = q_next.gather(1, best_actions.unsqueeze(-1)).squeeze(1)
             else:
                 q_next = q_next.max(1)[0]
         masks = tensor(transitions.mask)
