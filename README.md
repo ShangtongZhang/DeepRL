@@ -31,7 +31,7 @@ Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames,
 Please use this bibtex if you want to cite this repo
 ```
 @misc{deeprl,
-  author = {Shangtong, Zhang},
+  author = {Zhang, Shangtong},
   title = {Modularized Implementation of Deep RL Algorithms in PyTorch},
   year = {2018},
   publisher = {GitHub},
