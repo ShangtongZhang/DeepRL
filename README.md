@@ -28,7 +28,17 @@ Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames,
 
 ```examples.py``` contains examples for all the implemented algorithms.  
 ```Dockerfile``` contains the environment for generating the curves below.  
-Please cite any of the papers [here](#code-of-my-papers) if you want to cite this repo.
+Please use this bibtex if you want to cite this repo
+```
+@misc{deeprl,
+  author = {Shangtong, Zhang},
+  title = {Modularized Implementation of Deep RL Algorithms in PyTorch},
+  year = {2018},
+  publisher = {GitHub},
+  journal = {GitHub Repository},
+  howpublished = {\url{https://github.com/ShangtongZhang/DeepRL}},
+}
+```
 
 # Curves (commit ```9e811e```)
 
