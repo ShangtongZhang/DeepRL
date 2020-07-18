@@ -6,7 +6,7 @@ Modularized implementation of popular deep RL algorithms in PyTorch.
 Easy switch between toy tasks and challenging games.
 
 Implemented algorithms:
-* (Double/Dueling) Deep Q-Learning (DQN)
+* (Double/Dueling/Prioritized) Deep Q-Learning (DQN)
 * Categorical DQN (C51)
 * Quantile Regression DQN (QR-DQN)
 * (Continuous/Discrete) Synchronous Advantage Actor Critic (A2C)
@@ -15,10 +15,9 @@ Implemented algorithms:
 * Proximal Policy Optimization (PPO)
 * The Option-Critic Architecture (OC)
 * Twined Delayed DDPG (TD3)
-* Rainbow (double DQN + dueling net + C51 + n-step target + prioritized replay + noisy net)
 * [COF-PAC/GradientDICE/Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
 
-The DQN agent, as well as C51, QR-DQN and Rainbow, has an asynchronous actor for data generation and an asynchronous replay buffer for transferring data to GPU.
+The DQN agent, as well as C51 and QR-DQN, has an asynchronous actor for data generation and an asynchronous replay buffer for transferring data to GPU.
 Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames, 2.5M gradient updates) for Breakout within 6 hours.
 
 # Dependency
@@ -31,7 +30,7 @@ Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames,
 ```Dockerfile``` contains the environment for generating the curves below.  
 Please cite any of the papers [here](#code-of-my-papers) if you want to cite this repo.
 
-# Curves (commit ```cd6c30```)
+# Curves (commit ```9e811e```)
 
 ## BreakoutNoFrameskip-v4 (1 run)
 

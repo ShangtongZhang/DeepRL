@@ -95,6 +95,7 @@ def plot_atari():
         'remark_option_critic',
         'remark_quantile',
         'remark_ppo',
+        # 'remark_rainbow',
     ]
 
     labels = [
@@ -105,6 +106,7 @@ def plot_atari():
         'OC',
         'QR-DQN',
         'PPO',
+        # 'Rainbow'
     ]
 
     plotter.plot_games(games=games,
