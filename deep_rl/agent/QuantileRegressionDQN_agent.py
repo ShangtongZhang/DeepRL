@@ -62,7 +62,7 @@ class QuantileRegressionDQNAgent(DQNAgent):
 
         rewards = tensor(transitions.reward).unsqueeze(-1)
         masks = tensor(transitions.mask).unsqueeze(-1)
-        quantiles_next = rewards + self.config.discount * masks * quantiles_next
+        quantiles_next = rewards + self.config.discount ** self.config.n_step * masks * quantiles_next
 
         quantiles = self.network(states)['quantile']
         actions = tensor(transitions.action).long()
