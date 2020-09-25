@@ -1,6 +1,6 @@
 torch==1.5.1
 gym==0.10.8
-tensorflow==1.15.0
+tensorflow==1.15.4
 atari-py==0.1.7
 opencv-python==4.0.0.21
 scikit-image==0.14.2
