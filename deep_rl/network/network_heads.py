@@ -258,3 +258,24 @@ class TD3Net(nn.Module, BaseNet):
         q_1 = self.fc_critic_1(self.critic_body_1(x))
         q_2 = self.fc_critic_2(self.critic_body_2(x))
         return q_1, q_2
+
+
+class QuantileReverseTDNet(nn.Module, BaseNet):
+    def __init__(self,
+                 num_quantiles,
+                 repr,
+                 body_fn):
+        super(QuantileReverseTDNet, self).__init__()
+        self.body = body_fn()
+        if repr in ['tabular', 'linear']:
+            self.fc_v = nn.Linear(self.body.feature_dim, num_quantiles, bias=False)
+            self.fc_v.weight.data.zero_()
+        elif repr == 'nn':
+            self.fc_v = layer_init(nn.Linear(self.body.feature_dim, num_quantiles))
+        else:
+            raise NotImplementedError
+
+    def forward(self, states):
+        states = tensor(states)
+        v = self.fc_v(self.body(states))
+        return dict(v=v)

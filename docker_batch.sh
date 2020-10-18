@@ -10,10 +10,11 @@ GPUs=(0 1 2 3 4 5 6 7)
 
 rm -f jobs.txt
 touch jobs.txt
-for i in $(seq 0 24); do
+for i in $(seq 0 240); do
     echo "$i" >> jobs.txt
 done
-cat jobs.txt | xargs -n 1 -P 50 sh -c 'bash docker_python.sh 0 "template_jobs.py --i $0"'
+cat jobs.txt | xargs -n 1 -P 40 sh -c 'bash docker_python.sh 0 "template_jobs.py --i $0"'
+#cat jobs.txt | xargs -n 1 -P 50 sh -c 'bash docker_python.sh 0 "template_jobs.py --i $0"'
 rm -f jobs.txt
 
 

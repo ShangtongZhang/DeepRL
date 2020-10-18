@@ -159,7 +159,7 @@ class Task:
                  episode_life=True,
                  seed=None):
         if seed is None:
-            seed = np.random.randint(int(1e5))
+            seed = np.random.randint(int(1e9))
         if log_dir is not None:
             mkdir(log_dir)
         envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
@@ -187,6 +187,95 @@ class Task:
         if isinstance(self.action_space, Box):
             actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return self.env.step(actions)
+
+
+class Robot(gym.Env):
+    def __init__(self, feature_type):
+        self.num_states = 4
+        self.action_space = Discrete(2)
+
+        if feature_type == 'tabular':
+            self.phi = np.eye(self.num_states)
+            self.observation_space = Box(-10, 10, (self.num_states,))
+        elif feature_type == 'linear':
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    def reset(self):
+        self.state = np.random.randint(self.num_states)
+        return self.phi[self.state]
+
+    def reset_to(self, state):
+        self.state = state
+        return self.phi[self.state]
+
+    def step(self, action):
+        cur_state = self.state
+        if action == 0:
+            move = 1
+            reward = 2
+        elif action == 1:
+            move = -1
+            reward = 1
+        else:
+            raise NotImplementedError
+        self.state = (cur_state + move + self.num_states) % self.num_states
+        if np.random.rand() < 0.01:
+            self.state = cur_state
+            reward = 0
+
+        return self.phi[self.state], reward, False, \
+               {'s': cur_state,
+                'next_s': self.state,
+                'gamma_s': (0 if cur_state == 3 else 1),
+                'gamma_next_s': (0 if self.state == 3 else 1),
+                }
+
+
+class RobotTabular(Robot):
+    def __init__(self):
+        super().__init__('tabular')
+
+
+class RobotLinear(Robot):
+    def __init__(self):
+        super().__init__('linear')
+
+
+from gym.envs.mujoco.reacher import ReacherEnv
+
+
+class ReacherFixed(ReacherEnv):
+    def __init__(self):
+        self.first_step = True
+        ReacherEnv.__init__(self)
+
+    def reset_model(self):
+        qpos = self.np_random.uniform(low=-0.1, high=0.1, size=self.model.nq) + self.init_qpos
+        while True:
+            self.goal = self.np_random.uniform(low=-.2, high=.2, size=2)
+            if np.linalg.norm(self.goal) < 2:
+                break
+        qpos[-2:] = self.goal
+        qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
+        qvel[-2:] = 0
+        self.set_state(qpos, qvel)
+        return self._get_obs()
+
+    def step(self, a):
+        vec = self.get_body_com("fingertip")-self.get_body_com("target")
+        reward_dist = - np.linalg.norm(vec)
+        reward_ctrl = - np.square(a).sum()
+        reward = reward_dist + reward_ctrl
+        self.do_simulation(a, self.frame_skip)
+        ob = self._get_obs()
+        done = -reward_dist < 0.02
+        done = (False if self.first_step else done)
+        self.first_step = False
+        return ob, reward, done, dict(
+            reward_dist=reward_dist, reward_ctrl=reward_ctrl
+        )
 
 
 if __name__ == '__main__':

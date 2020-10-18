@@ -15,7 +15,8 @@ from skimage.io import imsave
 class BaseAgent:
     def __init__(self, config):
         self.config = config
-        self.logger = get_logger(tag=config.tag, log_level=config.log_level)
+        if not config.no_log:
+            self.logger = get_logger(tag=config.tag, log_level=config.log_level)
         self.task_ind = 0
 
     def close(self):
@@ -38,9 +39,13 @@ class BaseAgent:
     def eval_episode(self):
         env = self.config.eval_env
         state = env.reset()
+        steps = 0
         while True:
             action = self.eval_step(state)
             state, reward, done, info = env.step(action)
+            steps += 1
+            # self.record_obs(env, './data/image', steps)
+            # print(steps, info)
             ret = info[0]['episodic_return']
             if ret is not None:
                 break
