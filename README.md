@@ -80,7 +80,7 @@ Please use this bibtex if you want to cite this repo
 
 # Code of My Papers
 > They are located in other branches of this repo and seem to be good examples for using this codebase.
-* [Learning Retrospective Knowledge with Reverse Reinforcement Learning](https://arxiv.org/abs/2007.06703) [[reverse-rl](https://github.com/ShangtongZhang/DeepRL/tree/reverse-rl)]
+* [Learning Retrospective Knowledge with Reverse Reinforcement Learning](https://arxiv.org/abs/2007.06703) [[ReverseRL](https://github.com/ShangtongZhang/DeepRL/tree/ReverseRL)]
 * [Provably Convergent Two-Timescale Off-Policy Actor-Critic with Function Approximation](https://arxiv.org/abs/1911.04384) [[COF-PAC](https://github.com/ShangtongZhang/DeepRL/tree/COF-PAC), [TD3-random](https://github.com/ShangtongZhang/DeepRL/tree/TD3-random)]
 * [GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values](https://arxiv.org/abs/2001.11113) [[GradientDICE](https://github.com/ShangtongZhang/DeepRL/tree/GradientDICE)]
 * [Deep Residual Reinforcement Learning](https://arxiv.org/abs/1905.01072) [[Bi-Res-DDPG](https://github.com/ShangtongZhang/DeepRL/tree/Bi-Res-DDPG)]
