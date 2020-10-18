@@ -15,7 +15,7 @@ Implemented algorithms:
 * Proximal Policy Optimization (PPO)
 * The Option-Critic Architecture (OC)
 * Twined Delayed DDPG (TD3)
-* [COF-PAC/GradientDICE/Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
+* [ReverseRL/COF-PAC/GradientDICE/Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
 
 The DQN agent, as well as C51 and QR-DQN, has an asynchronous actor for data generation and an asynchronous replay buffer for transferring data to GPU.
 Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames, 2.5M gradient updates) for Breakout within 6 hours.
@@ -80,6 +80,7 @@ Please use this bibtex if you want to cite this repo
 
 # Code of My Papers
 > They are located in other branches of this repo and seem to be good examples for using this codebase.
+* [Learning Retrospective Knowledge with Reverse Reinforcement Learning](https://arxiv.org/abs/2007.06703) [[reverse-rl](https://github.com/ShangtongZhang/DeepRL/tree/reverse-rl)]
 * [Provably Convergent Two-Timescale Off-Policy Actor-Critic with Function Approximation](https://arxiv.org/abs/1911.04384) [[COF-PAC](https://github.com/ShangtongZhang/DeepRL/tree/COF-PAC), [TD3-random](https://github.com/ShangtongZhang/DeepRL/tree/TD3-random)]
 * [GradientDICE: Rethinking Generalized Offline Estimation of Stationary Values](https://arxiv.org/abs/2001.11113) [[GradientDICE](https://github.com/ShangtongZhang/DeepRL/tree/GradientDICE)]
 * [Deep Residual Reinforcement Learning](https://arxiv.org/abs/1905.01072) [[Bi-Res-DDPG](https://github.com/ShangtongZhang/DeepRL/tree/Bi-Res-DDPG)]
