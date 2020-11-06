@@ -55,7 +55,7 @@ class BootstrappedNStepQRDQNAgent(BaseAgent):
     def evaluation_action(self, state):
         self.config.state_normalizer.set_read_only()
         state = self.config.state_normalizer(np.stack([state]))
-        quantile_values, option_values = self.network.predict(self.config.state_normalizer(state))
+        quantile_values, option_values = self.network.predict(state)
         greedy_options = torch.argmax(option_values, dim=-1)
         if self.config.option_type == 'constant_beta':
             dice = np.random.rand()
