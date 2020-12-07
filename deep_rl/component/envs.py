@@ -157,7 +157,9 @@ class Task:
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
-                 seed=None):
+                 seed=None,
+                 action_noise=0):
+        self.action_noise = action_noise
         if seed is None:
             seed = np.random.randint(int(1e9))
         if log_dir is not None:
@@ -184,9 +186,54 @@ class Task:
         return self.env.reset()
 
     def step(self, actions):
+        actions = actions + np.random.randn(*actions.shape) * self.action_noise
         if isinstance(self.action_space, Box):
             actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return self.env.step(actions)
+
+
+class RiskChain(gym.Env):
+    def __init__(self, feature_type='tabular'):
+        self.num_states = 4
+        self.action_space = Discrete(2)
+
+        if feature_type == 'tabular':
+            self.phi = np.eye(self.num_states)
+            self.observation_space = Box(-10, 10, (self.num_states,))
+        elif feature_type == 'linear':
+            raise NotImplementedError
+        else:
+            raise NotImplementedError
+
+    def reset(self):
+        self.state = 0
+        return self.phi[self.state]
+
+    def reset_to(self, state):
+        self.state = state
+        return self.phi[self.state]
+
+    def step(self, action):
+        if self.state == 0:
+            reward = 0
+            if action == 0:
+                next_state = np.random.choice([1, 2])
+            elif action == 1:
+                next_state = 3
+            else:
+                raise NotImplementedError
+        else:
+            next_state = 0
+            if self.state == 1:
+                reward = 1
+            elif self.state == 2:
+                reward = -1
+            elif self.state == 3:
+                reward = -1
+            else:
+                raise NotImplementedError
+        self.state = next_state
+        return self.phi[self.state], reward, False, {}
 
 
 if __name__ == '__main__':

@@ -7,6 +7,12 @@
 from .config import *
 import torch
 import os
+import math
+import functools
+from collections import OrderedDict
+from torchmeta.modules import MetaModule, MetaSequential, MetaLinear
+from torchmeta.modules.utils import get_subdict
+import torch.nn as nn
 
 
 def select_device(gpu_id):
@@ -208,3 +214,14 @@ class Grads:
 
 def escape_float(x):
     return ('%s' % x).replace('.', '\.')
+
+
+class MetaTensor(MetaModule):
+    def __init__(self, data):
+        super(MetaTensor, self).__init__()
+        self.meta_tensor = nn.Parameter(data, requires_grad=True)
+
+    def forward(self, params):
+        if params is None:
+            params = OrderedDict(self.named_parameters())
+        return params.get('meta_tensor', None)

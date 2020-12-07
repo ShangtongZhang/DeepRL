@@ -9,7 +9,7 @@ from ..component import *
 from .BaseAgent import *
 
 
-class PPOAgent(BaseAgent):
+class VarPPOAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -39,9 +39,10 @@ class PPOAgent(BaseAgent):
             rewards = config.reward_normalizer(rewards)
             next_states = config.state_normalizer(next_states)
             storage.add(prediction)
-            storage.add({'r': tensor(rewards).unsqueeze(-1),
+            storage.add({'r_original': tensor(rewards).unsqueeze(-1),
                          'm': tensor(1 - terminals).unsqueeze(-1),
-                         's': tensor(states)})
+                         's': tensor(states),
+                         })
             states = next_states
             self.total_steps += config.num_workers
 
@@ -49,6 +50,13 @@ class PPOAgent(BaseAgent):
         prediction = self.network(states)
         storage.add(prediction)
         storage.placeholder()
+
+        rewards = list(storage.cat(['r_original']))[0]
+        y = rewards.mean()
+
+        for i in range(config.rollout_length):
+            r_original = storage.r_original[i]
+            storage.r[i] = r_original - config.lam * r_original ** 2 + 2 * config.lam * r_original * y
 
         advantages = tensor(np.zeros((config.num_workers, 1)))
         returns = prediction['v'].detach()
@@ -62,7 +70,7 @@ class PPOAgent(BaseAgent):
             storage.adv[i] = advantages.detach()
             storage.ret[i] = returns.detach()
 
-        states, actions, log_probs_old, returns, advantages = storage.cat(['s', 'a', 'log_pi_a', 'ret', 'adv'])
+        states, actions, log_probs_old, returns, advantages, rewards = storage.cat(['s', 'a', 'log_pi_a', 'ret', 'adv', 'r_original'])
         actions = actions.detach()
         log_probs_old = log_probs_old.detach()
         advantages = (advantages - advantages.mean()) / advantages.std()
@@ -95,4 +103,3 @@ class PPOAgent(BaseAgent):
                 self.critic_opt.zero_grad()
                 value_loss.backward()
                 self.critic_opt.step()
-

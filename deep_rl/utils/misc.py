@@ -18,18 +18,24 @@ def run_steps(agent):
     config = agent.config
     agent_name = agent.__class__.__name__
     t0 = time.time()
+    prev_steps = 0
+    steps_since_last_eval = config.eval_interval
     while True:
         if config.save_interval and not agent.total_steps % config.save_interval:
             agent.save('data/%s-%s-%d' % (agent_name, config.tag, agent.total_steps))
         if config.log_interval and not agent.total_steps % config.log_interval:
             agent.logger.info('steps %d, %.2f steps/s' % (agent.total_steps, config.log_interval / (time.time() - t0)))
             t0 = time.time()
-        if config.eval_interval and not agent.total_steps % config.eval_interval:
+        if config.eval_interval and steps_since_last_eval >= config.eval_interval:
             agent.eval_episodes()
+            steps_since_last_eval = 0
         if config.max_steps and agent.total_steps >= config.max_steps:
             agent.close()
+            agent.end_of_training_evaluation()
             break
         agent.step()
+        steps_since_last_eval += agent.total_steps - prev_steps
+        prev_steps = agent.total_steps
         agent.switch_task()
 
 

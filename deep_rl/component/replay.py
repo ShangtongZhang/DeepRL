@@ -59,6 +59,9 @@ class Replay:
         self.data = []
         self.pos = 0
 
+    def full(self):
+        return self.size() == self.memory_size
+
 
 class SkewedReplay:
     def __init__(self, memory_size, batch_size, criterion):

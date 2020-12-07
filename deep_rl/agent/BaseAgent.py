@@ -38,23 +38,38 @@ class BaseAgent:
     def eval_episode(self):
         env = self.config.eval_env
         state = env.reset()
+        discount_t = 1
+        discounted_rewards = []
+        rewards = []
         while True:
             action = self.eval_step(state)
             state, reward, done, info = env.step(action)
+            discounted_rewards.append(reward * discount_t)
+            rewards.append(reward)
+            discount_t *= self.config.discount
             ret = info[0]['episodic_return']
             if ret is not None:
                 break
-        return ret
+        assert np.abs(np.sum(rewards) - np.sum(ret)) < 1e-5
+        return dict(ret=ret, discounted_rewards=discounted_rewards, rewards=rewards)
 
     def eval_episodes(self):
         episodic_returns = []
+        discounted_rewards = []
+        rewards = []
         for ep in range(self.config.eval_episodes):
-            total_rewards = self.eval_episode()
-            episodic_returns.append(np.sum(total_rewards))
+            info = self.eval_episode()
+            episodic_returns.append(info['ret'])
+            discounted_rewards.extend(info['discounted_rewards'])
+            rewards.extend(info['rewards'])
         self.logger.info('steps %d, episodic_return_test %.2f(%.2f)' % (
             self.total_steps, np.mean(episodic_returns), np.std(episodic_returns) / np.sqrt(len(episodic_returns))
         ))
         self.logger.add_scalar('episodic_return_test', np.mean(episodic_returns), self.total_steps)
+        self.logger.add_scalar('discounted_per_step_reward_test_mean', np.mean(discounted_rewards), self.total_steps)
+        self.logger.add_scalar('discounted_per_step_reward_test_std', np.std(discounted_rewards), self.total_steps)
+        self.logger.add_scalar('per_step_reward_test_mean', np.mean(rewards), self.total_steps)
+        self.logger.add_scalar('per_step_reward_test_std', np.std(rewards), self.total_steps)
         return {
             'episodic_return_test': np.mean(episodic_returns),
         }
@@ -103,6 +118,23 @@ class BaseAgent:
         env = env.env.envs[0]
         obs = env.render(mode='rgb_array')
         imsave('%s/%04d.png' % (dir, steps), obs)
+
+    def end_of_training_evaluation(self):
+        if not self.config.EOT_eval:
+            pass
+
+        discounted_rewards = []
+        rewards = []
+        for i in range(self.config.EOT_eval):
+            info = self.eval_episode()
+            self.logger.add_scalar('EOT_eval', info['ret'])
+            discounted_rewards.extend(info['discounted_rewards'])
+            rewards.extend(info['rewards'])
+        self.logger.add_scalar('EOT_discounted_per_step_reward_mean', np.mean(discounted_rewards),
+                                   self.total_steps)
+        self.logger.add_scalar('EOT_discounted_per_step_reward_std', np.std(discounted_rewards), self.total_steps)
+        self.logger.add_scalar('EOT_per_step_reward_mean', np.mean(rewards), self.total_steps)
+        self.logger.add_scalar('EOT_per_step_reward_std', np.std(rewards), self.total_steps)
 
 
 class BaseActor(mp.Process):

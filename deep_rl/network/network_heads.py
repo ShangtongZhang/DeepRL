@@ -259,3 +259,248 @@ class TD3Net(nn.Module, BaseNet):
         q_1 = self.fc_critic_1(self.critic_body_1(x))
         q_2 = self.fc_critic_2(self.critic_body_2(x))
         return q_1, q_2
+
+
+class MetaGaussianActorCriticNet(MetaModule):
+    def __init__(self,
+                 state_dim,
+                 action_dim
+                 ):
+        super(MetaGaussianActorCriticNet, self).__init__()
+        hidden_size = 64
+        self.actor_net = MetaSequential(
+            layer_init(MetaLinear(state_dim, hidden_size)),
+            nn.Tanh(),
+            layer_init(MetaLinear(hidden_size, hidden_size)),
+            nn.Tanh(),
+            layer_init(MetaLinear(hidden_size, action_dim))
+        )
+        self.std = MetaTensor(torch.zeros(action_dim, requires_grad=True))
+
+        self.critic_net = nn.Sequential(
+            layer_init(nn.Linear(state_dim, hidden_size)),
+            nn.Tanh(),
+            layer_init(nn.Linear(hidden_size, hidden_size)),
+            nn.Tanh(),
+            layer_init(nn.Linear(hidden_size, 1))
+        )
+
+        self.critic_mix_net = nn.Sequential(
+            layer_init(nn.Linear(state_dim, hidden_size)),
+            nn.Tanh(),
+            layer_init(nn.Linear(hidden_size, hidden_size)),
+            nn.Tanh(),
+            layer_init(nn.Linear(hidden_size, 1))
+        )
+
+        self.lam = torch.zeros(1, requires_grad=True)
+
+        self.meta_params = [self.lam]
+        self.critic_params = self.critic_net.parameters()
+
+        self.to(Config.DEVICE)
+
+
+    def forward(self, obs, params=None, action=None):
+        obs = tensor(obs)
+        phi_a = self.actor_net(obs, params=get_subdict(params, 'actor_net'))
+        mean = torch.tanh(phi_a)
+        v = self.critic_net(obs)
+        v_mix = self.critic_net(obs)
+        std = F.softplus(self.std(params=get_subdict(params, 'std')))
+        dist = torch.distributions.Normal(mean, std)
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action).sum(-1).unsqueeze(-1)
+        entropy = dist.entropy().sum(-1).unsqueeze(-1)
+        return {'a': action,
+                'log_pi_a': log_prob,
+                'ent': entropy,
+                'mean': mean,
+                'v': v,
+                'v_mix': v_mix}
+
+    def penalty(self):
+        return torch.sigmoid(self.lam)
+
+
+class MVPNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None):
+        super(MVPNet, self).__init__()
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
+        self.std = nn.Parameter(torch.zeros(action_dim))
+        self.y = nn.Parameter(torch.zeros(1))
+
+        self.to(Config.DEVICE)
+
+    def forward(self, obs, action=None):
+        obs = tensor(obs)
+        phi = self.phi_body(obs)
+        phi_a = self.actor_body(phi)
+        phi_v = self.critic_body(phi)
+        mean = torch.tanh(self.fc_action(phi_a))
+        v = self.fc_critic(phi_v)
+        dist = torch.distributions.Normal(mean, F.softplus(self.std))
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action).sum(-1).unsqueeze(-1)
+        entropy = dist.entropy().sum(-1).unsqueeze(-1)
+        return {'a': action,
+                'log_pi_a': log_prob,
+                'ent': entropy,
+                'mean': mean,
+                'v': v}
+
+
+class RiskActorCriticNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None):
+        super(RiskActorCriticNet, self).__init__()
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
+        self.fc_critic_u = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
+        self.std = nn.Parameter(torch.zeros(action_dim))
+        self.phi_params = list(self.phi_body.parameters())
+
+        self.actor_named_parameters = dict()
+        for name, param in self.actor_body.named_parameters(prefix='actor_body'):
+            self.actor_named_parameters[name] = param
+        for name, param in self.fc_action.named_parameters(prefix='fc_action'):
+            self.actor_named_parameters[name] = param
+        self.actor_named_parameters['std'] = self.std
+
+        self.to(Config.DEVICE)
+
+    def forward(self, obs, action=None):
+        obs = tensor(obs)
+        phi = self.phi_body(obs)
+        phi_a = self.actor_body(phi)
+        phi_v = self.critic_body(phi)
+        mean = torch.tanh(self.fc_action(phi_a))
+        v = self.fc_critic(phi_v)
+        u = self.fc_critic_u(phi_v)
+        dist = torch.distributions.Normal(mean, F.softplus(self.std))
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action).sum(-1).unsqueeze(-1)
+        entropy = dist.entropy().sum(-1).unsqueeze(-1)
+        return {'a': action,
+                'log_pi_a': log_prob,
+                'ent': entropy,
+                'mean': mean,
+                'v': v,
+                'u': u}
+
+
+class TamarNet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 phi_body=None,
+                 actor_body=None,
+                 critic_body=None):
+        super(TamarNet, self).__init__()
+        if phi_body is None: phi_body = DummyBody(state_dim)
+        if actor_body is None: actor_body = DummyBody(phi_body.feature_dim)
+        if critic_body is None: critic_body = DummyBody(phi_body.feature_dim)
+        self.phi_body = phi_body
+        self.actor_body = actor_body
+        self.critic_body = critic_body
+        self.fc_action = layer_init(nn.Linear(actor_body.feature_dim, action_dim), 1e-3)
+        self.fc_critic = layer_init(nn.Linear(critic_body.feature_dim, 1), 1e-3)
+        self.std = nn.Parameter(torch.zeros(action_dim))
+
+        self.J = nn.Parameter(torch.zeros(1))
+        self.V = nn.Parameter(torch.zeros(1))
+
+        self.JV_params = [self.J, self.V]
+        self.pi_params = list(self.actor_body.parameters()) + list(self.fc_action.parameters()) + [self.std]
+
+        self.to(Config.DEVICE)
+
+    def forward(self, obs, action=None):
+        obs = tensor(obs)
+        phi = self.phi_body(obs)
+        phi_a = self.actor_body(phi)
+        phi_v = self.critic_body(phi)
+        mean = torch.tanh(self.fc_action(phi_a))
+        v = self.fc_critic(phi_v)
+        dist = torch.distributions.Normal(mean, F.softplus(self.std))
+        if action is None:
+            action = dist.sample()
+        log_prob = dist.log_prob(action).sum(-1).unsqueeze(-1)
+        entropy = dist.entropy().sum(-1).unsqueeze(-1)
+        return {'a': action,
+                'log_pi_a': log_prob,
+                'ent': entropy,
+                'mean': mean,
+                'v': v}
+
+
+class OffPolicyMVPINet(nn.Module, BaseNet):
+    def __init__(self,
+                 state_dim,
+                 action_dim,
+                 activation,
+                 repr):
+        super(OffPolicyMVPINet, self).__init__()
+
+        if repr == 'tabular' or repr == 'linear':
+            self.fc_tau = nn.Linear(state_dim, action_dim, bias=True)
+            self.fc_f = nn.Linear(state_dim, action_dim, bias=True)
+            self.fc_q = nn.Linear(state_dim, action_dim, bias=False)
+            self.fc_pi = nn.Linear(state_dim, action_dim, bias=True)
+        else:
+            raise NotImplementedError
+        self.param_u = nn.Parameter(torch.Tensor([[0]]))
+        self.activation = activation
+
+    def forward(self, states):
+        q = self.fc_q(states)
+        logit = self.fc_pi(states)
+        pi = F.softmax(logit, dim=-1)
+        log_pi = F.log_softmax(logit, dim=-1)
+        return dict(q=q,
+                    pi=pi,
+                    log_pi=log_pi)
+
+    def tau(self, states, actions=None):
+        value = self.fc_tau(states)
+        if self.activation == 'squared':
+            value = value.pow(2)
+        elif self.activation == 'linear':
+            pass
+        else:
+            raise NotImplementedError
+        if actions is None:
+            return value
+        return value.gather(1, actions)
+
+    def f(self, states, actions):
+        value = self.fc_f(states)
+        return value.gather(1, actions)
+
+    def u(self, batch_size):
+        return self.param_u.expand(batch_size, -1)
