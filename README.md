@@ -9,7 +9,7 @@ Shangtong Zhang, Hao Chen, Hengshuai Yao (AAAI 2019)
     ├── plan-ddpg.py                                    # Entrance for the Roboschool experiments
     |   ├── plan_ddpg                                   # Entrance of ACE 
     ├── deep_rl/agent/PlanDDPG_agent.py.py              # Implementation of ACE 
-    └── plot_ddpg.py                                    # Plotting
+    └── plot_plan.py                                    # Plotting
 
 > I can send the data for plotting via email upon request.
 
