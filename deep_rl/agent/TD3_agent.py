@@ -99,3 +99,8 @@ class TD3Agent(BaseAgent):
                 self.network.actor_opt.step()
 
                 self.soft_update(self.target_network, self.network)
+
+    def eval_episodes(self):
+        self.save('./data/%s-policy' % self.config.game)
+        self.replay.save('./data/%s-data' % self.config.game)
+        super().eval_episodes()

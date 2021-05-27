@@ -187,6 +187,65 @@ class Task:
         return self.env.step(actions)
 
 
+class BoyansChain(gym.Env):
+    def __init__(self, feature_type):
+        self.num_states = 13
+        self.action_space = Discrete(2)
+
+        if feature_type == 'tabular':
+            self.phi = np.eye(self.num_states)
+            self.observation_space = Box(-10, 10, (self.num_states,))
+        elif feature_type == 'linear':
+            self.phi = np.asarray([
+                [0, 0, 0, 1],
+                [0, 0, 0.25, 0.75],
+                [0, 0, 0.5, 0.5],
+                [0, 0, 0.75, 0.25],
+                [0, 0, 1, 0],
+                [0, 0.25, 0.75, 0],
+                [0, 0.5, 0.5, 0],
+                [0, 0.75, 0.25, 0],
+                [0, 1, 0, 0],
+                [0.25, 0.75, 0, 0],
+                [0.5, 0.5, 0, 0],
+                [0.75, 0.25, 0, 0],
+                [1, 0, 0, 0],
+            ])
+            self.observation_space = Box(-10, 10, (4,))
+        else:
+            raise NotImplementedError
+
+    def reset(self):
+        self.state = self.num_states
+        return self.phi[self.state]
+
+    def reset_to(self, state):
+        self.state = state
+        return self.phi[self.state]
+
+    def step(self, action):
+        raise NotImplementedError
+        # cur_state = self.state
+        # if self.state == 1 or self.state == 0:
+        #     self.state = 0
+        # else:
+        #     self.state -= action + 1
+        #
+        # return self.phi[self.state], 0, False, \
+        #        {'s': cur_state,
+        #         'next_s': self.state}
+
+
+class BoyanChainTabular(BoyansChain):
+    def __init__(self):
+        super().__init__('tabular')
+
+
+class BoyanChainLinear(BoyansChain):
+    def __init__(self):
+        super().__init__('linear')
+
+
 if __name__ == '__main__':
     task = Task('Hopper-v2', 5, single_process=False)
     state = task.reset()

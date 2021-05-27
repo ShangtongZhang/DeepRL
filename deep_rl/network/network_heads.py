@@ -258,3 +258,141 @@ class TD3Net(nn.Module, BaseNet):
         q_1 = self.fc_critic_1(self.critic_body_1(x))
         q_2 = self.fc_critic_2(self.critic_body_2(x))
         return q_1, q_2
+
+
+class LinearDICENet(nn.Module, BaseNet):
+    def __init__(self,
+                 sa_dim,
+                 activation):
+        super(LinearDICENet, self).__init__()
+
+        self.fc_tau = nn.Linear(sa_dim, 1, bias=False)
+        self.fc_f = nn.Linear(sa_dim, 1, bias=False)
+        self.param_u = nn.Parameter(torch.Tensor([[0]]))
+        self.param_rate = nn.Parameter(torch.Tensor([[0]]))
+        self.activation = activation
+
+    def tau(self, sa):
+        value = self.fc_tau(sa)
+        if self.activation == 'squared':
+            value = value.pow(2)
+        elif self.activation == 'linear':
+            pass
+        else:
+            raise NotImplementedError
+        return value
+
+    def f(self, sa):
+        value = self.fc_f(sa)
+        return value
+
+    def u(self, batch_size):
+        return self.param_u.expand(batch_size, -1)
+
+    def ridge(self):
+        return self.fc_tau.weight.flatten().norm(2).pow(2)
+
+    def rate(self):
+        return self.param_rate
+
+
+class LinearGQ1Net(nn.Module, BaseNet):
+    def __init__(self,
+                 sa_dim):
+        super(LinearGQ1Net, self).__init__()
+        sa_dim += 1
+        self.fc_u = nn.Linear(sa_dim, 1, bias=False)
+        self.fc_nu = nn.Linear(sa_dim, 1, bias=False)
+
+    def u(self, sa):
+        return self.fc_u(sa)
+
+    def rate(self):
+        return self.fc_u.weight[0, 0]
+
+    def ridge(self):
+        return self.fc_u.weight[0, 1:].norm(2).pow(2)
+
+    def nu(self, sa):
+        return self.fc_nu(sa)
+
+
+class LinearGQ2Net(nn.Module, BaseNet):
+    def __init__(self,
+                 sa_dim):
+        super(LinearGQ2Net, self).__init__()
+        self.fc_w = nn.Linear(sa_dim, 1, bias=False)
+        self.fc_nu = nn.Linear(sa_dim, 1, bias=False)
+        self.param_rate = nn.Parameter(torch.Tensor([[0]]))
+
+    def w(self, sa):
+        return self.fc_w(sa)
+
+    def rate(self):
+        return self.param_rate
+
+    def ridge(self):
+        return self.fc_w.weight.flatten().norm(2).pow(2)
+
+    def nu(self, sa):
+        return self.fc_nu(sa)
+
+
+class NeuralDICENet(nn.Module, BaseNet):
+    def __init__(self,
+                 body_tau_fn,
+                 body_f_fn,
+                 activation='linear',
+                 ):
+        super(NeuralDICENet, self).__init__()
+
+        self.body_tau = body_tau_fn()
+        self.body_f = body_f_fn()
+        self.activation = activation
+        self.fc_tau = layer_init(nn.Linear(self.body_tau.feature_dim, 1), 1e-3)
+        self.fc_f = layer_init(nn.Linear(self.body_f.feature_dim, 1), 1e-3)
+        self.param_u = nn.Parameter(torch.Tensor([[0]]))
+        self.param_rate = nn.Parameter(torch.Tensor([[0]]))
+
+    def tau(self, sa):
+        value = self.fc_tau(self.body_tau(sa))
+        if self.activation == 'squared':
+            value = value.pow(2)
+        elif self.activation == 'linear':
+            pass
+        else:
+            raise NotImplementedError
+        return value
+
+    def f(self, sa):
+        value = self.fc_f(self.body_f(sa))
+        return value
+
+    def u(self, batch_size):
+        return self.param_u.expand(batch_size, -1)
+
+    def rate(self):
+        return self.param_rate
+
+
+class NeuralGQNet(nn.Module, BaseNet):
+    def __init__(self,
+                 body_v_fn,
+                 body_nu_fn,
+                 ):
+        super(NeuralGQNet, self).__init__()
+
+        self.body_v = body_v_fn()
+        self.body_nu = body_nu_fn()
+        self.fc_v = layer_init(nn.Linear(self.body_v.feature_dim, 1), 1e-3)
+        self.fc_nu = layer_init(nn.Linear(self.body_nu.feature_dim, 1), 1e-3)
+        self.param_rate = nn.Parameter(torch.Tensor([[0]]))
+
+    def v(self, sa):
+        return self.fc_v(self.body_v(sa))
+
+    def nu(self, sa):
+        return self.fc_nu(self.body_nu(sa))
+
+    def rate(self):
+        return self.param_rate

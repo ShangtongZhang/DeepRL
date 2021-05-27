@@ -10,8 +10,8 @@ import re
 
 
 class Plotter:
-    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
-              'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
+    COLORS = ['blue', 'green', 'red', 'black', 'cyan', 'magenta', 'yellow', 'brown', 'purple', 'pink',
+              'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
               'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
 
     RETURN_TRAIN = 'episodic_return_train'
@@ -83,6 +83,9 @@ class Plotter:
         return sorted(names)
 
     def load_log_dirs(self, dirs, **kwargs):
+        kwargs.setdefault('right_align', False)
+        kwargs.setdefault('window', 0)
+        kwargs.setdefault('right_most', 0)
         xy_list = []
         from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
         for dir in dirs:
@@ -94,6 +97,9 @@ class Plotter:
             x_max = float('inf')
             for x, y in xy_list:
                 x_max = min(x_max, len(y))
+            xy_list = [[x[:x_max], y[:x_max]] for x, y in xy_list]
+        x_max = kwargs['right_most']
+        if x_max:
             xy_list = [[x[:x_max], y[:x_max]] for x, y in xy_list]
         if kwargs['window']:
             xy_list = [self._window_func(np.asarray(x), np.asarray(y), kwargs['window'], np.mean) for x, y in xy_list]
@@ -156,3 +162,59 @@ class Plotter:
                 plt.ylabel(kwargs['tag'])
             plt.title(game)
             plt.legend()
+
+    def select_best_parameters(self, patterns, **kwargs):
+        scores = []
+        for pattern in patterns:
+            log_dirs = self.filter_log_dirs(pattern, **kwargs)
+            xy_list = self.load_log_dirs(log_dirs, **kwargs)
+            y = np.asarray([xy[1] for xy in xy_list])
+            scores.append(kwargs['score'](y))
+        indices = np.argsort(-np.asarray(scores))
+        return indices
+
+
+    def reduce_dir(self, root, tag, ids, score_fn):
+        tf_log_info = {}
+        for dir, _, files in os.walk(root):
+            for file in files:
+                if 'tfevents' in file:
+                    dir = os.path.basename(dir)
+                    dir = re.sub(r'hp_\d+', 'placeholder', dir)
+                    dir = re.sub(r'run.*', 'run', dir)
+                    tf_log_info[dir] = {}
+        for key in tf_log_info.keys():
+            scores = []
+            for id in ids:
+                dir = key.replace('placeholder', 'hp_%s' % (id))
+                names = self.filter_log_dirs('.*%s.*' % (dir), root=root)
+                xy_list = self.load_log_dirs(names, tag=tag, right_align=True)
+                scores.append(score_fn(np.asarray([y for x, y in xy_list])))
+            best = np.nanargmax(scores)
+            tf_log_info[key]['hp'] = ids[best]
+            tf_log_info[key]['score'] = scores[best]
+        return tf_log_info
+
+
+    def reduce_patterns(self, patterns, root, tag, all_ids, score_fn):
+        new_patterns = []
+        best_ids = []
+        for pattern, ids in zip(patterns, all_ids):
+            scores = []
+            pattern = re.sub(r'hp_\d+', 'placeholder', pattern)
+            ps = []
+            for id in ids:
+                p = pattern.replace('placeholder', 'hp_%s' % (id))
+                ps.append(p)
+                names = self.filter_log_dirs('.*%s.*' % (p), root=root)
+                xy_list = self.load_log_dirs(names, tag=tag, right_align=True)
+                scores.append(score_fn(np.asarray([y for x, y in xy_list])))
+            try:
+                best = np.nanargmax(scores)
+            except ValueError as e:
+                print(e)
+                best = 0
+            best_ids.append(best)
+            new_patterns.append(ps[best])
+        return dict(patterns=new_patterns, ids=best_ids)
+
