@@ -80,6 +80,8 @@ Please use this bibtex if you want to cite this repo
 
 # Code of My Papers
 > They are located in other branches of this repo and seem to be good examples for using this codebase.
+* [Breaking the Deadly Triad with a Target Network](https://arxiv.org/abs/2101.08862) [[TargentNetwork](https://github.com/ShangtongZhang/DeepRL/tree/TargetNetwork)]
+* [Average-Reward Off-Policy Policy Evaluation with Function Approximation](https://arxiv.org/abs/2101.02808) [[DifferentialGQ](https://github.com/ShangtongZhang/DeepRL/tree/DifferentialGQ)]
 * [Mean-Variance Policy Iteration for Risk-Averse Reinforcement Learning](https://arxiv.org/abs/2004.10888) [[MVPI](https://github.com/ShangtongZhang/DeepRL/tree/MVPI)]
 * [Learning Retrospective Knowledge with Reverse Reinforcement Learning](https://arxiv.org/abs/2007.06703) [[ReverseRL](https://github.com/ShangtongZhang/DeepRL/tree/ReverseRL)]
 * [Provably Convergent Two-Timescale Off-Policy Actor-Critic with Function Approximation](https://arxiv.org/abs/1911.04384) [[COF-PAC](https://github.com/ShangtongZhang/DeepRL/tree/COF-PAC), [TD3-random](https://github.com/ShangtongZhang/DeepRL/tree/TD3-random)]
