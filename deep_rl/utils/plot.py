@@ -101,10 +101,12 @@ class Plotter:
             xy_list = [self._window_func(np.asarray(x), np.asarray(y), kwargs['window'], np.mean) for x, y in xy_list]
         return xy_list
 
-    def plot_mean(self, data, x=None, **kwargs):
+    def plot_mean(self, data, x=None, ax=None, **kwargs):
         import matplotlib.pyplot as plt
         if x is None:
             x = np.arange(data.shape[1])
+        if ax is None:
+            ax = plt
         if kwargs['error'] == 'se':
             e_x = np.std(data, axis=0) / np.sqrt(data.shape[0])
         elif kwargs['error'] == 'std':
@@ -113,19 +115,21 @@ class Plotter:
             raise NotImplementedError
         m_x = np.mean(data, axis=0)
         del kwargs['error']
-        plt.plot(x, m_x, **kwargs)
+        ax.plot(x, m_x, **kwargs)
         del kwargs['label']
-        plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
+        ax.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
 
-    def plot_median_std(self, data, x=None, **kwargs):
+    def plot_median_std(self, data, x=None, ax=None, **kwargs):
         import matplotlib.pyplot as plt
         if x is None:
             x = np.arange(data.shape[1])
+        if ax is None:
+            ax = plt
         e_x = np.std(data, axis=0)
         m_x = np.median(data, axis=0)
-        plt.plot(x, m_x, **kwargs)
+        ax.plot(x, m_x, **kwargs)
         del kwargs['label']
-        plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
+        ax.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
 
     def plot_games(self, games, **kwargs):
         kwargs.setdefault('agg', 'mean')

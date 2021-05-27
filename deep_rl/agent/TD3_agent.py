@@ -46,7 +46,12 @@ class TD3Agent(BaseAgent):
         if self.total_steps < config.warm_up:
             action = [self.task.action_space.sample()]
         else:
-            action = self.network(self.state)
+            if config.sampling == 'target':
+                action = self.target_network(self.state)
+            elif config.sampling == 'online':
+                action = self.network(self.state)
+            else:
+                raise NotImplementedError
             action = to_np(action)
             action += self.random_process.sample()
         action = np.clip(action, self.task.action_space.low, self.task.action_space.high)
@@ -76,7 +81,14 @@ class TD3Agent(BaseAgent):
             next_states = tensor(transitions.next_state)
             mask = tensor(transitions.mask).unsqueeze(-1)
 
-            a_next = self.target_network(next_states)
+            if config.bootstrap == 'online':
+                bootstrap_net = self.network
+            elif config.bootstrap == 'target':
+                bootstrap_net = self.target_network
+            else:
+                raise NotImplementedError
+            with torch.no_grad():
+                a_next = bootstrap_net(next_states)
             noise = torch.randn_like(a_next).mul(config.td3_noise)
             noise = noise.clamp(-config.td3_noise_clip, config.td3_noise_clip)
 
@@ -84,7 +96,8 @@ class TD3Agent(BaseAgent):
             max_a = float(self.task.action_space.high[0])
             a_next = (a_next + noise).clamp(min_a, max_a)
 
-            q_1, q_2 = self.target_network.q(next_states, a_next)
+            with torch.no_grad():
+                q_1, q_2 = bootstrap_net.q(next_states, a_next)
             target = rewards + config.discount * mask * torch.min(q_1, q_2)
             target = target.detach()
 

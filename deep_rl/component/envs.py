@@ -189,6 +189,65 @@ class Task:
         return self.env.step(actions)
 
 
+class BairdPrediction(gym.Env):
+    DASHED = 0
+    SOLID = 1
+
+    def __init__(self):
+        self.num_states = 7
+        self.phi = np.eye(7, 7) * 2
+        self.phi[-1, -1] = 1
+        self.phi = np.concatenate([self.phi, np.ones((7, 1))], axis=1)
+        self.phi[-1, -1] = 2
+
+        self.action_space = Discrete(2)
+        self.observation_space = Box(-10, 10, (self.phi.shape[1],))
+
+        self.state = None
+
+    def reset(self):
+        self.state = np.random.randint(self.num_states)
+        return self.phi[self.state]
+
+    def step(self, action):
+        if action == self.DASHED:
+            self.state = np.random.randint(self.num_states - 1)
+        elif action == self.SOLID:
+            self.state = self.num_states - 1
+        else:
+            raise NotImplementedError
+        return self.phi[self.state], 0, False, {}
+
+    def act(self, prob=6.0/7):
+        if np.random.rand() < prob:
+            action = self.DASHED
+            mu_prob = prob
+            pi_prob = 0
+        else:
+            action = self.SOLID
+            mu_prob = 1 - prob
+            pi_prob = 1
+        return dict(action=action, mu_prob=mu_prob, pi_prob=pi_prob)
+
+
+class BairdControl(BairdPrediction):
+    def __init__(self):
+        super(BairdControl, self).__init__()
+        self.phi_solid = self.phi
+        self.phi_dash = np.eye(7, 7)
+        self.phi = np.concatenate([self.phi_solid, self.phi_dash], axis=1)
+
+        self.action_space = Discrete(2)
+        self.observation_space = Box(-10, 10, (self.phi.shape[1],))
+
+    def expand_phi(self, phi):
+        assert len(phi.shape) == 1
+        phi = np.array([phi, phi])
+        phi[0, :8] = 0
+        phi[1, 8:] = 0
+        return phi
+
+
 if __name__ == '__main__':
     task = Task('Hopper-v2', 5, single_process=False)
     state = task.reset()

@@ -291,3 +291,18 @@ class TD3Net(nn.Module, BaseNet):
         q_1 = self.fc_critic_1(self.critic_body_1(x))
         q_2 = self.fc_critic_2(self.critic_body_2(x))
         return q_1, q_2
+
+
+class BairdNet(nn.Module, BaseNet):
+    def __init__(self, state_dim):
+        super(BairdNet, self).__init__()
+        self.fc = nn.Linear(state_dim, 1, bias=False)
+        weight = torch.ones(state_dim)
+        weight[6] = 10
+        self.fc.weight.data = weight.view(1, -1)
+
+    def forward(self, obs):
+        return self.fc(tensor(obs))
+
+    def ridge(self):
+        return self.fc.weight.norm(2)
