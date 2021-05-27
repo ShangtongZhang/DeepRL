@@ -10,10 +10,11 @@ import re
 
 
 class Plotter:
-    COLORS = ['blue', 'green', 'red', 'black', 'cyan', 'magenta', 'yellow', 'brown', 'purple', 'pink',
-              'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
+    COLORS = ['blue', 'orange', 'red', 'black', 'cyan', 'magenta', 'yellow', 'brown', 'purple', 'pink',
+              'green', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
               'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
 
+    MARKERS = ['v', 'o', 'x', 'P']
     RETURN_TRAIN = 'episodic_return_train'
     RETURN_TEST = 'episodic_return_test'
 
@@ -119,6 +120,8 @@ class Plotter:
         del kwargs['error']
         plt.plot(x, m_x, **kwargs)
         del kwargs['label']
+        del kwargs['marker']
+        del kwargs['markevery']
         plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
 
     def plot_median_std(self, data, x=None, **kwargs):

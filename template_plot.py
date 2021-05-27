@@ -178,10 +178,10 @@ def plot_boyans_chain(reload=False):
         with futures.ProcessPoolExecutor() as pool:
             for best_hp in pool.map(get_best_hp_boyans_chain, target_policies):
                 boyan_chain_best_hp.update(best_hp)
-        with open('./data/DifferentialGQ/boyan_chain_best_hp.pkl', 'wb') as f:
+        with open('/Volumes/Data/DeepRL/data/DifferentialGQ/boyan_chain_best_hp.pkl', 'wb') as f:
             pickle.dump(boyan_chain_best_hp, f)
     else:
-        with open('./data/DifferentialGQ/boyan_chain_best_hp.pkl', 'rb') as f:
+        with open('/Volumes/Data/DeepRL/data/DifferentialGQ/boyan_chain_best_hp.pkl', 'rb') as f:
             boyan_chain_best_hp = pickle.load(f)
 
     fontsize = 22
@@ -204,6 +204,7 @@ def plot_boyans_chain(reload=False):
                     # label = '%s (%s)' % (labels[j], info['ids'][j])
                     label = labels[j]
                     color = self.COLORS[j]
+                    marker = self.MARKERS[j]
                     log_dirs = self.filter_log_dirs(pattern='.*%s.*' % (p), **kwargs)
                     x, y = self.load_results(log_dirs, **kwargs)
                     if kwargs['downsample']:
@@ -211,11 +212,11 @@ def plot_boyans_chain(reload=False):
                         x = x[indices]
                         y = y[:, indices]
                     if kwargs['agg'] == 'mean':
-                        self.plot_mean(y, x, label=label, color=color, error='se')
+                        self.plot_mean(y, x, label=label, color=color, error='se', marker=marker, markevery=10)
                     elif kwargs['agg'] == 'mean_std':
-                        self.plot_mean(y, x, label=label, color=color, error='std')
+                        self.plot_mean(y, x, label=label, color=color, error='std', marker=marker, markevery=10)
                     elif kwargs['agg'] == 'median':
-                        self.plot_median_std(y, x, label=label, color=color)
+                        self.plot_median_std(y, x, label=label, color=color, marker=marker, markevery=10)
                     else:
                         for k in range(y.shape[0]):
                             plt.plot(x, y[i], label=label, color=color)
@@ -310,10 +311,10 @@ def plot_mujoco(group, reload=False, loss='online_rate_loss'):
         with futures.ProcessPoolExecutor() as pool:
             for best_hp in pool.map(get_best_hp_mujoco, games):
                 mujoco_best_hp.update(best_hp)
-        with open('./data/DifferentialGQ/mujoco_best_hp_%s.pkl' % (MUJOCO_LOSS_TYPE), 'wb') as f:
+        with open('/Volumes/Data/DeepRL/data/DifferentialGQ/mujoco_best_hp_%s.pkl' % (MUJOCO_LOSS_TYPE), 'wb') as f:
             pickle.dump(mujoco_best_hp, f)
     else:
-        with open('./data/DifferentialGQ/mujoco_best_hp_%s.pkl' % (MUJOCO_LOSS_TYPE), 'rb') as f:
+        with open('/Volumes/Data/DeepRL/data/DifferentialGQ/mujoco_best_hp_%s.pkl' % (MUJOCO_LOSS_TYPE), 'rb') as f:
             mujoco_best_hp = pickle.load(f)
 
     fontsize = 22
@@ -334,6 +335,7 @@ def plot_mujoco(group, reload=False, loss='online_rate_loss'):
                     # label = '%s (%s)' % (labels[j], info['ids'][j])
                     label = labels[j]
                     color = self.COLORS[j]
+                    marker = self.MARKERS[j]
                     log_dirs = self.filter_log_dirs(pattern='.*%s.*' % (p), **kwargs)
                     x, y = self.load_results(log_dirs, **kwargs)
                     if kwargs['downsample']:
@@ -341,11 +343,11 @@ def plot_mujoco(group, reload=False, loss='online_rate_loss'):
                         x = x[indices]
                         y = y[:, indices]
                     if kwargs['agg'] == 'mean':
-                        self.plot_mean(y, x, label=label, color=color, error='se')
+                        self.plot_mean(y, x, label=label, color=color, error='se', marker=marker, markevery=10)
                     elif kwargs['agg'] == 'mean_std':
-                        self.plot_mean(y, x, label=label, color=color, error='std')
+                        self.plot_mean(y, x, label=label, color=color, error='std', marker=marker, markevery=10)
                     elif kwargs['agg'] == 'median':
-                        self.plot_median_std(y, x, label=label, color=color)
+                        self.plot_median_std(y, x, label=label, color=color, marker=marker, markevery=10)
                     else:
                         for k in range(y.shape[0]):
                             plt.plot(x, y[i], label=label, color=color)
@@ -483,6 +485,6 @@ if __name__ == '__main__':
     mkdir('images')
     # plot_boyans_chain(False)
     # plot_mujoco(0, False)
-    plot_mujoco(1, False)
+    # plot_mujoco(1, False)
 
     # plot_tmp()
