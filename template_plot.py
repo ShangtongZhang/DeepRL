@@ -53,6 +53,7 @@ def plot_baird(group):
             for j, p in enumerate(patterns[i]):
                 label = labels[i][j]
                 color = self.COLORS[(1 - i) * 3 + j]
+                marker = self.MARKERS[(1 - i) * 3 + j]
                 log_dirs = self.filter_log_dirs(pattern='.*%s.*' % (p), **kwargs)
                 x, y = self.load_results(log_dirs, **kwargs)
                 y = np.nan_to_num(y, nan=upper_limit)
@@ -63,11 +64,11 @@ def plot_baird(group):
                     x = x[indices]
                     y = y[:, indices]
                 if kwargs['agg'] == 'mean':
-                    self.plot_mean(y, x, label=label, color=color, error='se')
+                    self.plot_mean(y, x, label=label, color=color, error='se', marker=marker, markevery=10)
                 elif kwargs['agg'] == 'mean_std':
-                    self.plot_mean(y, x, label=label, color=color, error='std', ax=ax)
+                    self.plot_mean(y, x, label=label, color=color, error='std', ax=ax, marker=marker, markevery=10)
                 elif kwargs['agg'] == 'median':
-                    self.plot_median_std(y, x, label=label, color=color)
+                    self.plot_median_std(y, x, label=label, color=color, marker=marker, markevery=10)
                 else:
                     raise NotImplementedError
         ax1, ax2 = axes
@@ -131,6 +132,7 @@ def plot_baird(group):
 
 
 def plot_kolter():
+    plotter = Plotter()
     eps = 0.01
     p0 = (2961 + 45240 * eps + 40400 * eps ** 2) / (4141 + 84840 * eps + 40400 * eps ** 2)
     P = torch.tensor([[0.5, 0.5], [0.5, 0.5]])
@@ -156,7 +158,7 @@ def plot_kolter():
             w = A.inverse() @ b
             errors[j, i] = (X @ w - v).norm(2)
     for i in range(len(labels)):
-        plt.plot(ps, errors[i], label=labels[i])
+        plt.plot(ps, errors[i], label=labels[i], marker=plotter.MARKERS[i], markevery=10)
     plt.xticks([0, 1], ['0', '1'], fontsize=fontsize)
     plt.xlabel(r'$d_\mu(s_1)$', fontsize=fontsize)
     plt.ylabel(r'$||Xw^*_\eta - v_\pi||$', fontsize=fontsize)
@@ -172,6 +174,6 @@ def plot_kolter():
 if __name__ == '__main__':
     mkdir('images')
     # plot_baird(0)
-    plot_baird(1)
+    # plot_baird(1)
     # plot_baird(2)
-    # plot_kolter()
+    plot_kolter()

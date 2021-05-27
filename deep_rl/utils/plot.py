@@ -10,9 +10,10 @@ import re
 
 
 class Plotter:
-    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'black', 'purple', 'pink',
-              'brown', 'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
+    COLORS = ['blue', 'orange', 'red', 'black', 'cyan', 'magenta', 'yellow', 'brown', 'purple', 'pink',
+              'green', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
               'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
+    MARKERS = ['v', 'o', 'x', 'P', '*', 'D']
 
     RETURN_TRAIN = 'episodic_return_train'
     RETURN_TEST = 'episodic_return_test'
@@ -117,19 +118,19 @@ class Plotter:
         del kwargs['error']
         ax.plot(x, m_x, **kwargs)
         del kwargs['label']
+        del kwargs['marker']
+        del kwargs['markevery']
         ax.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
 
-    def plot_median_std(self, data, x=None, ax=None, **kwargs):
+    def plot_median_std(self, data, x=None, **kwargs):
         import matplotlib.pyplot as plt
         if x is None:
             x = np.arange(data.shape[1])
-        if ax is None:
-            ax = plt
         e_x = np.std(data, axis=0)
         m_x = np.median(data, axis=0)
-        ax.plot(x, m_x, **kwargs)
+        plt.plot(x, m_x, **kwargs)
         del kwargs['label']
-        ax.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
+        plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
 
     def plot_games(self, games, **kwargs):
         kwargs.setdefault('agg', 'mean')
