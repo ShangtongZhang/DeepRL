@@ -10,6 +10,7 @@ import numpy as np
 import torch
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
+from gym.wrappers.time_limit import TimeLimit
 
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.atari_wrappers import FrameStack as FrameStack_
@@ -49,6 +50,8 @@ def make_env(env_id, seed, rank, episode_life=True):
             if len(obs_shape) == 3:
                 env = TransposeImage(env)
             env = FrameStack(env, 4)
+        else:
+            env = TimestampWrapper(env)
 
         return env
 
@@ -59,19 +62,49 @@ class OriginalReturnWrapper(gym.Wrapper):
     def __init__(self, env):
         gym.Wrapper.__init__(self, env)
         self.total_rewards = 0
+        self.all_rewards = []
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
         self.total_rewards += reward
+        self.all_rewards.append(reward)
         if done:
             info['episodic_return'] = self.total_rewards
+            info['all_rewards'] = self.all_rewards
             self.total_rewards = 0
+            self.all_rewards = []
         else:
             info['episodic_return'] = None
+        info['reward'] = reward
         return obs, reward, done, info
 
     def reset(self):
         return self.env.reset()
+
+
+class TimestampWrapper(gym.Wrapper):
+    def __init__(self, env):
+        gym.Wrapper.__init__(self, env)
+        self.observation_space.shape = (self.observation_space.shape[0] + 1, )
+        self.t = 0.0
+        env = self
+        while not isinstance(env, TimeLimit):
+            env = env.env
+        self.max_t = env._max_episode_steps
+
+    def augment_obs(self, obs):
+        t = self.t / self.max_t
+        obs = np.concatenate([obs, np.array([t])])
+        return obs
+
+    def step(self, action):
+        self.t += 1
+        obs, reward, done, info = self.env.step(action)
+        return self.augment_obs(obs), reward, done, info
+
+    def reset(self):
+        self.t = 0.0
+        return self.augment_obs(self.env.reset())
 
 
 class TransposeImage(gym.ObservationWrapper):
@@ -127,7 +160,8 @@ class DummyVecEnv(VecEnv):
     def __init__(self, env_fns):
         self.envs = [fn() for fn in env_fns]
         env = self.envs[0]
-        VecEnv.__init__(self, len(env_fns), env.observation_space, env.action_space)
+        VecEnv.__init__(self, len(env_fns),
+                        env.observation_space, env.action_space)
         self.actions = None
 
     def step_async(self, actions):
@@ -180,13 +214,43 @@ class Task:
         else:
             assert 'unknown action space'
 
+        if name in ['HalfCheetah-v2',
+                    'Walker2d-v2',
+                    'Swimmer-v2',
+                    'Hopper-v2',
+                    'Humanoid-v2',
+                    'Reacher-v2',
+                    'Ant-v2',
+                    'HumanoidStandup-v2',
+                    'InvertedDoublePendulum-v2',
+                    'InvertedPendulum-v2',
+                    ]:
+            self.sim = self.get_sim(self.env)
+
     def reset(self):
         return self.env.reset()
 
     def step(self, actions):
         if isinstance(self.action_space, Box):
-            actions = np.clip(actions, self.action_space.low, self.action_space.high)
+            actions = np.clip(actions, self.action_space.low,
+                              self.action_space.high)
         return self.env.step(actions)
+
+    def get_state(self):
+        return self.sim.get_state()
+
+    def set_state(self, state):
+        self.sim.set_state(state)
+        self.sim.forward()
+
+    def get_sim(self, env):
+        if hasattr(env, 'sim'):
+            return env.sim
+        if hasattr(env, 'env'):
+            return self.get_sim(env.env)
+        if hasattr(env, 'envs'):
+            return self.get_sim(env.envs[0])
+        raise NotImplementedError
 
 
 if __name__ == '__main__':

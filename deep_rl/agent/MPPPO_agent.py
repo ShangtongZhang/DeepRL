@@ -7,9 +7,76 @@
 from ..network import *
 from ..component import *
 from .BaseAgent import *
+import torch.multiprocessing as mp
 
 
-class PPOAgent(BaseAgent):
+def rollout_from(states, network, discount, normalizer, env):
+    all_rewards = []
+    while True:
+        prediction = network(states)
+        next_states, rewards, terminals, info = env.step(
+            to_np(prediction['a']))
+        all_rewards.append(rewards[0])
+        if terminals[0]:
+            break
+        states = normalizer(next_states)
+    cum_r = 0
+    for r in reversed(all_rewards):
+        cum_r = r + discount * cum_r
+    return cum_r
+
+
+class MonteCarloEstimator(mp.Process):
+    INIT = 1
+    ROLLOUT = 2
+
+    def __init__(self, game, discount):
+        mp.Process.__init__(self)
+        self.game = game
+        self.discount = discount
+        self.pipe, self.worker_pipe = mp.Pipe()
+
+    def run(self):
+        env = None
+        net = None
+        while True:
+            op, data = self.worker_pipe.recv()
+            if op == self.INIT:
+                env = Task(self.game)
+                env.reset()
+                net = data
+            elif op == self.ROLLOUT:
+                states, mj_state, normalizer = data
+                env.reset()
+                env.set_state(mj_state)
+                ret = rollout_from(states, net, self.discount, normalizer, env)
+                self.worker_pipe.send(ret)
+
+    def init(self, net):
+        self.pipe.send([self.INIT, net])
+
+    def rollout(self, states, mj_state, normalizer):
+        self.pipe.send([self.ROLLOUT, [states, mj_state, normalizer]])
+        return self.pipe.recv()
+
+
+class MCEstimators:
+    def __init__(self, config):
+        self.ps = [MonteCarloEstimator(
+            config.game, config.discount) for _ in range(config.mc_n)]
+        for p in self.ps:
+            p.start()
+
+    def init(self, net):
+        for p in self.ps:
+            p.init(net)
+
+    def rollout(self, states, mj_state, normalizer):
+        rets = [p.rollout(states, mj_state, normalizer) for p in self.ps]
+        return rets
+
+
+class MPPPOAgent(BaseAgent):
     def __init__(self, config):
         BaseAgent.__init__(self, config)
         self.config = config
@@ -17,6 +84,7 @@ class PPOAgent(BaseAgent):
         self.oracle = config.task_fn()
         self.oracle.reset()
         self.network = config.network_fn()
+        self.network.share_memory()
         if config.shared_repr:
             self.opt = config.optimizer_fn(self.network.parameters())
         else:
@@ -28,6 +96,8 @@ class PPOAgent(BaseAgent):
         if config.shared_repr:
             self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
                 self.opt, lambda step: 1 - step / config.max_steps)
+        self.MCEstimator = MCEstimators(config)
+        self.MCEstimator.init(self.network)
 
     def sample_trajectory_from(self, states, mj_state):
         config = self.config
@@ -50,9 +120,8 @@ class PPOAgent(BaseAgent):
 
     def compute_oracle_v(self, states, mj_state):
         self.config.state_normalizer.set_read_only()
-        rets = []
-        for i in range(self.config.mc_n):
-            rets.append(self.sample_trajectory_from(states, mj_state))
+        rets = self.MCEstimator.rollout(
+            states, mj_state, self.config.state_normalizer)
         self.config.state_normalizer.unset_read_only()
         return tensor(rets).mean().view(1, 1)
 
@@ -63,8 +132,6 @@ class PPOAgent(BaseAgent):
         for _ in range(config.rollout_length):
             if config.use_oracle_v:
                 oracle_v = self.compute_oracle_v(states, self.task.get_state())
-            else:
-                oracle_v = tensor([0]).view(1, 1)
             prediction = self.network(states)
             next_states, rewards, terminals, info = self.task.step(
                 to_np(prediction['a']))
@@ -72,24 +139,21 @@ class PPOAgent(BaseAgent):
             rewards = config.reward_normalizer(rewards)
             next_states = config.state_normalizer(next_states)
             storage.add(prediction)
+            if config.use_oracle_v:
+                prediction['v'] = oracle_v
             storage.add({'r': tensor(rewards).unsqueeze(-1),
                          'm': tensor(1 - terminals).unsqueeze(-1),
                          'next_s': tensor(next_states),
-                         's': tensor(states),
-                         'oracle_v': oracle_v})
+                         's': tensor(states)})
             states = next_states
             self.total_steps += config.num_workers
 
         self.states = states
         prediction = self.network(states)
-        if config.use_oracle_v or config.bootstrap_with_oracle:
+        if config.use_oracle_v:
             oracle_v = self.compute_oracle_v(states, self.task.get_state())
-        else:
-            oracle_v = tensor([0]).view(1, 1)
-        if config.bootstrap_with_oracle:
             prediction['v'] = oracle_v
         storage.add(prediction)
-        storage.add({'oracle_v': oracle_v})
         storage.placeholder()
 
         advantages = tensor(np.zeros((config.num_workers, 1)))
@@ -103,15 +167,11 @@ class PPOAgent(BaseAgent):
                     storage.m[i] * storage.v[i + 1] - storage.v[i]
                 advantages = advantages * config.gae_tau * \
                     config.discount * storage.m[i] + td_error
-            oracle_adv = storage.r[i] + config.discount * \
-                storage.m[i] * storage.oracle_v[i + 1] - \
-                storage.oracle_v[i]
             storage.adv[i] = advantages.detach()
             storage.ret[i] = returns.detach()
-            storage.oracle_adv[i] = oracle_adv
 
-        states, actions, log_probs_old, returns, advantages, next_states, rewards, masks, oracle_adv \
-            = storage.cat(['s', 'a', 'log_pi_a', 'ret', 'adv', 'next_s', 'r', 'm', 'oracle_adv'])
+        states, actions, log_probs_old, returns, advantages, next_states, rewards, masks \
+            = storage.cat(['s', 'a', 'log_pi_a', 'ret', 'adv', 'next_s', 'r', 'm'])
 
         actions = actions.detach()
         log_probs_old = log_probs_old.detach()
@@ -136,9 +196,6 @@ class PPOAgent(BaseAgent):
                 sampled_rewards = rewards[batch_indices]
                 sampled_masks = masks[batch_indices]
 
-                if config.use_oracle_v:
-                    sampled_advantages = oracle_adv[batch_indices]
-
                 prediction = self.network(sampled_states, sampled_actions)
                 ratio = (prediction['log_pi_a'] - sampled_log_probs_old).exp()
                 obj = ratio * sampled_advantages
@@ -154,7 +211,7 @@ class PPOAgent(BaseAgent):
                     with torch.no_grad():
                         prediction_next = self.network(sampled_next_states)
                     target = sampled_rewards + config.discount * \
-                        sampled_masks * prediction_next['v']
+                        sampled_masks + prediction_next['v']
                     value_loss = 0.5 * (target - prediction['v']).pow(2).mean()
 
                 approx_kl = (sampled_log_probs_old -

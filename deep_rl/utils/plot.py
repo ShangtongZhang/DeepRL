@@ -115,6 +115,10 @@ class Plotter:
         del kwargs['error']
         plt.plot(x, m_x, **kwargs)
         del kwargs['label']
+        if 'marker' in kwargs.keys():
+            del kwargs['marker']
+        if 'markevery' in kwargs.keys():
+            del kwargs['markevery']
         plt.fill_between(x, m_x + e_x, m_x - e_x, alpha=0.3, **kwargs)
 
     def plot_median_std(self, data, x=None, **kwargs):
@@ -168,3 +172,26 @@ class Plotter:
             scores.append(kwargs['score'](y))
         indices = np.argsort(-np.asarray(scores))
         return indices
+
+    def reduce(self, root, tag, fields, score_fn):
+        tf_log_info = {}
+        for dir, _, files in os.walk(root):
+            for file in files:
+                if 'tfevents' in file:
+                    dir = os.path.basename(dir)
+                    dir = re.sub(r'lr_\d+', 'placeholder', dir)
+                    dir = re.sub(r'run.*', 'run', dir)
+                    tf_log_info[dir] = {}
+        for key in tf_log_info.keys():
+            scores = []
+            for field in fields:
+                dir = key.replace('placeholder', field)
+                names = self.filter_log_dirs('.*%s.*' % (dir), root=root)
+                xy_list = self.load_log_dirs(names, tag=tag)
+                scores.append(score_fn([y for x, y in xy_list]))
+            best = np.nanargmax(scores)
+            tf_log_info[key]['field'] = fields[best]
+            tf_log_info[key]['score'] = scores[best]
+            tf_log_info[key]['scores'] = scores
+            tf_log_info[key]['fields'] = fields
+        return tf_log_info

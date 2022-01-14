@@ -14,6 +14,13 @@ class Config:
     DEFAULT_REPLAY = 0
     PRIORITIZED_REPLAY = 1
 
+    NO = 'no'
+    UNBIAS = 'unbias'
+    COMP_UNBIAS = 'comp_unbias'
+    INV_LINEAR = 'inv_linear'
+    LOG_LINEAR = 'log_linear'
+
+
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         self.task_fn = None

@@ -4,25 +4,49 @@
 # declaration at the top                                              #
 #######################################################################
 
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
+from .misc import *
+try:
+    from tensorboardX import SummaryWriter
+    from tensorboardX.event_file_writer import EventsWriter
+    tensorboardX = True
+except:
+    tensorboardX = False
+    from torch.utils.tensorboard import SummaryWriter
 import os
 import numpy as np
 import torch
 import logging
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s: %(message)s')
-from .misc import *
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s: %(message)s')
+
+__base_log_dir = None
+
+
+def set_base_log_dir(dir):
+    global __base_log_dir
+    __base_log_dir = dir
+
+
+def get_base_log_dir():
+    global __base_log_dir
+    return __base_log_dir
 
 
 def get_logger(tag='default', log_level=0):
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     if tag is not None:
-        fh = logging.FileHandler('./log/%s-%s.txt' % (tag, get_time_str()))
-        fh.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s: %(message)s'))
+        fh = logging.FileHandler(
+            os.path.join(get_base_log_dir(), 'log/%s-%s.txt' %
+                         (tag, get_time_str()))
+        )
+        fh.setFormatter(logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s: %(message)s'))
         fh.setLevel(logging.INFO)
         logger.addHandler(fh)
-    return Logger(logger, './tf_log/logger-%s-%s' % (tag, get_time_str()), log_level)
+    return Logger(logger, os.path.join(get_base_log_dir(), 'tf_log/logger-%s-%s' % (tag, get_time_str())), log_level)
 
 
 class Logger(object):
@@ -35,6 +59,19 @@ class Logger(object):
             self.warning = vanilla_logger.warning
         self.all_steps = {}
         self.log_dir = log_dir
+
+    def flush(self):
+        try:
+            path = self.writer.file_writer.event_writer._ev_writer._py_recordio_writer.path
+            self.writer.file_writer.event_writer._ev_writer._py_recordio_writer._writer.flush()
+            while True:
+                if self.writer.file_writer.event_writer._event_queue.empty():
+                    break
+                time.sleep(0.1)  # Increased from 0.1 -> X s
+            self.writer.file_writer.event_writer._ev_writer._py_recordio_writer._writer = open(
+                path, 'ab')
+        except:
+            pass
 
     def lazy_init_writer(self):
         if self.writer is None:
@@ -62,6 +99,9 @@ class Logger(object):
         if np.isscalar(value):
             value = np.asarray([value])
         self.writer.add_scalar(tag, value, step)
+        self.writer.flush()
+        if tensorboardX:
+            self.flush()
 
     def add_histogram(self, tag, values, step=None, log_level=0):
         self.lazy_init_writer()

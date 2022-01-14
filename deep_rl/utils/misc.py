@@ -18,19 +18,28 @@ def run_steps(agent):
     config = agent.config
     agent_name = agent.__class__.__name__
     t0 = time.time()
+    first_eval = True
+    steps_since_last_eval = 0
+    prev_total_steps = 0
     while True:
         if config.save_interval and not agent.total_steps % config.save_interval:
-            agent.save('data/%s-%s-%d' % (agent_name, config.tag, agent.total_steps))
+            agent.save('data/%s-%s-%d' %
+                       (agent_name, config.tag, agent.total_steps))
         if config.log_interval and not agent.total_steps % config.log_interval:
-            agent.logger.info('steps %d, %.2f steps/s' % (agent.total_steps, config.log_interval / (time.time() - t0)))
+            agent.logger.info('steps %d, %.2f steps/s' %
+                              (agent.total_steps, config.log_interval / (time.time() - t0)))
             t0 = time.time()
-        if config.eval_interval and not agent.total_steps % config.eval_interval:
+        if config.eval_interval and (steps_since_last_eval >= config.eval_interval or first_eval):
             agent.eval_episodes()
+            steps_since_last_eval = 0
+            first_eval = False
         if config.max_steps and agent.total_steps >= config.max_steps:
             agent.close()
             break
         agent.step()
         agent.switch_task()
+        steps_since_last_eval += agent.total_steps - prev_total_steps
+        prev_total_steps = agent.total_steps
 
 
 def get_time_str():
@@ -52,7 +61,8 @@ def close_obj(obj):
 
 def random_sample(indices, batch_size):
     indices = np.asarray(np.random.permutation(indices))
-    batches = indices[:len(indices) // batch_size * batch_size].reshape(-1, batch_size)
+    batches = indices[:len(indices) // batch_size *
+                      batch_size].reshape(-1, batch_size)
     for batch in batches:
         yield batch
     r = len(indices) % batch_size

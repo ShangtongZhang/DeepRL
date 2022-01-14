@@ -8,3 +8,8 @@ from .PPO_agent import *
 from .OptionCritic_agent import *
 from .TD3_agent import *
 from .Rainbow_agent import *
+from .PPO_C51_agent import *
+from .PPO_FHTD_agent import *
+from .DiscountPPO_agent import *
+from .MPPPO_agent import *
+from .PPO_QR_agent import *
