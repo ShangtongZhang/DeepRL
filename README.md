@@ -80,6 +80,7 @@ Please use this bibtex if you want to cite this repo
 
 # Code of My Papers
 > They are located in other branches of this repo and seem to be good examples for using this codebase.
+* [A Deeper Look at Discounting Mismatch in Actor-Critic Algorithms](https://arxiv.org/abs/2010.01069) [[Discounting](https://github.com/ShangtongZhang/DeepRL/tree/discounting)]
 * [Breaking the Deadly Triad with a Target Network](https://arxiv.org/abs/2101.08862) [[TargetNetwork](https://github.com/ShangtongZhang/DeepRL/tree/TargetNetwork)]
 * [Average-Reward Off-Policy Policy Evaluation with Function Approximation](https://arxiv.org/abs/2101.02808) [[DifferentialGQ](https://github.com/ShangtongZhang/DeepRL/tree/DifferentialGQ)]
 * [Mean-Variance Policy Iteration for Risk-Averse Reinforcement Learning](https://arxiv.org/abs/2004.10888) [[MVPI](https://github.com/ShangtongZhang/DeepRL/tree/MVPI)]

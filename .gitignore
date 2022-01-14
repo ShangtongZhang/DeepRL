@@ -89,6 +89,7 @@ ENV/
 .ropeproject
 
 .idea
+.vscode
 data
 dataset
 log
