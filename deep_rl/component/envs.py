@@ -7,6 +7,8 @@
 import os
 import gym
 import numpy as np
+from numpy.core.fromnumeric import shape
+from numpy.core.numeric import indices
 import torch
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
@@ -14,6 +16,8 @@ from gym.spaces.discrete import Discrete
 from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 from baselines.common.atari_wrappers import FrameStack as FrameStack_
 from baselines.common.vec_env.subproc_vec_env import SubprocVecEnv, VecEnv
+
+from .tiles3 import tiles, IHT
 
 from ..utils import *
 
@@ -24,7 +28,7 @@ except ImportError:
 
 
 # adapted from https://github.com/ikostrikov/pytorch-a2c-ppo-acktr/blob/master/envs.py
-def make_env(env_id, seed, rank, episode_life=True):
+def make_env(env_id, seed, rank, episode_life=True, tile_coding=False):
     def _thunk():
         random_seed(seed)
         if env_id.startswith("dm"):
@@ -33,6 +37,8 @@ def make_env(env_id, seed, rank, episode_life=True):
             env = dm_control2gym.make(domain_name=domain, task_name=task)
         else:
             env = gym.make(env_id)
+        if tile_coding:
+            env = TileCodingWrapper(env)
         is_atari = hasattr(gym.envs, 'atari') and isinstance(
             env.unwrapped, gym.envs.atari.atari_env.AtariEnv)
         if is_atari:
@@ -157,12 +163,14 @@ class Task:
                  single_process=True,
                  log_dir=None,
                  episode_life=True,
-                 seed=None):
+                 seed=None,
+                 tile_coding=False,
+                 ):
         if seed is None:
             seed = np.random.randint(int(1e9))
         if log_dir is not None:
             mkdir(log_dir)
-        envs = [make_env(name, seed, i, episode_life) for i in range(num_envs)]
+        envs = [make_env(name, seed, i, episode_life, tile_coding=tile_coding) for i in range(num_envs)]
         if single_process:
             Wrapper = DummyVecEnv
         else:
@@ -189,8 +197,99 @@ class Task:
         return self.env.step(actions)
 
 
+class BairdPrediction(gym.Env):
+    DASHED = 0
+    SOLID = 1
+
+    def __init__(self):
+        self.num_states = 7
+        self.phi = np.eye(7, 7) * 2
+        self.phi[-1, -1] = 1
+        self.phi = np.concatenate([self.phi, np.ones((7, 1))], axis=1)
+        self.phi[-1, -1] = 2
+
+        self.action_space = Discrete(2)
+        self.observation_space = Box(-10, 10, (self.phi.shape[1],))
+
+        self.state = None
+
+    def reset(self):
+        self.state = np.random.randint(self.num_states)
+        return self.phi[self.state]
+
+    def step(self, action):
+        if action == self.DASHED:
+            self.state = np.random.randint(self.num_states - 1)
+        elif action == self.SOLID:
+            self.state = self.num_states - 1
+        else:
+            raise NotImplementedError
+        return self.phi[self.state], 0, False, {}
+
+    def act(self, prob=6.0/7, pi_dashed=None):
+        if np.random.rand() < prob:
+            action = self.DASHED
+            mu_prob = prob
+            pi_prob = pi_dashed
+        else:
+            action = self.SOLID
+            mu_prob = 1 - prob
+            pi_prob = 1 - pi_dashed
+        return dict(action=action, mu_prob=mu_prob, pi_prob=pi_prob)
+
+
+class BairdControl(BairdPrediction):
+    def __init__(self):
+        super(BairdControl, self).__init__()
+        self.phi_solid = self.phi
+        self.phi_dash = np.eye(7, 7)
+        self.phi = np.concatenate([self.phi_solid, self.phi_dash], axis=1)
+
+        self.action_space = Discrete(2)
+        self.observation_space = Box(-10, 10, (self.phi.shape[1],))
+
+    def expand_phi(self, phi):
+        assert len(phi.shape) == 1
+        phi = np.array([phi, phi])
+        phi[0, :8] = 0
+        phi[1, 8:] = 0
+        return phi
+
+
+class TileCodingWrapper(gym.Wrapper):
+    def __init__(self, env):
+        gym.Wrapper.__init__(self, env)
+        self.max_size = 1024
+        self.num_tilings = 8 
+        high = np.where(self.observation_space.high > 100, 5, self.observation_space.high)
+        low = np.where(self.observation_space.low < -100,
+        -5, self.observation_space.low)
+        env._max_episode_steps = 1000
+        self.scale_factor = 10.0 / (high - low) 
+        self.observation_space = Box(
+            low = 0, high=1, shape=(self.max_size, ), 
+            dtype=self.observation_space.dtype)
+        
+    
+    def tile(self, obs):
+        indices = tiles(self.max_size, self.num_tilings, obs * self.scale_factor)
+        obs = np.zeros((self.max_size, ))
+        obs[indices] = 1
+        return obs
+    
+    def step(self, action):
+        obs, reward, done, info = self.env.step(action)
+        obs = self.tile(obs)
+        return obs, reward, done, info
+
+    def reset(self):
+        obs = self.env.reset()
+        return self.tile(obs)
+
+
 if __name__ == '__main__':
-    task = Task('Hopper-v2', 5, single_process=False)
+    # task = Task('Hopper-v2', 5, single_process=False)
+    task = Task('CartPole-v2', tile_coding=True)
     state = task.reset()
     while True:
         action = np.random.rand(task.observation_space.shape[0])

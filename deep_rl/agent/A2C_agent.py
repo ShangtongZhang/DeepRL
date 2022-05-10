@@ -19,11 +19,18 @@ class A2CAgent(BaseAgent):
         self.total_steps = 0
         self.states = self.task.reset()
 
+        # self.max_states = np.array([0, 0, 0, 0])
+        # self.min_states = np.array([0, 0, 0, 0])
+
     def step(self):
         config = self.config
         storage = Storage(config.rollout_length)
         states = self.states
         for _ in range(config.rollout_length):
+            # self.max_states = np.maximum(self.max_states, states[0])
+            # self.min_states = np.minimum(self.min_states, states[0])
+            # print(self.max_states)
+            # print(self.min_states)
             prediction = self.network(config.state_normalizer(states))
             next_states, rewards, terminals, info = self.task.step(to_np(prediction['action']))
             self.record_online_return(info)

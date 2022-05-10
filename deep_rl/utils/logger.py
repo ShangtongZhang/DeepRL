@@ -62,6 +62,7 @@ class Logger(object):
         if np.isscalar(value):
             value = np.asarray([value])
         self.writer.add_scalar(tag, value, step)
+        self.writer.flush()
 
     def add_histogram(self, tag, values, step=None, log_level=0):
         self.lazy_init_writer()
@@ -71,3 +72,4 @@ class Logger(object):
         if step is None:
             step = self.get_step(tag)
         self.writer.add_histogram(tag, values, step)
+        self.writer.flush()
