@@ -1,5 +1,7 @@
 # DeepRL
 
+<span style="color:red"> <a href="/people" style="color:red"> <u> [Ad] I am looking for self-motivated students interested in RL at different levels! </u> </a> </span>
+
 > If you have any question or want to report a bug, please open an issue instead of emailing me directly.  
 
 Modularized implementation of popular deep RL algorithms in PyTorch.  
