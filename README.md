@@ -1,6 +1,9 @@
 # DeepRL
 
-<span style="color:red"> <a href="/people" style="color:red"> <u> [Ad] I am looking for self-motivated students interested in RL at different levels! </u> </a> </span>
+```diff
+@@ I am looking for self-motivated students interested in RL at different levels! @@
+@@ Visit https://shangtongzhang.github.io/people/ for more details. @@
+```
 
 > If you have any question or want to report a bug, please open an issue instead of emailing me directly.  
 
