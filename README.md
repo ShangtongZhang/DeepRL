@@ -20,7 +20,7 @@ Implemented algorithms:
 * Proximal Policy Optimization (PPO)
 * The Option-Critic Architecture (OC)
 * Twined Delayed DDPG (TD3)
-* [TruncatedETD/DifferentialGQ/MVPI/ReverseRL/COF-PAC/GradientDICE/Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
+* [Off-PAC-KL/TruncatedETD/DifferentialGQ/MVPI/ReverseRL/COF-PAC/GradientDICE/Bi-Res-DDPG/DAC/Geoff-PAC/QUOTA/ACE](#code-of-my-papers)
 
 The DQN agent, as well as C51 and QR-DQN, has an asynchronous actor for data generation and an asynchronous replay buffer for transferring data to GPU.
 Using 1 RTX 2080 Ti and 3 threads, the DQN agent runs for 10M steps (40M frames, 2.5M gradient updates) for Breakout within 6 hours.
@@ -85,6 +85,7 @@ Please use this bibtex if you want to cite this repo
 
 # Code of My Papers
 > They are located in other branches of this repo and seem to be good examples for using this codebase.
+* [Global Optimality and Finite Sample Analysis of Softmax Off-Policy Actor Critic under State Distribution Mismatch](https://arxiv.org/abs/2111.02997) [[Off-PAC-KL](https://github.com/ShangtongZhang/DeepRL/tree/Off-PAC-KL)]
 * [Truncated Emphatic Temporal Difference Methods for Prediction and Control](https://arxiv.org/abs/2108.05338) [[TruncatedETD](https://github.com/ShangtongZhang/DeepRL/tree/TruncatedETD)]
 * [A Deeper Look at Discounting Mismatch in Actor-Critic Algorithms](https://arxiv.org/abs/2010.01069) [[Discounting](https://github.com/ShangtongZhang/DeepRL/tree/discounting)]
 * [Breaking the Deadly Triad with a Target Network](https://arxiv.org/abs/2101.08862) [[TargetNetwork](https://github.com/ShangtongZhang/DeepRL/tree/TargetNetwork)]
