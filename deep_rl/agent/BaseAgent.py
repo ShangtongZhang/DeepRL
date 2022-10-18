@@ -38,12 +38,17 @@ class BaseAgent:
     def eval_episode(self):
         env = self.config.eval_env
         state = env.reset()
+        rewards = []
         while True:
             action = self.eval_step(state)
             state, reward, done, info = env.step(action)
+            rewards.append(reward)
             ret = info[0]['episodic_return']
             if ret is not None:
                 break
+        ret = 0
+        for r in reversed(rewards):
+            ret = r + self.config.discount * ret
         return ret
 
     def eval_episodes(self):
@@ -63,8 +68,9 @@ class BaseAgent:
         if isinstance(info, dict):
             ret = info['episodic_return']
             if ret is not None:
-                self.logger.add_scalar('episodic_return_train', ret, self.total_steps + offset)
-                self.logger.info('steps %d, episodic_return_train %s' % (self.total_steps + offset, ret))
+                # self.logger.add_scalar('episodic_return_train', ret, self.total_steps + offset)
+                # self.logger.info('steps %d, episodic_return_train %s' % (self.total_steps + offset, ret))
+                pass
         elif isinstance(info, tuple):
             for i, info_ in enumerate(info):
                 self.record_online_return(info_, i)

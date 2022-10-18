@@ -1,118 +1,105 @@
 from examples import *
+from gym.envs.registration import register
 
-
-def batch_atari():
+def batch_chain():
     cf = Config()
     cf.add_argument('--i', type=int, default=0)
     cf.add_argument('--j', type=int, default=0)
     cf.merge()
 
-    games = [
-        'BreakoutNoFrameskip-v4',
-        # 'AlienNoFrameskip-v4',
-        # 'DemonAttackNoFrameskip-v4',
-        # 'MsPacmanNoFrameskip-v4'
-    ]
-
-    algos = [
-        dqn_pixel,
-        quantile_regression_dqn_pixel,
-        categorical_dqn_pixel,
-        rainbow_pixel,
-        a2c_pixel,
-        n_step_dqn_pixel,
-        option_critic_pixel,
-        ppo_pixel,
-    ]
-
     params = []
 
-    for game in games:
-        for r in range(1):
-            for algo in algos:
-                params.append([algo, dict(game=game, run=r, remark=algo.__name__)])
-            # for n_step in [1, 2, 3]:
-            #     for double_q in [True, False]:
-            #         params.extend([
-            #             [dqn_pixel,
-            #              dict(game=game, run=r, n_step=n_step, replay_cls=PrioritizedReplay, double_q=double_q,
-            #                   remark=dqn_pixel.__name__)],
-                        # [rainbow_pixel,
-                        #  dict(game=game, run=r, n_step=n_step, noisy_linear=False, remark=rainbow_pixel.__name__)]
-                    # ])
-            # params.append(
-            #     [categorical_dqn_pixel, dict(game=game, run=r, remark=categorical_dqn_pixel.__name__)]),
-            # params.append([dqn_pixel, dict(game=game, run=r, remark=dqn_pixel.__name__)])
+    # common_kwargs = dict(
+        # lr=0.01,
+        # critic_weight=10,
+    # )
+    # for r in range(10):
+    #     for num_states in [5]:
+    #     # for num_states in [6, 7]:
+    #     # for num_states in [5, 6, 7]:
+    #         for reg_weight in [0, 0.005, 0.01, 0.5]:
+    #             params.append([off_pac, dict(
+    #                 on_policy=True, 
+    #                 reg_weight=reg_weight,
+    #                 run=r,
+    #                 num_states=num_states,
+    #                 **common_kwargs)])
+    #             for mu_temperature in [0, 0.1, 0.2]:
+    #                 params.append([off_pac, dict(
+    #                     on_policy=False, 
+    #                     mu_temperature=mu_temperature,
+    #                     run=r,
+    #                     reg_weight=reg_weight,
+    #                     num_states=num_states,
+    #                     **common_kwargs)])
+    
+    # for r in range(0, 6):
+    # for r in range(6, 12):
+    # for r in range(12, 18):
+    # for r in range(18, 24):
+    for r in range(24, 30):
+    # for r in range(30):
+        for num_states in [5, 6]:
+        # for num_states in [7, 8, 9]:
+            # for eps_reg in np.array([0.2, 0.6, 1, 1.4, 1.8, 2, 4, 8, 16, 32]) / 16: 
+            # for eps_reg in np.array([0.5]) / 16:
+            for eps_reg in np.array([0.5, 1, 2, 8, 32]) / 16:
+                for sac in [True, False]:
+                    params.append([off_pac, dict(
+                        sac=sac,
+                        on_policy=False, 
+                        run=r,
+                        num_states=num_states,
+                        eps_reg=eps_reg)])
+
 
     algo, param = params[cf.i]
     algo(**param)
     exit()
 
 
-def batch_mujoco():
-    cf = Config()
-    cf.add_argument('--i', type=int, default=0)
-    cf.add_argument('--j', type=int, default=0)
-    cf.merge()
+def off_pac(**kwargs):
+    kwargs.setdefault('game', 'Chain-v0')
+    generate_tag(kwargs)
+    kwargs.setdefault('mu_temperature', 0.1)
+    kwargs.setdefault('log_level', 0)
+    kwargs.setdefault('num_states', 10)
+    kwargs.setdefault('beta', 0.8)
+    kwargs.setdefault('discount', 0.99)
+    kwargs.setdefault('full_init_support', False)
+    kwargs.setdefault('on_policy', True)
+    kwargs.setdefault('discount_state', True)
+    kwargs.setdefault('reg', 'kl')
+    kwargs.setdefault('eps_critic', 0.5+0.001)
+    kwargs.setdefault('eps_actor', 0.75+0.001)
+    kwargs.setdefault('eps_reg', 1.0 / 16)
+    kwargs.setdefault('eps_mu', 0.9)
+    kwargs.setdefault('sac', False)
+    config = Config()
+    config.merge(kwargs)
 
-    games = [
-        'dm-acrobot-swingup',
-        'dm-acrobot-swingup_sparse',
-        'dm-ball_in_cup-catch',
-        'dm-cartpole-swingup',
-        'dm-cartpole-swingup_sparse',
-        'dm-cartpole-balance',
-        'dm-cartpole-balance_sparse',
-        'dm-cheetah-run',
-        'dm-finger-turn_hard',
-        'dm-finger-spin',
-        'dm-finger-turn_easy',
-        'dm-fish-upright',
-        'dm-fish-swim',
-        'dm-hopper-stand',
-        'dm-hopper-hop',
-        'dm-humanoid-stand',
-        'dm-humanoid-walk',
-        'dm-humanoid-run',
-        'dm-manipulator-bring_ball',
-        'dm-pendulum-swingup',
-        'dm-point_mass-easy',
-        'dm-reacher-easy',
-        'dm-reacher-hard',
-        'dm-swimmer-swimmer15',
-        'dm-swimmer-swimmer6',
-        'dm-walker-stand',
-        'dm-walker-walk',
-        'dm-walker-run',
-    ]
+    register(
+        id='Chain-v0',
+        entry_point='deep_rl.component.envs:Chain',
+        kwargs=dict(
+            num_states=config.num_states,
+            beta=config.beta,
+            gamma=config.discount,
+            full_init_support=config.full_init_support,
+        )
+    )
 
-    games = [
-        'HalfCheetah-v2',
-        'Walker2d-v2',
-        'Swimmer-v2',
-        'Hopper-v2',
-        'Reacher-v2',
-        'Ant-v2',
-        'Humanoid-v2',
-        'HumanoidStandup-v2',
-    ]
+    config.task_fn = lambda: Task(config.game)
+    config.eval_env = Task(config.game)
+    config.optimizer_fn = lambda params: torch.optim.SGD(params, 1)
+    config.network_fn = lambda: OffPACNet(
+        state_dim=config.eval_env.state_dim, 
+        action_dim=config.eval_env.action_dim)
 
-    params = []
-
-    for game in games:
-        if 'Humanoid' in game:
-            algos = [ppo_continuous]
-        else:
-            algos = [ppo_continuous, ddpg_continuous, td3_continuous]
-        for algo in algos:
-            for r in range(5):
-                params.append([algo, dict(game=game, run=r)])
-
-    algo, param = params[cf.i]
-    algo(**param, remark=algo.__name__)
-
-    exit()
-
+    config.max_steps = int(2e6)
+    config.eval_interval = int(2e3)
+    config.eval_episodes = 10
+    run_steps(OffPACAgent(config))
 
 if __name__ == '__main__':
     mkdir('log')
@@ -122,5 +109,19 @@ if __name__ == '__main__':
     # select_device(0)
     # batch_atari()
 
-    select_device(-1)
-    batch_mujoco()
+    # select_device(-1)
+    # batch_mujoco()
+
+    batch_chain()
+
+    off_pac(
+        sac=True,
+        on_policy=False,
+        num_states=8,
+        mu_temperature=0.1,
+        # log_level=4,
+        eps_reg=1.0 / 16,
+        # lr=0.01,
+        # critic_weight=10,
+        # reg_weight=0.1,
+    )

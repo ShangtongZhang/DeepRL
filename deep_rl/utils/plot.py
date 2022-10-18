@@ -10,7 +10,7 @@ import re
 
 
 class Plotter:
-    COLORS = ['blue', 'green', 'red', 'black', 'cyan', 'magenta', 'yellow', 'brown', 'purple', 'pink',
+    COLORS = ['blue', 'green', 'red', 'cyan', 'magenta', 'yellow', 'brown', 'purple', 'pink',
               'orange', 'teal', 'coral', 'lightblue', 'lime', 'lavender', 'turquoise',
               'darkgreen', 'tan', 'salmon', 'gold', 'lightpurple', 'darkred', 'darkblue']
 
@@ -105,7 +105,7 @@ class Plotter:
             xy_list = [self._window_func(np.asarray(x), np.asarray(y), kwargs['window'], np.mean) for x, y in xy_list]
         return xy_list
 
-    def plot_mean(self, data, x=None, **kwargs):
+    def plot_mean(self, data, x=None, scale=1.0, **kwargs):
         import matplotlib.pyplot as plt
         if x is None:
             x = np.arange(data.shape[1])
@@ -115,6 +115,7 @@ class Plotter:
             e_x = np.std(data, axis=0)
         else:
             raise NotImplementedError
+        e_x = e_x * scale
         m_x = np.mean(data, axis=0)
         del kwargs['error']
         plt.plot(x, m_x, **kwargs)

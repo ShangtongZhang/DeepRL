@@ -4,6 +4,9 @@
 # declaration at the top                                              #
 #######################################################################
 
+from os import stat
+
+from torch import log
 from .network_utils import *
 from .network_bodies import *
 
@@ -291,3 +294,30 @@ class TD3Net(nn.Module, BaseNet):
         q_1 = self.fc_critic_1(self.critic_body_1(x))
         q_2 = self.fc_critic_2(self.critic_body_2(x))
         return q_1, q_2
+
+
+class OffPACNet(nn.Module, BaseNet):
+    def __init__(self, state_dim, action_dim):
+        super(OffPACNet, self).__init__()
+        self.action_dim = action_dim
+        self.fc_q = nn.Linear(state_dim, action_dim, bias=False)
+        self.fc_pi = nn.Linear(state_dim, action_dim, bias=False)
+    
+    def forward(self, state):
+        state = tensor(state)
+        q = self.fc_q(state)
+        logits = self.fc_pi(state)
+        prob = torch.softmax(logits, -1)
+        log_prob = torch.log_softmax(logits, -1)
+        uniform = 1.0 / self.action_dim
+        kl = (uniform * (tensor(uniform).log() - log_prob)).sum(-1).unsqueeze(-1)
+        entropy = (-prob * log_prob).sum(-1).unsqueeze(-1)
+        return dict(
+            q=q,
+            logits=logits,
+            prob=prob,
+            log_prob=log_prob,
+            kl=kl,
+            entropy=entropy
+        )
+

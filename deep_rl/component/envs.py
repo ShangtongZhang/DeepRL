@@ -7,6 +7,7 @@
 import os
 import gym
 import numpy as np
+from numpy.core.defchararray import not_equal
 import torch
 from gym.spaces.box import Box
 from gym.spaces.discrete import Discrete
@@ -187,6 +188,47 @@ class Task:
         if isinstance(self.action_space, Box):
             actions = np.clip(actions, self.action_space.low, self.action_space.high)
         return self.env.step(actions)
+
+
+class Chain(gym.Env):
+    def __init__(self, num_states, beta, gamma, full_init_support):
+        self.num_states = num_states
+        self.beta = beta
+        self.gamma = gamma
+        self.full_init_support = full_init_support
+        self.phi = np.eye(self.num_states) 
+        self.optimal_r = 1
+        self.suboptimal_r = beta * gamma ** (num_states - 1) * self.optimal_r
+        self.observation_space = Box(-10, 10, (num_states, ))
+        self.action_space = Discrete(2)
+    
+    def reset_state(self):
+        if self.full_init_support:
+            return np.random.choice(np.arange(self.num_states))
+        else:
+            return 0
+
+    def reset(self):
+        if self.full_init_support is None:
+            raise NotImplementedError
+        self.state = self.reset_state()
+        return self.phi[self.state]
+    
+    def step(self, action):
+        if action == 0:
+            self.state = self.reset_state()
+            reward = self.suboptimal_r
+            done = True
+        else:
+            self.state = self.state + 1
+            if self.state == self.num_states:
+                done = True
+                reward = self.optimal_r
+                self.state = self.reset_state()
+            else:
+                done = False
+                reward = 0
+        return self.phi[self.state], reward, done, {}
 
 
 if __name__ == '__main__':
