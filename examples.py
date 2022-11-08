@@ -113,7 +113,7 @@ def quantile_regression_dqn_feature(**kwargs):
     replay_kwargs = dict(
         memory_size=int(1e4),
         batch_size=config.batch_size)
-    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs, async=True)
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs)
 
     config.random_action_prob = LinearSchedule(1.0, 0.1, 1e4)
     config.discount = 0.99
@@ -146,7 +146,7 @@ def quantile_regression_dqn_pixel(**kwargs):
         batch_size=config.batch_size,
         history_length=4,
     )
-    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs, async=True)
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs)
 
     config.state_normalizer = ImageNormalizer()
     config.reward_normalizer = SignNormalizer()
@@ -177,7 +177,7 @@ def categorical_dqn_feature(**kwargs):
     replay_kwargs = dict(
         memory_size=int(1e4),
         batch_size=config.batch_size)
-    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs, async=True)
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs)
 
     config.discount = 0.99
     config.target_network_update_freq = 200
@@ -211,7 +211,7 @@ def categorical_dqn_pixel(**kwargs):
         batch_size=config.batch_size,
         history_length=4,
     )
-    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs, async=True)
+    config.replay_fn = lambda: ReplayWrapper(UniformReplay, replay_kwargs)
 
     config.discount = 0.99
     config.state_normalizer = ImageNormalizer()

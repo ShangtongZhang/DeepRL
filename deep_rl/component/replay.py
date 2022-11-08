@@ -202,12 +202,12 @@ class ReplayWrapper(mp.Process):
     EXIT = 2
     UPDATE_PRIORITIES = 3
 
-    def __init__(self, replay_cls, replay_kwargs, async=True):
+    def __init__(self, replay_cls, replay_kwargs, async_flag=True):
         mp.Process.__init__(self)
         self.replay_kwargs = replay_kwargs
         self.replay_cls = replay_cls
         self.cache_len = 2
-        if async:
+        if async_flag:
             self.pipe, self.worker_pipe = mp.Pipe()
             self.start()
         else:
