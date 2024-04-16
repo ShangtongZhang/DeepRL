@@ -1,10 +1,5 @@
 # DeepRL
 
-```diff
-@@ I am looking for self-motivated students interested in RL at different levels! @@
-@@ Visit https://shangtongzhang.github.io/people/ for more details. @@
-```
-
 > If you have any question or want to report a bug, please open an issue instead of emailing me directly.  
 
 Modularized implementation of popular deep RL algorithms in PyTorch.  
